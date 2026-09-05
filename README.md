@@ -1,6 +1,8 @@
 # Launch!
 A simple light-weight launcher menu for all DOS systems.
 
+Download the latest release [here](https://github.com/therenegar/launch/releases/download/v0.41/LAUNCH-0.41.zip).
+
 <img width="720" height="600" alt="LAUNCH06" src="https://github.com/user-attachments/assets/ff39dd14-5a45-499f-9acc-7d2b74b4e558" />
 <img width="720" height="600" alt="LAUNCH08" src="https://github.com/user-attachments/assets/2fa021bd-05cc-4bfb-952b-f3ac0f77d458" />
 <img width="720" height="600" alt="LAUNCH05" src="https://github.com/user-attachments/assets/0cd89198-1ad4-47d5-9bdc-2bf4415284f9" />
