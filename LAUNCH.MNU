@@ -1,4 +1,4 @@
-; Launch! 0.4 menu definition
+; Launch! 0.41 menu definition
 ; ITEM=display title|command, including any parameters
 
 [Launcher]

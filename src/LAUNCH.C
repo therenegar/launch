@@ -1,4 +1,4 @@
-/* Launch! 0.4 - modal application menu for DOS
+/* Launch! 0.41 - modal application menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -49,6 +49,7 @@ static unsigned short far *video;
 static unsigned short *saved;
 static unsigned char cursor_start,cursor_end;
 static char run_command[MAX_CMD];
+static char config_file[MAX_CMD];
 static unsigned char key_shift;
 static unsigned char key_scan;
 static int menu_at_top;
@@ -168,6 +169,46 @@ static char *trim(char *s)
   while(*s && isspace((unsigned char)*s)) ++s;
   e=s+strlen(s); while(e>s && isspace((unsigned char)e[-1])) --e; *e=0;
   return s;
+}
+
+static int file_exists(const char *name)
+{
+  FILE *f=fopen(name,"rb");
+  if(!f)return 0;
+  fclose(f);return 1;
+}
+
+static void config_path(const char *program)
+{
+  const char *p,*q,*path; char exe[MAX_CMD],candidate[MAX_CMD];
+  int n,len,has_extension,found;
+  strncpy(exe,program,MAX_CMD-1);exe[MAX_CMD-1]=0;
+  if(!strchr(exe,'\\') && !strchr(exe,'/') && !strchr(exe,':')){
+    path=getenv("PATH");
+    while(path && *path){
+      p=strchr(path,';');len=p?(int)(p-path):(int)strlen(path);
+      if(len>0 && len<MAX_CMD-14){
+        strncpy(candidate,path,len);candidate[len]=0;
+        if(candidate[len-1]!='\\' && candidate[len-1]!='/')strcat(candidate,"\\");
+        strcat(candidate,exe);
+        has_extension=strrchr(exe,'.')!=0;
+        found=file_exists(candidate);
+        if(!found && !has_extension){strcat(candidate,".EXE");found=file_exists(candidate);}
+        if(found){
+          strcpy(exe,candidate);break;
+        }
+      }
+      if(!p)break;
+      path=p+1;
+    }
+  }
+  p=strrchr(exe,'\\');q=strrchr(exe,'/');
+  if(!p || (q && q>p))p=q;
+  if(p)n=(int)(p-exe)+1;
+  else if(exe[0] && exe[1]==':')n=2;
+  else n=0;
+  if(n>MAX_CMD-11)n=0;
+  strncpy(config_file,exe,n);config_file[n]=0;strcat(config_file,"LAUNCH.MNU");
 }
 
 static int find_folder(const char *title,int parent)
@@ -333,9 +374,9 @@ static void write_section(FILE *f,int parent,const char *path)
 
 static int save_config(void)
 {
-  FILE *f=fopen("LAUNCH.MNU","wt");
+  FILE *f=fopen(config_file,"wt");
   if(!f) return 0;
-  fputs("; Launch! 0.4 menu definition\n; ITEM=display title|command and parameters\n\n",f);
+  fputs("; Launch! 0.41 menu definition\n; ITEM=display title|command and parameters\n\n",f);
   write_section(f,-1,"Launcher");
   if(fclose(f)!=0) return 0;
   return 1;
@@ -742,7 +783,7 @@ static void execute_command(const char *cmd)
 
 static void show_help(void)
 {
-  puts("Launch! 0.4 - lightweight application menu for DOS\n");
+  puts("Launch! 0.41 - lightweight application menu for DOS\n");
   puts("Usage: LAUNCH [/POS=TOP|BOTTOM]");
   puts("       LAUNCH /?\n");
   puts("Navigation:");
@@ -769,14 +810,14 @@ static void show_help(void)
 int main(int argc,char **argv)
 {
   int i;
-  menu_at_top=0;
+  menu_at_top=0;config_path(argv[0]);
   for(i=1;i<argc;i++){
     if(!stricmp(argv[i],"/?") || !stricmp(argv[i],"-?")){show_help();return 0;}
     if(!stricmp(argv[i],"/POS=TOP"))menu_at_top=1;
     else if(!stricmp(argv[i],"/POS=BOTTOM"))menu_at_top=0;
     else {printf("Launch!: unknown option %s (use LAUNCH /?)\n",argv[i]);return 1;}
   }
-  if(!load_config("LAUNCH.MNU")){puts("LAUNCH: cannot read LAUNCH.MNU");return 1;}
+  if(!load_config(config_file)){printf("LAUNCH: cannot read %s\n",config_file);return 1;}
   if(menu()>=0) execute_command(run_command);
   return 0;
 }

@@ -1,4 +1,4 @@
-Launch! 0.4
+Launch! 0.41
 ===========
 
 Target: DOS 3.3+, 80286, EGA or better, 80-column text mode.
@@ -22,9 +22,13 @@ typing LAUNCH; DOS does not require the extension.
 INSTALLATION
 ------------
 Keep LAUNCH.EXE and LAUNCH.MNU in the same directory and put that directory on
-PATH. Type LAUNCH at the DOS prompt to open the menu. Version 0.4 removes the
-resident Ctrl+Alt+L hotkey because its conventional-memory cost was excessive.
-Launch! now consumes no memory when it is not running.
+PATH. Type LAUNCH at the DOS prompt to open the menu. Launch! locates and saves
+LAUNCH.MNU beside LAUNCH.EXE, regardless of the current working directory.
+This works both with a full executable path and when LAUNCH is found via PATH.
+
+Version 0.4 removed the resident Ctrl+Alt+L hotkey because its conventional-
+memory cost was excessive. Launch! now consumes no memory when it is not
+running.
 
 CONFIGURATION
 -------------
@@ -46,7 +50,7 @@ BAT and BTM launchers inherently require a command processor, so those alone
 are passed to COMSPEC /C. A secondary 4DOS may run its configured 4START file
 on that path. Launcher definitions should therefore name an EXE, COM, BAT, or
 BTM file; shell-only internal commands and redirection are not supported as
-standalone launcher commands in version 0.4.
+standalone launcher commands in version 0.41.
 
 KEYS
 ----
