@@ -9,17 +9,16 @@ Download the latest release [here](https://github.com/therenegar/launch/releases
 
 SYS REQUIREMENTS
 ----------------
-Target: DOS 3.3+, 80286, EGA or better, 80-column text mode
-Compiler: Microsoft C 5.1
+- DOS 3.3+, 80286, EGA or better, 80-column text mode
+- Compiler (if building from source) Microsoft C 5.1
 
 INSTALLATION
 ------------
-Keep `LAUNCH.EXE` and `LAUNCH.MNU` in the same directory and put that directory on PATH. 
-Type 
+Keep `LAUNCH.EXE` and `LAUNCH.MNU` in the same directory and put that directory on `PATH`. 
+To start, at the DOS prompt type 
 ```
 LAUNCH
 ```
-at the DOS prompt to open the menu.
 
 Launch! locates and saves `LAUNCH.MNU` beside `LAUNCH.EXE`, regardless of the current working directory.
 
