@@ -93,7 +93,7 @@ The last two values are 1 for selected and 0 for clear. Existing records that do
 
 Launch! does not execute the selected program itself. It restores the screen, returns to the existing command interpreter, types the configured command and, when selected, supplies Enter. Shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can therefore all be used. No secondary command processor is started.
 
-When Change directory first is selected, Launch! extracts the directory from the first command token. For C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The final Enter setting applies to that complete command; the preliminary drive and CD commands necessarily receive Enter. Commands without a path do not cause a directory change.
+When **Change directory first** is selected, Launch! extracts the directory from the first command token. For C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The final Enter setting applies to that complete command; the preliminary drive and CD commands necessarily receive Enter. Commands without a path do not cause a directory change.
 
 
 ## File safety
