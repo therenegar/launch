@@ -18,14 +18,14 @@ To display your menu, just type
 ```
 > Tip: if you use 4DOS, create an alias `ALIAS .=LAUNCH` and you can have the menu appear by typing `.` at the command prompt. 
 
-A keyboard shortcut for launching was purposely excluded, otherwise a memory resident TSR would be required, additional command shelling, and unreliability with the menu potentially being executed during other programs (not at the command prompt).
+Launch! does not execute the selected program itself. It restores the screen, returns to the existing command interpreter, types the configured command and, when selected, supplies Enter. Shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can therefore all be used. No secondary command processor is started.
 
 The program will automatically create `LAUNCH.CFG` and `LAUNCH.MNU` on first run.
-
 `LAUNCH.CFG` stores configuration settings and `LAUNCH.MNU` contains the menu data. Whenever a change is made to the menu, a `LAUNCH.BAK` file will also be created containing a backup of the menu.
 
-Launch! locates and saves `LAUNCH.MNU` beside `LAUNCH.EXE,` regardless of the current working directory. This works both with a full executable path and when LAUNCH is found via `PATH`.
+Launch! locates and saves `LAUNCH.MNU` beside `LAUNCH.EXE,` regardless of the current working directory. This works both with a full executable path and when `LAUNCH` is found via `PATH`.
 
+A keyboard shortcut for showing the menu was purposely excluded, otherwise a memory resident TSR would be required, additional command shelling, and unreliability with the menu potentially being executed during other programs (not at the command prompt).
 
 ## Keyboard shortcuts
 
@@ -65,14 +65,11 @@ If `LAUNCH.CFG` is absent, Launch! uses the original blue colour scheme, opens a
 
 <img width="720" height="576" alt="LAUNCH04" src="https://github.com/user-attachments/assets/18e60e33-dd4e-4187-aebb-98ac2ba15053" />
 
-Use the keyboard shortcuts to visually edit the menu while it is open.
-Changes are written immediately to `LAUNCH.MNU`. 
+Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to `LAUNCH.MNU`. 
 
-Each menu panel can display 20 items. Adding a 21st item automatically creates
-a More folder at the bottom and moves the overflow into it. Further overflow
-is handled the same way, up to the four-level menu limit. More is maintained
-by Launch! and is kept at the bottom when the menu is sorted.
+Each menu panel can display 20 items. Adding a 21st item automatically creates a **More** folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. **More** is maintained by Launch! and is kept at the bottom when the menu is sorted.
 
+When **Change directory first** is selected, Launch! extracts the directory from the first command token. For C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The final Enter setting applies to that complete command; the preliminary drive and CD commands necessarily receive Enter. Commands without a path do not cause a directory change.
 
 ## Manual menu configuration
 
@@ -90,10 +87,6 @@ An ITEM record has this form:
   ITEM=title|command and parameters|press Enter|change directory
 ```
 The last two values are 1 for selected and 0 for clear. Existing records that do not contain them remain compatible and default to 1|0.
-
-Launch! does not execute the selected program itself. It restores the screen, returns to the existing command interpreter, types the configured command and, when selected, supplies Enter. Shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can therefore all be used. No secondary command processor is started.
-
-When **Change directory first** is selected, Launch! extracts the directory from the first command token. For C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The final Enter setting applies to that complete command; the preliminary drive and CD commands necessarily receive Enter. Commands without a path do not cause a directory change.
 
 
 ## File safety
