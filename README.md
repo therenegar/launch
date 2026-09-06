@@ -14,7 +14,7 @@ Requires DOS 3.3+, 80286, EGA or better, 80-column text mode.
 
 ## Usage
 
-Place `LAUNCH.EXE` anywhere, ideally inside it's own directory which is on `PATH`.
+Place `LAUNCH.EXE` anywhere, ideally inside its own directory which is on `PATH`.
 To display your menu, just type
 ```
     LAUNCH
@@ -32,22 +32,22 @@ A small keyboard macro helper in installed (TSR) after the first launched comman
 
 ## Keyboard shortcuts
 
-Up/Down       Select an entry
-Right         Open a selected folder
-Enter         Open a folder or send a launcher command to the prompt
-Left          Close the current folder
-Esc           Close the complete menu
-Ctrl+A        Add a folder or launcher to the open menu
-Ctrl+D        Delete the selected item after confirmation
-Ctrl+E        Edit the selected folder or launcher
-Ctrl+Up/Down  Move the selected item within its menu
-Ctrl+S        Sort the open menu alphabetically
+- Up/Down       - Select an entry
+- Right         - Open a selected folder
+- Enter         - Open a folder or send a launcher command to the prompt
+- Left          - Close the current folder
+- Esc           - Close the complete menu
+- Ctrl+A        - Add a folder or launcher to the open menu
+- Ctrl+D        - Delete the selected item after confirmation
+- Ctrl+E        - Edit the selected folder or launcher
+- Ctrl+Up/Down  - Move the selected item within its menu
+- Ctrl+S        - Sort the open menu alphabetically
 
 
 ## Mouse usage
 
-Left click opens a folder or runs a launcher; left click outside all visible menu panels closes Launch!.
-Right click an item opens its Edit dialog. 
+- Left click opens a folder or runs a launcher; left click outside all visible menu panels closes Launch!.
+- Right click an item opens its Edit dialog. 
 
 
 ## Customizing appearance
