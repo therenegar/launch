@@ -5,6 +5,7 @@ A light-weight customizable and flexible command launcher for all DOS systems.
 Download the latest release [here](https://github.com/therenegar/launch/releases/download/v0.6/LAUNCH-0.6.zip)
 
 Requires DOS 3.3+, 80286, EGA or better, 80-column text mode.
+Compatible with all command processors including 4DOS/NDOS.
 
 <img width="720" height="576" alt="LAUNCH03" src="https://github.com/user-attachments/assets/c7492f8c-6990-4460-95a3-709f20a3ae0f" />
 <img width="720" height="576" alt="LAUNCH04" src="https://github.com/user-attachments/assets/18e60e33-dd4e-4187-aebb-98ac2ba15053" />
@@ -19,24 +20,27 @@ To display your menu, just type
 ```
     LAUNCH
 ```
+> Tip: if you use 4DOS, create an alias `ALIAS .=LAUNCH` and you can have the menu appear by typing `.` at the command prompt. 
+
+A keyboard shortcut for launching was purposely excluded, otherwise a memory resident TSR would be required, additional command shelling, and unreliability with the menu potentially being executed during other programs (not at the command prompt).
 
 The program will automatically create `LAUNCH.CFG` and `LAUNCH.MNU` on first run.
 
-`LAUNCH.CFG` stores configuration settings and `LAUNCH.MNU` contains the menu data. 
-Whenever a change is made to the menu, a `LAUNCH.BAK` file will also be created containing a backup of the menu.
+`LAUNCH.CFG` stores configuration settings and `LAUNCH.MNU` contains the menu data. Whenever a change is made to the menu, a `LAUNCH.BAK` file will also be created containing a backup of the menu.
 
 Launch! locates and saves `LAUNCH.MNU` beside `LAUNCH.EXE,` regardless of the current working directory. This works both with a full executable path and when LAUNCH is found via `PATH`.
-
-A small keyboard macro helper in installed (TSR) after the first launched command. It is approximately 0.5 KB including its 384-byte queue--and is reused by later runs.
 
 
 ## Keyboard shortcuts
 
+General navigation
 - Up/Down       - Select an entry
 - Right         - Open a selected folder
-- Enter         - Open a folder or send a launcher command to the prompt
 - Left          - Close the current folder
+- Enter         - Open a folder or send a launcher command to the prompt
 - Esc           - Close the complete menu
+
+Menu management
 - Ctrl+A        - Add a folder or launcher to the open menu
 - Ctrl+D        - Delete the selected item after confirmation
 - Ctrl+E        - Edit the selected folder or launcher
