@@ -8,10 +8,6 @@ Requires DOS 3.3+, 80286, EGA or better, 80-column text mode.
 Compatible with all command processors including 4DOS/NDOS.
 
 <img width="720" height="576" alt="LAUNCH03" src="https://github.com/user-attachments/assets/c7492f8c-6990-4460-95a3-709f20a3ae0f" />
-<img width="720" height="576" alt="LAUNCH04" src="https://github.com/user-attachments/assets/18e60e33-dd4e-4187-aebb-98ac2ba15053" />
-<img width="720" height="600" alt="LAUNCH07" src="https://github.com/user-attachments/assets/0ffcd153-7de5-44bd-9f7f-3f53df13e5e3" />
-<img width="720" height="600" alt="LAUNCH05" src="https://github.com/user-attachments/assets/7eb0edcd-62f4-4c28-b754-88fb7985aad1" />
-
 
 ## Usage
 
@@ -56,6 +52,8 @@ Menu management
 
 ## Customizing appearance
 
+<img width="720" height="600" alt="LAUNCH05" src="https://github.com/user-attachments/assets/7eb0edcd-62f4-4c28-b754-88fb7985aad1" />
+
 Run `LAUNCH /CONFIG` to configure menu and dialog colours, menu position, and whether the live clock is shown. Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles the clock. Mouse clicks are also supported. 
 Settings are saved to `LAUNCH.CFG`.
 Cancel leaves the previous appearance unchanged.
@@ -64,6 +62,8 @@ If `LAUNCH.CFG` is absent, Launch! uses the original blue colour scheme, opens a
 
 
 ## Live menu management
+
+<img width="720" height="576" alt="LAUNCH04" src="https://github.com/user-attachments/assets/18e60e33-dd4e-4187-aebb-98ac2ba15053" />
 
 Use the keyboard shortcuts to visually edit the menu while it is open.
 Changes are written immediately to `LAUNCH.MNU`. 
