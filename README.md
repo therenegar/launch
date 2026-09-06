@@ -6,8 +6,8 @@ Download the latest release [here](https://github.com/therenegar/launch/releases
 
 Requires DOS 3.3+, 80286, EGA or better, 80-column text mode.
 
-<img width="720" height="600" alt="LAUNCH01" src="https://github.com/user-attachments/assets/df6d5e58-fb91-49c5-bca9-19e277df28de" />
-<img width="720" height="600" alt="LAUNCH02" src="https://github.com/user-attachments/assets/0b628548-adc5-47a6-9120-9bc8136c082f" />
+<img width="720" height="576" alt="LAUNCH03" src="https://github.com/user-attachments/assets/c7492f8c-6990-4460-95a3-709f20a3ae0f" />
+<img width="720" height="576" alt="LAUNCH04" src="https://github.com/user-attachments/assets/18e60e33-dd4e-4187-aebb-98ac2ba15053" />
 <img width="720" height="600" alt="LAUNCH07" src="https://github.com/user-attachments/assets/0ffcd153-7de5-44bd-9f7f-3f53df13e5e3" />
 <img width="720" height="600" alt="LAUNCH05" src="https://github.com/user-attachments/assets/7eb0edcd-62f4-4c28-b754-88fb7985aad1" />
 
