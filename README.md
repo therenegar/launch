@@ -83,7 +83,7 @@ Run `LAUNCH /CONFIG` to configure menu and dialog colours, menu position, and wh
 Settings are saved to `LAUNCH.CFG`.
 Cancel leaves the previous appearance unchanged.
 
-If `LAUNCH.CFG` is absent, Launch! uses the original blue colour scheme, opens at the lower-left, and displays the clock. A malformed LAUNCH.CFG is ignored with a warning and the defaults are used.
+If `LAUNCH.CFG` is absent, Launch! uses the original blue colour scheme, opens at the lower-left, and displays the clock. A malformed `LAUNCH.CFG` is ignored with a warning and the defaults are used.
 
 
 ## Live menu management
@@ -112,13 +112,15 @@ An ITEM record has this form:
 The last two values are 1 for selected and 0 for clear. Existing records that do not contain them remain compatible and default to 1|0.
 
 
-## SHORTCUT
-Change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal IBM Set-1 make codes, e.g.
+## Keyboard shortcut
+The keyboard shortcut is provided by a separate utility to make it completely optional. 
+Change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal IBM Set-1 scan codes, e.g.
 ```
   SHORTCUT /KEY=CTRL+ALT+L
   SHORTCUT /KEY=1D+38+34
 ```
-Tokens are separated by plus signs. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, letters, digits, common punctuation, and scan codes from 01 through 7F are accepted. Modifier scan codes are 
+Tokens are separated by plus signs. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, letters, digits, common punctuation, and scan codes from 01 through 7F are accepted. <br/>
+Common modifier scan codes are:
 - 1D (Ctrl)
 - 38 (Alt)
 - 2A or 36 (Shift)
