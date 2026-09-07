@@ -7,8 +7,9 @@ A lightweight customizable and flexible command launcher for all DOS systems.
 **Download the latest release [here](https://github.com/therenegar/launch/releases/tag/v1.1)**
 - You can download either a .zip file or in a 1.44 floppy disk image .img
 
-Requires DOS 3.3, 80286, EGA or better. Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS.
+Requires DOS 3.3, 80286, EGA or better. Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware. 
 Compatible with third-party command interpreters such as 4DOS/NDOS.
+> The keyboard shortcut tool (SHORTCUT.COM) does *not* work on DOSBox, but works on real hardware and other virtual machines (VMWare, VirtualBox, bochs).
 
 <img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/4e7d0907-a5d6-44a6-9edb-3f3e95f53fa6" />
 
@@ -23,7 +24,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 If you want to install yourself manually, just copy `!.EXE` and `SHORTCUT.COM` wherever you like. If you want to use the keyboard shortcut, add the following to your `AUTOEXEC.BAT` (with the correct path). You should add the Launch! directory to `PATH` in either case.
 ```
 SET PATH=C:\LAUNCH;%PATH%
-LOADHIGH C:\LAUNCH\SHORTCUT.COM
+C:\LAUNCH\SHORTCUT.COM
 ```
 
 ## Usage
@@ -34,8 +35,11 @@ CTRL + ALT + .
 ```
 
 If you don't have `SHORTCUT.COM` loaded, the keyboard shortcut will not be available.
-To start Launch! without the keyboard shortcut, just type `!` and press Enter.
-Read below for changing the shortcut combination.
+To start Launch! without the keyboard shortcut, just type 
+```
+! <ENTER>
+```
+
 
 ### How it works
 Launch! does not execute the selected program itself. Rather, it returns to the existing command interpreter, types the configured command and, if selected, supplies Enter. This means shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can all be used. No secondary command processor is started or additional shells. Launch! does not interfere with program execution or return.
@@ -130,3 +134,4 @@ Launch! validates `LAUNCH.MNU` before opening the menu. A valid file must contai
 Before every accepted Add, Edit, Delete, Move, or Sort operation, the existing valid `LAUNCH.MNU` is copied to `LAUNCH.BAK`. The new menu is first written fully to `LAUNCH.$$$` and is installed only after writing succeeds. `LAUNCH.BK$` is used briefly while rotating the backup.
 
 If `LAUNCH.MNU` is missing or invalid at startup and `LAUNCH.BAK` is valid, Launch! restores the backup automatically and displays a recovery message. If neither file is usable, the built-in sample menu is installed as both `LAUNCH.MNU` and `LAUNCH.BAK`. An invalid primary file is preserved as `LAUNCH.BAD` when possible.
+
