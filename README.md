@@ -28,6 +28,10 @@ SET PATH=C:\LAUNCH;%PATH%
 C:\LAUNCH\SHORTCUT.COM
 ```
 
+### Sample menu
+On first run `LAUNCH.MNU` will be created based on a sample (unless you're upgrading, and the file already exists). <br/>You'll likely want to delete everything and create your own structure.
+
+
 ## Usage
 
 At the **command prompt**, display your menu by pressing the keyboard shortcut 
