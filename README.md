@@ -50,7 +50,7 @@ This approach provides maximum flexibility, and compatibility.
 The program will automatically create `LAUNCH.CFG` and `LAUNCH.MNU` on first run.
 `LAUNCH.CFG` stores configuration settings and `LAUNCH.MNU` contains the menu data. Whenever a change is made to the menu, a `LAUNCH.BAK` file will also be created containing a backup of the menu.
 
-Launch! locates and saves `LAUNCH.MNU` beside `LAUNCH.EXE,` regardless of the current working directory. This works both with a full executable path and when `LAUNCH` is found via `PATH`.
+Launch! locates and saves `LAUNCH.MNU` beside `!.EXE,` regardless of the current working directory. This works both with a full executable path and when `!.EXE` is found via `PATH`.
 
 
 ## Keyboard usage
