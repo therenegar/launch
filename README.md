@@ -10,13 +10,13 @@ A lightweight customizable and flexible command launcher for all DOS systems.
 Requires DOS 3.3, 80286, EGA or better. Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS.
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="576" alt="LAUNCH03" src="https://github.com/user-attachments/assets/c7492f8c-6990-4460-95a3-709f20a3ae0f" />
+<img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/4e7d0907-a5d6-44a6-9edb-3f3e95f53fa6" />
 
 ## Easy Install
 
-- Run INSTALL.EXE 
+- Run `INSTALL.EXE`
 - You'll be prompted for a directory to place Launch!
-- The necessary files will be copied and your AUTOEXEC.BAT will be updated.
+- The necessary files will be copied and your `AUTOEXEC.BAT` will be updated.
 - Simply reboot after install and you're good to go.
 
 ### Manual Install
@@ -71,8 +71,7 @@ Menu management
 
 
 ## Customizing appearance
-
-<img width="720" height="600" alt="LAUNCH05" src="https://github.com/user-attachments/assets/7eb0edcd-62f4-4c28-b754-88fb7985aad1" />
+<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/32a026cc-d16f-4e50-9bfc-941d3af68614" />
 
 Run `LAUNCH /CONFIG` to configure menu and dialog colours, menu position, and whether the live clock is shown. Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles the clock. Mouse clicks are also supported. 
 Settings are saved to `LAUNCH.CFG`.
@@ -82,8 +81,7 @@ If `LAUNCH.CFG` is absent, Launch! uses the original blue colour scheme, opens a
 
 
 ## Live menu management
-
-<img width="720" height="576" alt="LAUNCH04" src="https://github.com/user-attachments/assets/18e60e33-dd4e-4187-aebb-98ac2ba15053" />
+<img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/1dbe3bea-ca7f-449f-8581-fd472a03b213" />
 
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to `LAUNCH.MNU`. 
 
@@ -92,7 +90,6 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 When **Change directory first** is selected, Launch! extracts the directory from the first command token. For C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The final Enter setting applies to that complete command; the preliminary drive and CD commands necessarily receive Enter. Commands without a path do not cause a directory change.
 
 ## Manual menu configuration
-
 Within the `LAUNCH.MNU` file, sections represent menu paths. Separate nesting levels with a backslash:
 ```
   [Launcher\Internet]
@@ -110,7 +107,6 @@ The last two values are 1 for selected and 0 for clear. Existing records that do
 
 
 ## SHORTCUT
-
 Change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal IBM Set-1 make codes, e.g.
 ```
   SHORTCUT /KEY=CTRL+ALT+L
@@ -124,6 +120,8 @@ Tokens are separated by plus signs. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, letter
 Use `SHORTCUT /?` for more information.
 The shortcut utility can also be removed from memory with `SHORTCUT /UNLOAD`.
 
+<img width="720" height="600" alt="shortcut-help" src="https://github.com/user-attachments/assets/6a6fc0fd-8155-4457-b452-bee9b2de2269" />
+
 
 ## File safety
 
@@ -131,4 +129,4 @@ Launch! validates `LAUNCH.MNU` before opening the menu. A valid file must contai
 
 Before every accepted Add, Edit, Delete, Move, or Sort operation, the existing valid `LAUNCH.MNU` is copied to `LAUNCH.BAK`. The new menu is first written fully to `LAUNCH.$$$` and is installed only after writing succeeds. `LAUNCH.BK$` is used briefly while rotating the backup.
 
-If LAUNCH.MNU is missing or invalid at startup and `LAUNCH.BAK` is valid, Launch! restores the backup automatically and displays a recovery message. If neither file is usable, the built-in sample menu is installed as both `LAUNCH.MNU` and `LAUNCH.BAK`. An invalid primary file is preserved as `LAUNCH.BAD` when possible.
+If `LAUNCH.MNU` is missing or invalid at startup and `LAUNCH.BAK` is valid, Launch! restores the backup automatically and displays a recovery message. If neither file is usable, the built-in sample menu is installed as both `LAUNCH.MNU` and `LAUNCH.BAK`. An invalid primary file is preserved as `LAUNCH.BAD` when possible.
