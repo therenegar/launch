@@ -29,17 +29,19 @@ C:\LAUNCH\SHORTCUT.COM
 
 ## Usage
 
-At the command prompt, display your menu by pressing the keyboard shortcut 
+At the **command prompt**, display your menu by pressing the keyboard shortcut 
 ```
 CTRL + ALT + .
 ```
+> The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display. 
+
+> At this time, the keyboard shortcut tool (SHORTCUT.COM) does **not** work on DOSBox, but works on real hardware and other virtual machines (VMWare, VirtualBox, bochs). 
 
 If you don't have `SHORTCUT.COM` loaded, the keyboard shortcut will not be available.
-To start Launch! without the keyboard shortcut, just type 
+To start Launch! without the keyboard shortcut, at the command prompt, just type 
 ```
 ! <ENTER>
 ```
-> The keyboard shortcut tool (SHORTCUT.COM) does **not** work on DOSBox, but works on real hardware and other virtual machines (VMWare, VirtualBox, bochs). I have no plans to resolve this, it's very complicated.
 
 ### How it works
 Launch! does not execute the selected program itself. Rather, it returns to the existing command interpreter, types the configured command and, if selected, supplies Enter. This means shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can all be used. No secondary command processor is started or additional shells. Launch! does not interfere with program execution or return.
