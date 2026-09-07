@@ -1,10 +1,10 @@
 # Launch!
 
-Version 1.0
+Version 1.1
 
 A lightweight customizable and flexible command launcher for all DOS systems.
 
-**Download the latest release [here](https://github.com/therenegar/launch/releases/tag/v1.0)**
+**Download the latest release [here](https://github.com/therenegar/launch/releases/tag/v1.1)**
 - You can download either a .zip file or in a 1.44 floppy disk image .img
 
 Requires DOS 3.3, 80286, EGA or better. Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS.
