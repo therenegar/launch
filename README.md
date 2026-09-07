@@ -1,6 +1,6 @@
 # Launch!
 
-Version 1.1
+Version 1.2
 
 A lightweight customizable and flexible command launcher for all DOS systems.
 
@@ -8,7 +8,7 @@ A lightweight customizable and flexible command launcher for all DOS systems.
 > You can download either a .ZIP file or in a 1.44 floppy disk image .IMG
 
 Requires DOS 3.3, 80286, EGA or better. <br/>
-Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware. <br/>
+Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines. <br/>
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/4e7d0907-a5d6-44a6-9edb-3f3e95f53fa6" />
@@ -27,9 +27,12 @@ If you want to use the keyboard shortcut, add the following to your `AUTOEXEC.BA
 SET PATH=C:\LAUNCH;%PATH%
 C:\LAUNCH\SHORTCUT.COM
 ```
+You can also use `LOADHIGH` to place the shortcut to into UMB, using no conventional memory.
 
-### Sample menu
-On first run `LAUNCH.MNU` will be created based on a sample (unless you're upgrading, and the file already exists). <br/>You'll likely want to delete everything and create your own structure.
+
+### DOSBox
+For DOSBox only, manually replace `SHORTCUT.COM` with `SHORTCDB.COM` found inside the install package. i.e. delete `SHORTCUT.COM` and rename `SHORTCDB.COM` to `SHORTCUT.COM`.
+A different keyboard intercept method is used to support the DOSBox BIOS implementation. Functionally, SHORTCDB functions the same as SHORTCUT.
 
 
 ## Usage
@@ -39,8 +42,6 @@ At the **command prompt**, display your menu by pressing the keyboard shortcut
 CTRL + ALT + .
 ```
 > The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display. This is not a multi-tasking application switcher!
-
-> At this time, the keyboard shortcut tool (SHORTCUT.COM) does **not** work on DOSBox, but works on real hardware and other virtual machines (VMWare, VirtualBox, bochs). 
 
 If you don't have `SHORTCUT.COM` loaded, the keyboard shortcut will not be available.<br/>
 To start Launch! without the keyboard shortcut, at the command prompt, simply type 
@@ -124,14 +125,11 @@ Change the keyboard shortcut used by adding the `/KEY=` parameter with readable 
   SHORTCUT /KEY=CTRL+ALT+L
   SHORTCUT /KEY=1D+38+34
 ```
-Tokens are separated by plus signs. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, letters, digits, common punctuation, and scan codes from 01 through 7F are accepted. <br/>
-Common modifier scan codes are:
-- 1D (Ctrl)
-- 38 (Alt)
-- 2A or 36 (Shift)
+Tokens are separated by `+`. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, F1-F12, the Windows key, letters, digits, common punctuation are accepted. You can also use scan codes.<br/>
 
+The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.
 Use `SHORTCUT /?` for more information.
-The shortcut utility can also be removed from memory with `SHORTCUT /UNLOAD`.
+
 
 <img width="720" height="600" alt="shortcut-help" src="https://github.com/user-attachments/assets/6a6fc0fd-8155-4457-b452-bee9b2de2269" />
 

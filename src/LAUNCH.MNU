@@ -1,0 +1,36 @@
+; Launch! 1.2 menu definition
+; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)
+
+[Launcher]
+FOLDER=Office
+FOLDER=Internet
+FOLDER=Multimedia
+FOLDER=Games
+FOLDER=Utilities
+FOLDER=System Tools
+
+[Launcher\Office]
+ITEM=WordPerfect 5.1|C:\WP51\WP.EXE|1|1
+ITEM=Microsoft Word 5.5|C:\WORD55\WORD.EXE|1|1
+ITEM=Lotus 1-2-3|C:\123R34\123.EXE|1|1
+
+[Launcher\Internet]
+ITEM=FTP2P|C:\MTCP\FTP2P.EXE|1|0
+ITEM=Telnet|C:\MTCP\TELNET.EXE|1|0
+ITEM=LYNX|C:\LYNX\LYNX.EXE|1|0
+ITEM=Arachne|C:\ARACHNE\ARACHNE.BAT|1|1
+FOLDER=Communications
+
+[Launcher\Internet\Communications]
+ITEM=Pegasus|C:\COMM\PEGASUS.EXE
+ITEM=Pine|C:\COMM\PINE.EXE
+ITEM=Compuserve|C:\COMM\CIS.BAT
+ITEM=Prodigy|C:\COMM\PRODIGY.BAT
+
+[Launcher\Utilities]
+ITEM=Font Selector|C:\UTILS\FONTSEL.COM
+ITEM=File Manager|C:\4DOS\4START.BAT
+
+[Launcher\System Tools]
+ITEM=Memory Report|MEM /C /P
+ITEM=System Information|C:\UTILS\NSSI.EXE

@@ -5,8 +5,8 @@ FILES
 LAUNCH.C    Source, including the compact BIOS keyboard macro helper
 LAUNCH.MNU  Example menu configuration
 LAUNCH.CFG  Appearance settings created by LAUNCH /CONFIG
-SHORTCUT.COM Optional tiny prompt-aware hotkey TSR
 SHORTCUT.ASM GNU assembler source for SHORTCUT.COM
+SHORTCDB.ASM GNU assembler wrapper source for SHORTCDB.COM
 MACRO.ASM    GNU assembler source for the helper embedded in LAUNCH.C
 INSTALL.C    Source for the interactive installation utility
 BUILD.BAT   Build command

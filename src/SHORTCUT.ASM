@@ -3,7 +3,7 @@
 .section .text
 .global _start
 
-/* SHORTCUT.COM 1.1 - tiny prompt-aware Launch! hotkey TSR.
+/* SHORTCUT.COM 1.2 - tiny prompt-aware Launch! hotkey TSR.
  * Build on a modern GNU binutils host:
  *   as --32 SHORTCUT.ASM -o SHORTCUT.O
  *   ld -m elf_i386 -Ttext 0x100 --oformat binary --entry=_start \
@@ -23,7 +23,9 @@ old2f:          .word 0,0
 shell_psp:      .word 0
 hot_scan:       .byte 0x34             /* period */
 hot_mods:       .byte 0x06             /* Ctrl + Alt */
+hot_extended:   .byte 0                /* key uses an E0 prefix */
 raw_mods:       .byte 0
+raw_e0:         .byte 0
 hot_down:       .byte 0
 pending:        .byte 0
 macro_active:   .byte 0
@@ -34,6 +36,88 @@ queue_len:      .word 0
 macro_queue:    .space 384,0
 
 int09_handler:
+.ifdef DOSBOX_BUILD
+    /* Inspect the raw Set-1 byte before the DOSBox-X BIOS consumes the IRQ.
+     * Every non-hotkey byte is still passed to the original handler. */
+    push ax
+    push bx
+    in al,0x60
+    cmp al,0xe0
+    jne int09_db_not_prefix
+    mov byte ptr cs:[raw_e0],1
+    jmp int09_db_chain
+int09_db_not_prefix:
+    mov bl,al
+    and bl,0x7f
+    cmp bl,0x1d
+    je int09_db_ctrl
+    cmp bl,0x38
+    je int09_db_alt
+    cmp bl,0x2a
+    je int09_db_shift
+    cmp bl,0x36
+    je int09_db_shift
+    cmp bl,byte ptr cs:[hot_scan]
+    jne int09_db_other_key
+    mov bl,byte ptr cs:[raw_e0]
+    cmp bl,byte ptr cs:[hot_extended]
+    jne int09_db_other_key
+    mov byte ptr cs:[raw_e0],0
+    test al,0x80
+    jnz int09_db_hot_release
+    cmp byte ptr cs:[hot_down],0
+    jne int09_db_discard
+    mov bl,byte ptr cs:[raw_mods]
+    cmp bl,byte ptr cs:[hot_mods]
+    jne int09_db_chain
+    mov byte ptr cs:[hot_down],1
+    mov byte ptr cs:[pending],1
+    jmp int09_db_discard
+int09_db_hot_release:
+    cmp byte ptr cs:[hot_down],0
+    je int09_db_chain
+    mov byte ptr cs:[hot_down],0
+    jmp int09_db_discard
+int09_db_ctrl:
+    mov bl,0x02
+    jmp int09_db_modifier
+int09_db_alt:
+    mov bl,0x04
+    jmp int09_db_modifier
+int09_db_shift:
+    mov bl,0x01
+int09_db_modifier:
+    mov byte ptr cs:[raw_e0],0
+    test al,0x80
+    jnz int09_db_modifier_up
+    or byte ptr cs:[raw_mods],bl
+    jmp int09_db_chain
+int09_db_modifier_up:
+    not bl
+    and byte ptr cs:[raw_mods],bl
+    jmp int09_db_chain
+int09_db_other_key:
+    mov byte ptr cs:[raw_e0],0
+int09_db_chain:
+    pop bx
+    pop ax
+    jmp far ptr cs:[old09]
+int09_db_discard:
+    /* The BIOS is bypassed for the matched hotkey, so acknowledge the
+     * keyboard interface and master PIC here. */
+    in al,0x61
+    mov ah,al
+    or al,0x80
+    out 0x61,al
+    mov al,ah
+    out 0x61,al
+    mov al,0x20
+    out 0x20,al
+    call queue_launch_hotkey
+    pop bx
+    pop ax
+    iret
+.else
     pushf
     call far ptr cs:[old09]
     push ax
@@ -71,6 +155,42 @@ int09_done:
     pop bx
     pop ax
     iret
+.endif
+
+/* DOSBox-X does not reliably issue the DOS INT 28h idle callback used by the
+ * real-hardware build. Queue the already-built command without making DOS
+ * calls; the command interpreter consumes it after this IRQ returns. */
+queue_launch_hotkey:
+.ifdef DOSBOX_BUILD
+    cmp byte ptr cs:[pending],0
+    je queue_hotkey_done
+    push cx
+    push si
+    push di
+    push ds
+    push es
+    push cs
+    pop ds
+    push cs
+    pop es
+    mov si,offset launch_macro
+    mov di,offset macro_queue
+    mov cx,word ptr cs:[hotkey_len]
+    mov word ptr cs:[queue_len],cx
+    cld
+    rep movsb
+    mov word ptr cs:[queue_pos],0
+    mov byte ptr cs:[macro_active],1
+    mov byte ptr cs:[pending],0
+    call fill_keyboard_buffer
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop cx
+queue_hotkey_done:
+.endif
+    ret
 
 /* Raw BIOS keyboard intercept.  DOSBox-X may not place Ctrl+Alt combinations
  * in the BIOS ring buffer, so catch Set-1 make/break codes before translation.
@@ -80,6 +200,11 @@ int15_handler:
     cmp ah,0x4f
     jne int15_chain
     push bx
+    cmp al,0xe0
+    jne int15_not_prefix
+    mov byte ptr cs:[raw_e0],1
+    jmp int15_chain_pop
+int15_not_prefix:
     mov bl,al
     and bl,0x7f
     cmp bl,0x1d
@@ -91,7 +216,11 @@ int15_handler:
     cmp bl,0x36
     je int15_shift
     cmp bl,byte ptr cs:[hot_scan]
-    jne int15_chain_pop
+    jne int15_other_key
+    mov bl,byte ptr cs:[raw_e0]
+    cmp bl,byte ptr cs:[hot_extended]
+    jne int15_other_key
+    mov byte ptr cs:[raw_e0],0
     test al,0x80
     jnz int15_hot_release
     cmp byte ptr cs:[hot_down],0
@@ -120,6 +249,7 @@ int15_alt:
 int15_shift:
     mov bl,0x01
 int15_modifier:
+    mov byte ptr cs:[raw_e0],0
     test al,0x80
     jnz int15_modifier_up
     or byte ptr cs:[raw_mods],bl
@@ -127,6 +257,9 @@ int15_modifier:
 int15_modifier_up:
     not bl
     and byte ptr cs:[raw_mods],bl
+    jmp int15_chain_pop
+int15_other_key:
+    mov byte ptr cs:[raw_e0],0
 int15_chain_pop:
     pop bx
 int15_chain:
@@ -235,14 +368,14 @@ int2f_handler:
     cmp ax,0xd5b0
     jne 6f
     mov bx,0x5343                     /* "SC" installation signature */
-    mov cx,0x0101                     /* version 1.1 */
+    mov cx,0x0102                     /* version 1.2 */
     push cs
     pop es
     iret
 6:  cmp ax,0xd5b1
     jne 7f
     mov bx,0x554e                     /* "UN" unload-query signature */
-    mov cx,0x0101
+    mov cx,0x0102
     push cs
     pop es
     iret
@@ -600,7 +733,7 @@ unload_shortcut:
     int 0x2f
     cmp bx,0x554e
     jne not_installed
-    cmp cx,0x0101
+    cmp cx,0x0102
     jne unload_unsafe
     mov word ptr [resident_seg],es
 
@@ -716,7 +849,61 @@ show_installed_message:
     jz 3f
     mov si,offset display_shift
     call print_green
-3:  mov al,byte ptr [hot_scan]
+3:  cmp byte ptr [hot_extended],0
+    je display_normal_key
+    mov al,byte ptr [hot_scan]
+    cmp al,0x5b
+    jne display_check_rwin
+    mov si,offset display_lwin
+    call print_green
+    jmp 7f
+display_check_rwin:
+    cmp al,0x5c
+    jne display_check_menu
+    mov si,offset display_rwin
+    call print_green
+    jmp 7f
+display_check_menu:
+    mov si,offset display_menu
+    call print_green
+    jmp 7f
+display_normal_key:
+    mov al,byte ptr [hot_scan]
+    cmp al,0x3b
+    jb display_not_function
+    cmp al,0x44
+    jbe display_function_1_10
+    cmp al,0x57
+    je display_function_11
+    cmp al,0x58
+    je display_function_12
+    jmp display_not_function
+display_function_1_10:
+    sub al,0x3a
+    jmp display_function_number
+display_function_11:
+    mov al,11
+    jmp display_function_number
+display_function_12:
+    mov al,12
+display_function_number:
+    mov byte ptr [display_function+2],0
+    cmp al,10
+    jae display_function_two_digits
+    add al,'0'
+    mov byte ptr [display_function+1],al
+    jmp display_function_ready
+display_function_two_digits:
+    mov byte ptr [display_function+1],'1'
+    sub al,10
+    add al,'0'
+    mov byte ptr [display_function+2],al
+    mov byte ptr [display_function+3],0
+display_function_ready:
+    mov si,offset display_function
+    call print_green
+    jmp 7f
+display_not_function:
     cmp al,0x39
     jne 4f
     mov si,offset display_space
@@ -803,7 +990,10 @@ parse_command:
     xor ch,ch
     mov si,0x81
     call skip_spaces
-    jcxz parse_default
+    or cx,cx
+    jnz parse_have_command
+    jmp parse_default
+parse_have_command:
     mov al,byte ptr [si]
     cmp al,'/'
     je 8f
@@ -832,6 +1022,7 @@ parse_key_option:
     jc parse_bad
     mov byte ptr [hot_mods],0
     mov byte ptr [hot_scan],0
+    mov byte ptr [hot_extended],0
 parse_token:
     call skip_spaces
     jcxz parse_finish
@@ -923,6 +1114,22 @@ match_key_prefix:
 parse_token_value:
     push bx
     push dx
+    cmp cx,2
+    jne parse_named_four
+    cmp byte ptr [si],'F'
+    je parse_function_short
+    cmp byte ptr [si],'f'
+    jne parse_named_four
+parse_function_short:
+    mov al,byte ptr [si+1]
+    cmp al,'1'
+    jb token_bad
+    cmp al,'9'
+    ja token_bad
+    sub al,'1'
+    add al,0x3b
+    jmp set_key
+parse_named_four:
     cmp cx,4
     jne 14f
     mov di,offset word_ctrl
@@ -931,6 +1138,15 @@ parse_token_value:
     mov di,offset word_alt
     call token_equal
     jnc set_alt
+    mov di,offset word_lwin
+    call token_equal
+    jnc key_lwin
+    mov di,offset word_rwin
+    call token_equal
+    jnc key_rwin
+    mov di,offset word_menu
+    call token_equal
+    jnc key_menu
 14: cmp cx,5
     jne 15f
     mov di,offset word_shift
@@ -947,6 +1163,18 @@ parse_token_value:
     mov di,offset word_dot
     call token_equal
     jnc key_period
+    mov di,offset word_win
+    call token_equal
+    jnc key_lwin
+    mov di,offset word_f10
+    call token_equal
+    jnc key_f10
+    mov di,offset word_f11
+    call token_equal
+    jnc key_f11
+    mov di,offset word_f12
+    call token_equal
+    jnc key_f12
 16: cmp cx,6
     jne 17f
     mov di,offset word_period
@@ -985,6 +1213,26 @@ key_space:
     jmp set_key
 key_period:
     mov al,0x34
+    jmp set_key
+key_f10:
+    mov al,0x44
+    jmp set_key
+key_f11:
+    mov al,0x57
+    jmp set_key
+key_f12:
+    mov al,0x58
+    jmp set_key
+key_lwin:
+    mov al,0x5b
+    jmp set_extended_key
+key_rwin:
+    mov al,0x5c
+    jmp set_extended_key
+key_menu:
+    mov al,0x5d
+set_extended_key:
+    mov byte ptr [hot_extended],1
 set_key:
     cmp byte ptr [hot_scan],0
     jne token_bad
@@ -1135,6 +1383,13 @@ word_shift:     .asciz "SHIFT"
 word_space:     .asciz "SPACE"
 word_dot:       .asciz "DOT"
 word_period:    .asciz "PERIOD"
+word_lwin:      .asciz "LWIN"
+word_rwin:      .asciz "RWIN"
+word_win:       .asciz "WIN"
+word_menu:      .asciz "MENU"
+word_f10:       .asciz "F10"
+word_f11:       .asciz "F11"
+word_f12:       .asciz "F12"
 word_unload:    .asciz "UNLOAD"
 launch_name:    .ascii "!.EXE"
 launch_short_name: .ascii "!"
@@ -1152,42 +1407,88 @@ character_table:
     .byte '[',0x1a,']',0x1b,'\\',0x2b,'`',0x29,0,0
 
 msg_already:
+.ifdef DOSBOX_BUILD
+    .ascii "SHORTCDB is already installed.\r\n$"
+.else
     .ascii "SHORTCUT is already installed.\r\n$"
+.endif
 msg_press:
     .ascii "Press $"
 msg_open_menu:
     .ascii " to open the LAUNCH! menu.\r\n$"
 msg_syntax:
+.ifdef DOSBOX_BUILD
+    .ascii "SHORTCDB: invalid option. Use SHORTCDB /?\r\n$"
+.else
     .ascii "SHORTCUT: invalid option. Use SHORTCUT /?\r\n$"
+.endif
 msg_path:
+.ifdef DOSBOX_BUILD
+    .ascii "SHORTCDB: cannot determine its executable directory.\r\n$"
+.else
     .ascii "SHORTCUT: cannot determine its executable directory.\r\n$"
+.endif
 msg_unloaded:
+.ifdef DOSBOX_BUILD
+    .ascii "SHORTCDB unloaded.\r\n$"
+.else
     .ascii "SHORTCUT unloaded.\r\n$"
+.endif
 msg_not_installed:
+.ifdef DOSBOX_BUILD
+    .ascii "SHORTCDB is not installed.\r\n$"
+.else
     .ascii "SHORTCUT is not installed.\r\n$"
+.endif
 msg_unload_unsafe:
+.ifdef DOSBOX_BUILD
+    .ascii "SHORTCDB cannot unload: another TSR is above it.\r\n"
+.else
     .ascii "SHORTCUT cannot unload: another TSR is above it.\r\n"
+.endif
     .ascii "Unload that TSR first, or reboot.\r\n$"
 msg_help:
-    .ascii "SHORTCUT 1.1 - prompt-aware hotkey for Launch!\r\n\r\n"
+.ifdef DOSBOX_BUILD
+    .ascii "SHORTCDB 1.2 - DOSBox-X hotkey for Launch!\r\n\r\n"
+    .ascii "Usage: SHORTCDB [/KEY=keys]\r\n"
+    .ascii "       SHORTCDB /UNLOAD\r\n"
+    .ascii "       SHORTCDB /?\r\n\r\n"
+.else
+    .ascii "SHORTCUT 1.2 - prompt-aware hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCUT [/KEY=keys]\r\n"
     .ascii "       SHORTCUT /UNLOAD\r\n"
     .ascii "       SHORTCUT /?\r\n\r\n"
+.endif
     .ascii "Default: CTRL+ALT+.\r\n"
-    .ascii "/KEY accepts CTRL, ALT, SHIFT, a character, or hexadecimal\r\n"
+    .ascii "/KEY accepts CTRL, ALT, SHIFT, F1-F12, WIN/LWIN/RWIN/MENU,\r\n"
+    .ascii "a character, or hexadecimal\r\n"
     .ascii "Set-1 make codes separated by +. Modifier codes are 1D (Ctrl),\r\n"
     .ascii "38 (Alt), and 2A or 36 (Shift).\r\n\r\n"
     .ascii "Examples:\r\n"
+.ifdef DOSBOX_BUILD
+    .ascii "  SHORTCDB /KEY=CTRL+ALT+L\r\n"
+    .ascii "  SHORTCDB /KEY=1D+38+34\r\n\r\n"
+    .ascii "If SHORTCDB's directory is on PATH, the hotkey types !.\r\n"
+.else
     .ascii "  SHORTCUT /KEY=CTRL+ALT+L\r\n"
     .ascii "  SHORTCUT /KEY=1D+38+34\r\n\r\n"
     .ascii "If SHORTCUT's directory is on PATH, the hotkey types !.\r\n"
+.endif
     .ascii "Otherwise it falls back to the full sibling !.EXE path.\r\n"
     .ascii "Install at the DOS/4DOS prompt or from AUTOEXEC.BAT.\r\n"
+.ifdef DOSBOX_BUILD
+    .ascii "Use LOADHIGH SHORTCDB to place the resident portion in a UMB.\r\n$"
+.else
     .ascii "Use LOADHIGH SHORTCUT to place the resident portion in a UMB.\r\n$"
+.endif
 
 display_ctrl:   .asciz "CTRL+"
 display_alt:    .asciz "ALT+"
 display_shift: .asciz "SHIFT+"
+display_lwin:  .asciz "LWIN"
+display_rwin:  .asciz "RWIN"
+display_menu:  .asciz "MENU"
+display_function: .byte 'F',0,0,0
 display_space:  .asciz "SPACE"
 display_key:    .byte 0,0
 display_scan:   .byte 0,0,0,0,0

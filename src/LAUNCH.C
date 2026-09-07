@@ -1,4 +1,4 @@
-/* Launch! 1.1 - modal command menu for DOS
+/* Launch! 1.2 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -98,7 +98,7 @@ static unsigned mouse_last_buttons;
 static int added_visible_node;
 
 static const char *sample_config[] = {
-  "; Launch! 1.1 menu definition\n",
+  "; Launch! 1.2 menu definition\n",
   "; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)\n",
   "\n",
   "[Launcher]\n",
@@ -562,7 +562,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 1.1 menu definition\n; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)\n\n",f)!=EOF;
+  ok=fputs("; Launch! 1.2 menu definition\n; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -588,7 +588,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 1.1 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 1.2 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSHOW_TIME=%u\n",
@@ -1310,7 +1310,7 @@ static int queue_macro(const char *text)
 
 static void show_help(void)
 {
-  puts("Launch! 1.1 - lightweight command menu for DOS\n");
+  puts("Launch! 1.2 - lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder or launcher");
