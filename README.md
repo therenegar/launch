@@ -21,7 +21,8 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Simply reboot after install and you're good to go.
 
 ### Manual Install
-If you want to install yourself manually, just copy `!.EXE` and `SHORTCUT.COM` wherever you like. If you want to use the keyboard shortcut, add the following to your `AUTOEXEC.BAT` (with the correct path). You should add the Launch! directory to `PATH` in either case.
+If you want to install yourself manually, just copy `!.EXE` and optionally, `SHORTCUT.COM` wherever you like. <br/>
+If you want to use the keyboard shortcut, add the following to your `AUTOEXEC.BAT` (with the correct path). You should add the Launch! directory to `PATH` in either case.
 ```
 SET PATH=C:\LAUNCH;%PATH%
 C:\LAUNCH\SHORTCUT.COM
@@ -33,21 +34,21 @@ At the **command prompt**, display your menu by pressing the keyboard shortcut
 ```
 CTRL + ALT + .
 ```
-> The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display. 
+> The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display. This is not a multi-tasking application switcher!
 
 > At this time, the keyboard shortcut tool (SHORTCUT.COM) does **not** work on DOSBox, but works on real hardware and other virtual machines (VMWare, VirtualBox, bochs). 
 
-If you don't have `SHORTCUT.COM` loaded, the keyboard shortcut will not be available.
-To start Launch! without the keyboard shortcut, at the command prompt, just type 
+If you don't have `SHORTCUT.COM` loaded, the keyboard shortcut will not be available.<br/>
+To start Launch! without the keyboard shortcut, at the command prompt, simply type 
 ```
 ! <ENTER>
 ```
 
 ### How it works
 Launch! does not execute the selected program itself. Rather, it returns to the existing command interpreter, types the configured command and, if selected, supplies Enter. This means shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can all be used. No secondary command processor is started or additional shells. Launch! does not interfere with program execution or return.
-This approach provides maximum flexibility, and compatibility.
+This approach provides maximum flexibility, and compatibility. If it can be run from the command prompt, it will work with Launch!.
 
-The program will automatically create `LAUNCH.CFG` and `LAUNCH.MNU` on first run.
+The program will automatically create `LAUNCH.CFG` and `LAUNCH.MNU` on first run.<br/>
 `LAUNCH.CFG` stores configuration settings and `LAUNCH.MNU` contains the menu data. Whenever a change is made to the menu, a `LAUNCH.BAK` file will also be created containing a backup of the menu.
 
 Launch! locates and saves `LAUNCH.MNU` beside `!.EXE,` regardless of the current working directory. This works both with a full executable path and when `!.EXE` is found via `PATH`.
@@ -79,7 +80,7 @@ Menu management
 ## Customizing appearance
 <img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/32a026cc-d16f-4e50-9bfc-941d3af68614" />
 
-Run `LAUNCH /CONFIG` to configure menu and dialog colours, menu position, and whether the live clock is shown. Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles the clock. Mouse clicks are also supported. 
+Run `! /CONFIG` to configure menu and dialog colours, menu position, and whether the live clock is shown. Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles the clock. Mouse clicks are also supported. 
 Settings are saved to `LAUNCH.CFG`.
 Cancel leaves the previous appearance unchanged.
 
@@ -93,7 +94,7 @@ Use the keyboard shortcuts to visually edit the menu while it is open. Changes a
 
 Each menu panel can display 20 items. Adding a 21st item automatically creates a **More** folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. **More** is maintained by Launch! and is kept at the bottom when the menu is sorted.
 
-When **Change directory first** is selected, Launch! extracts the directory from the first command token. For C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The final Enter setting applies to that complete command; the preliminary drive and CD commands necessarily receive Enter. Commands without a path do not cause a directory change.
+When **Change directory first** is selected, Launch! extracts the directory from the first command token. E.g. for C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
 ## Manual menu configuration
 Within the `LAUNCH.MNU` file, sections represent menu paths. Separate nesting levels with a backslash:
