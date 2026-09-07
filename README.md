@@ -4,12 +4,11 @@ Version 1.0
 
 A lightweight customizable and flexible command launcher for all DOS systems.
 
-Download the latest release 
-- [ZIP File](https://github.com/therenegar/launch/releases/download/v1.0/LAUNCH-1.0.zip)
-- [Floppy IMG](https://github.com/therenegar/launch/releases/download/v1.0/LAUNCH-1.0.img)
+Download the latest release [here](https://github.com/therenegar/launch/releases/tag/v1.0)
+You can download either a .zip file or in a 1.44 floppy disk image .img
 
-Requires DOS 3.3, 80286, EGA or better.
-Compatible with all command interpreters including 4DOS/NDOS.
+Requires DOS 3.3, 80286, EGA or better. Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS.
+Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="576" alt="LAUNCH03" src="https://github.com/user-attachments/assets/c7492f8c-6990-4460-95a3-709f20a3ae0f" />
 
