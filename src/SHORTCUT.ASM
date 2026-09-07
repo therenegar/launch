@@ -3,7 +3,7 @@
 .section .text
 .global _start
 
-/* SHORTCUT.COM 1.0 - tiny prompt-aware Launch! hotkey TSR.
+/* SHORTCUT.COM 1.1 - tiny prompt-aware Launch! hotkey TSR.
  * Build on a modern GNU binutils host:
  *   as --32 SHORTCUT.ASM -o SHORTCUT.O
  *   ld -m elf_i386 -Ttext 0x100 --oformat binary --entry=_start \
@@ -16,17 +16,22 @@ _start:
 /* -------------------------- resident portion -------------------------- */
 
 old09:          .word 0,0
+old15:          .word 0,0
 old16:          .word 0,0
 old28:          .word 0,0
 old2f:          .word 0,0
 shell_psp:      .word 0
 hot_scan:       .byte 0x34             /* period */
 hot_mods:       .byte 0x06             /* Ctrl + Alt */
+raw_mods:       .byte 0
+hot_down:       .byte 0
 pending:        .byte 0
 macro_active:   .byte 0
-macro_pos:      .word 0
-macro_len:      .word 0
+hotkey_len:     .word 0
 launch_macro:   .space 132,0           /* Esc + ! command/path + Enter */
+queue_pos:      .word 0
+queue_len:      .word 0
+macro_queue:    .space 384,0
 
 int09_handler:
     pushf
@@ -67,6 +72,67 @@ int09_done:
     pop ax
     iret
 
+/* Raw BIOS keyboard intercept.  DOSBox-X may not place Ctrl+Alt combinations
+ * in the BIOS ring buffer, so catch Set-1 make/break codes before translation.
+ * CF clear tells the BIOS to discard the matched hotkey keystroke. */
+int15_handler:
+    pushf
+    cmp ah,0x4f
+    jne int15_chain
+    push bx
+    mov bl,al
+    and bl,0x7f
+    cmp bl,0x1d
+    je int15_ctrl
+    cmp bl,0x38
+    je int15_alt
+    cmp bl,0x2a
+    je int15_shift
+    cmp bl,0x36
+    je int15_shift
+    cmp bl,byte ptr cs:[hot_scan]
+    jne int15_chain_pop
+    test al,0x80
+    jnz int15_hot_release
+    cmp byte ptr cs:[hot_down],0
+    jne int15_discard
+    mov bl,byte ptr cs:[raw_mods]
+    cmp bl,byte ptr cs:[hot_mods]
+    jne int15_chain_pop
+    mov byte ptr cs:[hot_down],1
+    mov byte ptr cs:[pending],1
+    jmp int15_discard
+int15_hot_release:
+    cmp byte ptr cs:[hot_down],0
+    je int15_chain_pop
+    mov byte ptr cs:[hot_down],0
+int15_discard:
+    pop bx
+    popf
+    clc
+    retf 2
+int15_ctrl:
+    mov bl,0x02
+    jmp int15_modifier
+int15_alt:
+    mov bl,0x04
+    jmp int15_modifier
+int15_shift:
+    mov bl,0x01
+int15_modifier:
+    test al,0x80
+    jnz int15_modifier_up
+    or byte ptr cs:[raw_mods],bl
+    jmp int15_chain_pop
+int15_modifier_up:
+    not bl
+    and byte ptr cs:[raw_mods],bl
+int15_chain_pop:
+    pop bx
+int15_chain:
+    popf
+    jmp far ptr cs:[old15]
+
 int16_handler:
     call fill_keyboard_buffer
     jmp far ptr cs:[old16]
@@ -87,8 +153,8 @@ fill_keyboard_buffer:
     push es
     mov ax,0x40
     mov es,ax
-2:  mov bx,word ptr cs:[macro_pos]
-    cmp bx,word ptr cs:[macro_len]
+2:  mov bx,word ptr cs:[queue_pos]
+    cmp bx,word ptr cs:[queue_len]
     jae 6f
     mov di,word ptr es:[0x1c]          /* current tail */
     mov cx,di
@@ -98,7 +164,7 @@ fill_keyboard_buffer:
     mov cx,0x1e
 3:  cmp cx,word ptr es:[0x1a]          /* next tail == head means full */
     je 7f
-    mov al,byte ptr cs:[launch_macro+bx]
+    mov al,byte ptr cs:[macro_queue+bx]
     xor ah,ah
     cmp al,0x1b
     jne 4f
@@ -109,7 +175,7 @@ fill_keyboard_buffer:
 5:  mov word ptr es:[di],ax
     mov word ptr es:[0x1c],cx
     inc bx
-    mov word ptr cs:[macro_pos],bx
+    mov word ptr cs:[queue_pos],bx
     jmp 2b
 6:  mov byte ptr cs:[macro_active],0
 7:  pop es
@@ -141,7 +207,17 @@ int28_handler:
     mov bx,word ptr es:[0x1a]
     cmp bx,word ptr es:[0x1c]         /* wait for an empty BIOS buffer */
     jne int28_done
-    mov word ptr cs:[macro_pos],0
+    push cs
+    pop ds
+    push cs
+    pop es
+    mov si,offset launch_macro
+    mov di,offset macro_queue
+    mov cx,word ptr cs:[hotkey_len]
+    mov word ptr cs:[queue_len],cx
+    cld
+    rep movsb
+    mov word ptr cs:[queue_pos],0
     mov byte ptr cs:[macro_active],1
     mov byte ptr cs:[pending],0
     call fill_keyboard_buffer
@@ -159,18 +235,52 @@ int2f_handler:
     cmp ax,0xd5b0
     jne 6f
     mov bx,0x5343                     /* "SC" installation signature */
-    mov cx,0x0100                     /* version 1.0 */
+    mov cx,0x0101                     /* version 1.1 */
     push cs
     pop es
     iret
 6:  cmp ax,0xd5b1
     jne 7f
     mov bx,0x554e                     /* "UN" unload-query signature */
-    mov cx,0x0100
+    mov cx,0x0101
     push cs
     pop es
     iret
-7:  jmp far ptr cs:[old2f]
+7:  cmp ax,0xd5b3
+    jne 8f
+    mov bx,0x4d51                     /* "MQ": shared macro queue present */
+    mov cx,384
+    push cs
+    pop es
+    iret
+8:  cmp ax,0xd5b2
+    jne 10f
+    push ax
+    push cx
+    push si
+    push di
+    push es
+    push cs
+    pop es
+    mov di,offset macro_queue
+    cmp cx,384
+    jbe 9f
+    mov cx,384
+9:  mov word ptr cs:[queue_len],cx
+    mov word ptr cs:[queue_pos],0
+    cld
+    rep movsb
+    mov byte ptr cs:[pending],0
+    mov byte ptr cs:[macro_active],1
+    pop es
+    pop di
+    pop si
+    pop cx
+    pop ax
+    call fill_keyboard_buffer
+    xor al,al
+    iret
+10: jmp far ptr cs:[old2f]
 
 resident_end:
 
@@ -202,6 +312,10 @@ installer:
     int 0x21
     mov word ptr [old09],bx
     mov word ptr [old09+2],es
+    mov ax,0x3515
+    int 0x21
+    mov word ptr [old15],bx
+    mov word ptr [old15+2],es
     mov ax,0x3516
     int 0x21
     mov word ptr [old16],bx
@@ -220,6 +334,9 @@ installer:
     pop ds
     mov dx,offset int09_handler
     mov ax,0x2509
+    int 0x21
+    mov dx,offset int15_handler
+    mov ax,0x2515
     int 0x21
     mov dx,offset int16_handler
     mov ax,0x2516
@@ -314,7 +431,7 @@ build_launch_path:
     mov byte ptr [di],0x0d
     inc di
     sub di,offset launch_macro
-    mov word ptr [macro_len],di
+    mov word ptr [hotkey_len],di
     clc
     ret
 build_short_path:
@@ -327,7 +444,7 @@ build_short_path:
     mov byte ptr [di],0x0d
     inc di
     sub di,offset launch_macro
-    mov word ptr [macro_len],di
+    mov word ptr [hotkey_len],di
     clc
     ret
 build_path_bad:
@@ -483,13 +600,17 @@ unload_shortcut:
     int 0x2f
     cmp bx,0x554e
     jne not_installed
-    cmp cx,0x0100
+    cmp cx,0x0101
     jne unload_unsafe
     mov word ptr [resident_seg],es
 
     mov ax,0x3509
     int 0x21
     call check_09
+    jc unload_unsafe
+    mov ax,0x3515
+    int 0x21
+    call check_15
     jc unload_unsafe
     mov ax,0x3516
     int 0x21
@@ -506,6 +627,9 @@ unload_shortcut:
 
     mov al,0x09
     mov bx,offset old09
+    call restore_vector
+    mov al,0x15
+    mov bx,offset old15
     call restore_vector
     mov al,0x16
     mov bx,offset old16
@@ -525,6 +649,9 @@ unload_shortcut:
 
 check_09:
     mov dx,offset int09_handler
+    jmp check_vector
+check_15:
+    mov dx,offset int15_handler
     jmp check_vector
 check_16:
     mov dx,offset int16_handler
@@ -1042,7 +1169,7 @@ msg_unload_unsafe:
     .ascii "SHORTCUT cannot unload: another TSR is above it.\r\n"
     .ascii "Unload that TSR first, or reboot.\r\n$"
 msg_help:
-    .ascii "SHORTCUT 1.0 - prompt-aware hotkey for Launch!\r\n\r\n"
+    .ascii "SHORTCUT 1.1 - prompt-aware hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCUT [/KEY=keys]\r\n"
     .ascii "       SHORTCUT /UNLOAD\r\n"
     .ascii "       SHORTCUT /?\r\n\r\n"

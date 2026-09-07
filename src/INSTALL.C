@@ -1,4 +1,4 @@
-/* Launch! 1.0 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 1.1 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -106,7 +106,7 @@ int main(int argc,char **argv)
   char install[PATH_SIZE],source_dir[PATH_SIZE],source[PATH_SIZE];
   char destination[PATH_SIZE],autoexec[16],*comspec;int n;
   (void)argc;
-  puts("Launch! 1.0 Installation\n");
+  puts("Launch! 1.1 Installation\n");
   printf("Installation directory [C:\\LAUNCH]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
   strip_line(install);

@@ -89,7 +89,7 @@ queue_command:
     xor al,al
     iret
 
-signature:      .ascii "LH10"
+signature:      .ascii "LH11"
 old16:          .word 0,0
 old2f:          .word 0,0
 macro_pos:      .word 0

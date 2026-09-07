@@ -1,4 +1,4 @@
-/* Launch! 1.0 - modal command menu for DOS
+/* Launch! 1.1 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -72,7 +72,7 @@ static unsigned char macro_blob[MACRO_BLOB_SIZE]={
 171,0,187,72,76,207,80,81,86,87,6,14,7,49,255,46,
 137,62,175,0,129,249,128,1,118,3,185,128,1,46,137,14,
 177,0,191,179,0,252,243,164,7,95,94,89,88,232,104,255,
-48,192,207,76,72,49,48
+48,192,207,76,72,49,49
 };
 
 static NODE nodes[MAX_NODES];
@@ -98,7 +98,7 @@ static unsigned mouse_last_buttons;
 static int added_visible_node;
 
 static const char *sample_config[] = {
-  "; Launch! 1.0 menu definition\n",
+  "; Launch! 1.1 menu definition\n",
   "; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)\n",
   "\n",
   "[Launcher]\n",
@@ -562,7 +562,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 1.0 menu definition\n; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)\n\n",f)!=EOF;
+  ok=fputs("; Launch! 1.1 menu definition\n; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -588,7 +588,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 1.0 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 1.1 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSHOW_TIME=%u\n",
@@ -1240,7 +1240,7 @@ static int helper_signature(unsigned seg)
          p[MACRO_SIGNATURE_OFF+0]=='L' &&
          p[MACRO_SIGNATURE_OFF+1]=='H' &&
          p[MACRO_SIGNATURE_OFF+2]=='1' &&
-         p[MACRO_SIGNATURE_OFF+3]=='0';
+         p[MACRO_SIGNATURE_OFF+3]=='1';
 }
 
 static unsigned find_resident_helper(void)
@@ -1255,7 +1255,7 @@ static unsigned find_resident_helper(void)
 static int macro_helper(void)
 {
   union REGS r;unsigned seg,paragraphs,vector_seg,vector_off;
-  unsigned int16_seg,int16_off;int detected,direct;
+  unsigned int16_seg,int16_off,old_strategy;int detected,direct,alloc_error;
   struct SREGS s;
   unsigned long old16,old2f;
   r.x.ax=0xD5A0;r.x.bx=0;int86(0x2F,&r,&r);
@@ -1279,7 +1279,11 @@ static int macro_helper(void)
   }
   if(detected)return 1;
   paragraphs=(MACRO_BLOB_SIZE+15)/16;
-  if(_dos_allocmem(paragraphs,&seg)!=0)return 0;
+  r.x.ax=0x5800;int86(0x21,&r,&r);old_strategy=r.x.ax;
+  if(old_strategy<=2){r.x.ax=0x5801;r.x.bx=2;int86(0x21,&r,&r);}
+  alloc_error=_dos_allocmem(paragraphs,&seg);
+  if(old_strategy<=2){r.x.ax=0x5801;r.x.bx=old_strategy;int86(0x21,&r,&r);}
+  if(alloc_error!=0)return 0;
   segread(&s);movedata(s.ds,(unsigned)macro_blob,seg,0,MACRO_BLOB_SIZE);
   old16=dos_get_vector(0x16);
   far_write_long(seg,MACRO_OLD16_OFF,old16);
@@ -1293,6 +1297,12 @@ static int macro_helper(void)
 static int queue_macro(const char *text)
 {
   union REGS r;struct SREGS s;
+  r.x.ax=0xD5B3;r.x.bx=0;int86(0x2F,&r,&r);
+  if(r.x.bx==0x4D51 && r.x.cx>=MAX_MACRO){
+    segread(&s);r.x.ax=0xD5B2;r.x.si=(unsigned)text;
+    r.x.cx=(unsigned)strlen(text);
+    int86x(0x2F,&r,&r,&s);return r.h.al==0;
+  }
   if(!macro_helper())return 0;
   segread(&s);r.x.ax=0xD5A1;r.x.si=(unsigned)text;r.x.cx=(unsigned)strlen(text);
   int86x(0x2F,&r,&r,&s);return r.h.al==0;
@@ -1300,7 +1310,7 @@ static int queue_macro(const char *text)
 
 static void show_help(void)
 {
-  puts("Launch! 1.0 - lightweight command menu for DOS\n");
+  puts("Launch! 1.1 - lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder or launcher");
