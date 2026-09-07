@@ -1,33 +1,54 @@
 # Launch!
 
-A light-weight customizable and flexible command launcher for all DOS systems.
+Version 1.0
 
-Download the latest release [here](https://github.com/therenegar/launch/releases/download/v0.6/LAUNCH-0.6.zip)
+A lightweight customizable and flexible command launcher for all DOS systems.
 
-Requires DOS 3.3+, 80286, EGA or better, 80-column text mode.
-Compatible with all command processors including 4DOS/NDOS.
+Download the latest release 
+- [ZIP File](https://github.com/therenegar/launch/releases/download/v1.0/LAUNCH-1.0.zip)
+- [Floppy IMG](https://github.com/therenegar/launch/releases/download/v1.0/LAUNCH-1.0.img)
+
+Requires DOS 3.3, 80286, EGA or better.
+Compatible with all command interpreters including 4DOS/NDOS.
 
 <img width="720" height="576" alt="LAUNCH03" src="https://github.com/user-attachments/assets/c7492f8c-6990-4460-95a3-709f20a3ae0f" />
 
+## Easy Install
+
+- Run INSTALL.EXE 
+- You'll be prompted for a directory to place Launch!
+- The necessary files will be copied and your AUTOEXEC.BAT will be updated.
+- Simply reboot after install and you're good to go.
+
+### Manual Install
+If you want to install yourself manually, just copy `!.EXE` and `SHORTCUT.COM` wherever you like. If you want to use the keyboard shortcut, add the following to your `AUTOEXEC.BAT` (with the correct path). You should add the Launch! directory to `PATH` in either case.
+```
+SET PATH=C:\LAUNCH;%PATH%
+LOADHIGH C:\LAUNCH\SHORTCUT.COM
+```
+
 ## Usage
 
-Place `LAUNCH.EXE` anywhere, ideally inside its own directory which is on `PATH`.
-To display your menu, just type
+At the command prompt, display your menu by pressing the keyboard shortcut 
 ```
-    LAUNCH
+CTRL + ALT + .
 ```
-> Tip: if you use 4DOS, create an alias `ALIAS .=LAUNCH` and you can have the menu appear by typing `.` at the command prompt. 
 
-Launch! does not execute the selected program itself. It restores the screen, returns to the existing command interpreter, types the configured command and, when selected, supplies Enter. Shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can therefore all be used. No secondary command processor is started.
+If you don't have `SHORTCUT.COM` loaded, the keyboard shortcut will not be available.
+To start Launch! without the keyboard shortcut, just type `!` and press Enter.
+Read below for changing the shortcut combination.
+
+### How it works
+Launch! does not execute the selected program itself. Rather, it returns to the existing command interpreter, types the configured command and, if selected, supplies Enter. This means shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can all be used. No secondary command processor is started or additional shells. Launch! does not interfere with program execution or return.
+This approach provides maximum flexibility, and compatibility.
 
 The program will automatically create `LAUNCH.CFG` and `LAUNCH.MNU` on first run.
 `LAUNCH.CFG` stores configuration settings and `LAUNCH.MNU` contains the menu data. Whenever a change is made to the menu, a `LAUNCH.BAK` file will also be created containing a backup of the menu.
 
 Launch! locates and saves `LAUNCH.MNU` beside `LAUNCH.EXE,` regardless of the current working directory. This works both with a full executable path and when `LAUNCH` is found via `PATH`.
 
-A keyboard shortcut for showing the menu was purposely excluded, otherwise a memory resident TSR would be required, additional command shelling, and unreliability with the menu potentially being executed during other programs (not at the command prompt).
 
-## Keyboard shortcuts
+## Keyboard usage
 
 General navigation
 - Up/Down       - Select an entry
@@ -87,6 +108,22 @@ An ITEM record has this form:
   ITEM=title|command and parameters|press Enter|change directory
 ```
 The last two values are 1 for selected and 0 for clear. Existing records that do not contain them remain compatible and default to 1|0.
+
+
+## SHORTCUT
+
+Change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal IBM Set-1 make codes, e.g.
+```
+  SHORTCUT /KEY=CTRL+ALT+L
+  SHORTCUT /KEY=1D+38+34
+```
+Tokens are separated by plus signs. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, letters, digits, common punctuation, and scan codes from 01 through 7F are accepted. Modifier scan codes are 
+- 1D (Ctrl)
+- 38 (Alt)
+- 2A or 36 (Shift)
+
+Use `SHORTCUT /?` for more information.
+The shortcut utility can also be removed from memory with `SHORTCUT /UNLOAD`.
 
 
 ## File safety

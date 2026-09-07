@@ -1,8 +1,11 @@
 @ECHO OFF
 REM Microsoft C/C++ 7.0: run from an environment prepared by SETENV.BAT
-CL /AS /Os /Gs /W3 LAUNCH.C
+CL /AS /Os /Gs /W3 /Fe!.EXE LAUNCH.C
 IF ERRORLEVEL 1 GOTO FAIL
-ECHO Built LAUNCH.EXE
+CL /AS /Os /Gs /W3 INSTALL.C
+IF ERRORLEVEL 1 GOTO FAIL
+ECHO Built !.EXE
+ECHO Built INSTALL.EXE
 GOTO END
 :FAIL
 ECHO Build failed.
