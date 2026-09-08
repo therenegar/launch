@@ -12,8 +12,7 @@ Requires DOS 3.3, 80286, EGA or better. <br/>
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/eccb2525-ade2-4bbf-b64e-52530a61cab5" />
-
+<img width="720" height="600" alt="!01" src="https://github.com/user-attachments/assets/60960ef0-3cf9-4a89-9133-c5c39278a04d" />
 
 ## Easy Install
 
