@@ -117,15 +117,15 @@ The last two values are 1 for selected and 0 for clear. Existing records that do
 
 <img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/7492b7af-cf84-42bf-bb0b-cb6816792344" />
 
-The `Shutdown...` menu item is fixed, always at the bottom, and when selected shows a dialog for you to Shutdown or Reboot.
-Shutdown flushes DOS and SMARTDrive buffers first and then uses standard ACPI power off calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.
+The `Shutdown...` menu item is fixed, always at the bottom, and when selected shows a dialog for you to Shutdown or Reboot.<br/>
+Shutdown flushes DOS and SMARTDrive buffers first and then uses standard ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
 <img width="720" height="600" alt="poweroff" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
 ## SHORTCUT - keyboard shortcut tool
-The keyboard shortcut is provided by a separate utility to make it completely optional. <br/>
-Change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal IBM Set-1 scan codes, examples:
+The keyboard shortcut is provided by a separate utility as it is optional. It will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
+You can change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal scan codes, examples:
 ```
   SHORTCUT /KEY=LWIN
   SHORTCUT /KEY=CTRL+SPACE
