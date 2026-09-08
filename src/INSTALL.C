@@ -1,14 +1,39 @@
-/* Launch! 1.2 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 1.5 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <dos.h>
 #include <direct.h>
 #include <io.h>
+#include <process.h>
 
 #define PATH_SIZE 128
 
 static unsigned char copy_buffer[4096];
+
+static int rom_contains_dosbox(unsigned segment,unsigned offset,unsigned length)
+{
+  const unsigned char far *rom;
+  static const char name[]="DOSBOX";unsigned i,j;
+  /* Build the 16:16 address directly.  Some Microsoft C 7 installations do
+     not provide MK_FP as a macro and otherwise emit an unresolved _MK_FP. */
+  rom=(const unsigned char far *)
+      (((unsigned long)segment<<16)|(unsigned long)offset);
+  for(i=0;i+sizeof(name)-1<=length;i++){
+    for(j=0;j<sizeof(name)-1;j++)
+      if(toupper(rom[i+j])!=name[j])break;
+    if(j==sizeof(name)-1)return 1;
+  }
+  return 0;
+}
+
+static int running_in_dosbox(void)
+{
+  /* DOSBox and DOSBox-X identify themselves in the system or video BIOS. */
+  return rom_contains_dosbox(0xF000,0xE000,0x2000)||
+         rom_contains_dosbox(0xC000,0x0000,0x8000);
+}
 
 static int exists(const char *name)
 {
@@ -104,10 +129,11 @@ static int append_autoexec(const char *filename,const char *path)
 int main(int argc,char **argv)
 {
   char install[PATH_SIZE],source_dir[PATH_SIZE],source[PATH_SIZE];
-  char destination[PATH_SIZE],autoexec[16],*comspec;int n;
+  char destination[PATH_SIZE],autoexec[16],*comspec,answer[16];
+  int n,dosbox_detected,use_dosbox;
   (void)argc;
-  puts("Launch! 1.2 Installation\n");
-  printf("Installation directory [C:\\LAUNCH]: ");
+  puts("Launch! Installation\n");
+  printf("Install directory [C:\\LAUNCH]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
   strip_line(install);
   if(!*install)strcpy(install,"C:\\LAUNCH");
@@ -117,10 +143,25 @@ int main(int argc,char **argv)
   }
   while(n>3 && (install[n-1]=='\\' || install[n-1]=='/'))install[--n]=0;
   if(!make_directories(install)){printf("Cannot create or access %s\n",install);return 1;}
+  dosbox_detected=running_in_dosbox();
+  if(dosbox_detected){
+    printf("\nIt looks like you're running in DOSBox, is this correct? [Y/n]: ");
+    if(!fgets(answer,sizeof(answer),stdin))return 1;
+    use_dosbox=!answer[0]||answer[0]=='\r'||answer[0]=='\n'||toupper(answer[0])=='Y';
+  }else{
+    printf("\nAre you installing in DOSBox? [y/N]: ");
+    if(!fgets(answer,sizeof(answer),stdin))return 1;
+    use_dosbox=toupper(answer[0])=='Y';
+  }
   source_directory(argv[0],source_dir);
   sprintf(source,"%s!.EXE",source_dir);sprintf(destination,"%s\\!.EXE",install);
   if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
-  sprintf(source,"%sSHORTCUT.COM",source_dir);sprintf(destination,"%s\\SHORTCUT.COM",install);
+  sprintf(source,"%s%s",source_dir,use_dosbox?"SHORTCDB.COM":"SHORTCUT.COM");
+  sprintf(destination,"%s\\SHORTCUT.COM",install);
+  if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
+  sprintf(source,"%sAUTOGEN.EXE",source_dir);sprintf(destination,"%s\\AUTOGEN.EXE",install);
+  if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
+  sprintf(source,"%sAUTOGEN.DAT",source_dir);sprintf(destination,"%s\\AUTOGEN.DAT",install);
   if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
   comspec=getenv("COMSPEC");
   autoexec[0]=(comspec && comspec[1]==':')?(char)toupper(comspec[0]):'C';
@@ -128,9 +169,17 @@ int main(int argc,char **argv)
   if(!append_autoexec(autoexec,install)){
     printf("Files copied, but %s could not be updated.\n",autoexec);return 1;
   }
-  printf("\nInstalled !.EXE and SHORTCUT.COM in %s\n",install);
-  printf("Updated %s with PATH and LOADHIGH commands.\n",autoexec);
-  puts("\nPlease reboot the computer to complete the installation.");
-  puts("Press Enter to exit.");
+  printf("\nInstalled !.EXE, SHORTCUT.COM and AUTOGEN.EXE in %s\n",install);
+  printf("Shortcut build: %s\n",use_dosbox?"DOSBox":"real hardware");
+  printf("Updated %s with PATH and LOADHIGH commands.\n\n",autoexec);
+  printf("\nDo you want to scan the C: drive now for recognized programs\n");
+  printf("and build an initial Launch! menu? [y/N]: ");
+  if(fgets(answer,sizeof(answer),stdin)&&toupper(answer[0])=='Y'){
+    sprintf(destination,"%s\\AUTOGEN.EXE",install);
+    if(spawnl(P_WAIT,destination,"AUTOGEN.EXE",NULL)==-1)
+      puts("AutoGen could not be started. Run AUTOGEN manually after installation.");
+  }
+  puts("\nInstall is complete. Reboot the computer to activate the keyboard shortcut.");
+  puts("Press Ù to exit.");
   getchar();return 0;
 }

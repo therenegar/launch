@@ -1,4 +1,4 @@
-/* Launch! 1.2 - modal command menu for DOS
+/* Launch! 1.5 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -6,13 +6,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <conio.h>
 
 #define MAX_NODES 96
 #define MAX_TITLE 24
 #define MAX_CMD 128
 #define MAX_MACRO 384
 #define MAX_DEPTH 4
-#define MAX_CHILD 21
+#define MAX_CHILD 22
 #define MENU_CAPACITY 20
 #define MENU_WIDTH 20
 #define MAKE_FP(seg,off) ((void far *)((((unsigned long)(seg))<<16) | \
@@ -21,11 +22,11 @@
 typedef struct {
   unsigned char background,border,main_title,titles,folders,launchers;
   unsigned char selected_fg,selected_bg,controls_fg,controls_bg,labels;
-  unsigned char menu_top,show_time;
+  unsigned char menu_top,show_power,show_time;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1};
-static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1};
+static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1};
+static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1};
 
 /* VGA attribute byte: high nibble = background, low nibble = foreground. */
 #define ATTR(bg,fg)       (((bg)<<4)|(fg))
@@ -48,6 +49,7 @@ typedef struct {
   char command[MAX_CMD];
   int parent;
   unsigned char folder;
+  unsigned char separator;
   unsigned char active;
   unsigned char order;
   unsigned char press_enter;
@@ -97,9 +99,12 @@ static int mouse_present;
 static unsigned mouse_last_buttons;
 static int added_visible_node;
 
+#define BUILTIN_POWER (-2)
+
 static const char *sample_config[] = {
-  "; Launch! 1.2 menu definition\n",
+  "; Launch! 1.5 menu definition\n",
   "; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)\n",
+  "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
   "[Launcher]\n",
   "FOLDER=Office\n",
@@ -312,6 +317,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"CONTROLS_BG")){field=&a->controls_bg;limit=7;}
   else if(!stricmp(key,"LABELS"))field=&a->labels;
   else if(!stricmp(key,"MENU_TOP")){field=&a->menu_top;limit=1;}
+  else if(!stricmp(key,"SHOW_POWER")){field=&a->show_power;limit=1;}
   else if(!stricmp(key,"SHOW_TIME")){field=&a->show_time;limit=1;}
   if(!field || value<0 || value>limit)return 0;
   *field=(unsigned char)value;return 1;
@@ -358,6 +364,7 @@ static int add_node(const char *title,const char *cmd,int parent,int folder)
   strncpy(nodes[n].title,title,MAX_TITLE-1); nodes[n].title[MAX_TITLE-1]=0;
   strncpy(nodes[n].command,cmd ? cmd : "",MAX_CMD-1); nodes[n].command[MAX_CMD-1]=0;
   nodes[n].parent=parent; nodes[n].folder=(unsigned char)folder;
+  nodes[n].separator=0;
   nodes[n].active=1; nodes[n].order=(unsigned char)ord;
   nodes[n].press_enter=1;nodes[n].change_dir=0;
   return n;
@@ -419,6 +426,11 @@ static int load_config(const char *name)
       if(!*p){valid=0;break;}
       if(find_folder(p,parent)<0 && add_node(p,"",parent,1)<0){valid=0;break;}
     }
+    else if(!stricmp(p,"SEPARATOR") || !stricmp(p,"SEPARATOR=")){
+      int node=add_node("-","",parent,0);
+      if(node<0){valid=0;break;}
+      nodes[node].separator=1;
+    }
     else {valid=0;break;}
   }
   if(ferror(f))valid=0;
@@ -433,6 +445,13 @@ static int children(int parent,int *list)
   for(i=0;i<node_count && n<MAX_CHILD;i++) if(nodes[i].active && nodes[i].parent==parent) list[n++]=i;
   for(i=0;i<n-1;i++) for(j=i+1;j<n;j++)
     if(nodes[list[j]].order<nodes[list[i]].order){t=list[i];list[i]=list[j];list[j]=t;}
+  return n;
+}
+
+static int menu_children(int parent,int *list)
+{
+  int n=children(parent,list);
+  if(parent==-1 && appearance.show_power && n<MAX_CHILD)list[n++]=BUILTIN_POWER;
   return n;
 }
 
@@ -540,7 +559,8 @@ static int write_section(FILE *f,int parent,int path_len)
   if(fprintf(f,"[%s]\n",write_path)<0)return 0;
   for(i=0;i<n;i++){
     node=ordered_child(parent,i);if(node<0)return 0;
-    if(nodes[node].folder){if(fprintf(f,"FOLDER=%s\n",nodes[node].title)<0)return 0;}
+    if(nodes[node].separator){if(fputs("SEPARATOR=\n",f)==EOF)return 0;}
+    else if(nodes[node].folder){if(fprintf(f,"FOLDER=%s\n",nodes[node].title)<0)return 0;}
     else if(fprintf(f,"ITEM=%s|%s|%u|%u\n",nodes[node].title,nodes[node].command,
                     nodes[node].press_enter,nodes[node].change_dir)<0)return 0;
   }
@@ -562,7 +582,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 1.2 menu definition\n; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)\n\n",f)!=EOF;
+  ok=fputs("; Launch! 1.5 menu definition\n; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -588,14 +608,14 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 1.2 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 1.5 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
-      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSHOW_TIME=%u\n",
+      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
       appearance.background,appearance.border,appearance.main_title,appearance.titles,
       appearance.folders,appearance.launchers,appearance.selected_fg,appearance.selected_bg,
       appearance.controls_fg,appearance.controls_bg,appearance.labels,
-      appearance.menu_top,appearance.show_time)<0)ok=0;
+      appearance.menu_top,appearance.show_power,appearance.show_time)<0)ok=0;
   if(fclose(f)!=0)ok=0;
   if(!ok){remove(appearance_temp_file);return 0;}
   remove(appearance_file);
@@ -691,8 +711,9 @@ static void sort_menu(int parent)
   int list[MAX_CHILD],n,i,j,t;
   n=children(parent,list);
   for(i=0;i<n-1;i++) for(j=i+1;j<n;j++)
-    if(!stricmp(nodes[list[i]].title,"More") ||
-       (stricmp(nodes[list[j]].title,"More") && stricmp(nodes[list[i]].title,nodes[list[j]].title)>0))
+    if(!nodes[list[i]].separator && !nodes[list[j]].separator &&
+       (!stricmp(nodes[list[i]].title,"More") ||
+       (stricmp(nodes[list[j]].title,"More") && stricmp(nodes[list[i]].title,nodes[list[j]].title)>0)))
       {t=list[i];list[i]=list[j];list[j]=t;}
   for(i=0;i<n;i++) nodes[list[i]].order=(unsigned char)i;
 }
@@ -754,21 +775,189 @@ static void notice_box(const char *title,const char *message)
   draw_button(x+21,y+4,"  OK  ",6,1);wait_input(&k,&mx,&my,&mb);
 }
 
-static int choose_type(void)
+static unsigned char physical_byte(unsigned long address)
 {
-  int x=(screen_cols-44)/2,y=(screen_rows-7)/2,k,folder=1,mx=0,my=0;unsigned mb;
+  return *(unsigned char far *)MAKE_FP((unsigned)(address>>4),
+                                        (unsigned)(address&15));
+}
+
+static unsigned physical_word(unsigned long address)
+{
+  return (unsigned)physical_byte(address)|
+         ((unsigned)physical_byte(address+1)<<8);
+}
+
+static unsigned long physical_dword(unsigned long address)
+{
+  return (unsigned long)physical_word(address)|
+         ((unsigned long)physical_word(address+2)<<16);
+}
+
+static int physical_match(unsigned long address,const char *text,int length)
+{
+  int i;for(i=0;i<length;i++)if(physical_byte(address+i)!=(unsigned char)text[i])return 0;
+  return 1;
+}
+
+static int physical_checksum(unsigned long address,unsigned long length)
+{
+  unsigned char sum=0;unsigned long i;
+  for(i=0;i<length;i++)sum=(unsigned char)(sum+physical_byte(address+i));
+  return sum==0;
+}
+
+static unsigned long find_rsdp_range(unsigned long first,unsigned long last)
+{
+  unsigned long p;
+  for(p=first;p+20<=last;p+=16)
+    if(physical_match(p,"RSD PTR ",8) && physical_checksum(p,20))return p;
+  return 0;
+}
+
+static unsigned long find_rsdp(void)
+{
+  unsigned long ebda=((unsigned long)physical_word(0x40E))<<4;
+  unsigned long found=0;
+  if(ebda>=0x80000UL && ebda<0xA0000UL)found=find_rsdp_range(ebda,ebda+1024);
+  return found?found:find_rsdp_range(0xE0000UL,0x100000UL);
+}
+
+static int aml_integer(unsigned long p,unsigned *value)
+{
+  unsigned char op=physical_byte(p);
+  if(op==0){*value=0;return 1;}
+  if(op==1){*value=1;return 1;}
+  if(op==0x0A){*value=physical_byte(p+1);return 1;}
+  if(op==0x0B){*value=physical_word(p+1);return 1;}
+  if(op==0x0C){*value=(unsigned)physical_dword(p+1);return 1;}
+  return 0;
+}
+
+static int find_s5(unsigned long dsdt,unsigned *type_a,unsigned *type_b)
+{
+  unsigned long length,p,end,q;unsigned char lead,follow;
+  if(!dsdt || dsdt>=0x100000UL || !physical_match(dsdt,"DSDT",4))return 0;
+  length=physical_dword(dsdt+4);if(length<36 || length>0x10000UL)return 0;
+  end=dsdt+length;
+  for(p=dsdt+36;p+12<end;p++)if(physical_match(p,"_S5_",4)){
+    q=p+4;if(physical_byte(q)!=0x12)continue;q++;
+    lead=physical_byte(q++);follow=(unsigned char)(lead>>6);
+    q+=follow;if(q>=end)continue;
+    q++; /* package element count */
+    if(!aml_integer(q,type_a))continue;
+    lead=physical_byte(q);
+    q+=(lead==0x0A)?2:(lead==0x0B)?3:(lead==0x0C)?5:1;
+    if(!aml_integer(q,type_b))*type_b=*type_a;
+    return 1;
+  }
+  return 0;
+}
+
+static int acpi_sleep_info(unsigned *pm1a,unsigned *pm1b,unsigned *smi,
+                           unsigned char *enable,unsigned *type_a,unsigned *type_b)
+{
+  unsigned long rsdp,rsdt,length,p,fadt=0,dsdt;
+  rsdp=find_rsdp();if(!rsdp)return 0;
+  rsdt=physical_dword(rsdp+16);
+  if(!rsdt || rsdt>=0x100000UL || !physical_match(rsdt,"RSDT",4))return 0;
+  length=physical_dword(rsdt+4);
+  if(length<36 || length>0x10000UL || rsdt+length>0x100000UL ||
+     !physical_checksum(rsdt,length))return 0;
+  for(p=rsdt+36;p+4<=rsdt+length;p+=4){
+    fadt=physical_dword(p);
+    if(fadt && fadt<0x100000UL && physical_match(fadt,"FACP",4))break;
+    fadt=0;
+  }
+  if(!fadt || physical_dword(fadt+4)<72)return 0;
+  dsdt=physical_dword(fadt+40);
+  *smi=(unsigned)physical_dword(fadt+48);*enable=physical_byte(fadt+52);
+  *pm1a=(unsigned)physical_dword(fadt+64);*pm1b=(unsigned)physical_dword(fadt+68);
+  return *pm1a && find_s5(dsdt,type_a,type_b);
+}
+
+static unsigned port_in_word(unsigned port)
+{
+  return (unsigned)_inpw(port);
+}
+
+static void port_out_word(unsigned port,unsigned value)
+{
+  _outpw(port,value);
+}
+
+static void port_out_byte(unsigned port,unsigned char value)
+{
+  _outp(port,value);
+}
+
+static int acpi_poweroff(void)
+{
+  unsigned pm1a,pm1b,smi,type_a,type_b,value;unsigned char enable;long wait;
+  if(!acpi_sleep_info(&pm1a,&pm1b,&smi,&enable,&type_a,&type_b))return 0;
+  if(!(port_in_word(pm1a)&1) && smi && enable){
+    port_out_byte(smi,enable);
+    for(wait=0;wait<200000L && !(port_in_word(pm1a)&1);wait++);
+  }
+  value=(unsigned)((port_in_word(pm1a)&0x03FF)|((type_a&7)<<10)|0x2000);
+  port_out_word(pm1a,value);
+  if(pm1b)port_out_word(pm1b,(unsigned)((port_in_word(pm1b)&0x03FF)|((type_b&7)<<10)|0x2000));
+  return 0; /* successful ACPI S5 does not return */
+}
+
+static void cold_reboot(void)
+{
+  union REGS r;long wait;
+  r.h.ah=0x0D;int86(0x21,&r,&r); /* flush DOS disk buffers */
+  *(unsigned far *)MAKE_FP(0x40,0x72)=0; /* request a cold, not warm, boot */
+  _disable();
+  for(wait=0;wait<200000L;wait++){
+    unsigned char status=(unsigned char)_inp(0x64);
+    if(!(status&2))break;
+  }
+  port_out_byte(0x64,0xFE);
+  for(;;);
+}
+
+static int power_dialog(void)
+{
+  int x=(screen_cols-54)/2,y=(screen_rows-7)/2,k,choice=2,mx=0,my=0;unsigned mb;
   for(;;){
-    dialog_box(x,y,44,7,"Add Item"); textout(x+3,y+2,"Choose the type of item to add:",C_FOLDER,36);
-    draw_button(x+9,y+4,"  Folder  ",10,folder);
-    draw_button(x+24,y+4,"  Launcher  ",12,!folder);
+    dialog_box(x,y,54,7,"Shutdown/Reboot");
+    textout(x+3,y+2,"Choose a power action:",C_FOLDER,46);
+    draw_button(x+5,y+4,"  Shutdown  ",12,choice==0);
+    draw_button(x+21,y+4,"  Reboot  ",10,choice==1);
+    draw_button(x+35,y+4,"  Cancel  ",10,choice==2);
     wait_input(&k,&mx,&my,&mb);
     if((mb&1) && my==y+4){
-      if(mx>=x+9 && mx<x+19)return 1;
-      if(mx>=x+24 && mx<x+36)return 0;
+      if(mx>=x+5 && mx<x+17)return 1;
+      if(mx>=x+21 && mx<x+31)return 2;
+      if(mx>=x+35 && mx<x+45)return 0;
+    }
+    if(k==27)return 0;
+    if(k==0x4B00)choice=(choice+2)%3;
+    else if(k==0x4D00 || k==9)choice=(choice+1)%3;
+    else if(k==13)return choice==0?1:(choice==1?2:0);
+  }
+}
+
+static int choose_type(void)
+{
+  int x=(screen_cols-56)/2,y=(screen_rows-7)/2,k,choice=0,mx=0,my=0;unsigned mb;
+  for(;;){
+    dialog_box(x,y,56,7,"Add Item"); textout(x+3,y+2,"Choose the type of item to add:",C_FOLDER,48);
+    draw_button(x+5,y+4,"  Folder  ",10,choice==0);
+    draw_button(x+20,y+4,"  Launcher  ",12,choice==1);
+    draw_button(x+37,y+4,"  Separator  ",13,choice==2);
+    wait_input(&k,&mx,&my,&mb);
+    if((mb&1) && my==y+4){
+      if(mx>=x+5 && mx<x+15)return 1;
+      if(mx>=x+20 && mx<x+32)return 0;
+      if(mx>=x+37 && mx<x+50)return 2;
     }
     if(k==27) return -1;
-    if(k==0x4B00 || k==0x4D00 || k==9) folder=!folder;
-    else if(k==13) return folder;
+    if(k==0x4B00){choice=(choice+2)%3;}
+    else if(k==0x4D00 || k==9){choice=(choice+1)%3;}
+    else if(k==13)return choice==0?1:(choice==1?0:2);
   }
 }
 
@@ -889,7 +1078,8 @@ static unsigned char *appearance_field(int focus,int *limit)
 static void change_appearance_value(int focus,int direction)
 {
   unsigned char *field;int limit,value;
-  if(focus==12){appearance.show_time=!appearance.show_time;return;}
+  if(focus==12){appearance.show_power=!appearance.show_power;return;}
+  if(focus==13){appearance.show_time=!appearance.show_time;return;}
   field=appearance_field(focus,&limit);if(!field)return;
   value=(int)*field+direction;
   if(value<0)value=limit;
@@ -900,12 +1090,12 @@ static void change_appearance_value(int focus,int direction)
 static int configure_appearance(void)
 {
   APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,focus=0,row=-1;
-  unsigned mb=0;static const int rows[13]={2,3,4,5,6,7,8,8,9,9,10,12,14};
+  unsigned mb=0;static const int rows[14]={2,3,4,5,6,7,8,8,9,9,10,12,14,15};
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
   cursor_hide();mouse_present=mouse_start();
-  x=(screen_cols-64)/2;y=(screen_rows-20)/2;
+  x=(screen_cols-64)/2;y=(screen_rows-21)/2;
   for(;;){
-    dialog_box(x,y,64,20,"Configure Appearance");
+    dialog_box(x,y,64,21,"Configure Appearance");
     textout(x+3,y+2,"Background",C_INPUT_LABEL,18);
     textout(x+3,y+3,"Border",C_INPUT_LABEL,18);
     textout(x+3,y+4,"Main Title",C_INPUT_LABEL,18);
@@ -928,19 +1118,20 @@ static int configure_appearance(void)
     cycle_control(x+22,y+10,colour_names[appearance.labels],focus==10);
     textout(x+3,y+12,"Menu position",C_INPUT_LABEL,18);
     cycle_control(x+22,y+12,appearance.menu_top?"Top":"Bottom",focus==11);
-    check_line(x+22,y+14,"Show the time",appearance.show_time,focus==12);
-    draw_button(x+19,y+17,"  OK  ",6,focus==13);
-    draw_button(x+34,y+17,"  Cancel  ",10,focus==14);
+    check_line(x+22,y+14,"Show Shutdown/Reboot",appearance.show_power,focus==12);
+    check_line(x+22,y+15,"Show the time",appearance.show_time,focus==13);
+    draw_button(x+19,y+18,"  OK  ",6,focus==14);
+    draw_button(x+34,y+18,"  Cancel  ",10,focus==15);
     wait_input(&k,&mx,&my,&mb);
     if(mb){
       row=-1;
       if(mx>=x+22 && mx<x+37){
-        int i;for(i=0;i<13;i++)if(my==y+rows[i]){row=i;break;}
+        int i;for(i=0;i<14;i++)if(my==y+rows[i]){row=i;break;}
       }
       if(mx>=x+41 && mx<x+56 && my==y+8)row=7;
       if(mx>=x+41 && mx<x+56 && my==y+9)row=9;
       if(row>=0){focus=row;change_appearance_value(focus,(mb&2)?-1:1);continue;}
-      if(my==y+17 && (mb&1)){
+      if(my==y+18 && (mb&1)){
         if(mx>=x+19 && mx<x+25){
           if(save_appearance()){close_menu();return 1;}
           notice_box("Write Error","Could not update LAUNCH.CFG.");continue;
@@ -950,13 +1141,13 @@ static int configure_appearance(void)
       continue;
     }
     if(k==27){appearance=original;close_menu();return 0;}
-    if(k==9 || k==0x5000){focus=(focus+1)%15;continue;}
-    if(k==0x4800){focus=(focus+14)%15;continue;}
+    if(k==9 || k==0x5000){focus=(focus+1)%16;continue;}
+    if(k==0x4800){focus=(focus+15)%16;continue;}
     if(k==0x4B00){change_appearance_value(focus,-1);continue;}
     if(k==0x4D00 || k==' '){change_appearance_value(focus,1);continue;}
     if(k==13){
-      if(focus<13){focus++;continue;}
-      if(focus==13){
+      if(focus<14){focus++;continue;}
+      if(focus==14){
         if(save_appearance()){close_menu();return 1;}
         notice_box("Write Error","Could not update LAUNCH.CFG.");continue;
       }
@@ -993,6 +1184,13 @@ static int add_dialog(int parent,int depth)
   name[0]=exe[0]=params[0]=cmd[0]=0;
   if(children(parent,list)>=MENU_CAPACITY && depth>=MAX_DEPTH-1){notice_box("Menu Full","No further menu level is available.");return 0;}
   folder=choose_type(); if(folder<0)return 0;
+  if(folder==2){
+    node=add_node("-","",parent,0);
+    if(node<0){notice_box("Menu Full","The menu database is full.");return 0;}
+    nodes[node].separator=1;
+    added_visible_node=place_overflow(parent,depth,node);
+    return added_visible_node>=0;
+  }
   if(!item_form(folder,name,exe,params,&press_enter,&change_dir,0))return 0;
   if(folder && !stricmp(name,"More")){notice_box("Reserved Name","More is reserved for automatic overflow.");return 0;}
   if(folder && find_folder(name,parent)>=0){notice_box("Duplicate Folder","That folder name is already in this menu.");return 0;}
@@ -1026,6 +1224,7 @@ static int edit_dialog(int node)
   int duplicate,press_enter=nodes[node].press_enter,change_dir=nodes[node].change_dir;
   static char name[MAX_TITLE],exe[MAX_CMD],params[MAX_CMD],cmd[MAX_CMD];
   exe[0]=params[0]=cmd[0]=0;
+  if(nodes[node].separator)return 0;
   strcpy(name,nodes[node].title);
   if(nodes[node].folder && !stricmp(name,"More")){notice_box("Automatic Folder","More is managed automatically.");return 0;}
   if(!nodes[node].folder)split_command(nodes[node].command,exe,params);
@@ -1055,13 +1254,13 @@ static int menu(void)
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return -1;}
   cursor_hide();mouse_present=mouse_start();
   for(;;){
-    n=children(parent[depth],list);
+    n=menu_children(parent[depth],list);
     if(sel[depth]>=n) sel[depth]=n ? n-1 : 0;
     if(redraw){
       if(redraw==2) restore_screen();
       for(i=0;i<=depth;i++){
         int tn,j;
-        tn=children(parent[i],draw_list); h=(tn?tn+2:3)+(i==0?1:0);
+        tn=menu_children(parent[i],draw_list); h=(tn?tn+2:3)+(i==0?1:0);
         if(h>screen_rows) h=screen_rows;
         if(i==0) y=appearance.menu_top?0:screen_rows-h;
         else {
@@ -1076,7 +1275,12 @@ static int menu(void)
                  (i==0)?C_ROOT_TITLE:C_TITLE);
         for(j=0;j<tn && j<h-2;j++){
           node=draw_list[j];
-          if(nodes[node].folder){
+          if(node==BUILTIN_POWER){
+            textout(x+1,y+1+j,"Shutdown/Reboot",(j==sel[i])?C_SELECTED:C_ITEM,18);
+          } else if(nodes[node].separator){
+            int a=(j==sel[i])?ATTR(appearance.selected_bg,appearance.border):C_BORDER;
+            int sx;for(sx=0;sx<18;sx++)cell(x+1+sx,y+1+j,196,a);
+          } else if(nodes[node].folder){
             textout(x+1,y+1+j,nodes[node].title,(j==sel[i])?C_SELECTED:C_FOLDER,16);
             cell(x+17,y+1+j,' ',(j==sel[i])?C_SELECTED:C_FOLDER);
             cell(x+18,y+1+j,16,(j==sel[i])?C_SELECTED:C_FOLDER);
@@ -1106,16 +1310,26 @@ static int menu(void)
       }
       if((mb&1) && hit<0){close_menu();return -1;}
       if(hit>=0 && pos>=0){
-        int hn=children(parent[hit],hitlist);
+        int hn=menu_children(parent[hit],hitlist);
         if(pos<hn){
           depth=hit;sel[hit]=pos;node=hitlist[pos];
+          if(node==BUILTIN_POWER && (mb&1)){
+            int action=power_dialog();
+            if(action){
+              close_menu();
+              if(action==1){if(!acpi_poweroff())puts("Launch!: ACPI power off is unavailable or did not complete.");}
+              else cold_reboot();
+              return -1;
+            }
+            redraw=2;continue;
+          }
           if(mb&2){
-            if(edit_dialog(node) && !save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");
+            if(node!=BUILTIN_POWER && !nodes[node].separator && edit_dialog(node) && !save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");
             redraw=2;continue;
           }
           if(mb&1){
             if(nodes[node].folder && depth<MAX_DEPTH-1){depth++;parent[depth]=node;sel[depth]=0;redraw=2;continue;}
-            if(!nodes[node].folder){run_node=node;close_menu();return node;}
+            if(!nodes[node].folder && !nodes[node].separator){run_node=node;close_menu();return node;}
           }
         }
       }
@@ -1126,15 +1340,17 @@ static int menu(void)
     if((key_shift&0x04) && key_scan==0x1E){
       if(add_dialog(parent[depth],depth)){
         if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");
-        n=children(parent[depth],list);for(i=0;i<n;i++)if(list[i]==added_visible_node)sel[depth]=i;
+        n=menu_children(parent[depth],list);for(i=0;i<n;i++)if(list[i]==added_visible_node)sel[depth]=i;
       }
       redraw=2;
     }
     else if((key_shift&0x04) && key_scan==0x20 && n>0){
       node=list[sel[depth]];
+      if(node==BUILTIN_POWER){redraw=1;continue;}
       {
         char question[64];
-        sprintf(question,"Remove %s from the menu?",nodes[node].title);
+        if(nodes[node].separator)strcpy(question,"Remove this separator from the menu?");
+        else sprintf(question,"Remove %s from the menu?",nodes[node].title);
         if(confirm_box("Remove Item",question)){
         delete_tree(node);normalize_order(parent[depth]);if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");
         }
@@ -1143,17 +1359,21 @@ static int menu(void)
     }
     else if((key_shift&0x04) && key_scan==0x12 && n>0){
       node=list[sel[depth]];
-      if(edit_dialog(node) && !save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");
+      if(node!=BUILTIN_POWER && !nodes[node].separator && edit_dialog(node) && !save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");
       redraw=2;
     }
     else if((key_shift&0x04) && (key_scan==0x48 || key_scan==0x8D) && n>0){
-      sel[depth]=move_item(parent[depth],sel[depth],-1);if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");redraw=1;
+      node=list[sel[depth]];
+      if(node!=BUILTIN_POWER){sel[depth]=move_item(parent[depth],sel[depth],-1);if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");}
+      redraw=1;
     }
     else if((key_shift&0x04) && (key_scan==0x50 || key_scan==0x91) && n>0){
-      sel[depth]=move_item(parent[depth],sel[depth],1);if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");redraw=1;
+      node=list[sel[depth]];
+      if(node!=BUILTIN_POWER){sel[depth]=move_item(parent[depth],sel[depth],1);if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");}
+      redraw=1;
     }
     else if((key_shift&0x04) && key_scan==0x1F){
-      if(n>0){node=list[sel[depth]];sort_menu(parent[depth]);n=children(parent[depth],list);for(i=0;i<n;i++)if(list[i]==node)sel[depth]=i;if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");}
+      if(n>0){node=list[sel[depth]];sort_menu(parent[depth]);n=menu_children(parent[depth],list);for(i=0;i<n;i++)if(list[i]==node)sel[depth]=i;if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");}
       redraw=1;
     }
     else if(k==0x4800 && n>0){sel[depth]=(sel[depth]+n-1)%n;redraw=1;}
@@ -1161,8 +1381,13 @@ static int menu(void)
     else if(k==0x4B00){if(depth){depth--;redraw=2;}}
     else if((k==13 || k==0x4D00) && n>0){
       node=list[sel[depth]];
-      if(nodes[node].folder && depth<MAX_DEPTH-1){depth++;parent[depth]=node;sel[depth]=0;redraw=1;}
-      else if(k==13 && !nodes[node].folder){run_node=node;close_menu();return node;}
+      if(node==BUILTIN_POWER && k==13){
+        int action=power_dialog();
+        if(action){close_menu();if(action==1){if(!acpi_poweroff())puts("Launch!: ACPI power off is unavailable or did not complete.");}else cold_reboot();return -1;}
+        redraw=2;
+      }
+      else if(nodes[node].folder && depth<MAX_DEPTH-1){depth++;parent[depth]=node;sel[depth]=0;redraw=1;}
+      else if(k==13 && !nodes[node].folder && !nodes[node].separator){run_node=node;close_menu();return node;}
     }
   }
 }
@@ -1310,16 +1535,16 @@ static int queue_macro(const char *text)
 
 static void show_help(void)
 {
-  puts("Launch! 1.2 - lightweight command menu for DOS\n");
+  puts("Launch! 1.5 - lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /?]\n");
   puts("Menu management shortcuts:");
-  puts("  Ctrl+A        Add a folder or launcher");
+  puts("  Ctrl+A        Add a folder, launcher or separator");
   puts("  Ctrl+D        Delete the selected item");
   puts("  Ctrl+E        Edit the selected item");
   puts("  Ctrl+Up/Down  Move the selected item");
   puts("  Ctrl+S        Sort the current menu\n");
   puts("Command-line parameters:");
-  puts("  /CONFIG       Configure colours, position and clock");
+  puts("  /CONFIG       Configure colours, position, power item and clock");
   puts("  /?            Show this help");
 }
 

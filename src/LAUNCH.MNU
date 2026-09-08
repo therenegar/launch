@@ -1,4 +1,4 @@
-; Launch! 1.2 menu definition
+; Launch! 1.5 menu definition
 ; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)
 
 [Launcher]

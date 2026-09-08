@@ -1,0 +1,753 @@
+; AutoGen 1.5 recognition database recovered from DirectAccess 5.19
+; primary|support file 1|support file 2|program|category|company
+; A blank support field means no additional identification file is required.
+
+ABILITY.BAT|A.EXE||Ability|Integrated|Migent Software Corp.
+APLUS.EXE|APLUS.OVL|APSPL.OVL|Ability Plus|Integrated|Migent Software Corp.
+AP.EXE|AR.EXE||Account Mate: Accounts|Applications|Sourcemate Information Service
+GL.EXE|MI.EXE||Account Mate: General|Applications|Sourcemate Information Service
+MI.EXE|OI.EXE||Account Mate: Inventory|Applications|Sourcemate Information Service
+PO.EXE|OI.EXE||Account Mate: Purchase|Applications|Sourcemate Information Service
+TAP3.EXE|||Accounting Partner III|Applications|Star Software Systems, Inc.
++.EXE|||Accpac Plus|Applications|Computer Associates
+CMS.EXE|CMS.COM||Act I Accounting|Applications|Cougar Mountain Software
+ACT.EXE|ACT.HLP||Act!|Project Mgmt|Conductor Software, Inc.
+PLANNER.EXE|PLANNER.DEF|PLANNER.INS|Action Planner|Project Mgmt|Power Up Software Corp.
+AB.EXE|AP.PRN||Address Book Plus|Applications|Power Up Software Corp.
+AFT.EXE|TITLE.PIC|CRASH.PIC|Advanced Flight Trainer|Games|Electronic Arts
+AREV.EXE|REVBOOT||Advanced Revelation|Utilities|Cosmos
+AREV.EXE|REVBOOT||Advanced Revelation|Applications|Revelation Technologies, Inc.
+ALGEBRA.EXE|BORDER.PIC|CANDY.PIC|Algebra Shop|Education|Scholastic, Inc.
+A4.EXE|A4.DFL|PRINTER.DTA|Alpha Four|Databases|Alpha Software Corp.
+A3.COM|A3MAIN.EXE|A3VIEW.EXE|Alpha Three|Databases|Alpha Software Corp.
+AWORKS.EXE|AWORKS.DB|AWORKS.SS|Alphaworks|Integrated|Alpha Software Corp.
+AMI.EXE|!OVRHD1.STY|!AMI.STY|Ami|Windows Apps|Samna Corp.
+AMORT.EXE|A3.EXE||Amortizer III|Applications|Good Software Corp.
+APLUS.EXE|APLISU.CFG||Amortizer Plus|Applications|Good Software Corp.
+ANALYST.EXE|||Analyst|Applications|Structured Systems Group
+ANALY.EXE|||Analyticalc|Spreadsheets|General Cybernetic Engineering
+APPLY.EXE|||Apply - Process Job|Applications|Bonner & Moore Associates, Inc
+ARRIBA.EXE|ALOADED.EXE|ATSR.EXE|Arriba|Applications|Good Software Corp.
+ART.COM|||Art - Artificial Art|Graphics|Inference Corp.
+ARTFILE.EXE|||Art File - Article|Applications|Frambach Software Systems
+NEGO.EXE|NEGO.GEN|NEGO.MOD|Art Of Negotiating|Education|Experience In Software, Inc.
+A&L_EDIT.EXE|||Arts & Letters Editor|Desktop Publish|Computer Support Corp.
+ATERM.EXE|ATERM.CNF||Aterm|Communications|DMA
+ACAD.EXE|||AutoCAD|Applications|Autodesk, Inc.
+AA.EXE|AA.CFG|AAPLAY.EXE|Autodesk Animator|Applications|Autodesk, Inc.
+AUTODIM.EXE|||Autodimension|Applications|Generic Software, Inc.
+AM.EXE|CYCOLOGO.DWG||Automanager|Graphics|Cyco Automation
+SKETCH.EXE|||Autosketch|Applications|Autodesk, Inc.
+AWARD.EXE|AWARDIT.PIC||Award Maker Plus|Desktop Publish|Baudville, Inc.
+BACKIT.EXE|||Back It - Hard Disk|Utilities|Gazelle Systems
+BCKCOMON.EXE|||Backgammon|Games|Personally Developed Software
+BACKPAK.EXE|||Backpak|Utilities|California Software Products
+BOP.EXE|||Balance Of Power|Windows Apps|Mindscape, Inc.
+BM.EXE|BM.OVL|BMUIFIL.DAT|Bank Mate|Applications|Pratical Software, Inc.
+BSW.EXE|KEYS.BSW||Bank Street Writer Plus|Word Processing|Broderbund Software, Inc.
+BANNER.EXE|BANNER.BRN||Banner|Applications|Broderbond Software, Inc.
+BG.EXE|BG001.DAT|BG011.DAT|Bar Games|Games|Accolade
+SATIA.EXE|DSTUDYIA.EXE||Barron's S.A.T.|Education|Barron's Educational Series
+BW.COM|||Battery Watch|Utilities|Traveling Software, Inc.
+CHESS.EXE|ALLCANM1|ALLCANM2|Battle Chess|Games|Interplay
+BEDFORD.EXE|||Bedford Integrated|Applications|Bedford Software
+BIBLIO.EXE|||Biblio|Word Processing|Personal Bibliographic Softwar
+BIGPRINT.COM|||Bigprint Double|Utilities|ATC Software
+BITCOM.EXE|COMM.DAT|COMM.GLO|Bitcom|Communications|Bit Software, Inc.
+COTOPX.EXE|||Bitstream Fontware|Word Processing|Bitstream, Inc.
+BOARDGAM.EXE|||Board Games Selection|Games|Keypunch Software
+BCALC.EXE|BCALC.HLP|BCALC.MSG|Boeing Calc|Spreadsheets|Boeing Company
+COOKBOOK.EXE|BAI.INI||Bon Appetit Cookbook|Applications|Pinpoint Publishing
+BOOKMARK.COM|||Bookmark|Utilities|Intellisoft Int'l
+BC.EXE|BCINST.EXE|PRJ2MAK.EXE|Borland C++|Programming|Borland international
+NVOICE.EXE|NVOFIG.EXE|TERM.TER|Boss - Invoicing Module|Applications|Balcones Computer Corp.
+ACCOUNT.EXE|CHART.ACT|JORDIR.ACT|Boss Financial Account.|Applications|Balcones Computer Corp.
+BOWL.EXE|BOWLING.CNF|BWNSTL.OVR|Bowling League Secret.|Applications|CDE Software
+BOWL.COM|BOWL.000|BOWL.001|Bowling League Secret.|Applications|Lloyd C. Bowen, Jr.
+BOYAN.COM|||Boyan D3 Communic.|Communications|Boyan Communications
+CBPI.EXE|C99MENU.EXE||BPI General Accounting|Applications|BPI Systems, Inc.
+BRIDGE.EXE|||Bridge|Games|Artworx Software Co., Inc.
+BRIEF.EXE|STARTUP.COM||Brief|Word Processing|Solution Systems
+F.EXE|F.HLP|F.CNS|Brooklyn Bridge|Communications|Fifth Generation Systems, Inc.
+ED.EXE|MANUAL1.CPR|MANUAL2.CPR|Brown Bag Word Proces.|Word Processing|Software Resource Group, Inc.
+BUDG.EXE|||Budgetrak|Applications|Software Associates Laboratori
+BUREAUCR.COM|BUREAUCR.DAT||Bureaucracy|Games|Infocom, Inc.
+CYMA3.EXE|CYMSG||Business Accounting|Applications|Cyma/Worldwide Technology
+BP.EXE|SF.VAR|BUSPLAN.VOL|Business Plan|Applications|PSI Research
+BYLINE.COM|BYLINE.HLP||Byline|Desktop Publish|Ashton-Tate
+CALC2.EXE|||Calc2|Applications|Expressware
+CALC.COM|CALC.HLP||Calculator|Applications|Wordperfect Corp.
+CCPLUS.EXE|CCPLUS.FNT|CCPLUS.HLP|Calendar Creator Plus|Desktop Publish|Power Up Software Corp.
+CC.EXE|CC30.CFG||Carbon Copy Plus|Communications|Microcom Software Division
+CARMEN.EXE|CARMEN.DAT|DETECTIV.DAT|Carmen Sandiego|Education|Broderbund Software, Inc.
+CASHFLOW.EXE|||Cashflow|Applications|Cashflow Software
+CTGRAF.EXE|||Cashtrac|Applications|Sublogic Corp.
+CASHTRAC.EXE|||Cashtrack - Home|Applications|Sublogic Corp.
+GATEWAY.EXE|GWADMEND.EXE||cc:Mail Gateway|Communications|cc:Mail, Inc.
+MAIL.EXE|NOTIFY.COM|MESSENGR.EXE|cc:Mail LAN|Communications|cc:Mail, Inc.
+REMOTE.EXE|SNAPSHOT.COM||cc:Mail Remote|Communications|cc:Mail, Inc.
+CCSD.EXE|||CCS Designer|Applications|Magellan Group, Inc.
+CELB.EXE|CELB.FC||Celebrity|Word Processing|Good Software Corp.
+QUICK.EXE|SAT.EXE||Certus|Utilities|FoundationWare
+GR-BG2.EXE|||Championship Backgammon|Games|Spinnaker Software
+CM.EXE|BRUN11B.EXE||Chart-Master|Graphics|Ashton-Tate
+CHECKIT.EXE|CHECKIT.CNF|CHECKIT.OVL|CheckIt|Utilities|TouchStone Software Corp
+CM.COM|CM.OVL|CM.000|CheckMate|Applications|Custom Technologies
+CMATE.EXE|REPORT.EXE|HOSPITAL.DAT|CHECKMATE|Applications|Logicare Corporation
+CMATEN.EXE|REPORTN.EXE|HOSPITAL.DAT|CHECKMATE - NETWORK|Applications|Logicare Corporation
+CMGL.COM|CMGL.OVL|CMGL.000|CheckMate-GL|Applications|Custom Technologies
+CHECKOUT.EXE|CHECKOUT.SET||CheckOut|Applications|Logicare Corporation
+CHECK31N.EXE|MANAGERN.EXE|HOSPITAL.DAT|CHECKOUT - NETWORK|Applications|Logicare Corporation
+CHECK31.EXE|MANAGER.EXE|HOSPITAL.DAT|CHECKOUT Version 3|Applications|Logicare Corporation
+CHECK.EXE|CHKS&BAL.CNF|CBNSTL.OVR|Checks & Balances|Applications|CDE Software
+CHCKBDGT.COM|||Checks And Budgets|Applications|Parsons Technology
+CHESS.EXE|CHESS1.OVL||Chess Master 2000|Games|Software Toolworks, Inc.
+2100.EXE|SYSTEM01.FNT||Chess Master 2100|Games|Software Toolworks, Inc.
+PROX.EXE|PROXMTY.CFG||Choice Words|Word Processing|Proximity Technology, Inc.
+CWI.EXE|CWRAL.EXE||Civil War|Games|Avalon Hill
+CLARION.COM|CLARION.OBJ||Clarion Professional|Databases|Clarion Software
+SCRAP.EXE|F1.HLH||Clickart Scrapbook+|Desktop Publish|T/MAKER
+CLIPPER.COM|||Clipper|Databases|Nantucket Corp.
+CLIPPER.EXE|||Clipper|Databases|Nantucket Corp.
+CUSTOMER.COM|||Close-up|Communications|Norton-Lambert Corp.
+SESSION.BAT|SESSION.CFG||Co/Session|Communications|Triton Technologies, Inc.
+COBRA.BAT|EVCALCS.EXE|CAGGREG.EXE|Cobra|Applications|Welcom Software Technology
+CSM.EXE|||Codesmith Debugger|Programming|Visual Age
+COLORIX.EXE|PRINTIX.EXE|RIXINFO.EXE|ColoRIX|Graphics|Rix Softworks, Inc.
+COMPARE.COM|NETCOMP.COM|COMPDEF.SYS|CompareRite|Word Processing|Jurisoft, Inc.
+CIM.EXE|||Compuserve Info Manager|Communications|Compuserve
+D.EXE|D1P1.MAP|D1P2.MAP|Computer Diplomacy|Games|Avalon Hill
+DBMS.COM|||Condor 3|Databases|Condor Computer Corp.
+CBOOK|||Cook Book|Applications|Concept Development Assoc.
+COREFAST.EXE|||Corefast|Utilities|Core International
+COREFAST.EXE|COREFAST.HLP|CFBACK.EXE|Corefast|Utilities|Core International
+CORELDRW.EXE|CDCONFIG.SYS||Corel Draw|Windows Apps|Corel Systems
+CORNER.BAT|CORNER.EXE||Cornerstone|Databases|Infocom, Inc.
+CG.EXE|CGRAMMAR.OV1||Correct Grammar|Word Processing|Lifetree Software, Inc.
+COURIER.BAT|DCOURIER.BAT||Courier|Word Processing|Bitstream, Inc.
+CPR.BAT|F_IMPORT.FOX|FOXPRUN.EXE|CPR Professional|Applications|PSI Research
+DOOM.EXE|DOOM.PIC||Crack of Doom|Games|Addison Wesley Publishing
+CW.EXE|SCENE0.ACC||Crime Wave|Games|Access Software, Inc.
+XB.EXE|CROSS.EXE|XB.OVL|CrossBase|Applications|MAB Software Solutions, Inc.
+XTALK.EXE|STD.XTK||Crosstalk|Communications|Crosstalk Communications
+XTALK.EXE|CONFIG.XWC||Crosstalk for Windows|Windows Apps|Crosstalk Communications
+XTALK.EXE|XTALK.USR||Crosstalk Mk. 4|Communications|Crosstalk Communications
+CRUISE.COM|||Cruise Control|Utilities|Revolution Software, Inc.
+CSS.EXE|||CSS|Applications|StatSoft, Inc.
+CUBIC.EXE|CUBEMORE.EXE||Cubic TIc Tac Toe|Games|Brown-Wagh Publishing, Inc.
+CUBIT.EXE|||Cubit|Utilities|Softlogic Solutions, Inc.
+CURS.EXE|STAR.EXE||Curse of Azur Bonds|Games|Strategic Simulations, Inc.
+CYCLE21.EXE|||Cycle|Graphics|Pardo Corp.
+GPC.BAT|GPCGA.EXE|GPCONFIG.EXE|Cycles|Games|Accolade
+DB.EXE|DAVE1.EXE||D.A.V.E.|Spreadsheets|GOLDATA Computer Services, Inc
+EASY.EXE|EA-00|EA-02|Dac Easy Accounting 1.0|Applications|DacEasy, Inc.
+DEA.EXE|||Dac Easy Accounting 2.0|Applications|DacEasy, Inc.
+DEA3.EXE|||Dac Easy Accounting 3.0|Applications|DacEasy, Inc.
+DEA4.BAT|DEA4.EXE||Dac Easy Accounting 4.0|Applications|DacEasy, Inc.
+DEB.EXE|||Dac Easy Base|Databases|Dac Software, Inc.
+LIGHT.EXE|OPTIONS.EXE||Dac Easy Light|Applications|Dac Software, Inc.
+DEP3.EXE|||Dac Easy Payroll|Applications|Dac Software, Inc.
+DACWORD.EXE|||Dac Easy Word|Word Processing|Dac Software, Inc.
+DEW.EXE|||Dac Easy Word II|Word Processing|Dac Software, Inc.
+MONDAY.COM|||Daily Diary|Applications|Persimmon Software
+DEMO2.EXE|||Dan Bricklin's Demo II|Graphics|Peter Norton Computing, Inc.
+DP.COM|DP.OVL|DP.SYS|Data Perfect|Databases|Wordperfect Corp.
+DBM2.EXE|||Database Manager II|Databases|AV Systems
+DCARE.COM|||Datacare|Utilities|Ellicott Software, Inc.
+DEASE.EXE|||Dataease|Databases|DataEase International, Inc.
+DFRUN.EXE|||Dataflex|Databases|Aim Management Services, Inc.
+DAYFLO.BAT|||Dayflo|Databases|Dayflo, Inc.
+DBASE.EXE|DBASE.OVL||dBase|Databases|Ashton-Tate
+DBASE2.COM|||dBase II|Databases|Ashton-Tate
+DBASE.EXE|||dBase III|Databases|Ashton-Tate
+DBASE.EXE|DBASE.MSG||dBase III Plus|Databases|Ashton-Tate
+DBASE.EXE|DBASE1.HLP|DBASE.RES|dBase IV|Databases|Ashton-Tate
+DCTGRAF.EXE|||Dbase Tools For C|Programming|Ashton-Tate
+DBPUB.BAT|DBSTART.COM|IMAGE|dbPUBLISHER|Applications|Digital Composition System
+DAS.EXE|||Decision Analysis|Applications|Dynacomp, Inc.
+DP.EXE|CAMERA.COM||Deluxepaint II|Graphics|Electronic Arts
+DINO.EXE|DINO2.PCX|ICON.PCX|Designasaurus|Education|Britannica Software
+DC.EXE|DCPRINT.EXE||DesignCAD|Applications|American Small Business
+DC3.EXE|DC3PRINT.EXE||DesignCAD 3-D|Applications|American Small Business
+DESK.EXE|DLM.EXE||Desklink|Utilities|Traveling Software, Inc.
+DESK.EXE|DESKTOP.PDM||Deskmate|Integrated|Tandy Corporation
+HALODPE.EXE|DPG.EXE||Desktop Publisher's|Graphics|IMSI
+DESTROYE.EXE|DESTROYR.DAT|AA.EPX|Destroyer|Games|Epyx Computer Software
+DM.EXE|BRUN11B.EXE||Diagram-Master|Graphics|Ashton-Tate
+DIAGRAPH.EXE|DEFAULT.DIA||Diagraph 2000|Graphics|Computer Support Corp.
+DD.EXE|DD.OVL|WP.OVL|Diamond|Integrated|Mosaic Software, Inc.
+DD.EXE|PROPRINT.BAT|ADDENDUM.TXT|Diamond|Integrated|Mosaic Software, Inc.
+DALOAD.EXE|||Directory Assistant|Databases|Individual Software, Inc.
+DO.EXE|ANALYXE.EXE|FINDFILE.COM|Disk Optimizer|Utilities|Softlogic Solutions, Inc.
+OPTIMIZE.EXE|OPTIMIZE.PGM|ANALYZE.EXE|Disk Optimizer|Utilities|Softlogic Solutions, Inc.
+DL.EXE|DISKLOCK.SYS||DiskLock|Utilities|Fifth Generation Systems, Inc.
+DW3.BAT|DW3PG.COM||Displaywrite 3|Word Processing|IBM
+DW4PG.COM|DW4.TBL||Displaywrite 4|Word Processing|IBM
+DS.BAT|DSMAIN.$VL||Dollars & Sense|Applications|Monogram
+ALONE.EXE|MONSTERS.EGA|MYSTERY.MAZ|Don't Go Alone|Games|Accolade
+DRHALO.EXE|||Dr. Halo|Graphics|Media Cybernetics, Inc.
+RUTH.EXE|||Dr. Ruth|Games|Avalon Hill
+DFX.EXE|DFX.CNF||Drafix|Applications|Foresight Resouces Corp.
+DREAM.EXE|DREAM.COM||Dream House|Desktop Publish|Computer Easy Int'l.
+DSO.COM|DSO.HLP||DS Optimize|Utilities|Design Software, Inc.
+E78.EXE|E78GEN.EXE|E78EUS.INT|E78 Plus|Communications|DCA Inc.
+WEAVER.EXE|||Earl Weaver Baseball|Games|Electronic Arts
+ECAD.EXE|ECAD.MNU||Easy Cad 2|Applications|Evolution Computing
+EASY.EXE|EASY.PIF|SETTINGS.PRF|Easy Extra|Word Processing|Micropro International Corp.
+MAINP.EXE|||Easy Presentation|Graphics|Brown Bag Software
+EP.BAT|EPX.EXE||Easy Project|Applications|Parcell Software
+EASYFLOW.COM|EASYFLOW.EXE||Easyflow|Graphics|Haven Tree Software Ltd.
+EWII.EXE|||Easywriter II|Word Processing|Computer Associates
+ECHELON.EXE|||Echelon|Games|Access Software, Inc.
+WORDIX.EXE|||Edix Text Formatter|Word Processing|Emerging Technology Consultant
+EGAPAINT.EXE|||EGA Paint|Graphics|Rix Softworks, Inc.
+EIGHT.EXE|EIGHT2.OVL||Eight-in-One|Integrated|Spinnaker Software
+8020.EXE|EXP.OVL||Eighty/20 Advanced|Project Mgmt|Eighty/20 Software
+EXPEED.EXE|FUADD.OVL||Eighty/20 Expeed|Project Mgmt|Eighty/20 Software
+EDL.EXE|EDS.EXE||Electric Desk|Integrated|Alpha Software Corp.
+EDSC.EXE|CONFIG.EXE||Electric Desk & Spell|Integrated|Alpha Software Corp.
+ENABLE.EXE|||Enable|Integrated|Enable Software, Inc.
+ENR.EXE|||Enrich|Databases|Migent Software Corp.
+EUREKA.EXE|EUREKA.MAC||Eureka|Applications|Borland
+CHECK.EXE|CHECK2.EXE|CHECK4.EXE|Express Check|Applications|Expressware
+EP.COM|EP.INI||Express Publisher|Desktop Publish|Power Up Software Corp.
+CALC.EXE|BW.PRO|SL.PRO|ExpressCalc|Spreadsheets|Expressware
+F15.COM|START.EXE||F-15 Strike Eagle II|Games|Microprose Software
+F19.COM|START.EXE||F-19 Stealth Fighter|Games|Microprose Software
+FALCON.EXE|E0|E1|Falcon|Games|Spectrum Holobyte
+FASTFWD.EXE|FFBAT.EXE||Fast Forward|Utilities|Mark Williams Co.
+FG.EXE|FAST.CFG|FAST.PRT|Fast Graph Plus|Graphics|Discovery Computer, Inc.
+FASTBACK.EXE|FRESTORE.EXE||Fastback|Utilities|Fifth Generation Systems, Inc.
+FB.EXE|STARTUP.FB||Fastback Plus|Utilities|Fifth Generation Systems, Inc.
+DMENU.EXE|||Fastpak Data|Databases|DHA Systems Software
+MMENU.EXE|||Fastpak Mail|Word Processing|DHA Systems & Software
+FAST.EXE|||Fastread|Education|Achievement House
+FASTTRAX.EXE|||FastTrax|Utilities|Bridgeway Publishing
+FW2.EXE|SL.EXE||Fastwire II|Communications|Rupp Software
+FD.EXE|FD.CNF|FD.HLP|File Director|Utilities|Fifth Generation Systems, Inc.
+FE.EXE|FE-MAIN.EXE|FE-OVL.EXE|File Express|Databases|Expressware
+FM.COM|FMANAGER.HLP||File Manager|Applications|Wordperfect Corp.
+DRUNMENU.EXE|DCLERCK.EXE|DREPORT.EXE|File Pro|Databases|Small Computer Company
+FS.BAT|FS3.EXE||Flight Simulator|Games|Microsoft
+FS4.EXE|FOREIGN.FS4|KB1.KBD|Flight Simulator|Games|MicroSoft
+FLOW.EXE|||Flow Charting II +|Utilities|Pacesetter Software
+FONTA.EXE|MAKESHOW.COM|TITLE.MVE|Fontavision|Games|Broderbond Software, Inc.
+FONTRIX.EXE|||Fontrix|Word Processing|Data Transforms, Inc.
+FCAUTHOR.EXE|FC.OV1||For Comment|Word Processing|Broderbond Software, Inc.
+FCREVIEW.EXE|FCUNLOCK.COM||For Comment|Word Processing|Broderbond Software, Inc.
+FF.EXE|FF.HLP||Formfiller|Desktop Publish|Bloc Publishing Corp.
+FORMSET.EXE|FSLPASTE.EXE||Formset|Graphics|Softview, Inc.
+FORMTOOL.EXE|FORMTOOL.DOC||Formtool|Desktop Publish|Bloc Publishing Corp.
+FT.EXE|FORMTOOL.BLC||Formtool Gold|Desktop Publish|Bloc Publishing Corp.
+FORM.EXE|FORM.SYS||Formworx|Desktop Publish|Formworx Corp.
+FT.COM|FTREC.$$$|FTBUILD.OVR|Fortune Teller|Applications|Electronic Crystal Ball (the)
+FOXPLUS.EXE|FOX.HLP||Foxbase +|Databases|Fox Software, Inc.
+MFOXPLUS.EXE|MFOXPLUS.OVL||Foxbase +|Databases|Fox Software, Inc.
+FOXPLUS.EXE|||Foxbase Plus|Databases|Fox Software, Inc.
+FOXPRO.EXE|DFINST.EXE|DFLOW.EXE|FoxPro|Databases|Fox Software, Inc.
+FW.EXE|FW.OVL||Framework|Integrated|Ashton-Tate
+FRW.EXE|||Freeway|Communications|Champion Business Systems
+GALAXY.EXE|GALMAIN.DIC|GALAXY.MSG|Galaxy 2.43|Word Processing|PSI Research
+GBA.EXE|GAMESTAR.PIC||GBA Basktball|Games|Gamestar
+TGSMENU.EXE|||General Store|Applications|Crichlow Data Sciences, Inc.
+G3D.EXE|||Generic 3-D|Graphics|Generic Software, Inc.
+AUTOCON.EXE|||Generic Autoconvert|Applications|Generic Software, Inc.
+CADD.EXE|||Generic Cadd|Graphics|BV Engineering
+GEN.EXE|GEN.OVL||Genifer|Programming|Bytel Corp.
+GEOS.EXE|GEO.INI|SETUP.EXE|Geoworks Ensemble|Integrated|Geoworks
+FOOTBALL.EXE|GAMESTAR.CGS||GFL Football|Games|Gamestar
+GLYPHIX.COM|||Glyphix Font Manager|Word Processing|Swfte International
+GSSTAT.EXE|GSSTAT.OVL|GSTAHELP.CMP|GoldSpread Stat|Spreadsheets|PSI Research
+GMK2.EXE|||Grammatik II|Word Processing|Reference Software
+GMK3.EXE|DICTUTIL.EXE||Grammatik III|Word Processing|Reference Software
+G4.EXE|G4.DIC||Grammatik IV|Word Processing|Reference Software
+GP.EXE|DETROIT.PC5||Grand Prix|Games|Accolade
+GP.EXE|STATUS.PCS|XTRACKA.PCS|Grand Prix Circuit|Games|Accolade
+BRIDGE|||Grand Slam Bridge|Games|Cybron, Inc.
+GV.EXE|GVCONG.PV||Grandview|Utilities|Symantec
+KENNEDY.BAT|MIRKWOOD.DAT||Guardians Of Infinity|Games|Paragon Software
+GUIDE.EXE|||Guide|Applications|Owl International, Inc.
+GS.EXE|G5B.MAP||Gulf Strike|Games|Avalon Hill
+HB2.BAT|HB.FNT|HB2.FNT|Hard Ball II|Games|Accolade
+HG.EXE|HG.OVL|HGMAIN.OVL|Harvard Graphics|Graphics|Software Publishing Corp.
+HPG.EXE|||Harvard Presentation|Graphics|Software Publishing Corp.
+FP.EXE|||Harvard Professional|Desktop Publish|Software Publishing Corp.
+HTPM.EXE|||Harvard Total Project|Project Mgmt|Software Publishing Corp.
+HL.EXE|X1065|X1565|Headliner|Applications|Salinon Software, Inc.
+METAL.EXE|||Heavy Metal|Games|Access Software, Inc.
+HELI.COM|HELI.SYS|HELI0.MDL|Helicopter 3-D|Games|Sierra On-line, Inc.
+DFORMS.BAT|||Helvetica: Forms|Word Processing|Adobe Systems, Inc.
+DHELV-L.BAT|||Helvetica: Landscape|Word Processing|Adobe Systems, Inc.
+DVU-H1-L.BAT|||Helvetica: Landscape|Word Processing|Adobe Systems, Inc.
+DVU-H2-L.BAT|||Helvetica: Landscape|Word Processing|Adobe Systems, Inc.
+DHELV-P.BAT|||Helvetica: Portrait|Word Processing|Adobe Systems, Inc.
+DVU-H1-P.BAT|||Helvetica: Portrait|Word Processing|Adobe Systems, Inc.
+DVU-H2-P.BAT|||Helvetica: Portrait|Word Processing|Adobe Systems, Inc.
+HIJAAK.EXE|CONVERT.EXE||HiJaak|Graphics|Inset Systems, Inc.
+HITCHHIK.COM|HITCHHIK.DAT||Hitchhiker's Guide|Games|Infocom, Inc.
+HOME.EXE|RECORDS.INV|HOME.DOC|Home Inventory|Applications|Byte Size
+HOMETOWN.EXE|BAKERY.ART|BANK1.ART|Hometown, U.S.A.|Education|Publishing International
+VKETTE.COM|||Hot Rod Disk - Mace|Utilities|Paul Mace Software
+HACODE.EXE|||Hyperaccess|Communications|Hilgraeve, Inc.
+DRAWASST.EXE|||IBM Drawing Assistant|Graphics|IBM
+T189.BAT|T189.IFX|INFO89.PRM|IFX89|Applications|Informatrix Group
+IMAGE.EXE|||Image Builder|Graphics|Tridos Software Publishers
+IMAGINE.EXE|||Imagine This|Desktop Publish|Software Machine (the)
+ACS-PERS.EXE|||In-Control|Databases|Projectronix
+INDEX.EXE|||Index|Word Processing|Digital Marketing Corp.
+ND.EXE|PY.EXE||Indian Ridge Accounting|Applications|Indian Ridge Enterprises, Inc.
+AR.EXE|PY.EXE||Indian Ridge AR Module|Applications|Indian Ridge Enterprises, Inc.
+GL.EXE|IY.EXE||Indian Ridge General|Applications|Indian Ridge Enterprises, Inc.
+IY.EXE|PY.EXE||Indian Ridge Inventory|Applications|Indian Ridge Enterprises, Inc.
+OE.EXE|PY.EXE||Indian Ridge Order|Applications|Indian Ridge Enterprises, Inc.
+AP.EXE|ND.EXE||Indian Ridge Payables|Applications|Indian Ridge Enterprises, Inc.
+PY.EXE|GL.EXE||Indian Ridge Payroll|Applications|Indian Ridge Enterprises, Inc.
+INPAC.EXE|SYSINFO.MEM|RPTOPTS.MEM|Inpac Profit Power Tool|Applications|Tak Technologies, Inc.
+REPLAY.COM|||Instant Replay|Utilities|Nostradamus, Inc.
+IP.EXE|IDISC.OVL||Instaplan|Project Mgmt|Instaplan Corp.
+I7.EXE|||Integrated 7+|Integrated|Mosaic Software, Inc.
+IZE.EXE|IZE.GDN|IZE.SCR|Ize|Databases|Persoft, Inc.
+JAV.EXE|||Javelin|Spreadsheets|Javelin Software Corp.
+JAV.EXE|JAV0.OVL||Javelin PLUS|Applications|Information Resource, Inc.
+MENU.EXE|JI.JPQ|J2.JPQ|Jeopordy|Games|Share Data
+JET.EXE|||Jet|Games|Sublogic Corp.
+JF.EXE|DATA.EXE||Jet Fighter|Games|Velocity Development
+JIGSAW.EXE|JIGSAW.OVL|JIGSAW.LAT|Jigsaw!|Games|Britannica Software
+MFB.EXE|TALK.BIN|GRAPHICS.CGA|John Madden Football|Games|Electronic Arts
+JOSHUA.BAT|JOSHUA.EXE||Joshua's Reading Mach.|Education|Compu-Teach, Inc.
+KEDIT.EXE|KEDIT.HLP||K EDIT|Word Processing|Mansfield Software Group, Inc.
+KERMIT.EXE|MSKERMIT.INI||Kermit|Communications|Columbia University
+KERNFAST.EXE|||Kernfastic|Desktop Publish|Computer Group (the)
+KC.BAT|CHART.EXE||Keychart|Graphics|Softkey Software Products, Inc
+MAILER.EXE|||Keymailer|Applications|Softkey Software Products, Inc
+KP.BAT|KP.HLP||Knowledgepro|Word Processing|Knowledge Garden, Inc.
+LABELS.EXE|LABELS.OVL||Labels Unlimited|Graphics|Power Up Software Corp.
+LACRAM.EXE|LACRAM.CFG||LACRAM Link|Utilities|Final Solution Corp.
+LL.EXE|DD.EXE|DD.BIN|Laplink|Communications|Traveling Software, Inc.
+LL3|||Laplink III|Utilities|Traveling Software
+LC.COM|||Lattice C V 2.15|Programming|Lattice, Inc.
+LC.EXE|||Lattice C V 3.xx|Programming|Lattice, Inc.
+LS2.EXE|||Lawsearch Plus Expert|Communications|Direct Aid
+LEATHER.EXE|LEATHER.DAT||Leather Goddesses|Games|Infocom, Inc.
+DGOTHIC.BAT|||Letter Gothic|Word Processing|Bitstream, Inc.
+L&D.EXE|DIAG.VCE|SCR.VCE|Life & Death|Games|Software Toolworks, Inc.
+L&D.EXE|SURGERY1.L&D|SURGERY2.L&D|Life & Death|Games|Software Toolworks, Inc.
+WW.COM|||Lightning Word Wizard|Word Processing|Borland
+GOLF|||Links|Games|Cybron
+AMORTIZE.EXE|||Loan Amortization|Applications|Realty Software Co.
+LCSETUP.EXE|POPLC.EXE||Logical Connection|Utilities|Fifth Generation Systems, Inc.
+LCPSETUP.EXE|LCP.EXE||Logical Connection Plus|Utilities|Fifth Generation Systems, Inc.
+PSHOW.EXE|||Logitech Paintshow|Graphics|Logitech
+123.COM|123.CMP||Lotus 1-2-3|Spreadsheets|Lotus Development Corp.
+123.EXE|123.CMP||Lotus 1-2-3|Spreadsheets|Lotus Development Corp.
+123.EXE|123DOS.EXE||Lotus 1-2-3 Rel. 3|Spreadsheets|Lotus Development Corp.
+AGENDA.EXE|AGENDA.RI||Lotus Agenda|Project Mgmt|Lotus Development Corp.
+FL.COM|FLACESS.EXE||Lotus Freelance|Graphics|Lotus Development Corp.
+FL.COM|FL.MNU||Lotus Freelance Plus|Graphics|Lotus Development Corp.
+GW.COM|GCISD.EXE||Lotus Graphwriter II|Graphics|Lotus Development Corp.
+HAL.EXE|HALDEMO.COM||Lotus Hal|Spreadsheets|Lotus Development Corp.
+MS.EXE|MSMENU.EXE||Lotus Manuscript|Word Processing|Lotus Development Corp.
+REPORT.EXE|RINSTALL.EXE||Lotus Report Writer|Spreadsheets|Red Wing Business Systems, Inc
+SYMPHONY.EXE|SYMPHONY.CNF||Lotus Symphony|Integrated|Lotus Development Corp.
+LTA.EXE|SYS$LOG.DAT||LT Auditor|Utilities|Blue Lance Inc.
+LTEVENT.EXE|LTEVENT.BTV||LT Event|Utilities|Blue Lance Inc.
+LTSTAT.EXE|STAT.HLP||LT Stat|Utilities|Blue Lance Inc.
+MACE.EXE|||Mace 5|Utilities|Fifth Generation Systems, Inc.
+MACE.EXE|||Mace Gold|Utilities|Fifth Generation Systems, Inc.
+XFDISK.COM|HFORMAT.COM|HTEST.COM|Mace Hard Disk|Utilities|Paul Mace Software
+MACE.EXE|FRAGCHK.EXE||Mace Utilities|Utilities|Fifth Generation Systems, Inc.
+VACCINE.EXE|SURVEY.EXE||Mace Vaccine|Utilities|Fifth Generation Systems, Inc.
+ME.EXE|MEM.MEX||Macro Editor|Applications|Wordperfect Corp.
+MN.EXE|MN.CAP||Magic Mirror|Utilities|Softlogic Solutions, Inc.
+CTL.BAT|MGHELP.BAT||Magic PC|Databases|Aker Corp.
+MS.EXE|FLASH.EXE|SCRAMBLE.EXE|Magic Spells|Education|Learning Co. (the)
+ECOMP.EXE|||Magnatype- Compugraphic|Desktop Publish|Magna Computer Systems, Inc.
+JCOMP.EXE|||Magnatype- Compugraphic|Desktop Publish|Magna Computer Systems, Inc.
+CCOMP.EXE|||Magnatype- Linotype 202|Desktop Publish|Magna Computer Systems, Inc.
+BCOMP.EXE|||Magnatype- Linotype 300|Desktop Publish|Magna Computer Systems, Inc.
+LCOMP.EXE|||Magnatype- Postscript|Desktop Publish|Magna Computer Systems, Inc.
+MJVGA.EXE|PAL.CFG|V54.ICN|Mah Jongg 1.1|Games|Ron Balewski
+MAI.BAT|OP||MAI/Integrated|Applications|Promark, Ltd.
+MAILEX.EXE|MEX.HLP||Mail Express|Applications|Vision Software
+MTM.BAT|||Managing The Market|Applications|Meca Ventures, Inc.
+MYM.EXE|BUDGET.EXE|PORTFOL.EXE|Managing Your Money|Applications|Meca Ventures, Inc.
+MBS.EXE|||Mandelbrot Set|Graphics|IBM
+MAPINFO.COM|MAPINFOP.EXE|HCONFIG.EXE|MapInfo|Graphics|Mapinfo, Inc.
+MM1.EXE|||Mapmaker|Graphics|Select Micro Systems, Inc.
+MASS11.COM|M11WORDP.EXE||Mass-11|Word Processing|Microsystems Engineering Corp.
+MBP.COM|MBPTEXT.DAT|MTK.BIN|Math Blaster Plus|Education|Davidson And Associates, Inc.
+MR.EXE|MRCLOWN.IND|GYPSY.CMP|Math Rabbit|Education|Learning Co. (the)
+MCAD.EXE|MCAD.HLP||Mathcad|Education|Mathsoft, Inc.
+MET.BAT|KG16.COM|HIMATH.EXE|Mathematics Exploration|Education|IBM
+MAVIS.EXE|MAVISC.DAT|LOGIC.AI|Mavis Beacon Typing|Education|Software Toolworks, Inc.
+MXZ.BAT|SSS_MAIN.EXE||Maximizer|Project Mgmt|Richmond Software, Inc.
+GOLF.EXE|GOLF.DAT||Mean 18 Golf|Games|Accolade
+MS.EXE|CAR.ACC||Mean Streets|Games|Access Software, Inc.
+ANALYST.COM|||MI-Analyst|Applications|Budget Computer, Inc.
+COOKBOOK.EXE|MCI.INI||Micro Cookbook|Applications|Pinpoint Publishing
+MI1000.EXE|PS1000.EXE||Micro Illustrator|Desktop Publish|Island Graphics Corporation
+MISII.EXE|||Micro Stat II|Applications|Ecosoft, Inc.
+MPSYCH.BAT|PSYCH.MFT|PSYCH.MFX|Micro-Psych|Applications|Magnum Medical Software
+DESIGNER.EXE|METALIB.EXE||Micrographix Designer|Windows Apps|Micrografx, Inc.
+BOOKS.EXE|||Microsoft Bookshelf|Applications|Microsoft
+CL.EXE|C1.EXE|C1L.EXE|Microsoft C|Programming|Microsoft
+CHART.COM|MC.INI|MC.SYS|Microsoft Chart|Graphics|Microsoft
+EXCEL.EXE|EXCELHLP.HLP||Microsoft Excel|Windows Apps|Microsoft
+LEARN.COM|LD.PGM|LEARN.PIF|Microsoft Learning DOS|Education|Microsoft
+MP.EXE|MP.INI||Microsoft Multiplan|Spreadsheets|Microsoft
+PAINT.BAT|PBRUSH.EXE|PBRUSH.INI|Microsoft Paintbrush|Graphics|Microsoft
+PROJ.COM|PROJ.INI|PROJ.PGM|Microsoft Project|Project Mgmt|Microsoft
+QB.EXE|LINK.EXE|BUILDLIB.EXE|Microsoft Quick Basic|Programming|Microsoft
+QB.EXE|QB.LIB|QB.QLB|Microsoft Quick Basic|Programming|Microsoft
+QC.EXE|QC.INI||Microsoft Quick C|Programming|Microsoft
+QP.EXE|QPMKKEY.EXE|QPL.COM|Microsoft Quick Pascal|Programming|Microsoft
+PAINT.EXE|||Microsoft Windows Paint|Windows Apps|Microsoft
+WRITE.EXE|||Microsoft Windows Write|Windows Apps|Microsoft
+WORD.COM|MW.INI||Microsoft Word 4|Word Processing|Microsoft
+WORD.EXE|WORD.PIF||Microsoft Word 5|Word Processing|Microsoft
+WORKS.EXE|WORKS.INI||Microsoft Works|Integrated|Microsoft
+WORKS.EXE|WORKS.INI|SCREEN.GSD|Microsoft Works|Word Processing|Microsoft
+MS.EXE|MSINST.EXE||Microstar|Word Processing|Bank Of America
+MILESTON.COM|||Milestone|Project Mgmt|Digital Marketing Corp.
+MINDVIEW.EXE|MINDVIEW.PKB|MINDVIEW.SBJ|Mindviewer|Applications|Provocative Software, Inc.
+MIRAGE.EXE|||Mirage|Graphics|Datasoft Int'l.
+MIRROR.EXE|PRISM.MAF||Mirror|Communications|Softklone
+MC5.EXE|FM5.EXE||Money Counts|Applications|Parsons Technology
+MOVE-IT.COM|||Move-it Communications|Communications|Woolf Software Systems
+RUN.EXE|||Multi-Base|Databases|Cykic Software, Inc
+MM.EXE|MM.OV1|MM.OV2|Multimate|Word Processing|Ashton-Tate
+MM.EXE|WP.EXE|WP.SER|Multimate Advantage II|Word Processing|Ashton-Tate
+MAX.EXE|||Multimax|Utilities|Getc Software
+MUSIC|||Music Library System|Databases|The Software Guild
+MVPFORTH.EXE|||MVP-Forth 1|Programming|Bell-Atlantic
+F.EXE|MYOVR1.OVL|MYOVR2.OVL|Mybase|Databases|Useful Software, Inc.
+MYLABEL.EXE|||MyLabelMaker|Applications|MySoftware Co.
+MYSTAT.BAT|||Mystat|Applications|Systat, Inc
+NAMER.EXE|SYN1.FIL|SYN1X.FIL|Namer By Salinon|Applications|Salinon Software, Inc.
+NBA.EXE|||NBA|Games|Avalon Hill
+DIALOG.COM|||Networker Plus|Utilities|Wordtech Systems, Inc.
+NEWS.EXE|NEWS.CFG||Newsmaster|Desktop Publish|Unison World
+NFL.EXE|PACKERS.NFL||NFL Challenge|Games|XOR Corp.
+NC.EXE|NCSMALL.EXE||Norton Commander|Utilities|Peter Norton Computing, Inc.
+NU.EXE|NI.EXE|SD.EXE|Norton Utilities|Utilities|Peter Norton Computing, Inc.
+NORTON.EXE|||Norton Utilities|Utilities|Symantec
+NB.EXE|NBMASTER.COM|NBL.OVL|Nota Bene|Word Processing|Dragonfly Software
+NB.EXE|NOTABENE.MAS|NBMASTER.COM|Nota Bene|Word Processing|Equal Access Systems, Inc.
+NOTE.COM|TRNSNOTE.COM|PAD.WKS|Note-it|Spreadsheets|Turner Hall Publishing
+NOTEPLUS.EXE|NOTEPLUS.HLP||Note-it Plus|Utilities|Symantec
+NB.EXE|NOTEBOOK.FIL|NOTEBOOK.HLP|Notebook|Applications|Wordperfect Corp.
+FCONSOLE.EXE|||Novell - Fconsole|Utilities|Novell Inc.
+FILER.EXE|||Novell - Filer|Utilities|Novell Inc.
+PCONSOLE.EXE|||Novell - Pconsole|Utilities|Novell Inc.
+SYSCON.EXE|||Novell - Syscon|Utilities|Novell Inc.
+NUTSHELL.EXE|||Nutshell|Databases|Claris Corp.
+NUTPLUS.EXE|||Nutshell Plus|Databases|Claris Corp.
+OP.COM|||Office Publisher|Desktop Publish|Office Publisher, Inc.
+WP.COM|OWEDIT.OVL||Office Writer|Word Processing|Software Publishing Corp.
+WP.COM|OWMACRO.COM|OWCONFIG.DAT|Office Writer|Word Processing|Software Publishing Corp.
+OMEGA.EXE|SPLASH.TLB||Omega|Games|Origin Systems, Inc
+QUARTZ.EXE|||Omnis Quartz|Databases|Blyth Software, Inc.
+OB.EXE|OB.CGA|OB.EGA|On Balance|Applications|Broderbond Software, Inc.
+ONCE.EXE|||Once Upon a Time|Education|Compu-Teach, Inc.
+1ON1.EXE|1ON1.PIX||One On One|Games|Electronic Arts
+OWP.BAT|||One-Write Accounting|Applications|Great American Software
+OPLAN.BAT|PDMPLACE.EXE||Open Plan|Project Mgmt|Welcom Software Technology
+OSAS.BAT|OSMENU||Open Systems Accounting|Applications|Open Systems, Inc.
+OPTUNE.EXE|||Optune|Utilities|Gazelle Systems
+ORG.EXE|CNFG.BIN||Org Plus|Graphics|Banner Blue
+ORG.EXE|CHART.EXE||Org Plus Advanced|Graphics|Banner Blue
+PACMAN.EXE|||PacMan|Games|Datasoft Int'l.
+PM.EXE|PM.CNF|(C)ALDUS.'88|Pagemaker|Desktop Publish|Aldus
+PAGEONE.COM|||Pageone|Word Processing|QAX Int. Systems
+PARADOX.EXE|||Paradox|Databases|Borland International
+PARADOX2.EXE|PARADOX2.OV1|PARADOX2.OV2|Paradox 2|Databases|Borland
+PARADOX3.EXE|PARADOX3.OV1|PARADOX3.OV2|Paradox 3|Databases|Borland
+PM.EXE|CONFIG.PM4||Pathminder|Utilities|Westlake Data Corp.
+FOCUS.EXE|||PC / Focus|Databases|Information Builders, Inc.
+ANYWHERE.EXE|ANYWHERE.CNF|ACANCEL.EXE|PC Anywhere|Communications|DMA
+PC-DIAL.EXE|||PC Dial|Communications|Buttonware, Inc.
+FULLBAK.COM|FULLBAK.LOG||PC FullBak|Utilities|Westlake Data Corp.
+PCLINK.COM|||PC Link|Communications|Tandem Computers
+PCPAINT.EXE|PAPAINT.OVR|PCPAINT.CFG|PC Paint Plus|Graphics|Mouse Systems Corp.
+PAINT.BAT|PBSETUP.EXE|PBSETUP.SCR|PC Paintbrush Plus|Graphics|Zsoft Corp.
+TEX.EXE|||PC Tex|Desktop Publish|Personal Tex, Inc.
+PCTOOLS.EXE|FORMAT.BAT|PCRESTOR.EXE|PC Tools|Utilities|Central Point Software
+PCBACKUP|||PC Tools - Backup|Utilities|Central Point Software
+COMPRESS.EXE|||PC Tools - Compress|Utilities|Central Point Software
+DESKTOP.EXE|||PC Tools - Desktop|Utilities|Central Point Software
+MIRROR.COM|||PC Tools - Mirror|Utilities|Central Point Software
+PCSHELL.EXE|PCSHELL.OVL||PC Tools - Shell|Utilities|Central Point Software
+ED.EXE|ED.DEF||PC Write|Word Processing|Quicksoft, Inc.
+PCF.EXE|PCFILE.PRO|PCF.HLP|PC-File+|Databases|Buttonware, Inc.
+PCF.EXE|PCF.HLP|PCFIX.EXE|PC-File:db|Databases|Buttonware, Inc.
+FULLBAK.EXE|FULLBAK.LOG||PC-FullBak|Utilities|Westlake Data Corp.
+PCLPAK.EXE|||PCL Pak|Utilities|Hewlett Packard
+PCUSA.EXE|||PCUSA|Applications|PC Globe
+PEACH.EXE|UTILBA.EXE|MENU8.OVL|Peachtree Accounting|Applications|Peachtree Software, Inc.
+PENPLOT.EXE|PENPLOT.HLP||Penplot|Applications|Generic Software, Inc.
+PERFORM.BAT|PERFORM.EXE||Per:form|Desktop Publish|Delrina Technology, Inc.
+BCHECK3.EXE|||Personal Checking|Applications|Heizer Software
+PCONLINE.EXE|||Personal Consultant|Applications|Texas Instruments
+RBASE.EXE|FORMS.MSG|RBLABEL.MSG|Personal R:Base|Databases|Microrim
+FILE.EXE|||PFS:File|Databases|Software Publishing Corp.
+FIRST.EXE|FIRST1.OVL||PFS:First Choice|Integrated|Software Publishing Corp.
+PF.EXE|PF.OVL|PF.PRI|PFS:First Publisher|Desktop Publish|Software Publishing Corp.
+PLAN.EXE|||PFS:Plan|Project Mgmt|Software Publishing Corp.
+PF.EXE|||PFS:Professional File|Databases|Software Publishing Corp.
+PW.COM|PW.PRG|PW.PRI|PFS:Professional Write|Word Processing|Software Publishing Corp.
+PROOF.EXE|||PFS:Proof|Word Processing|Software Publishing Corp.
+REPORT.EXE|RINSTALL.EXE||PFS:Report|Project Mgmt|Software Publishing Corp.
+CRAZE.EXE|||Phrase Craze|Games|Excelsior Systems
+PIXIE.EXE|||Pixie|Graphics|Zenographics, Inc.
+PZ.COM|||Pizazz|Graphics|Application Techniques, Inc.
+PZP.COM|PZP.PZX||Pizazz Plus|Graphics|Application Techniques, Inc.
+PL.EXE|PL.DRS|PL.MRS|Plan Perfect|Spreadsheets|Wordperfect Corp.
+PLANETS.COM|||Planets|Education|Aladdin Software
+PACKRAT2.EXE|PACKRAT2.OVR||Polaris Pack Rat|Windows Apps|Polaris Software
+PQ.COM|PQSG.1|AGIDATA.OVL|Police Quest|Games|Sierra On-line, Inc.
+PM.EXE|SF.VAR|PERSMAN.VOL|Policy Manual|Applications|PSI Research
+START.EXE|8X8D1.DAX|BODY1.DAX|Pool Of Radiance|Games|Strategic Simulations, Inc.
+PB.EXE|PBCONFIG.TAB||Powerbase|Databases|Compuware
+PB.EXE|PBCONFIG.USR||Powerbase|Databases|Compuware
+PB.EXE|PBCONFIG.NET||Powerbase - Network|Databases|Compuware
+PC.EXE|CASH.OVL|CASH.SET|Premium-Cash|Applications|Intellect Software Corp.
+PPC.EXE|PREMIUM.OVL|PREMIUM.SET|Premium-PC|Applications|Intellect Software Corp.
+PRESENT.EXE|MODERN.FNT||Present-It|Graphics|Power Up Software Corp.
+DELITE.BAT|||Prestige Elite|Word Processing|Bitstream, Inc.
+PRESTIGE.BAT|HOLIDAY.SCR||Prestige PC Forms|Desktop Publish|K & H Professional Management
+PT.EXE|PT.MAD|PTFMT.PRM|Primetime Personal|Applications|Wiseware, Inc.
+PS.EXE|PRLIST.PSF|SCRFONT.PSF|Print Shop|Desktop Publish|Broderbond Software, Inc.
+PM.BAT|PMMAIN.EXE||Printmaster|Graphics|Unison World
+PM.EXE|SET.UP||Printmaster Plus|Graphics|Unison World
+PM.COM|PM.HLP||Printmate|Utilities|Micrologic Software, Inc.
+PT.EXE|PRINTOOL.EXE||PrinTool|Utilities|Data Safe Corp.
+PRINTRIX.EXE|||Printrix|Word Processing|Data Transforms, Inc.
+PROCOMM.EXE|CMDCNVT.EXE||Procomm|Communications|Datastorm Technologies
+PCPLUS.EXE|PCEDIT.EXE|PCKEYMAP.EXE|Procomm Plus|Communications|Datastorm Technologies
+PRODIGY.BAT|||Prodigy 2.1|Communications|Prodigy Services Company
+PRODIGY.EXE|||Prodigy 3.1|Communications|Prodigy Services Company
+PWP.EXE|||Professional Writers|Word Processing|Software Publishing Corp.
+INSTRUCT.EXE|START.DAT|INDEX.DAT|Professor DOS!|Education|Individual Software, Inc.
+PW.BAT|SUPPORT.EXE||ProfitWise|Applications|Solomon Software
+PE.EXE|PE.TBL|PEM.MEX|Program Editor|Word Processing|Wordperfect Corp.
+PS4.EXE|PSONE.OVL||Project Scheduler 4|Project Mgmt|Scitor Corporation
+PROTRACS.EXE|||Protracs|Project Mgmt|Applied Microsystems, Inc.
+PTIHP.EXE|||PTI Laser/HL|Desktop Publish|Personal Tex, Inc.
+PUBLISH.BAT|PUBLISH.OVL||Publish-it|Desktop Publish|Time Works
+PAINT.BAT|PCINSTAL.EXE|PBRUSH2.OVL|Publisher's Paintbrush|Graphics|Zsoft Corp.
+PURCHASE.COM|||Purchase Order|Applications|Applied Information Management
+PYRO.EXE|CLOCK.PYR||Pyro!|Utilities|Fifth Generation Systems, Inc.
+QA.COM|QA.DIS||Q & A|Databases|Symantec
+QA.COM|QA1.EXE|QAWP.OVL|Q & A|Databases|Symantec
+QA3.COM|QA.DIS||Q & A|Databases|Symantec
+QW.COM|QW1.EXE||Q & A Write|Word Processing|Symantec
+QD.EXE|||Q-DOS|Utilities|Gazelle Systems
+QD2.EXE|||Q-DOS II|Utilities|Gazelle Systems
+QMODEM.EXE|||Qmodem|Communications|Forbin Project
+QSORT.EXE|||Qsort|Utilities|Structured Systems Group
+Q.EXE|Q2.OVL|Q4.OVL|Quattro|Spreadsheets|Borland
+Q.EXE|QUATTRO.RSC||Quattro|Spreadsheets|Borland
+Q.EXE|||Quattro Pro|Spreadsheets|Borland International
+QUBECALC.COM|||Qubecalc|Spreadsheets|Formalsoft
+Q.EXE|Q.CFG||Quicken|Applications|Intuit
+Q.EXE|Q.CNF||Quicken|Applications|Intuit
+DB3C.EXE|DB3L.EXE||Quicksilver|Databases|Quicksilver Corp.
+MAILMATE.EXE|||Quincy Mailmate|Applications|Quincy Street Corp.
+RR.EXE|RR.OVL||R&R Relational Report|Databases|Concentric Data Systems, Inc.
+RW.EXE|RW.OVL|RW.HFC|R&R Worksheet Report|Spreadsheets|Concentric Data Systems, Inc.
+WSM.EXE|||Ramis PC / Workstation|Databases|Digital Learning Systems, Inc.
+RAMPAGE.EXE|OSHAPES.P16|BLOCKS.P16|Rampage|Games|Activision, Inc.
+SCREEN.COM|PROTO.COM||Rapid Prototyping|Utilities|Genesis Data Systems
+RF.COM|OVERLAY.OVL||Rapidfile|Databases|Ashton-Tate
+RBASE.EXE|RBASE.OVL||Rbase|Databases|Microrim, Inc.
+RBASE.EXE|RBASEI.ID|INITIAL.RBS|Rbase|Databases|Microrim, Inc.
+RBSYSTEM.EXE|||Rbase System V|Databases|Microrim, Inc.
+RR.EXE|RNR.EXE||Read 'n Roll|Education|Davidson And Associates, Inc.
+RR.EXE|RRTITLE|RASHAPES.IND|Reader Rabbit|Education|Learning Co. (the)
+MASTER.COM|||Real World Accounting|Applications|Monterey Computer Consulting
+RPOINT.EXE|||Reference Point|Utilities|LAN Systems Inc.
+REFLECT.EXE|CONVERT.EXE||Reflection|Utilities|IMSI
+REFLEX.EXE|SCRNDRV.RX||Reflex|Databases|Borland
+REFRESE.EXE|||Refresh|Utilities|Soft Logic Solutions
+RELAY.COM|RELAY.MSG||Relay Gold|Communications|Microcom Software Division
+R2CALL.EXE|R2CALL.USR||Remote2 Call|Communications|Crosstalk Communications
+R2HOST.COM|R2.USR||Remote2 Host|Communications|Crosstalk Communications
+RESCUE.COM|RESQDISK.COM||RESCUE Plus|Utilities|Spectrum Computer Consulting
+REV.EXE|REVBOOT||Revelation|Applications|Cosmos
+RIGHT.EXE|COMBINE.DCT||RightWriter|Word Processing|Rightsoft, Inc.
+RIGHT.EXE|RWCONFIG.DCT||RightWriter|Word Processing|Rightsoft, Inc.
+ROCMENU.COM|ROCAON.COM|ROCCHAL.COM|Rocky's Boots|Education|Learning Co. (the)
+ROLODEX.COM|RDODATA.NDX||Rolodex Simulator|Applications|Dac Software, Inc.
+SM.EXE|SMSY001.EXE||Sales Manager|Applications|Market Power Computer Innovati
+SAMNA.COM|||Samna Word IV|Word Processing|Samna Corp.
+SARGON.EXE|SARGON4.DEF||Sargon 4|Games|Spinnaker Software
+SCANRIX.EXE|RIXINFO.EXE||ScanRIX|Applications|Rix Softworks, Inc.
+SCRABBLH.EXE|||Scrabble|Games|Electronic Arts
+CDUSA.BAT|CDUSAP.EXE|QEDITP.EXE|See the USA|Education|Compu-Teach, Inc.
+SOM.EXE|||Shadows of Mordor|Games|Addison Wesley Publishing
+PCSHANG.BAT|||Shanghai|Games|Mediagenic/Solid Gold Software
+SHELL.COM|SHELL.FIL|SHELL.HLP|Shell|Applications|Wordperfect Corp.
+SHULTZ.EXE|||Shultz's Treasure|Games|Computer Easy Int'l.
+SKN.EXE|||Sidekick|Utilities|Borland International
+SIDEWAYS.COM|SIDEWAYS.APP|SWSETUP.COM|Sideways|Utilities|Funk Software, Inc.
+SW123.EXE|||Sideways|Spreadsheets|Funk Software, Inc.
+SM.BAT|SM.EXE||Sign-Master|Desktop Publish|Ashton-Tate
+ACCESS.COM|SILK2WKS.EXE|SILK2WK1.EXE|Silk|Spreadsheets|Daybreak Technologies, Inc.
+SILVER.EXE|||Silverado|Spreadsheets|Computer Associates
+SIMCITY.EXE|DULLSVIL.PSN||Sim City|Games|Broderbond Software, Inc.
+BKKP.EXE|||Simple Bookkeeper|Applications|A.P. Software
+SKY1.COM|||Sky Runner|Games|Spinnaker Software
+MAIN.EXE|SELFTEST.SBE|HELP1.SBE|Small Business Expert|Applications|PSI Research
+SMART.EXE|CONFIGUR||Smart|Integrated|Informix
+SF.BAT|SMARTFC2.COM||Smart Forecasts II|Applications|Smart Software
+SMOVE.EXE|SHOWMOVE.EXE||Smart Move|Communications|Persoft, Inc.
+SMART.COM|OVFILE0.||Smart System|Integrated|Informix
+ST320.EXE|SHOW320.EXE||Smart Term 320|Communications|Persoft, Inc.
+SW_B.EXE|||Smart Words|Word Processing|Addison Wesley Publishing
+SCOM.EXE|SCOM.OVR||Smartcom|Communications|Hayes
+SCOM.EXE|MAIN_SCN.OVL||Smartcom II|Communications|Hayes
+SCOM3.EXE|||Smartcom III|Communications|Hayes
+ST220.EXE|ST220.HSU||SmarTerm 220|Communications|Persoft, Inc.
+ST240.EXE|ST240.HSU||SmarTerm 240|Communications|Persoft, Inc.
+ST400.EXE|ST400.HSU||SmarTerm 400|Communications|Persoft, Inc.
+HDRUN.BAT|SMOOTH.CON|MALE.EXE|Smooth Talker|Education|First Byte
+SOFTSAFE.EXE|||Softsafe|Utilities|Software Directions, Inc.
+SB.EXE|SCCSETUP.DEF|SCC_4D.RTL|Software Bridge|Utilities|System Capability
+SB.EXE|WPF5CONV.EXE||Software Bridge|Word Processing|Systems Compatibility Corp.
+SOLOMON.BAT|SUPPORT.EXE||Solomon III Accounting|Applications|Solomon Software
+SQ.BAT|SIERRA.COM||Space Quest|Games|Sierra On-line, Inc.
+SR.EXE|VSTAR.LBM||Space Rogue|Games|Origin Systems, Inc
+SDP.EXE|||Spellbinder Desktop|Desktop Publish|L/Tek, Inc.
+SPELLBRE.COM|SPELLBRE.DAT||Spellbreaker|Games|Infocom, Inc.
+SPFPC.EXE|SPFPC.MSG||SPF/PC|Word Processing|Command Technology Corp.
+SPLASH.EXE|HELP.MNU||Splash!|Graphics|Spinnaker
+SP.COM|SP.OVL||Sprint|Word Processing|Borland
+SP.EXE|SP.OVL||Sprint|Word Processing|Borland
+SQ2.EXE|UNSQ2.EXE|SQZ.ADN|Sqz! Plus|Spreadsheets|Turner Hall Publishing
+STARWARS.EXE|STARWARS.HSC||Star Wars|Games|Broderbond Software, Inc.
+STATGRAF.EXE|||Statgraphics|Applications|Stsc, Inc.
+STS.EXE|||Stats+|Applications|StatSoft, Inc.
+ST.EXE|SETUP.EXE|ACCO.PPK|Steel Thunder|Games|Accolade
+MAIN.EXE|SBG.HLP||Stella Business Graph.|Graphics|Stella Systems
+STEP.EXE|||Stepping Stones|Education|Compu-Teach, Inc.
+STOCK.COM|||Stock Trader|Applications|DSF Associates
+SWW.EXE|SWW-C.EXE|SWW-E.EXE|Success With Writing|Education|Scholastic, Inc.
+SPACMAN.EXE|THUNDER.PIC||Super Pac Man|Games|Thunder Mountain
+SSR.EXE|ROCKET.DAT|DROCKET.GRA|Super Solvers Rescue|Education|Learning Co. (the)
+SBFD4W.EXE|||SuperBase Form Designer|Windows Apps|Precision, Inc.
+SB2W.EXE|||SuperBase II|Windows Apps|Precision, Inc.
+SB4W.EXE|||SuperBase IV|Windows Apps|Precision, Inc.
+SC2.COM|SC2.OVL||Supercalc 2|Spreadsheets|Computer Associates
+SC3.COM|SC3.OVL||Supercalc 3|Spreadsheets|Computer Associates
+SC4.COM|SC4.OVL||Supercalc 4|Spreadsheets|Computer Associates
+SC5.COM|SC5.OVL||Supercalc 5|Spreadsheets|Computer Associates
+SPJPLUS.EXE|SPJPLUS.HLP||Superproject Plus|Project Mgmt|Computer Associates
+SP.EXE|DESK.OVY|FILE1.OVY|Surpass|Spreadsheets|Software Systems, Inc.
+SYSTAT.COM|SYSTAT.DEF||Systat|Applications|Systat, Inc
+T3.COM|T3CALC.OVL|T3SETUP.EXE|T390|Applications|STM Systems Corp.
+BOOKS.EXE|TAS.EXE||TasPlus Relational Data|Databases|Business Tools, Inc.
+TAX.BAT|||Tax Preparer|Applications|Howardsoft
+TAXVIEW.COM|||TaxView|Applications|Softview, Inc.
+MAGIC.EXE|MAGIC.OVL|TMMEM$$$.MEM|Telemagic|Project Mgmt|Remote Control International
+TELLSTAR.EXE|NORTH.EXE|SOUTH.EXE|Tellstar|Education|Spectrum Holobyte
+TELPAC.COM|TELPACC.EXE|TELPAC.CNF|Telpac|Communications|Usrobotics
+TESTDRIV.COM|||Test Drive|Games|Accolade
+TM.EXE|~NU.EXE||Textmate|Word Processing|Professional Software, Inc.
+TEXTRA.EXE|||Textra|Word Processing|Ann Arbor Software
+AU.EXE|AU.COM|AU.HLP|The Auditor|Spreadsheets|Consumers Software, Inc.
+BARD.EXE|||The Bard's Tale|Games|Electronic Arts
+CHOICE.EXE|CWGEN16.FRM|CWGEN18.FRM|The Broker's Choice|Applications|Pacesetter Software
+ATC.EXE|||The Coordinator|Project Mgmt|Action Technologies
+GATE.EXE|GATE.PRN||The Gate|Utilities|Claire Systems
+TGL.EXE|||The Graphics Link|Graphics|Harvard Systems Corp.
+HOBBIT.EXE|||The Hobbit|Games|Addison Wesley Publishing
+IDEA.EXE|IDEA.MOD|IDEA.GEN|The Idea Generator|Applications|Experience In Software, Inc.
+IMP.EXE|HELP.IMP|MENU.IMP|The Impersonator|Communications|Direct-Aid
+MUSIC.EXE|MSTUDIO.PDM||The Music Studio|Applications|Activision, Inc.
+NRPRO.EXE|NPO.EXE||The Newsroom Pro|Desktop Publish|Springboard Software, Inc.
+SB.EXE|SC.OVL||The Secretary Bird|Integrated|Software Toolworks, Inc.
+THEXDER.COM|ROBOT.BIN|BANK.BIN|Thexder|Games|Sierra On-line, Inc.
+TQ.EXE|SHOW2.SHW||Think Quick!|Education|Learning Co. (the)
+TANK.EXE|||Thinktank|Word Processing|Symantec
+COURIER.BAT|OBJECTS.RES|PEOPLE.RES|Third Courier|Games|Accolade
+TIM.EXE|||Tim|Applications|Timeslips Corporation
+TIMELINE.EXE|TLCNFG.DAT||Time Line|Project Mgmt|Symantec
+LORE.EXE|TOL.CH|KNIGHT|Times Of Lore|Games|Origin Systems, Inc
+TSREPORT.COM|TSTIMER.COM||Timeslips 2.3|Applications|Timeslips Corporation
+TSREPORT.EXE|TSTIMER.COM||Timeslips III|Applications|Timeslips Corporation
+TSREMOTE.EXE|||Timeslips Remote|Communications|Timeslips Corporation
+TK.EXE|TK.CFG||TK!SolverPLUS|Applications|Universal Technical Systems
+TOPGUN.BAT|||Top Gun|Games|Thunder Mountain
+TOPDOS.COM|||Topdos|Utilities|Frontrunner Development Corp.
+TOPSMENU.EXE|||Tops|Communications|Sun Microsystems
+TW.EXE|||Total Word|Word Processing|Lifetree Software, Inc.
+TRACKER.EXE|TRACKER.COM||Tracker|Databases|Argos, Inc.
+TRINITY.COM|TRINITY.DAT||Trinity|Games|Infocom, Inc.
+TRIO.EXE|||Trio|Integrated|Softsync, Inc.
+TRIO.EXE|TRIO.CFG||Trio Plus|Integrated|Softsync, Inc.
+TRIX.EXE|RIXINFO.EXE||TRIX|Applications|Rix Softworks, Inc.
+TASM.EXE|OBJXREF.COM|TASM.TAH|Turbo Assembler|Programming|Borland International
+TC.EXE|TURBOC.CFG||Turbo C|Programming|Borland
+TURBOCAD.COM|||Turbo CAD|Graphics|IMSI
+TD.EXE|TD.OVL|TDSTRIP.EXE|Turbo Debugger|Programming|Borland International
+TURBO.COM|TURBO.MSG|TINST.COM|Turbo Pascal|Programming|Borland
+TURBO.EXE|TURBO.TP||Turbo Pascal|Programming|Borland
+TP.EXE|TURBO.EXE|TP.CFG|Turbo Print|Utilities|Atled Software
+TPROF.EXE|TFHELP.TFH|TFREMOTE.EXE|Turbo Profiler|Programming|Borland International
+PROLOG.EXE|||Turbo Prolog|Programming|Borland
+TTAX.COM|||Turbo Tax Personal|Applications|Chipsoft
+TWIN.EXE|||Twin|Spreadsheets|Mosaic Software, Inc.
+TWIN.EXE|PRINTER.DEF|MOSAIC.BAT|Twin Classic|Integrated|Mosaic Software, Inc.
+TYPERITE.EXE|||Typerite|Applications|Selfware
+V2MM.EXE|||Typesetters Connection:|Desktop Publish|Core International
+TT.COM|||Typing Tutor|Education|IBM
+ULTIMA.EXE|BRITISH.BIT|RUNES.CH|Ultima V|Games|Origin Systems, Inc
+UNIFORTH.COM|||Uniforth|Programming|Unified Software Systems
+VCR.EXE|VCR.DAT|VCRTOOL.DAT|VCR Companion|Applications|Broderbond Software, Inc.
+VEDIT.EXE|VPCONFIG.EXE||VEDIT|Word Processing|Compuview Products, Inc.
+VP.BAT|VP.XCD||Ventura Publisher|Desktop Publish|Xerox Corp.
+VPPROF.BAT|||Ventura Publisher Prof.|Desktop Publish|Xerox Corp.
+VL.EXE|VL.OVL|VL.DAT|View-Link|Utilities|Traveling Software, Inc.
+VP.EXE|HELP||Viewpoint|Project Mgmt|Computer Aided Management
+VW.EXE|||Volkswriter|Word Processing|Lifetree Software, Inc.
+VW3.EXE|||Volkswriter 3|Word Processing|Lifetree Software, Inc.
+VW4.EXE|VW4.SYS||Volkswriter 4|Word Processing|Lifetree Software, Inc.
+VPG.EXE|||VP Graphics|Databases|Paperback Software Int'l.
+VP.COM|VP.XCD||VP Planner|Spreadsheets|Paperback Software Int'l.
+VPP.COM|VPP.XCD||VP Planner Plus|Spreadsheets|Paperback Software Int'l.
+RAIDER.EXE|||Wall Street Raider|Games|Smith Micro Software
+WWP.COM|||Webster's NewWorld|Word Processing|Simon & Schuster Software
+WTH.COM|||Webster's On-line|Word Processing|Simon & Schuster Software
+WSP.COM|||Webster's Spelling|Word Processing|Simon & Schuster Software
+MENU.EXE|GIRL.DAT|WHEELS.DAT|Wheel of Fortune|Games|Share Data
+WWW.BAT|W.EXE||Who, What, When|Project Mgmt|Chronos Software
+CALENDAR.EXE|||Windows Calendar|Windows Apps|Microsoft
+CARDFILE.EXE|||Windows Cardfile|Windows Apps|Microsoft
+NOTEPAD.EXE|||Windows Notepad|Windows Apps|Microsoft
+WIND.EXE|SHADOW.TLB|WINDWALK.DEF|Windwalker|Games|Origin Systems, Inc
+WISHBRIN.COM|WISHBRIN.DAT||Wishbringer|Games|Infocom, Inc.
+WAPF.EXE|||Word Attack Plus French|Education|Davidson And Associates, Inc.
+WAP.EXE|||Word Attack! Plus|Education|Davidson And Associates, Inc.
+WFW.EXE|||Word For Word|Word Processing|Mastersoft, Inc.
+MAGIC.EXE|PRINTER.TBL|FILSPLIT.COM|Word Magic|Word Processing|Disk Count Software, Inc.
+WB.EXE|WB.OVR|OUTLINE.OVR|Wordbench|Word Processing|Addison Wesley Publishing
+WP.EXE|WPHELP.FIL||Wordperfect|Word Processing|Wordperfect Corp.
+WP.EXE|PTR.EXE|WPINFO.EXE|Wordperfect 5.1|Word Processing|Wordperfect Corp.
+SHELL.COM|SS.EXE||Wordperfect Executive|Integrated|Wordperfect Corp.
+WAF.EXE|WAF.CNF|WAF.HLP|Words & Figures|Spreadsheets|Lifetree Software, Inc.
+WS.EXE|WSMSGS.OVR||Wordstar|Word Processing|Micropro International Corp.
+WS2.EXE|WS2.CFG||Wordstar 2000|Word Processing|Micropro International Corp.
+GOLF.EXE|LDRBRD.HUF||World Class Leader|Games|Access Software, Inc.
+GOLF.EXE|BM.DAT|PLAYERS.DAT|World Tour Golf|Games|Electronic Arts
+WR.EXE|RABFONT|STORIES.IND|Writer Rabbit|Education|Learning Co. (the)
+CPC.EXE|CPCFONTS.DAT|CPCHELP.DAT|Writing Publish Center|Education|Learning Co. (the)
+FORMBASE.EXE|||Xerox FormBase|Windows Apps|Xerox Corp.
+XG.EXE|||Xerox Graph|Windows Apps|Xerox Corp.
+XP.EXE|||Xerox Presents|Windows Apps|Xerox Corp.
+XTREE.EXE|XTREEINS.DAT||Xtree|Utilities|Executive Systems, Inc.
+XTGOLD.COM|||Xtree Gold|Utilities|Executive Systems, Inc.
+XTNET.COM|XTNET.X01|XTNET.X02|Xtree Net|Utilities|Executive Systems, Inc.
+XTPRO.COM|XTPRO.X01|XTPRO.X02|Xtree Pro|Utilities|Executive Systems, Inc.
+EDITOR.EXE|CHKSTACK.COM|CONFIG.INT|XyWrite III Plus|Word Processing|Xyquest, Inc.
+ZR.EXE|||Zoomracks II|Databases|Quickview Systems
+ZYS.BAT|ZYSEARCH.EXE||ZyIndex Professional|Utilities|ZyLAB Corp.
