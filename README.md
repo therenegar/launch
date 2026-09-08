@@ -12,7 +12,8 @@ Requires DOS 3.3, 80286, EGA or better. <br/>
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="LAUNCH!" src="https://github.com/user-attachments/assets/e8dd3dd3-8540-40a8-a500-656aae59b6e6" />
+<img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/eccb2525-ade2-4bbf-b64e-52530a61cab5" />
+
 
 ## Easy Install
 
@@ -22,7 +23,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - You can scan your drive and automatically build an initial menu from a comprehensive database of over 1000 DOS programs.
 - Simply reboot after install and you're good to go.
 
-<img width="720" height="600" alt="install_001" src="https://github.com/user-attachments/assets/23ddd438-a744-4ec5-9bea-ddb1f42e30bc" />
+<img width="720" height="600" alt="install" src="https://github.com/user-attachments/assets/a77505ec-c99b-47ad-bdcf-b6e5310b084b" />
 
 ### DOSBox
 DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
@@ -71,7 +72,7 @@ Menu management
 - Right click an item opens its Edit dialog. 
 
 ## Customizing appearance
-<img width="720" height="600" alt="!_002" src="https://github.com/user-attachments/assets/7994e3e9-4cc5-48e0-899c-9ed1c6ce794a" />
+<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/55a13b00-a146-4daa-84c9-1ee4d1b3608d" />
 
 Run `! /CONFIG` to configure menu and dialog colours, menu position, and whether the Shutdown/Reboot option and live clock are shown. 
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles the clock. Mouse clicks are also supported. 
@@ -85,11 +86,11 @@ Use the keyboard shortcuts to visually edit the menu while it is open. Changes a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="720" height="600" alt="!_003" src="https://github.com/user-attachments/assets/92e5ede8-7d6a-4f53-90ee-9b58ac665814" />
+<img width="720" height="600" alt="add" src="https://github.com/user-attachments/assets/726cd0f1-3b38-4f98-ae45-0e59346389ff" />
 
 `CTRL+E` will show you the edit dialog.
 
-<img width="720" height="600" alt="!_004" src="https://github.com/user-attachments/assets/b0b525ca-0fad-43c1-ad39-195cbb7eb3c8" />
+<img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/7b65fd05-db50-4acd-a9af-a191cdadff02" />
 
 When **Change directory first** is selected, Launch! extracts the directory from the first command token. E.g. for C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
@@ -113,16 +114,22 @@ An ITEM record has this form:
 The last two values are 1 for selected and 0 for clear. Existing records that do not contain them remain compatible and default to 1|0.
 
 ## Shutdown/Reboot
-<img width="720" height="600" alt="!_001" src="https://github.com/user-attachments/assets/c7ed73a2-1578-4c13-9c44-a6bb9af35ee4" />
 
-The `Shutdown/Reboot` menu item is fixed, always at the bottom, and when selected shows a dialog for you to Shutdown or Reboot.
+<img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/7492b7af-cf84-42bf-bb0b-cb6816792344" />
+
+The `Shutdown...` menu item is fixed, always at the bottom, and when selected shows a dialog for you to Shutdown or Reboot.
 Shutdown uses standard ACPI power off calls, which may not be supported on older machines.
-You can remove the Shutdown/Reboot menu item in configuration.
+If unsupported the Power off message from Windows 9x will be shown, press ESC to reveal the prompt again.
+You can remove the Shutdown... menu item in configuration (`! /CONFIG`)
+
+<img width="720" height="600" alt="poweroff" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
 ## SHORTCUT - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility to make it completely optional. <br/>
-Change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal IBM Set-1 scan codes, e.g.
+Change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal IBM Set-1 scan codes, examples:
 ```
+  SHORTCUT /KEY=LWIN
+  SHORTCUT /KEY=CTRL+SPACE
   SHORTCUT /KEY=CTRL+ALT+L
   SHORTCUT /KEY=1D+38+34
 ```
@@ -132,7 +139,7 @@ The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.
 Use `SHORTCUT /?` for more information.
 
 ## AUTOGEN - an automatic menu generator
-<img width="720" height="600" alt="autogen_001" src="https://github.com/user-attachments/assets/a03df183-75bf-48bd-b84e-772d1a1d4d1d" />
+<img width="720" height="600" alt="autogen" src="https://github.com/user-attachments/assets/0430d091-5e71-4613-82a5-545172a2a74a" />
 
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
 You will be prompted to resolve any ambiguous items found.
