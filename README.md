@@ -22,6 +22,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - You can scan your drive and automatically build an initial menu from a comprehensive database of over 1000 DOS programs.
 - Simply reboot after install and you're good to go.
 
+<img width="720" height="600" alt="install_001" src="https://github.com/user-attachments/assets/23ddd438-a744-4ec5-9bea-ddb1f42e30bc" />
 
 ### DOSBox
 DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
@@ -119,7 +120,7 @@ Shutdown uses standard ACPI power off calls, which may not be supported on older
 You can remove the Shutdown/Reboot menu item in configuration.
 
 ## SHORTCUT - keyboard shortcut tool
-The keyboard shortcut is provided by a separate utility to make it completely optional. 
+The keyboard shortcut is provided by a separate utility to make it completely optional. <br/>
 Change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal IBM Set-1 scan codes, e.g.
 ```
   SHORTCUT /KEY=CTRL+ALT+L
