@@ -45,7 +45,7 @@ To start Launch! without the keyboard shortcut, at the command prompt, simply ty
 
 ### How it works
 Launch! does not execute the selected program itself. Rather, it returns to the existing command interpreter, types the configured command and, if selected, supplies Enter. This means shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can all be used. No secondary command processor is started or additional shells. Launch! does not interfere with program execution or return.
-This approach provides maximum flexibility, and compatibility. If it can be run from the command prompt, it will work with Launch!.
+This approach provides maximum flexibility, and compatibility. *If it can be run from the command prompt, it will work with Launch!*.
 
 `LAUNCH.CFG` stores configuration settings and `LAUNCH.MNU` contains the menu data. Whenever a change is made to the menu, a `LAUNCH.BAK` file will also be created containing a backup of the menu.
 Launch! locates and saves `LAUNCH.MNU` beside `!.EXE,` regardless of the current working directory. This works both with a full executable path and when `!.EXE` is found via `PATH`.
@@ -88,7 +88,7 @@ Use the keyboard shortcuts to visually edit the menu while it is open. Changes a
 
 <img width="720" height="600" alt="add" src="https://github.com/user-attachments/assets/726cd0f1-3b38-4f98-ae45-0e59346389ff" />
 
-`CTRL+E` will show you the edit dialog.
+`CTRL+E` will show you the edit dialog to modify a launcher.
 
 <img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/7b65fd05-db50-4acd-a9af-a191cdadff02" />
 
@@ -113,14 +113,13 @@ An ITEM record has this form:
 ```
 The last two values are 1 for selected and 0 for clear. Existing records that do not contain them remain compatible and default to 1|0.
 
-## Shutdown/Reboot
+## It's now safe to turn off your computer.
 
 <img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/7492b7af-cf84-42bf-bb0b-cb6816792344" />
 
 The `Shutdown...` menu item is fixed, always at the bottom, and when selected shows a dialog for you to Shutdown or Reboot.
-Shutdown uses standard ACPI power off calls, which may not be supported on older machines.
-If unsupported the Power off message from Windows 9x will be shown, press ESC to reveal the prompt again.
-You can remove the Shutdown... menu item in configuration (`! /CONFIG`)
+Shutdown flushes DOS and SMARTDrive buffers first and then uses standard ACPI power off calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.
+You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
 <img width="720" height="600" alt="poweroff" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
@@ -135,7 +134,7 @@ Change the keyboard shortcut used by adding the `/KEY=` parameter with readable 
 ```
 Tokens are separated by `+`. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, F1-F12, the Windows key, letters, digits, common punctuation are accepted. You can also use scan codes.<br/>
 
-The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.
+The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.<br/>
 Use `SHORTCUT /?` for more information.
 
 ## AUTOGEN - an automatic menu generator
