@@ -132,8 +132,8 @@ int main(int argc,char **argv)
   char destination[PATH_SIZE],autoexec[16],*comspec,answer[16];
   int n,dosbox_detected,use_dosbox;
   (void)argc;
-  puts("Launch! Installation\n");
-  printf("Install directory [C:\\LAUNCH]: ");
+  puts("Launch! 1.5 Installation\n");
+  printf("Installation directory [C:\\LAUNCH]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
   strip_line(install);
   if(!*install)strcpy(install,"C:\\LAUNCH");
@@ -163,23 +163,25 @@ int main(int argc,char **argv)
   if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
   sprintf(source,"%sAUTOGEN.DAT",source_dir);sprintf(destination,"%s\\AUTOGEN.DAT",install);
   if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
+  sprintf(source,"%sPWROFF.BMP",source_dir);sprintf(destination,"%s\\PWROFF.BMP",install);
+  if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
   comspec=getenv("COMSPEC");
   autoexec[0]=(comspec && comspec[1]==':')?(char)toupper(comspec[0]):'C';
   strcpy(autoexec+1,":\\AUTOEXEC.BAT");
   if(!append_autoexec(autoexec,install)){
     printf("Files copied, but %s could not be updated.\n",autoexec);return 1;
   }
-  printf("\nInstalled !.EXE, SHORTCUT.COM and AUTOGEN.EXE in %s\n",install);
-  printf("Shortcut build: %s\n",use_dosbox?"DOSBox":"real hardware");
-  printf("Updated %s with PATH and LOADHIGH commands.\n\n",autoexec);
-  printf("\nDo you want to scan the C: drive now for recognized programs\n");
+  printf("\nInstalled Launch! in %s\n",install);
+  printf("Shortcut version: %s\n",use_dosbox?"DOSBox":"Real/emulated PC BIOS");
+  printf("Updated %s with PATH and LOADHIGH commands.\n\n\n",autoexec);
+  printf("\nDo you want to scan drive C for recognized programs\n");
   printf("and build an initial Launch! menu? [y/N]: ");
   if(fgets(answer,sizeof(answer),stdin)&&toupper(answer[0])=='Y'){
     sprintf(destination,"%s\\AUTOGEN.EXE",install);
     if(spawnl(P_WAIT,destination,"AUTOGEN.EXE",NULL)==-1)
       puts("AutoGen could not be started. Run AUTOGEN manually after installation.");
   }
-  puts("\nInstall is complete. Reboot the computer to activate the keyboard shortcut.");
+  puts("\nPlease reboot to activate the keyboard shortcut.");
   puts("Press Ù to exit.");
   getchar();return 0;
 }

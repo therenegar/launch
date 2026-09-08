@@ -91,6 +91,7 @@ static char backup_temp_file[MAX_CMD];
 static char bad_file[MAX_CMD];
 static char appearance_file[MAX_CMD];
 static char appearance_temp_file[MAX_CMD];
+static char logos_file[MAX_CMD];
 static char write_path[MAX_CMD];
 static unsigned char copy_buffer[512];
 static unsigned char key_shift;
@@ -300,6 +301,7 @@ static void config_path(const char *program)
   strncpy(bad_file,exe,n);bad_file[n]=0;strcat(bad_file,"LAUNCH.BAD");
   strncpy(appearance_file,exe,n);appearance_file[n]=0;strcat(appearance_file,"LAUNCH.CFG");
   strncpy(appearance_temp_file,exe,n);appearance_temp_file[n]=0;strcat(appearance_temp_file,"LAUNCH.CF$");
+  strncpy(logos_file,exe,n);logos_file[n]=0;strcat(logos_file,"PWROFF.BMP");
 }
 
 static int appearance_value(APPEARANCE *a,const char *key,int value)
@@ -890,9 +892,128 @@ static void port_out_byte(unsigned port,unsigned char value)
   _outp(port,value);
 }
 
+static void flush_disk_buffers(void)
+{
+  union REGS r;
+  memset(&r,0,sizeof(r));r.h.ah=0x0D;int86(0x21,&r,&r);
+  memset(&r,0,sizeof(r));r.x.ax=0x4A10;r.x.bx=0;r.x.cx=0;
+  int86(0x2F,&r,&r);
+  if(r.x.ax==0xBABE){
+    memset(&r,0,sizeof(r));r.x.ax=0x4A10;r.x.bx=1;r.x.cx=0;
+    int86(0x2F,&r,&r);
+  }
+  memset(&r,0,sizeof(r));r.h.ah=0x0D;int86(0x21,&r,&r);
+}
+
+static unsigned read_word(FILE *f)
+{
+  int a=fgetc(f),b=fgetc(f);
+  if(a==EOF || b==EOF)return 0;
+  return (unsigned)a|((unsigned)b<<8);
+}
+
+static unsigned long read_dword(FILE *f)
+{
+  unsigned long low=read_word(f),high=read_word(f);
+  return low|(high<<16);
+}
+
+static void wait_for_escape(void)
+{
+  union REGS r;
+  do {memset(&r,0,sizeof(r));int86(0x16,&r,&r);} while(r.h.al!=27);
+}
+
+static void text_safe_screen(void)
+{
+  int i,x,y;const char *first="It's now safe to turn off";
+  const char *second="your computer.";
+  video_init();if(!save_screen())return;
+  cursor_hide();
+  for(i=0;i<screen_cols*screen_rows;i++)video[i]=(unsigned short)(0x0C00|' ');
+  y=screen_rows/2-1;x=(screen_cols-(int)strlen(first))/2;
+  textout(x,y,first,0x0C,(int)strlen(first));
+  x=(screen_cols-(int)strlen(second))/2;
+  textout(x,y+1,second,0x0C,(int)strlen(second));
+  wait_for_escape();restore_screen();cursor_restore();free(saved);saved=0;
+}
+
+static int bitmap_header(FILE *f,unsigned long *bits)
+{
+  unsigned long width,height,compression;
+  if(read_word(f)!=0x4D42)return 0;
+  (void)read_dword(f);(void)read_word(f);(void)read_word(f);*bits=read_dword(f);
+  if(read_dword(f)<40)return 0;
+  width=read_dword(f);height=read_dword(f);
+  if(read_word(f)!=1 || read_word(f)!=8)return 0;
+  compression=read_dword(f);
+  return width==320 && height==400 && compression==0 && *bits>=1078;
+}
+
+static void set_320x400_mode(void)
+{
+  union REGS r;unsigned far *clear=(unsigned far *)MAKE_FP(0xA000,0);unsigned i;
+  memset(&r,0,sizeof(r));r.h.al=0x13;int86(0x10,&r,&r);
+  port_out_word(0x3C4,0x0604); /* disable chain 4 and odd/even */
+  port_out_word(0x3CE,0x4005); /* disable Graphics Controller odd/even */
+  port_out_word(0x3CE,0x0106); /* disable Graphics Controller chaining */
+  port_out_word(0x3C4,0x0F02); /* enable writes to all four planes */
+  for(i=0;i<0x8000;i++)clear[i]=0; /* clear both 320x400 pages */
+  port_out_word(0x3D4,0x0009); /* one displayed scan line per bitmap row */
+  port_out_word(0x3D4,0x2014); /* disable doubleword addressing */
+  port_out_word(0x3D4,0xE317); /* enable byte-mode display addressing */
+}
+
+static int graphics_safe_screen(void)
+{
+  FILE *f;union REGS r;unsigned long bits;unsigned old_mode,old_cursor;
+  int old_cols,old_rows,i,y,plane,failed=0;static unsigned char row[320];
+  unsigned char far *vga=(unsigned char far *)MAKE_FP(0xA000,0);
+  f=fopen(logos_file,"rb");if(!f)return 0;
+  if(!bitmap_header(f,&bits)){fclose(f);return 0;}
+  if(fseek(f,0L,SEEK_END)!=0 || ftell(f)<(long)bits+128000L){fclose(f);return 0;}
+  memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);
+  if(r.h.al!=0x1A){fclose(f);return 0;} /* 320x400 requires VGA */
+  video_init();old_cols=screen_cols;old_rows=screen_rows;
+  if(!save_screen()){fclose(f);return 0;}
+  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);old_mode=r.h.al;
+  memset(&r,0,sizeof(r));r.h.ah=3;r.h.bh=0;int86(0x10,&r,&r);old_cursor=r.x.dx;
+  cursor_hide();set_320x400_mode();
+  fseek(f,54L,SEEK_SET);port_out_byte(0x3C8,0);
+  for(i=0;i<256;i++){
+    int blue=fgetc(f),green=fgetc(f),red=fgetc(f);(void)fgetc(f);
+    if(blue==EOF || green==EOF || red==EOF){failed=1;break;}
+    port_out_byte(0x3C9,(unsigned char)(red>>2));
+    port_out_byte(0x3C9,(unsigned char)(green>>2));
+    port_out_byte(0x3C9,(unsigned char)(blue>>2));
+  }
+  for(y=0;y<400 && !failed;y++){
+    if(fseek(f,(long)bits+(long)(399-y)*320L,SEEK_SET)!=0 ||
+       fread(row,1,320,f)!=320){failed=1;break;}
+    for(plane=0;plane<4;plane++){
+      port_out_word(0x3C4,(unsigned)(((1<<plane)<<8)|2));
+      for(i=0;i<80;i++)vga[y*80+i]=row[i*4+plane];
+    }
+  }
+  fclose(f);if(!failed)wait_for_escape();
+  memset(&r,0,sizeof(r));r.h.al=(unsigned char)old_mode;int86(0x10,&r,&r);
+  if(old_rows>25){memset(&r,0,sizeof(r));r.x.ax=0x1112;r.h.bl=0;int86(0x10,&r,&r);}
+  screen_cols=old_cols;screen_rows=old_rows;
+  video=(unsigned short far *)MAKE_FP(old_mode==7?0xB000:0xB800,0);
+  restore_screen();cursor_restore();
+  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=0;r.x.dx=old_cursor;int86(0x10,&r,&r);
+  free(saved);saved=0;return !failed;
+}
+
+static void safe_to_turn_off(void)
+{
+  if(!graphics_safe_screen())text_safe_screen();
+}
+
 static int acpi_poweroff(void)
 {
   unsigned pm1a,pm1b,smi,type_a,type_b,value;unsigned char enable;long wait;
+  flush_disk_buffers();
   if(!acpi_sleep_info(&pm1a,&pm1b,&smi,&enable,&type_a,&type_b))return 0;
   if(!(port_in_word(pm1a)&1) && smi && enable){
     port_out_byte(smi,enable);
@@ -906,8 +1027,8 @@ static int acpi_poweroff(void)
 
 static void cold_reboot(void)
 {
-  union REGS r;long wait;
-  r.h.ah=0x0D;int86(0x21,&r,&r); /* flush DOS disk buffers */
+  long wait;
+  flush_disk_buffers();
   *(unsigned far *)MAKE_FP(0x40,0x72)=0; /* request a cold, not warm, boot */
   _disable();
   for(wait=0;wait<200000L;wait++){
@@ -922,8 +1043,8 @@ static int power_dialog(void)
 {
   int x=(screen_cols-54)/2,y=(screen_rows-7)/2,k,choice=2,mx=0,my=0;unsigned mb;
   for(;;){
-    dialog_box(x,y,54,7,"Shutdown/Reboot");
-    textout(x+3,y+2,"Choose a power action:",C_FOLDER,46);
+    dialog_box(x,y,54,7,"Shutdown...");
+    textout(x+3,y+2,"What do you want to do?",C_FOLDER,46);
     draw_button(x+5,y+4,"  Shutdown  ",12,choice==0);
     draw_button(x+21,y+4,"  Reboot  ",10,choice==1);
     draw_button(x+35,y+4,"  Cancel  ",10,choice==2);
@@ -993,9 +1114,9 @@ static int item_form(int folder,char *name,char *exe,char *params,
         editing?(folder?"Edit Folder":"Edit Launcher"):
                 (folder?"Add Folder":"Add Launcher"));
     field_line(x+3,y+2,"Name:",name,focus==0,pos[0]);
-    if(!folder){field_line(x+3,y+4,"Executable:",exe,focus==1,pos[1]);field_line(x+3,y+6,"Parameters:",params,focus==2,pos[2]);}
+    if(!folder){field_line(x+3,y+4,"Command:",exe,focus==1,pos[1]);field_line(x+3,y+6,"Parameters:",params,focus==2,pos[2]);}
     if(!folder){
-      check_line(x+16,y+8,"Press \021\331 after launcher command",*press_enter,focus==3);
+      check_line(x+16,y+8,"Provide \021\331 after launcher command",*press_enter,focus==3);
       check_line(x+16,y+9,"Change directory first",*change_dir,focus==4);
     }
     draw_button(x+19,y+(folder?7:11),"  OK  ",6,focus==controls);
@@ -1118,7 +1239,7 @@ static int configure_appearance(void)
     cycle_control(x+22,y+10,colour_names[appearance.labels],focus==10);
     textout(x+3,y+12,"Menu position",C_INPUT_LABEL,18);
     cycle_control(x+22,y+12,appearance.menu_top?"Top":"Bottom",focus==11);
-    check_line(x+22,y+14,"Show Shutdown/Reboot",appearance.show_power,focus==12);
+    check_line(x+22,y+14,"Show Shutdown... action",appearance.show_power,focus==12);
     check_line(x+22,y+15,"Show the time",appearance.show_time,focus==13);
     draw_button(x+19,y+18,"  OK  ",6,focus==14);
     draw_button(x+34,y+18,"  Cancel  ",10,focus==15);
@@ -1276,7 +1397,7 @@ static int menu(void)
         for(j=0;j<tn && j<h-2;j++){
           node=draw_list[j];
           if(node==BUILTIN_POWER){
-            textout(x+1,y+1+j,"Shutdown/Reboot",(j==sel[i])?C_SELECTED:C_ITEM,18);
+	    textout(x+1,y+1+j,"Shutdown...",(j==sel[i])?C_SELECTED:C_ITEM,18);
           } else if(nodes[node].separator){
             int a=(j==sel[i])?ATTR(appearance.selected_bg,appearance.border):C_BORDER;
             int sx;for(sx=0;sx<18;sx++)cell(x+1+sx,y+1+j,196,a);
@@ -1317,7 +1438,7 @@ static int menu(void)
             int action=power_dialog();
             if(action){
               close_menu();
-              if(action==1){if(!acpi_poweroff())puts("Launch!: ACPI power off is unavailable or did not complete.");}
+              if(action==1){if(!acpi_poweroff())safe_to_turn_off();}
               else cold_reboot();
               return -1;
             }
@@ -1383,7 +1504,7 @@ static int menu(void)
       node=list[sel[depth]];
       if(node==BUILTIN_POWER && k==13){
         int action=power_dialog();
-        if(action){close_menu();if(action==1){if(!acpi_poweroff())puts("Launch!: ACPI power off is unavailable or did not complete.");}else cold_reboot();return -1;}
+        if(action){close_menu();if(action==1){if(!acpi_poweroff())safe_to_turn_off();}else cold_reboot();return -1;}
         redraw=2;
       }
       else if(nodes[node].folder && depth<MAX_DEPTH-1){depth++;parent[depth]=node;sel[depth]=0;redraw=1;}

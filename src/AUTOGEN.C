@@ -434,13 +434,13 @@ static int write_menu(void)
 
 static void usage(void)
 {
-  puts("AUTOGEN - an automatic menu generator for Launch!\n");
+  puts("AutoGen 1.5 - an automatic menu generator for Launch!\n");
   puts("Usage: AUTOGEN [/LOOKIN=drives] [/?]");
   puts("\nDefault: /LOOKIN=C");
   puts("Examples: AUTOGEN /LOOKIN=D");
   puts("          AUTOGEN /LOOKIN=C,D,E\n\n");
   puts("Also adds useful commands for the detected DOS family and version.");
-  puts("Any existing menu will be saved as LAUNCH.BAK");
+
 }
 
 static int parse_drives(int argc,char **argv,char *drives)
