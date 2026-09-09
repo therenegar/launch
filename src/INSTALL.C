@@ -1,4 +1,4 @@
-/* Launch! 1.5 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 1.7 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -132,8 +132,9 @@ int main(int argc,char **argv)
   char destination[PATH_SIZE],autoexec[16],*comspec,answer[16];
   int n,dosbox_detected,use_dosbox;
   (void)argc;
-  puts("Launch! 1.5 Installation\n");
-  printf("Installation directory [C:\\LAUNCH]: ");
+  puts("Launch! 1.7 Installation");
+  puts("ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ\n\n");
+  printf("Install to directory [C:\\LAUNCH]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
   strip_line(install);
   if(!*install)strcpy(install,"C:\\LAUNCH");
@@ -145,7 +146,7 @@ int main(int argc,char **argv)
   if(!make_directories(install)){printf("Cannot create or access %s\n",install);return 1;}
   dosbox_detected=running_in_dosbox();
   if(dosbox_detected){
-    printf("\nIt looks like you're running in DOSBox, is this correct? [Y/n]: ");
+    printf("\nIt looks like you're running in DOSBox, is that correct? [Y/n]: ");
     if(!fgets(answer,sizeof(answer),stdin))return 1;
     use_dosbox=!answer[0]||answer[0]=='\r'||answer[0]=='\n'||toupper(answer[0])=='Y';
   }else{
@@ -171,17 +172,17 @@ int main(int argc,char **argv)
   if(!append_autoexec(autoexec,install)){
     printf("Files copied, but %s could not be updated.\n",autoexec);return 1;
   }
-  printf("\nInstalled Launch! in %s\n",install);
-  printf("Shortcut version: %s\n",use_dosbox?"DOSBox":"Real/emulated PC BIOS");
-  printf("Updated %s with PATH and LOADHIGH commands.\n\n\n",autoexec);
-  printf("\nDo you want to scan drive C for recognized programs\n");
+  printf("\n- Installed LAUNCH! to %s\n",install);
+  printf("- SHORTCUT version: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- Updated %s with commands to run SHORTCUT at startup.\n\n",autoexec);
+  printf("\nScan the C drive now for recognized programs\n");
   printf("and build an initial Launch! menu? [y/N]: ");
   if(fgets(answer,sizeof(answer),stdin)&&toupper(answer[0])=='Y'){
     sprintf(destination,"%s\\AUTOGEN.EXE",install);
     if(spawnl(P_WAIT,destination,"AUTOGEN.EXE",NULL)==-1)
       puts("AutoGen could not be started. Run AUTOGEN manually after installation.");
   }
-  puts("\nPlease reboot to activate the keyboard shortcut.");
+  puts("\nInstall is complete. Reboot to activate the keyboard shortcut.");
   puts("Press Ù to exit.");
   getchar();return 0;
 }

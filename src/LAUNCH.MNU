@@ -1,5 +1,6 @@
-; Launch! 1.5 menu definition
-; ITEM=title|command and parameters|press Enter (0/1)|change directory (0/1)
+; Launch! 1.7 menu definition
+; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)
+; SEPARATOR= adds a movable horizontal separator
 
 [Launcher]
 FOLDER=Office
@@ -8,29 +9,35 @@ FOLDER=Multimedia
 FOLDER=Games
 FOLDER=Utilities
 FOLDER=System Tools
+SEPARATOR=
 
 [Launcher\Office]
-ITEM=WordPerfect 5.1|C:\WP51\WP.EXE|1|1
-ITEM=Microsoft Word 5.5|C:\WORD55\WORD.EXE|1|1
-ITEM=Lotus 1-2-3|C:\123R34\123.EXE|1|1
+ITEM=WordPerfect 5.1|C:\WP51\WP.EXE|1|1|0
+ITEM=Microsoft Word 5.5|C:\WORD55\WORD.EXE|1|1|0
+ITEM=Lotus 1-2-3|C:\123R34\123.EXE|1|1|0
 
 [Launcher\Internet]
-ITEM=FTP2P|C:\MTCP\FTP2P.EXE|1|0
-ITEM=Telnet|C:\MTCP\TELNET.EXE|1|0
-ITEM=LYNX|C:\LYNX\LYNX.EXE|1|0
-ITEM=Arachne|C:\ARACHNE\ARACHNE.BAT|1|1
+ITEM=FTP2P|C:\MTCP\FTP2P.EXE|1|0|0
+ITEM=Telnet|C:\MTCP\TELNET.EXE|1|0|0
+ITEM=LYNX|C:\LYNX\LYNX.EXE|1|0|0
+ITEM=Arachne|C:\ARACHNE\ARACHNE.BAT|1|1|0
 FOLDER=Communications
 
 [Launcher\Internet\Communications]
-ITEM=Pegasus|C:\COMM\PEGASUS.EXE
-ITEM=Pine|C:\COMM\PINE.EXE
-ITEM=Compuserve|C:\COMM\CIS.BAT
-ITEM=Prodigy|C:\COMM\PRODIGY.BAT
+ITEM=Pegasus|C:\COMM\PEGASUS.EXE|1|0|0
+ITEM=Pine|C:\COMM\PINE.EXE|1|0|0
+ITEM=Compuserve|C:\COMM\CIS.BAT|1|0|0
+ITEM=Prodigy|C:\COMM\PRODIGY.BAT|1|0|0
+
+[Launcher\Multimedia]
+
+[Launcher\Games]
 
 [Launcher\Utilities]
-ITEM=Font Selector|C:\UTILS\FONTSEL.COM
-ITEM=File Manager|C:\4DOS\4START.BAT
+ITEM=Font Selector|C:\UTILS\FONTSEL.COM|1|0|0
+ITEM=File Manager|C:\4DOS\4START.BAT|1|0|0
 
 [Launcher\System Tools]
-ITEM=Memory Report|MEM /C /P
-ITEM=System Information|C:\UTILS\NSSI.EXE
+ITEM=Memory Report|MEM /C /P|1|0|0
+ITEM=System Information|C:\UTILS\NSSI.EXE|1|0|0
+

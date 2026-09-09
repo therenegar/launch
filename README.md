@@ -1,12 +1,11 @@
 # Launch!
 
-Version 1.5
+Version 1.7
 
-A lightweight customizable and flexible command launcher for all DOS systems.
-Includes automatic menu generator, and keyboard shortcut launching.
+A free, tiny lightweight launcher for any DOS, with huge features to improve usability and make the command prompt friendly and convenient.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
-> You can download either a .ZIP file or in a 1.44 floppy disk image .IMG
+> You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
 
 Requires DOS 3.3, 80286, EGA or better. <br/>
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
@@ -14,7 +13,22 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="600" alt="!01" src="https://github.com/user-attachments/assets/60960ef0-3cf9-4a89-9133-c5c39278a04d" />
 
-## Easy Install
+
+## Key features
+- Displays a hierarchical folder based menu, modally over the top of the existing console contents.
+- Supports launch by keyboard shortcut which can be customized.
+- Launches commands at the existing command prompt. It doesn't interfere with program execution or return meaning maximum compatibility and flexibility.
+- Easy visual menu editing.
+- Automatic menu generator with comprehensive DOS program database to automatically identify programs and create a menu
+- Program parameter help screen to help with supplying parameters to any menu item.
+- Built in executable explorer to quickly browse and run programs anywhere.
+- Built in Shutdown/Reboot control with retro Windows 95 power off experience.
+- Maximum compatibility across DOS versions on real or emulated hardware.
+
+
+## Install it
+
+Extract the release zip file or mount the floppy image:
 
 - Run `INSTALL.EXE`
 - You'll be prompted for a directory to place Launch!
@@ -24,20 +38,19 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="600" alt="install" src="https://github.com/user-attachments/assets/a77505ec-c99b-47ad-bdcf-b6e5310b084b" />
 
-### DOSBox
-DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
+> DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
 
 
 ## Usage
 
-At the **command prompt**, display your menu by pressing the keyboard shortcut 
+At the **command prompt**, display your menu by pressing the keyboard shortcut which by default is set to:
 ```
 CTRL + ALT + .
 ```
 > The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display. This is not a multi-tasking application switcher!
 
 If you don't have `SHORTCUT.COM` loaded, the keyboard shortcut will not be available.<br/>
-To start Launch! without the keyboard shortcut, at the command prompt, simply type 
+To start Launch! without the keyboard shortcut, at the command prompt, simply type:
 ```
 ! <ENTER>
 ```
@@ -49,26 +62,29 @@ This approach provides maximum flexibility, and compatibility. *If it can be run
 `LAUNCH.CFG` stores configuration settings and `LAUNCH.MNU` contains the menu data. Whenever a change is made to the menu, a `LAUNCH.BAK` file will also be created containing a backup of the menu.
 Launch! locates and saves `LAUNCH.MNU` beside `!.EXE,` regardless of the current working directory. This works both with a full executable path and when `!.EXE` is found via `PATH`.
 
+
 ## Keyboard usage
 
 General navigation
-- Up/Down       - Select an entry
-- Right         - Open a selected folder
-- Left          - Close the current folder
-- Enter         - Open a folder or send a launcher command to the prompt
-- Esc           - Close the complete menu
+- `Up/Down`       - Select an entry
+- `Right`         - Open a selected folder
+- `Left`          - Close the current folder
+- `Enter`         - Open a folder or send a launcher command to the prompt
+- `Esc`           - Close the complete menu
 
 Menu management
-- Ctrl+A        - Add a folder or launcher to the open menu
-- Ctrl+D        - Delete the selected item after confirmation
-- Ctrl+E        - Edit the selected folder or launcher
-- Ctrl+Up/Down  - Move the selected item within its menu
-- Ctrl+S        - Sort the open menu alphabetically
+- `Ctrl+A`        - Add a folder or launcher to the open menu
+- `Ctrl+D`        - Delete the selected item after confirmation
+- `Ctrl+E`        - Edit the selected folder or launcher
+- `Ctrl+Up/Down`  - Move the selected item within its menu
+- `Ctrl+S`        - Sort the open menu alphabetically
+
 
 ## Mouse usage
 
 - Left click opens a folder or runs a launcher; left click outside all visible menu panels closes Launch!.
 - Right click an item opens its Edit dialog. 
+
 
 ## Customizing appearance
 <img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/55a13b00-a146-4daa-84c9-1ee4d1b3608d" />
@@ -79,6 +95,7 @@ Settings are saved to `LAUNCH.CFG`.
 Cancel leaves the previous appearance unchanged.
 
 If `LAUNCH.CFG` is absent, Launch! uses the original blue colour scheme, opens at the lower-left, and displays the clock. A malformed `LAUNCH.CFG` is ignored with a warning and the defaults are used.
+
 
 ## Live menu management
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to `LAUNCH.MNU`. 
@@ -112,18 +129,28 @@ An ITEM record has this form:
 ```
 The last two values are 1 for selected and 0 for clear. Existing records that do not contain them remain compatible and default to 1|0.
 
-## It's now safe to turn off your computer.
+
+## Explore and run
+
+The `Explore...` menu it is a fixed item at the bottom of the menu.
+When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.
+You can remove the `Explore...` menu item in configuration (`! /CONFIG`)
+
+
+## Shutdown/Reboot
 
 <img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/7492b7af-cf84-42bf-bb0b-cb6816792344" />
 
-The `Shutdown...` menu item is fixed, always at the bottom, and when selected shows a dialog for you to Shutdown or Reboot.<br/>
+The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Shutdown or Reboot.<br/>
 Shutdown flushes DOS and SMARTDrive buffers first and then uses standard ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
 <img width="720" height="600" alt="poweroff" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
+
 ## SHORTCUT - keyboard shortcut tool
-The keyboard shortcut is provided by a separate utility as it is optional. It will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
+The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
+It will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
 You can change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal scan codes, examples:
 ```
   SHORTCUT /KEY=LWIN
@@ -135,6 +162,7 @@ Tokens are separated by `+`. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, F1-F12, the W
 
 The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.<br/>
 Use `SHORTCUT /?` for more information.
+
 
 ## AUTOGEN - an automatic menu generator
 <img width="720" height="600" alt="autogen" src="https://github.com/user-attachments/assets/0430d091-5e71-4613-82a5-545172a2a74a" />
