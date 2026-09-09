@@ -89,12 +89,12 @@ Menu management
 ## Customizing appearance
 <img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/ecd2eeb9-00e5-4d7c-b6fb-d2417dfee9ed" />
 
-Run `! /CONFIG` to configure menu and dialog colours, menu position, and whether the Shutdown/Reboot option and live clock are shown. 
-Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles the clock. Mouse clicks are also supported. 
+Run `! /CONFIG` to configure menu and dialog colors, menu position, and whether options such as Explore & Run, Shutdown, and the live clock are displayed.
+Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
 Settings are saved to `LAUNCH.CFG`.
 Cancel leaves the previous appearance unchanged.
 
-If `LAUNCH.CFG` is absent, Launch! uses the original blue colour scheme, opens at the lower-left, and displays the clock. A malformed `LAUNCH.CFG` is ignored with a warning and the defaults are used.
+If `LAUNCH.CFG` is absent, Launch! uses the original blue color scheme, opens at the lower-left, and displays the clock. A malformed `LAUNCH.CFG` is ignored with a warning and the defaults are used.
 
 
 ## Live menu management
