@@ -1098,9 +1098,9 @@ static int power_dialog(void)
     draw_button(x+39,y+4,"  Cancel  ",10,choice==2);
     wait_input(&k,&mx,&my,&mb);
     if((mb&1) && my==y+4){
-      if(mx>=x+5 && mx<x+17)return 1;
-      if(mx>=x+21 && mx<x+31)return 2;
-      if(mx>=x+35 && mx<x+45)return 0;
+      if(mx>=x+3 && mx<x+16)return 1;
+      if(mx>=x+20 && mx<x+30)return 2;
+      if(mx>=x+39 && mx<x+49)return 0;
     }
     if(k==27)return 0;
     if(k==0x4B00)choice=(choice+2)%3;
@@ -1178,17 +1178,17 @@ static int item_form(int folder,char *name,char *exe,char *params,
     if(mb&1){
       if(my==y+2 && mx>=x+16 && mx<x+58){focus=0;i=0;}
       else if(!folder && my==y+4 && mx>=x+16 && mx<x+58){focus=1;i=1;}
-      else if(!folder && my==y+6 && mx>=x+16 && mx<x+40){focus=2;i=2;}
-      else if(!folder && my==y+6 && mx>=x+41 && mx<x+55){*prompt_params=!*prompt_params;focus=3;continue;}
+      else if(!folder && my==y+6 && mx>=x+16 && mx<x+44){focus=2;i=2;}
+      else if(!folder && my==y+6 && mx>=x+47 && mx<x+58){*prompt_params=!*prompt_params;focus=3;continue;}
       else if(!folder && my==y+8 && mx>=x+16 && mx<x+54){*press_enter=!*press_enter;focus=4;continue;}
       else if(!folder && my==y+9 && mx>=x+16 && mx<x+54){*change_dir=!*change_dir;focus=5;continue;}
-      else if(my==y+(folder?7:11) && mx>=x+19 && mx<x+25){
+      else if(my==y+(folder?7:11) && mx>=x+16 && mx<x+24){
         if(*name && (folder || *exe))return 1;
         focus=controls;continue;
       }
-      else if(my==y+(folder?7:11) && mx>=x+33 && mx<x+43)return 0;
+      else if(my==y+(folder?7:11) && mx>=x+28 && mx<x+38)return 0;
       else continue;
-      len=strlen(fields[i]);scroll=pos[i]>(i==2?23:41)?pos[i]-(i==2?23:41):0;
+      len=strlen(fields[i]);scroll=pos[i]>(i==2?27:41)?pos[i]-(i==2?27:41):0;
       pos[i]=scroll+mx-(x+16);if(pos[i]>len)pos[i]=len;
       continue;
     }
@@ -1806,7 +1806,7 @@ static int explore_dialog(void)
         }
         continue;
       }
-      if(my==y+20 && mx>=x+39 && mx<x+46){
+      if(my==y+20 && mx>=x+4 && mx<x+11){
         focus=1;
         action=explore_activate(path,selected);
         last_click=-1;
@@ -1814,7 +1814,7 @@ static int explore_dialog(void)
         if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;redraw=1;}
         continue;
       }
-      if(my==y+20 && mx>=x+50 && mx<x+57){focus=2;if(explore_help(path,selected))return 1;redraw=1;continue;}
+      if(my==y+20 && mx>=x+14 && mx<x+21){focus=2;if(explore_help(path,selected))return 1;redraw=1;continue;}
       if(my==y+20 && mx>=x+61 && mx<x+71){focus=3;return 0;}
       continue;
     }
