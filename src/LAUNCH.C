@@ -30,10 +30,11 @@ typedef struct {
   unsigned char background,border,main_title,titles,folders,launchers;
   unsigned char selected_fg,selected_bg,controls_fg,controls_bg,labels;
   unsigned char menu_top,show_explore,show_power,show_time;
+  unsigned char screensaver,saver_color;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1};
-static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1};
+static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,11};
+static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,11};
 
 /* VGA attribute byte: high nibble = background, low nibble = foreground. */
 #define ATTR(bg,fg)       (((bg)<<4)|(fg))
@@ -366,6 +367,8 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SHOW_EXPLORE")){field=&a->show_explore;limit=1;}
   else if(!stricmp(key,"SHOW_POWER")){field=&a->show_power;limit=1;}
   else if(!stricmp(key,"SHOW_TIME")){field=&a->show_time;limit=1;}
+  else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=1;}
+  else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
   if(!field || value<0 || value>limit)return 0;
   *field=(unsigned char)value;return 1;
 }
@@ -557,30 +560,33 @@ static unsigned long elapsed_ticks(unsigned long start,unsigned long now)
 }
 
 static const char *big_digits[10][7]={
-  {"########","##    ##","##    ##","##    ##","##    ##","##    ##","########"},
-  {"  ###   ","   ##   ","   ##   ","   ##   ","   ##   ","   ##   "," ###### "},
-  {"########","##    ##","      ##","########","##      ","##    ##","########"},
-  {"########","##    ##","      ##","########","      ##","##    ##","########"},
-  {"##    ##","##    ##","##    ##","########","      ##","      ##","      ##"},
-  {"########","##      ","##      ","########","      ##","##    ##","########"},
-  {"########","##    ##","##      ","########","##    ##","##    ##","########"},
-  {"########","##    ##","      ##","      ##","      ##","      ##","      ##"},
-  {"########","##    ##","##    ##","########","##    ##","##    ##","########"},
-  {"########","##    ##","##    ##","########","      ##","##    ##","########"}
+  {" DBBBBBD ","BBU   UBB","BB     BB","BB     BB","BB     BB","BBD   DBB"," UBBBBBU "},
+  {"   DBB   ","  UUBB   ","    BB   ","    BB   ","    BB   ","    BB   ","  BBBBBB "},
+  {"DBBBBBBBD","UU     BB","     DBBU","   DBBU  "," DBBU    ","BBU      ","BBBBBBBBB"},
+  {"DBBBBBBBD","UU    UBB","      DBB","  BBBBBB ","      UBB","DD    DBB","UBBBBBBBU"},
+  {"    DBBB ","  DBU BB ","DBU   BB ","BBBBBBBBB","      BB ","      BB ","      BB "},
+  {"BBBBBBBBB","BB       ","BB       ","BBBBBBBBD","      UBB","DD    DBB","UBBBBBBBU"},
+  {" DBBBBBBD","BBU    UU","BB       ","BBDBBBBBD","BBU   UBB","BBD   DBB","UBBBBBBBU"},
+  {"BBBBBBBBB","UU     BB","     DBBU","   DBBU  ","   BB    ","   BB    ","   BB    "},
+  {"DBBBBBBBD","BBU   UBB","BBD   DBB"," BBBBBBB ","BBU   UBB","BBD   DBB","UBBBBBBBU"},
+  {"DBBBBBBBD","BBU   UBB","BBD   DBB","UBBBBBBBB","       BB","      DBB"," BBBBBBU "}
 };
 
 static void draw_big_digit(int x,int y,int digit)
 {
-  int row,column;
-  for(row=0;row<7;row++)for(column=0;column<8;column++)
-    cell(x+column,y+row,big_digits[digit][row][column]=='#'?219:' ',0x0B);
+  int row,column,ch;char part;
+  for(row=0;row<7;row++)for(column=0;column<9;column++){
+    part=big_digits[digit][row][column];
+    ch=part=='B'?219:(part=='D'?220:(part=='U'?223:' '));
+    cell(x+column,y+row,ch,appearance.saver_color);
+  }
 }
 
 static void draw_big_colon(int x,int y)
 {
   int row,column;
   for(row=0;row<7;row++)for(column=0;column<2;column++)
-    cell(x+column,y+row,(row==2 || row==4)?219:' ',0x0B);
+    cell(x+column,y+row,(row==2 || row==4)?219:' ',appearance.saver_color);
 }
 
 static unsigned char draw_big_time(unsigned char previous_second)
@@ -591,15 +597,15 @@ static unsigned char draw_big_time(unsigned char previous_second)
   wait_vertical_retrace();
   if(screen_cols>=73 && screen_rows>=7){
     x=(screen_cols-73+1)/2;y=(screen_rows-7)/2;
-    draw_big_digit(x,y,r.h.ch/10);draw_big_digit(x+9,y,r.h.ch%10);
-    draw_big_colon(x+21,y);
+    draw_big_digit(x,y,r.h.ch/10);draw_big_digit(x+10,y,r.h.ch%10);
+    draw_big_colon(x+22,y);
     draw_big_digit(x+27,y,r.h.cl/10);draw_big_digit(x+37,y,r.h.cl%10);
     draw_big_colon(x+49,y);
-    draw_big_digit(x+55,y,r.h.dh/10);draw_big_digit(x+65,y,r.h.dh%10);
+    draw_big_digit(x+54,y,r.h.dh/10);draw_big_digit(x+64,y,r.h.dh%10);
   } else {
     char value[9];
     sprintf(value,"%02u:%02u:%02u",r.h.ch,r.h.cl,r.h.dh);
-    textout((screen_cols-8)/2,screen_rows/2,value,0x0B,8);
+    textout((screen_cols-8)/2,screen_rows/2,value,appearance.saver_color,8);
   }
   return r.h.dh;
 }
@@ -746,11 +752,12 @@ static int save_appearance(void)
   if(fputs("; Launch! 1.8 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
-      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
+      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSCREENSAVER=%u\nSAVER_COLOR=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
       appearance.background,appearance.border,appearance.main_title,appearance.titles,
       appearance.folders,appearance.launchers,appearance.selected_fg,appearance.selected_bg,
       appearance.controls_fg,appearance.controls_bg,appearance.labels,
-      appearance.menu_top,appearance.show_explore,appearance.show_power,
+      appearance.menu_top,appearance.screensaver,appearance.saver_color,
+      appearance.show_explore,appearance.show_power,
       appearance.show_time)<0)ok=0;
   if(fclose(f)!=0)ok=0;
   if(!ok){remove(appearance_temp_file);return 0;}
@@ -1375,6 +1382,8 @@ static unsigned char *appearance_field(int focus,int *limit)
     case 9:*limit=7;return &appearance.controls_bg;
     case 10:return &appearance.labels;
     case 11:*limit=1;return &appearance.menu_top;
+    case 12:*limit=1;return &appearance.screensaver;
+    case 13:return &appearance.saver_color;
   }
   return 0;
 }
@@ -1382,9 +1391,9 @@ static unsigned char *appearance_field(int focus,int *limit)
 static void change_appearance_value(int focus,int direction)
 {
   unsigned char *field;int limit,value;
-  if(focus==12){appearance.show_explore=!appearance.show_explore;return;}
-  if(focus==13){appearance.show_power=!appearance.show_power;return;}
-  if(focus==14){appearance.show_time=!appearance.show_time;return;}
+  if(focus==14){appearance.show_explore=!appearance.show_explore;return;}
+  if(focus==15){appearance.show_power=!appearance.show_power;return;}
+  if(focus==16){appearance.show_time=!appearance.show_time;return;}
   field=appearance_field(focus,&limit);if(!field)return;
   value=(int)*field+direction;
   if(value<0)value=limit;
@@ -1395,7 +1404,7 @@ static void change_appearance_value(int focus,int direction)
 static int configure_appearance(void)
 {
   APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,focus=0,row=-1,redraw=1;
-  unsigned mb=0;static const int rows[15]={2,3,4,5,6,7,8,8,9,9,10,12,14,15,16};
+  unsigned mb=0;static const int rows[17]={2,3,4,5,6,7,8,8,9,9,10,12,13,13,15,16,17};
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
   cursor_hide();mouse_present=mouse_start();
   x=(screen_cols-64)/2;y=(screen_rows-22)/2;
@@ -1424,22 +1433,26 @@ static int configure_appearance(void)
     cycle_control(x+22,y+10,colour_names[appearance.labels],focus==10);
     textout(x+3,y+12,"Menu position",C_INPUT_LABEL,18);
     cycle_control(x+22,y+12,appearance.menu_top?"Top":"Bottom",focus==11);
-    check_line(x+22,y+14,"Show 'Explore & Run' menu item",appearance.show_explore,focus==12);
-    check_line(x+22,y+15,"Show 'Shutdown...' menu item",appearance.show_power,focus==13);
-    check_line(x+22,y+16,"Show the time",appearance.show_time,focus==14);
-    draw_button(x+19,y+19,"  Save  ",8,focus==15);
-    draw_button(x+34,y+19,"  Cancel  ",10,focus==16);
+    textout(x+3,y+13,"Screensaver",C_INPUT_LABEL,18);
+    cycle_control(x+22,y+13,appearance.screensaver?"Clock":"None",focus==12);
+    cycle_control(x+41,y+13,colour_names[appearance.saver_color],focus==13);
+    check_line(x+22,y+15,"Show 'Explore & Run' menu item",appearance.show_explore,focus==14);
+    check_line(x+22,y+16,"Show 'Shutdown...' menu item",appearance.show_power,focus==15);
+    check_line(x+22,y+17,"Show the time",appearance.show_time,focus==16);
+    draw_button(x+19,y+19,"  Save  ",8,focus==17);
+    draw_button(x+34,y+19,"  Cancel  ",10,focus==18);
     wait_input(&k,&mx,&my,&mb);
     if(mb){
       row=-1;
       if(mx>=x+22 && mx<x+37){
-        int i;for(i=0;i<15;i++)if(my==y+rows[i]){row=i;break;}
+        int i;for(i=0;i<17;i++)if(my==y+rows[i]){row=i;break;}
       }
       if(mx>=x+41 && mx<x+56 && my==y+8)row=7;
       if(mx>=x+41 && mx<x+56 && my==y+9)row=9;
+      if(mx>=x+41 && mx<x+56 && my==y+13)row=13;
       if(row>=0){focus=row;change_appearance_value(focus,(mb&2)?-1:1);redraw=1;continue;}
       if(my==y+19 && (mb&1)){
-        if(mx>=x+19 && mx<x+25){
+        if(mx>=x+19 && mx<x+27){
           if(save_appearance()){close_menu();return 1;}
           notice_box("Write Error","Could not update LAUNCH.CFG.");redraw=1;continue;
         }
@@ -1448,13 +1461,13 @@ static int configure_appearance(void)
       continue;
     }
     if(k==27){appearance=original;close_menu();return 0;}
-    if(k==9 || k==0x5000){focus=(focus+1)%17;continue;}
-    if(k==0x4800){focus=(focus+16)%17;continue;}
+    if(k==9 || k==0x5000){focus=(focus+1)%19;continue;}
+    if(k==0x4800){focus=(focus+18)%19;continue;}
     if(k==0x4B00){change_appearance_value(focus,-1);redraw=1;continue;}
     if(k==0x4D00 || k==' '){change_appearance_value(focus,1);redraw=1;continue;}
     if(k==13){
-      if(focus<15){focus++;continue;}
-      if(focus==15){
+      if(focus<17){focus++;continue;}
+      if(focus==17){
         if(save_appearance()){close_menu();return 1;}
         notice_box("Write Error","Could not update LAUNCH.CFG.");redraw=1;continue;
       }
@@ -2063,7 +2076,7 @@ static int menu(void)
       if(appearance.show_time)
         last_second=draw_clock(panel_y[0]+panel_h[0]-1,last_second);
       now=bios_ticks();
-      if(elapsed_ticks(last_activity,now)>=SCREENSAVER_TICKS){
+      if(appearance.screensaver && elapsed_ticks(last_activity,now)>=SCREENSAVER_TICKS){
         clock_screensaver();
         last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;
         last_activity=bios_ticks();redraw=2;break;
