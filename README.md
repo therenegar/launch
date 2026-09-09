@@ -90,7 +90,6 @@ Menu management
 ## Customizing appearance
 <img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/ecd2eeb9-00e5-4d7c-b6fb-d2417dfee9ed" />
 
-
 Run `! /CONFIG` to configure menu and dialog colours, menu position, and whether the Shutdown/Reboot option and live clock are shown. 
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles the clock. Mouse clicks are also supported. 
 Settings are saved to `LAUNCH.CFG`.
@@ -109,7 +108,7 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/7b65fd05-db50-4acd-a9af-a191cdadff02" />
+<img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/129a5105-2a23-4fe5-9951-68c886a8dbab" />
 
 When **Change directory first** is selected, Launch! extracts the directory from the first command token. E.g. for C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
