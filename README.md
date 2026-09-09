@@ -104,19 +104,20 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="720" height="600" alt="add" src="https://github.com/user-attachments/assets/726cd0f1-3b38-4f98-ae45-0e59346389ff" />
+<img width="720" height="600" alt="add" src="https://github.com/user-attachments/assets/be2f5567-086a-4337-909e-42f22fa8853a" />
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
 <img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/129a5105-2a23-4fe5-9951-68c886a8dbab" />
 
-When **Change directory first** is selected, Launch! extracts the directory from the first command token. E.g. for C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
+When **Change directory first** is selected, Launch! extracts the directory from the first command token. <br/>
+E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
 ### Parameter prompting and help
-<img width="720" height="600" alt="parameter" src="https://github.com/user-attachments/assets/f5d14de5-27e8-4652-a86d-32a0d3f90e78" />
-
 If a launcher has `Prompt?` activated, when launched from the menu the parameter help dialog will be displayed.
 It shows useful command help information for the selected command. You can then enter the required parameters and choose `Run` to execute the command.
+
+<img width="720" height="600" alt="parameter" src="https://github.com/user-attachments/assets/f5d14de5-27e8-4652-a86d-32a0d3f90e78" />
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
@@ -137,18 +138,21 @@ The last two values are 1 for selected and 0 for clear. Existing records that do
 
 
 ## Explore & Run
+The `Explore & Run` menu it is a fixed item at the bottom of the menu.<br/>
+When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
+Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
+
 <img width="720" height="600" alt="explore" src="https://github.com/user-attachments/assets/14259f3c-68b8-4539-a436-0e96c8270013" />
 
-The `Explore & Run` menu it is a fixed item at the bottom of the menu.
-When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 
 
 ## Shutdown/Reboot
-<img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/cfbeb9aa-3533-48fa-84cf-7f0d1c6ebb6b" />
-
 The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Shutdown or Reboot.<br/>
 Shutdown flushes DOS and SMARTDrive buffers first and then uses standard ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
+
+<img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/cfbeb9aa-3533-48fa-84cf-7f0d1c6ebb6b" />
+
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
 <img width="720" height="600" alt="poweroff" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
