@@ -132,9 +132,9 @@ Within the `LAUNCH.MNU` file, sections represent menu paths. Separate nesting le
 ```
 An ITEM record has this form:
 ```
-  ITEM=title|command and parameters|press Enter|change directory
+  ITEM=title|command and parameters|provide Enter|change directory|prompt
 ```
-The last two values are 1 for selected and 0 for clear. Existing records that do not contain them remain compatible and default to 1|0.
+The last three values are 1 for on and 0 for off. Records that do not contain them remain compatible and default to 1|0|0.
 
 
 ## Explore & Run
@@ -152,8 +152,8 @@ You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 
 
 ## Shutdown/Reboot
-The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Shutdown or Reboot.<br/>
-Shutdown flushes DOS and SMARTDrive buffers first and then uses standard ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
+The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Power Off or Reboot.<br/>
+Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
 <img width="720" height="600" alt="power" src="https://github.com/user-attachments/assets/b4743d26-5bbe-4d44-b95d-dfeef85dcafe" />
 
@@ -166,8 +166,9 @@ You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a large clock.
 Pressing any key or moving the mouse will return to the menu.
 
+<img width="720" height="600" alt="!08" src="https://github.com/user-attachments/assets/c44e5ffb-e16a-485c-9e78-0808f74836ae" />
 
-
+Pretty isn't she?
 
 ## SHORTCUT - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
