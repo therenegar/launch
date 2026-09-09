@@ -87,7 +87,7 @@ Menu management
 
 
 ## Customizing appearance
-<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/ecd2eeb9-00e5-4d7c-b6fb-d2417dfee9ed" />
+<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/fa6635ea-0740-48a6-8735-3f47a0f7d539" />
 
 Run `! /CONFIG` to configure menu and dialog colors, menu position, and whether options such as Explore & Run, Shutdown, and the live clock are displayed.
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
@@ -107,7 +107,8 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/129a5105-2a23-4fe5-9951-68c886a8dbab" />
+<img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/dda87955-ad54-4583-b073-996eba095d9d" />
+
 
 When **Change directory first** is selected, Launch! extracts the directory from the first command token. <br/>
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
@@ -116,7 +117,7 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 If a launcher has `Prompt?` activated, when launched from the menu the parameter help dialog will be displayed.
 It shows useful command help information for the selected command. You can then enter the required parameters and choose `Run` to execute the command.
 
-<img width="720" height="600" alt="parameter" src="https://github.com/user-attachments/assets/f5d14de5-27e8-4652-a86d-32a0d3f90e78" />
+<img width="720" height="600" alt="param" src="https://github.com/user-attachments/assets/9a8f4694-814e-400a-a6d1-037c8c1a4265" />
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
@@ -141,11 +142,11 @@ The `Explore & Run` menu it is a fixed item at the bottom of the menu.<br/>
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
 Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
 
-<img width="720" height="600" alt="!01" src="https://github.com/user-attachments/assets/9c060fae-fa64-45a9-bd68-6e8327893e44" />
+<img width="720" height="600" alt="explore" src="https://github.com/user-attachments/assets/591ce9e5-f5d7-4d6f-bb0b-b98772545766" />
 
 Choosing `/?` for an executable will show the command help (if available) and allow you to provide parameters.
 
-<img width="720" height="600" alt="!02" src="https://github.com/user-attachments/assets/fbb81e6c-b541-45fa-aed1-4f9caba5055d" />
+<img width="720" height="600" alt="exechelp" src="https://github.com/user-attachments/assets/7fd4f354-3022-4e90-9283-b6c5a8bd225b" />
 
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 
@@ -154,7 +155,7 @@ You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Shutdown or Reboot.<br/>
 Shutdown flushes DOS and SMARTDrive buffers first and then uses standard ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/cfbeb9aa-3533-48fa-84cf-7f0d1c6ebb6b" />
+<img width="720" height="600" alt="power" src="https://github.com/user-attachments/assets/b4743d26-5bbe-4d44-b95d-dfeef85dcafe" />
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
