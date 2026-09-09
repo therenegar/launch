@@ -10,7 +10,7 @@ Compiler: Microsoft C/C++ 7.0, small model.
 FILES
 -----
 
-AUTOGEN.DAT  DirectAccess 5.19-compatible recognition database
+AUTOGEN.DAT  Autogen program ID database
 AUTOGEN.C    Source for the automatic program scanner
 BUILD.BAT   Build command
 INSTALL.C    Source for the interactive installation utility
