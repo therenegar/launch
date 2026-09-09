@@ -1269,14 +1269,14 @@ static void change_appearance_value(int focus,int direction)
 
 static int configure_appearance(void)
 {
-  APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,focus=0,row=-1;
+  APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,focus=0,row=-1,redraw=1;
   unsigned mb=0;static const int rows[15]={2,3,4,5,6,7,8,8,9,9,10,12,14,15,16};
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
   cursor_hide();mouse_present=mouse_start();
   x=(screen_cols-64)/2;y=(screen_rows-22)/2;
-  dialog_box(x,y,64,22,"Configure Appearance");
   for(;;){
     wait_vertical_retrace();
+    if(redraw){dialog_box(x,y,64,22,"Configure Appearance");redraw=0;}
     textout(x+3,y+2,"Background",C_INPUT_LABEL,18);
     textout(x+3,y+3,"Border",C_INPUT_LABEL,18);
     textout(x+3,y+4,"Main Title",C_INPUT_LABEL,18);
@@ -1312,11 +1312,11 @@ static int configure_appearance(void)
       }
       if(mx>=x+41 && mx<x+56 && my==y+8)row=7;
       if(mx>=x+41 && mx<x+56 && my==y+9)row=9;
-      if(row>=0){focus=row;change_appearance_value(focus,(mb&2)?-1:1);continue;}
+      if(row>=0){focus=row;change_appearance_value(focus,(mb&2)?-1:1);redraw=1;continue;}
       if(my==y+19 && (mb&1)){
         if(mx>=x+19 && mx<x+25){
           if(save_appearance()){close_menu();return 1;}
-          notice_box("Write Error","Could not update LAUNCH.CFG.");continue;
+          notice_box("Write Error","Could not update LAUNCH.CFG.");redraw=1;continue;
         }
         if(mx>=x+34 && mx<x+44){appearance=original;close_menu();return 0;}
       }
@@ -1325,13 +1325,13 @@ static int configure_appearance(void)
     if(k==27){appearance=original;close_menu();return 0;}
     if(k==9 || k==0x5000){focus=(focus+1)%17;continue;}
     if(k==0x4800){focus=(focus+16)%17;continue;}
-    if(k==0x4B00){change_appearance_value(focus,-1);continue;}
-    if(k==0x4D00 || k==' '){change_appearance_value(focus,1);continue;}
+    if(k==0x4B00){change_appearance_value(focus,-1);redraw=1;continue;}
+    if(k==0x4D00 || k==' '){change_appearance_value(focus,1);redraw=1;continue;}
     if(k==13){
       if(focus<15){focus++;continue;}
       if(focus==15){
         if(save_appearance()){close_menu();return 1;}
-        notice_box("Write Error","Could not update LAUNCH.CFG.");continue;
+        notice_box("Write Error","Could not update LAUNCH.CFG.");redraw=1;continue;
       }
       appearance=original;close_menu();return 0;
     }
