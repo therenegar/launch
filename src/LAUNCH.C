@@ -1093,9 +1093,9 @@ static int power_dialog(void)
   dialog_box(x,y,54,7,"Shutdown...");textout(x+3,y+2,"What do you want to do?",C_FOLDER,46);
   for(;;){
     wait_vertical_retrace();
-    draw_button(x+5,y+4,"  Power Off  ",12,choice==0);
-    draw_button(x+21,y+4,"  Reboot  ",10,choice==1);
-    draw_button(x+35,y+4,"  Cancel  ",10,choice==2);
+    draw_button(x+3,y+4,"  Power Off  ",13,choice==0);
+    draw_button(x+20,y+4,"  Reboot  ",10,choice==1);
+    draw_button(x+39,y+4,"  Cancel  ",10,choice==2);
     wait_input(&k,&mx,&my,&mb);
     if((mb&1) && my==y+4){
       if(mx>=x+5 && mx<x+17)return 1;
@@ -1142,7 +1142,7 @@ static void field_line(int x,int y,const char *label,const char *value,int selec
 static void check_line(int x,int y,const char *label,int checked,int focused)
 {
   char mark[4];
-  sprintf(mark,"[%c]",checked?'X':' ');
+  sprintf(mark,"[%c]",checked?'þ':' ');
   textout(x,y,mark,C_BUTTON,3);
   textout(x+4,y,label,focused?C_SELECTED:C_INPUT_LABEL,34);
 }
@@ -1164,16 +1164,16 @@ static int item_form(int folder,char *name,char *exe,char *params,
     field_line(x+3,y+2,"Name:",name,focus==0,pos[0],42);
     if(!folder){
       field_line(x+3,y+4,"Command:",exe,focus==1,pos[1],42);
-      field_line(x+3,y+6,"Parameters:",params,focus==2,pos[2],24);
-      textout(x+41,y+6,"Prompt?",focus==3?C_SELECTED:C_INPUT_LABEL,7);
-      textout(x+49,y+6,*prompt_params?"[X]":"[ ]",C_BUTTON,3);
+      field_line(x+3,y+6,"Parameters:",params,focus==2,pos[2],28);
+      textout(x+47,y+6,"Prompt?",focus==3?C_SELECTED:C_INPUT_LABEL,7);
+      textout(x+55,y+6,*prompt_params?"[þ]":"[ ]",C_BUTTON,3);
     }
     if(!folder){
       check_line(x+16,y+8,"Provide \021\331 after launcher command",*press_enter,focus==4);
       check_line(x+16,y+9,"Change directory first",*change_dir,focus==5);
     }
-    draw_button(x+19,y+(folder?7:11),"  OK  ",6,focus==controls);
-    draw_button(x+33,y+(folder?7:11),"  Cancel  ",10,focus==controls+1);
+    draw_button(x+16,y+(folder?7:11),"  Save  ",8,focus==controls);
+    draw_button(x+28,y+(folder?7:11),"  Cancel  ",10,focus==controls+1);
     wait_input(&k,&mx,&my,&mb);
     if(mb&1){
       if(my==y+2 && mx>=x+16 && mx<x+58){focus=0;i=0;}
@@ -1559,7 +1559,7 @@ static int parameter_prompt_command(const char *title,const char *command)
        scroll+i<help_line_count?help_lines[scroll+i]:"",C_INPUT_FIELD,HELP_WIDTH);
     cell(x+73,y+2,scroll>0?30:' ',C_BUTTON);
     cell(x+73,y+15,scroll<max_scroll?31:' ',C_BUTTON);
-    textout(x+2,y+16,"Up/Down and PgUp/PgDn scroll command help",focus==0?C_SELECTED:C_INPUT_LABEL,52);
+    textout(x+2,y+16,"/ and PgUp/PgDn scrolls command help.",focus==0?C_SELECTED:C_INPUT_LABEL,52);
     parameter_field(x+2,y+19,parameters,position,focus==1,44);
     draw_button(x+49,y+19,"  Run  ",7,focus==2);
     draw_button(x+61,y+19,"  Cancel  ",10,focus==3);
@@ -1775,8 +1775,8 @@ static int explore_dialog(void)
     cell(x+73,y+4,top>0?30:' ',C_BUTTON);
     cell(x+73,y+18,top+page<explore_count?31:' ',C_BUTTON);
     if(!explore_count)textout(x+2,y+4,"No executable files or directories",C_EMPTY,38);
-    draw_button(x+39,y+20,"  Run  ",7,focus==1);
-    draw_button(x+50,y+20,"  /?  ",7,focus==2);
+    draw_button(x+4,y+20,"  Run  ",7,focus==1);
+    draw_button(x+14,y+20,"  /?  ",7,focus==2);
     draw_button(x+61,y+20,"  Cancel  ",10,focus==3);
     redraw=0;}
     wait_input(&k,&mx,&my,&mb);
