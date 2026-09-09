@@ -25,7 +25,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - No libraries or dependencies including ANSI.
 
 
-## Install it
+## Install itUpdate README.md
 
 Extract the release zip file or mount the floppy image:
 
@@ -125,10 +125,10 @@ Within the `LAUNCH.MNU` file, sections represent menu paths. Separate nesting le
 ```
   [Launcher\Internet]
   FOLDER=Communications
-  ITEM=Telnet|C:\MTCP\TELNET.EXE|1|0
+  ITEM=Telnet|C:\MTCP\TELNET.EXE|1|0|1
 
   [Launcher\Internet\Communications]
-  ITEM=Pine|C:\COMM\PINE.EXE|1|1
+  ITEM=Pine|C:\COMM\PINE.EXE|1|1|0
 ```
 An ITEM record has this form:
 ```
@@ -138,7 +138,7 @@ The last three values are 1 for on and 0 for off. Records that do not contain th
 
 
 ## Explore & Run
-The `Explore & Run` menu it is a fixed item at the bottom of the menu.<br/>
+`Explore & Run` is a fixed item at the bottom of the menu.<br/>
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
 Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
 
@@ -163,7 +163,7 @@ You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
 
 ## Screensaver
-If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a large clock.
+If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a big clock.
 Pressing any key or moving the mouse will return to the menu.
 
 <img width="720" height="600" alt="!08" src="https://github.com/user-attachments/assets/c44e5ffb-e16a-485c-9e78-0808f74836ae" />
