@@ -51,9 +51,9 @@ CTRL + ALT + .
 > The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display. This is not a multi-tasking application switcher!
 
 If you don't have `SHORTCUT.COM` loaded, the keyboard shortcut will not be available.<br/>
-To start Launch! without the keyboard shortcut, at the command prompt, simply type:
+To start Launch! without the keyboard shortcut, at the command prompt, simply enter:
 ```
-! <ENTER>
+!
 ```
 
 ### How it works
@@ -92,15 +92,18 @@ Menu management
 
 
 Run `! /CONFIG` to configure menu and dialog colors, menu position, screensaver clock, and whether options such as Explore & Run, Shutdown..., and the time are displayed.
+
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
-Settings are saved to `LAUNCH.CFG`.<br/>
+
 Cancel leaves the previous appearance unchanged.
 
+Settings are saved to `LAUNCH.CFG`.<br/>
 If `LAUNCH.CFG` is absent, Launch! uses the original blue color scheme, opens at the lower-left, and displays the clock. A malformed `LAUNCH.CFG` is ignored with a warning and the defaults are used.
 
 
 ## Live menu management
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to `LAUNCH.MNU`. 
+
 Each menu panel can display 20 items. Adding a 21st item automatically creates a **More** folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. **More** is maintained by Launch! and is kept at the bottom when the menu is sorted.
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
@@ -157,7 +160,7 @@ Choosing `/?` for an executable will show the command help (if available) and al
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 
 
-## Shutdown/Reboot
+## Shutdown
 The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Power Off or Reboot.<br/>
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
@@ -167,10 +170,13 @@ You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
 <img width="720" height="600" alt="poweroff" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
+If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 color bitmap.
 
 ## Screensaver
 If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a big clock.
-Pressing any key or moving the mouse will return to the menu.<br/>
+
+Pressing any key or moving the mouse will return to the menu.
+
 You can disable the screensaver or change the color of the clock in configuration `! /CONFIG`.
 
 <img width="720" height="600" alt="clock" src="https://github.com/user-attachments/assets/c626b710-da73-418f-ab23-115f15ef612d" />
@@ -179,7 +185,9 @@ Pretty isn't she?
 
 ## SHORTCUT - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
+
 It will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
+
 You can change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal scan codes, examples:
 ```
   SHORTCUT /KEY=LWIN
@@ -197,8 +205,11 @@ Use `SHORTCUT /?` for more information.
 <img width="720" height="600" alt="autogen" src="https://github.com/user-attachments/assets/0430d091-5e71-4613-82a5-545172a2a74a" />
 
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
+
 You will be prompted to resolve any ambiguous items found.
+
 It will also detect your installed DOS version and build a DOS command menu.
+
 This menu will replace any existing `LAUNCH.MNU` file, saving the existing menu as `LAUNCH.BAK` first.
 
 `AUTOGEN` is run as part of the install process, but can be run at any time. 
