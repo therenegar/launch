@@ -1,7 +1,5 @@
 # Launch!
 
-Version 1.7
-
 A lightweight launcher for any DOS, with huge features to improve the usability of the command prompt - and make it more convenient and friendly.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
@@ -24,6 +22,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Shutdown/Reboot control with retro Windows 95 power off experience.
 - Maximum compatibility across DOS versions on real or emulated hardware.
+- No libraries or dependencies including ANSI.
 
 
 ## Install it
@@ -142,7 +141,11 @@ The `Explore & Run` menu it is a fixed item at the bottom of the menu.<br/>
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
 Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
 
-<img width="720" height="600" alt="explore" src="https://github.com/user-attachments/assets/14259f3c-68b8-4539-a436-0e96c8270013" />
+<img width="720" height="600" alt="!01" src="https://github.com/user-attachments/assets/9c060fae-fa64-45a9-bd68-6e8327893e44" />
+
+Choosing `/?` for an executable will show the command help (if available) and allow you to provide parameters.
+
+<img width="720" height="600" alt="!02" src="https://github.com/user-attachments/assets/fbb81e6c-b541-45fa-aed1-4f9caba5055d" />
 
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 
