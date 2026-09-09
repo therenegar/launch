@@ -25,7 +25,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - No libraries or dependencies including ANSI.
 
 
-## Install itUpdate README.md
+## Install it
 
 Extract the release zip file or mount the floppy image:
 
