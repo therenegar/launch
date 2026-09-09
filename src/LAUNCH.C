@@ -1058,6 +1058,40 @@ static void safe_to_turn_off(void)
   if(!graphics_safe_screen())text_safe_screen();
 }
 
+static int apm_call(unsigned ax,unsigned bx,unsigned cx,union REGS *result)
+{
+  memset(result,0,sizeof(*result));
+  result->x.ax=ax;result->x.bx=bx;result->x.cx=cx;
+  int86(0x15,result,result);
+  return !result->x.cflag;
+}
+
+static int apm_poweroff(void)
+{
+  union REGS r;
+
+  /* This is the same APM 1.2 sequence used by APMTEST /OFF. */
+  if(!apm_call(0x5300,0x0000,0x0000,&r) || r.x.bx!=0x504D)return 0;
+  if(!apm_call(0x5301,0x0000,0x0000,&r))return 0;
+
+  if(!apm_call(0x530E,0x0000,0x0102,&r) ||
+     !apm_call(0x5308,0x0001,0x0001,&r) ||
+     !apm_call(0x530F,0x0001,0x0001,&r)){
+    apm_call(0x5304,0x0000,0x0000,&r);
+    return 0;
+  }
+
+  flush_disk_buffers();
+  if(!apm_call(0x5307,0x0001,0x0003,&r)){
+    apm_call(0x5304,0x0000,0x0000,&r);
+    return 0;
+  }
+
+  /* A successful power-off should never return.  If it does, let ACPI try. */
+  apm_call(0x5304,0x0000,0x0000,&r);
+  return 0;
+}
+
 static int acpi_poweroff(void)
 {
   unsigned pm1a,pm1b,smi,type_a,type_b,value;unsigned char enable;long wait;
@@ -1071,6 +1105,12 @@ static int acpi_poweroff(void)
   port_out_word(pm1a,value);
   if(pm1b)port_out_word(pm1b,(unsigned)((port_in_word(pm1b)&0x03FF)|((type_b&7)<<10)|0x2000));
   return 0; /* successful ACPI S5 does not return */
+}
+
+static int power_off(void)
+{
+  if(apm_poweroff())return 1;
+  return acpi_poweroff();
 }
 
 static void cold_reboot(void)
@@ -1954,7 +1994,7 @@ static int menu(void)
             int action=power_dialog();
             if(action){
               close_menu();
-              if(action==1){if(!acpi_poweroff())safe_to_turn_off();}
+              if(action==1){if(!power_off())safe_to_turn_off();}
               else cold_reboot();
               return -1;
             }
@@ -2027,7 +2067,7 @@ static int menu(void)
       }
       else if(node==BUILTIN_POWER && k==13){
         int action=power_dialog();
-        if(action){close_menu();if(action==1){if(!acpi_poweroff())safe_to_turn_off();}else cold_reboot();return -1;}
+        if(action){close_menu();if(action==1){if(!power_off())safe_to_turn_off();}else cold_reboot();return -1;}
         redraw=2;
       }
       else if(node<0){redraw=1;}
