@@ -2,7 +2,7 @@
 
 Version 1.7
 
-A free, tiny lightweight launcher for any DOS, with huge features to improve usability and make the command prompt friendly and convenient.
+A free, tiny lightweight launcher for any DOS, with huge features to improve usability of the command prompt - and make it friendly and convenient.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
@@ -16,7 +16,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 ## Key features
 - Displays a hierarchical folder based menu, modally over the top of the existing console contents.
-- Supports launch by keyboard shortcut which can be customized.
+- Supports trigger by keyboard shortcut which can be customized.
 - Launches commands at the existing command prompt. It doesn't interfere with program execution or return meaning maximum compatibility and flexibility.
 - Easy visual menu editing.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs and create a menu
