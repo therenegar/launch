@@ -206,6 +206,24 @@ static void cell(int x,int y,int ch,int at)
     video[y*screen_cols+x] = (unsigned short)((at<<8)|(ch&255));
 }
 
+static void wait_vertical_retrace(void)
+{
+  unsigned port=(*(unsigned far *)MAKE_FP(0x40,0x63))+6;
+  unsigned count=0xFFFF;
+  while((_inp(port)&8) && --count);
+  count=0xFFFF;while(!(_inp(port)&8) && --count);
+}
+
+static void row_attribute(int x,int y,int width,int at)
+{
+  int i;unsigned short value;
+  if(y<0 || y>=screen_rows)return;
+  for(i=0;i<width && x+i<screen_cols;i++)if(x+i>=0){
+    value=video[y*screen_cols+x+i];
+    video[y*screen_cols+x+i]=(unsigned short)((value&255)|(at<<8));
+  }
+}
+
 static void textout(int x,int y,const char *s,int at,int width)
 {
   int i,ended=0;
@@ -1688,10 +1706,37 @@ static int explore_activate(char *path,int selected)
   return 1;
 }
 
+static int explore_entry_attribute(int index,int selected)
+{
+  if(selected)return C_SELECTED;
+  return explore_entries[index].directory?C_FOLDER:C_ITEM;
+}
+
+static void highlight_explore_entry(int x,int y,int top,int index,int selected)
+{
+  int relative=index-top,row,column;
+  if(relative<0 || relative>=EXPLORE_ROWS*EXPLORE_COLS ||
+     index<0 || index>=explore_count)return;
+  column=relative/EXPLORE_ROWS;row=relative%EXPLORE_ROWS;
+  row_attribute(x+2+column*18,y+4+row,16,
+                explore_entry_attribute(index,selected));
+}
+
+static void select_explore_entry(int x,int y,int next,int *selected,int *top,
+                                 int page,int *redraw)
+{
+  int old=*selected,new_top=(next/page)*page;
+  if(next<0 || next>=explore_count || next==old)return;
+  if(new_top!=*top){*selected=next;*top=new_top;*redraw=1;return;}
+  wait_vertical_retrace();
+  highlight_explore_entry(x,y,*top,old,0);*selected=next;
+  highlight_explore_entry(x,y,*top,next,1);
+}
+
 static int explore_dialog(void)
 {
   int x=(screen_cols-76)/2,y=(screen_rows-23)/2,k,mx=0,my=0;
-  int selected=0,top=0,page=EXPLORE_ROWS*EXPLORE_COLS,focus=0;
+  int selected=0,top=0,page=EXPLORE_ROWS*EXPLORE_COLS,focus=0,redraw=1;
   int i,row,column,index,action;unsigned mb;
   int last_click=-1;unsigned long last_click_tick=0,tick;
   static char path[MAX_CMD]="C:\\";
@@ -1701,7 +1746,7 @@ static int explore_dialog(void)
     if(selected>=explore_count)selected=explore_count?explore_count-1:0;
     if(selected<top)top=(selected/page)*page;
     if(selected>=top+page)top=(selected/page)*page;
-    dialog_box(x,y,76,23,"Explore & Run");
+    if(redraw){dialog_box(x,y,76,23,"Explore & Run");
     explore_path_field(x+2,y+2,path);
     cell(x,y+3,195,C_BORDER);cell(x+75,y+3,180,C_BORDER);
     cell(x,y+19,195,C_BORDER);cell(x+75,y+19,180,C_BORDER);
@@ -1709,7 +1754,7 @@ static int explore_dialog(void)
     for(column=0;column<EXPLORE_COLS;column++)for(row=0;row<EXPLORE_ROWS;row++){
       index=top+column*EXPLORE_ROWS+row;
       if(index<explore_count)textout(x+2+column*18,y+4+row,explore_entries[index].name,
-        index==selected?C_SELECTED:(explore_entries[index].directory?C_FOLDER:C_ITEM),16);
+        explore_entry_attribute(index,index==selected),16);
       else textout(x+2+column*18,y+4+row,"",C_MENU_BACKGROUND,16);
     }
     cell(x+73,y+4,top>0?30:' ',C_BUTTON);
@@ -1717,13 +1762,14 @@ static int explore_dialog(void)
     if(!explore_count)textout(x+2,y+4,"No executable files or directories",C_EMPTY,38);
     draw_button(x+48,y+20,"  Run  ",7,focus==1);
     draw_button(x+60,y+20,"  Cancel  ",10,focus==2);
+    redraw=0;}
     wait_input(&k,&mx,&my,&mb);
     if(mb&1){
       if(my>=y+4 && my<y+19 && mx>=x+2 && mx<x+74){
         focus=0;
         if(mx>=x+72){
-          if(my<y+11 && top>0){top-=page;selected=top;}
-          else if(my>=y+11 && top+page<explore_count){top+=page;selected=top;}
+          if(my<y+11 && top>0){top-=page;selected=top;redraw=1;}
+          else if(my>=y+11 && top+page<explore_count){top+=page;selected=top;redraw=1;}
           last_click=-1;
         } else {
           column=(mx-(x+2))/18;row=my-(y+4);index=top+column*EXPLORE_ROWS+row;
@@ -1734,10 +1780,11 @@ static int explore_dialog(void)
               if(action==1)return 1;
               if(action==2){
                 if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");
-                selected=top=0;
+                selected=top=0;redraw=1;
               }
             } else {
-              selected=index;last_click=index;last_click_tick=tick;
+              select_explore_entry(x,y,index,&selected,&top,page,&redraw);
+              last_click=index;last_click_tick=tick;
             }
           }
         }
@@ -1748,14 +1795,14 @@ static int explore_dialog(void)
         action=explore_activate(path,selected);
         last_click=-1;
         if(action==1)return 1;
-        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=0;}
+        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;redraw=1;}
         continue;
       }
       if(my==y+20 && mx>=x+60 && mx<x+70){focus=2;return 0;}
       continue;
     }
     if(k==27)return 0;
-    if(k==9){focus=(focus+1)%3;continue;}
+    if(k==9){focus=(focus+1)%3;redraw=1;continue;}
     if(focus){
       if(k==0x4B00 || k==0x4D00)focus=focus==1?2:1;
       else if(k==0x4800)focus=0;
@@ -1763,23 +1810,49 @@ static int explore_dialog(void)
         if(focus==2)return 0;
         action=explore_activate(path,selected);
         if(action==1)return 1;
-        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;}
+        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;redraw=1;}
       }
+      redraw=1;
       continue;
     }
-    if(k==0x4800 && selected>0)selected--;
-    else if(k==0x5000 && selected+1<explore_count)selected++;
-    else if(k==0x4B00){if(selected>=EXPLORE_ROWS)selected-=EXPLORE_ROWS;else if(!explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;}}
-    else if(k==0x4D00 && selected+EXPLORE_ROWS<explore_count)selected+=EXPLORE_ROWS;
-    else if(k==0x4900){top=top>=page?top-page:0;selected=top;}
-    else if(k==0x5100 && top+page<explore_count){top+=page;selected=top;}
-    else if(k==8 && !explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;}
+    if(k==0x4800 && selected>0)select_explore_entry(x,y,selected-1,&selected,&top,page,&redraw);
+    else if(k==0x5000 && selected+1<explore_count)select_explore_entry(x,y,selected+1,&selected,&top,page,&redraw);
+    else if(k==0x4B00){if(selected>=EXPLORE_ROWS)select_explore_entry(x,y,selected-EXPLORE_ROWS,&selected,&top,page,&redraw);else if(!explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;redraw=1;}}
+    else if(k==0x4D00 && selected+EXPLORE_ROWS<explore_count)select_explore_entry(x,y,selected+EXPLORE_ROWS,&selected,&top,page,&redraw);
+    else if(k==0x4900){top=top>=page?top-page:0;selected=top;redraw=1;}
+    else if(k==0x5100 && top+page<explore_count){top+=page;selected=top;redraw=1;}
+    else if(k==8 && !explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;redraw=1;}
     else if(k==13){
       action=explore_activate(path,selected);
       if(action==1)return 1;
-      if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=0;}
+      if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=0;redraw=1;}
     }
   }
+}
+
+static int menu_entry_attribute(int node,int selected)
+{
+  if(selected){
+    if(node>=0 && nodes[node].separator)
+      return ATTR(appearance.selected_bg,appearance.border);
+    return C_SELECTED;
+  }
+  if(node<0)return C_ITEM;
+  if(nodes[node].separator)return C_BORDER;
+  return nodes[node].folder?C_FOLDER:C_ITEM;
+}
+
+static void change_menu_selection(int depth,int *list,int n,int *selection,
+                                  int direction,int panel_y)
+{
+  int old=*selection,next,x=depth*MENU_WIDTH;
+  if(!n)return;
+  next=(old+n+direction)%n;if(next==old)return;
+  if(x+MENU_WIDTH>screen_cols)x=screen_cols-MENU_WIDTH;
+  wait_vertical_retrace();
+  row_attribute(x+1,panel_y+1+old,18,menu_entry_attribute(list[old],0));
+  *selection=next;
+  row_attribute(x+1,panel_y+1+next,18,menu_entry_attribute(list[next],1));
 }
 
 static int menu(void)
@@ -1924,8 +1997,8 @@ static int menu(void)
       if(n>0){node=list[sel[depth]];sort_menu(parent[depth]);n=menu_children(parent[depth],list);for(i=0;i<n;i++)if(list[i]==node)sel[depth]=i;if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");}
       redraw=1;
     }
-    else if(k==0x4800 && n>0){sel[depth]=(sel[depth]+n-1)%n;redraw=1;}
-    else if(k==0x5000 && n>0){sel[depth]=(sel[depth]+1)%n;redraw=1;}
+    else if(k==0x4800 && n>0)change_menu_selection(depth,list,n,&sel[depth],-1,panel_y[depth]);
+    else if(k==0x5000 && n>0)change_menu_selection(depth,list,n,&sel[depth],1,panel_y[depth]);
     else if(k==0x4B00){if(depth){depth--;redraw=2;}}
     else if((k==13 || k==0x4D00) && n>0){
       node=list[sel[depth]];
