@@ -21,7 +21,8 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Program parameter help screen to help with supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Shutdown/Reboot control with retro Windows 95 power off experience.
-- Maximum compatibility across DOS versions on real or emulated hardware.
+- Inactivity screensaver with jumbo clock.
+- Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
 
 
