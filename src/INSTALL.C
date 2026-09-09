@@ -1,4 +1,4 @@
-/* Launch! 1.7 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 1.8 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -132,7 +132,7 @@ int main(int argc,char **argv)
   char destination[PATH_SIZE],autoexec[16],*comspec,answer[16];
   int n,dosbox_detected,use_dosbox;
   (void)argc;
-  puts("Launch! 1.7 Installation");
+  puts("Launch! 1.8 Installation");
   puts("컴컴컴컴컴컴컴컴컴컴컴컴\n\n");
   printf("Install to directory [C:\\LAUNCH]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;

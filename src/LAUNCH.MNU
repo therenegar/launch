@@ -1,4 +1,4 @@
-; Launch! 1.7 menu definition
+; Launch! 1.8 menu definition
 ; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)
 ; SEPARATOR= adds a movable horizontal separator
 

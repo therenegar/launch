@@ -1,4 +1,4 @@
-/* Launch! 1.72 - modal command menu for DOS
+/* Launch! 1.8 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -109,12 +109,14 @@ static unsigned char key_shift;
 static unsigned char key_scan;
 static int mouse_present;
 static unsigned mouse_last_buttons;
+static unsigned mouse_raw_x,mouse_raw_y;
 static int added_visible_node;
 static char help_lines[MAX_HELP_LINES][HELP_WIDTH+1];
 static int help_line_count;
 
 #define BUILTIN_EXPLORE (-3)
 #define BUILTIN_POWER (-2)
+#define SCREENSAVER_TICKS 1092UL
 
 typedef struct {
   char name[13];
@@ -125,7 +127,7 @@ static EXPLORE_ENTRY explore_entries[MAX_EXPLORE_ENTRIES];
 static int explore_count;
 
 static const char *sample_config[] = {
-  "; Launch! 1.72 menu definition\n",
+  "; Launch! 1.8 menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -167,6 +169,7 @@ static const char *sample_config[] = {
 
 static void cursor_restore(void);
 static void mouse_stop(void);
+static unsigned mouse_poll(int *column,int *row);
 
 static void video_init(void)
 {
@@ -542,6 +545,86 @@ static unsigned char draw_clock(int y,unsigned char last_second)
   return r.h.dh;
 }
 
+static unsigned long bios_ticks(void)
+{
+  return *(unsigned long far *)MAKE_FP(0x40,0x6C);
+}
+
+static unsigned long elapsed_ticks(unsigned long start,unsigned long now)
+{
+  if(now>=start)return now-start;
+  return (0x1800B0UL-start)+now;
+}
+
+static const char *big_digits[10][7]={
+  {"########","##    ##","##    ##","##    ##","##    ##","##    ##","########"},
+  {"  ###   ","   ##   ","   ##   ","   ##   ","   ##   ","   ##   "," ###### "},
+  {"########","##    ##","      ##","########","##      ","##    ##","########"},
+  {"########","##    ##","      ##","########","      ##","##    ##","########"},
+  {"##    ##","##    ##","##    ##","########","      ##","      ##","      ##"},
+  {"########","##      ","##      ","########","      ##","##    ##","########"},
+  {"########","##    ##","##      ","########","##    ##","##    ##","########"},
+  {"########","##    ##","      ##","      ##","      ##","      ##","      ##"},
+  {"########","##    ##","##    ##","########","##    ##","##    ##","########"},
+  {"########","##    ##","##    ##","########","      ##","##    ##","########"}
+};
+
+static void draw_big_digit(int x,int y,int digit)
+{
+  int row,column;
+  for(row=0;row<7;row++)for(column=0;column<8;column++)
+    cell(x+column,y+row,big_digits[digit][row][column]=='#'?219:' ',0x0B);
+}
+
+static void draw_big_colon(int x,int y)
+{
+  int row,column;
+  for(row=0;row<7;row++)for(column=0;column<2;column++)
+    cell(x+column,y+row,(row==2 || row==4)?219:' ',0x0B);
+}
+
+static unsigned char draw_big_time(unsigned char previous_second)
+{
+  union REGS r;int x,y;
+  memset(&r,0,sizeof(r));r.h.ah=0x2C;int86(0x21,&r,&r);
+  if(r.h.dh==previous_second)return previous_second;
+  wait_vertical_retrace();
+  if(screen_cols>=73 && screen_rows>=7){
+    x=(screen_cols-73+1)/2;y=(screen_rows-7)/2;
+    draw_big_digit(x,y,r.h.ch/10);draw_big_digit(x+9,y,r.h.ch%10);
+    draw_big_colon(x+21,y);
+    draw_big_digit(x+27,y,r.h.cl/10);draw_big_digit(x+37,y,r.h.cl%10);
+    draw_big_colon(x+49,y);
+    draw_big_digit(x+55,y,r.h.dh/10);draw_big_digit(x+65,y,r.h.dh%10);
+  } else {
+    char value[9];
+    sprintf(value,"%02u:%02u:%02u",r.h.ch,r.h.cl,r.h.dh);
+    textout((screen_cols-8)/2,screen_rows/2,value,0x0B,8);
+  }
+  return r.h.dh;
+}
+
+static void mouse_show(void)
+{
+  union REGS r;if(!mouse_present)return;
+  memset(&r,0,sizeof(r));r.x.ax=1;int86(0x33,&r,&r);
+}
+
+static void clock_screensaver(void)
+{
+  int i,mx=0,my=0;unsigned buttons,start_x=mouse_raw_x,start_y=mouse_raw_y;
+  unsigned char second=255;
+  mouse_stop();
+  for(i=0;i<screen_cols*screen_rows;i++)video[i]=(unsigned short)(0x0000|' ');
+  for(;;){
+    second=draw_big_time(second);
+    if(key_waiting()){keyread();break;}
+    buttons=mouse_poll(&mx,&my);
+    if(buttons || mouse_raw_x!=start_x || mouse_raw_y!=start_y)break;
+  }
+  mouse_show();
+}
+
 static int mouse_start(void)
 {
   union REGS r;
@@ -549,6 +632,7 @@ static int mouse_start(void)
   r.x.ax=4;r.x.cx=1;r.x.dx=1;int86(0x33,&r,&r);
   r.x.ax=1;int86(0x33,&r,&r);
   r.x.ax=3;int86(0x33,&r,&r);mouse_last_buttons=r.x.bx;
+  mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;
   return 1;
 }
 
@@ -562,6 +646,7 @@ static unsigned mouse_poll(int *column,int *row)
   union REGS r;unsigned pressed;
   if(!mouse_present)return 0;
   r.x.ax=3;int86(0x33,&r,&r);
+  mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;
   *column=r.x.cx/8;*row=r.x.dx/8;
   pressed=r.x.bx&~mouse_last_buttons;mouse_last_buttons=r.x.bx;
   return pressed;
@@ -632,7 +717,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 1.72 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 1.8 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -658,7 +743,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 1.72 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 1.8 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
@@ -1920,10 +2005,12 @@ static int menu(void)
   static int panel_y[MAX_DEPTH],panel_h[MAX_DEPTH],panel_n[MAX_DEPTH];
   static int draw_list[MAX_CHILD],hitlist[MAX_CHILD];
   int depth=0,n,k,i,h,x,y,node,redraw=2,mx=0,my=0,hit,pos;
-  unsigned mb; unsigned char last_second=255;
+  unsigned mb,last_mouse_x,last_mouse_y;unsigned char last_second=255;
+  unsigned long last_activity,now;
   parent[0]=-1; sel[0]=0;
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return -1;}
   cursor_hide();mouse_present=mouse_start();
+  last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;last_activity=bios_ticks();
   for(;;){
     n=menu_children(parent[depth],list);
     if(sel[depth]>=n) sel[depth]=n ? n-1 : 0;
@@ -1963,15 +2050,28 @@ static int menu(void)
       }
       if(appearance.show_time)last_second=draw_clock(panel_y[0]+panel_h[0]-1,255);
       else last_second=255;
+      last_activity=bios_ticks();
       redraw=0;
     }
     k=0;mb=0;
     do {
       if(key_waiting()){k=keyread();break;}
       mb=mouse_poll(&mx,&my);
+      if(mouse_raw_x!=last_mouse_x || mouse_raw_y!=last_mouse_y){
+        last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;last_activity=bios_ticks();
+      }
       if(appearance.show_time)
         last_second=draw_clock(panel_y[0]+panel_h[0]-1,last_second);
+      now=bios_ticks();
+      if(elapsed_ticks(last_activity,now)>=SCREENSAVER_TICKS){
+        clock_screensaver();
+        last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;
+        last_activity=bios_ticks();redraw=2;break;
+      }
     } while(!mb);
+
+    if(k || mb)last_activity=bios_ticks();
+    if(!k && !mb && redraw==2)continue;
 
     if(mb){
       hit=-1;pos=-1;
@@ -2223,7 +2323,7 @@ static int queue_macro(const char *text)
 
 static void show_help(void)
 {
-  puts("Launch! 1.72 - a lightweight command menu for DOS\n");
+  puts("Launch! 1.8 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");

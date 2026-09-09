@@ -162,6 +162,13 @@ You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 <img width="720" height="600" alt="poweroff" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
 
+## Screensaver
+If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a large clock.
+Pressing any key or moving the mouse will return to the menu.
+
+
+
+
 ## SHORTCUT - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
 It will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
