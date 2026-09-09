@@ -11,7 +11,7 @@ Requires DOS 3.3, 80286, EGA or better. <br/>
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="!01" src="https://github.com/user-attachments/assets/60960ef0-3cf9-4a89-9133-c5c39278a04d" />
+<img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/433ec062-e5e8-4d0b-a764-8263ce5c25ca" />
 
 
 ## Key features
@@ -36,7 +36,8 @@ Extract the release zip file or mount the floppy image:
 - You can scan your drive and automatically build an initial menu from a comprehensive database of over 1000 DOS programs.
 - Simply reboot after install and you're good to go.
 
-<img width="720" height="600" alt="install" src="https://github.com/user-attachments/assets/a77505ec-c99b-47ad-bdcf-b6e5310b084b" />
+<img width="720" height="600" alt="install" src="https://github.com/user-attachments/assets/0ef73b1f-b2f2-4a3c-929c-986aba861126" />
+
 
 > DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
 
@@ -87,7 +88,8 @@ Menu management
 
 
 ## Customizing appearance
-<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/55a13b00-a146-4daa-84c9-1ee4d1b3608d" />
+<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/ecd2eeb9-00e5-4d7c-b6fb-d2417dfee9ed" />
+
 
 Run `! /CONFIG` to configure menu and dialog colours, menu position, and whether the Shutdown/Reboot option and live clock are shown. 
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles the clock. Mouse clicks are also supported. 
@@ -99,6 +101,7 @@ If `LAUNCH.CFG` is absent, Launch! uses the original blue colour scheme, opens a
 
 ## Live menu management
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to `LAUNCH.MNU`. 
+Each menu panel can display 20 items. Adding a 21st item automatically creates a **More** folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. **More** is maintained by Launch! and is kept at the bottom when the menu is sorted.
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
@@ -110,7 +113,11 @@ Use the keyboard shortcuts to visually edit the menu while it is open. Changes a
 
 When **Change directory first** is selected, Launch! extracts the directory from the first command token. E.g. for C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
-Each menu panel can display 20 items. Adding a 21st item automatically creates a **More** folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. **More** is maintained by Launch! and is kept at the bottom when the menu is sorted.
+### Parameter prompting and help
+<img width="720" height="600" alt="parameter" src="https://github.com/user-attachments/assets/f5d14de5-27e8-4652-a86d-32a0d3f90e78" />
+
+If a launcher has `Prompt?` activated, when launched from the menu the parameter help dialog will be displayed.
+It shows useful command help information for the selected command. You can then enter the required parameters and choose `Run` to execute the command.
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
@@ -130,16 +137,16 @@ An ITEM record has this form:
 The last two values are 1 for selected and 0 for clear. Existing records that do not contain them remain compatible and default to 1|0.
 
 
-## Explore and run
+## Explore & Run
+<img width="720" height="600" alt="explore" src="https://github.com/user-attachments/assets/14259f3c-68b8-4539-a436-0e96c8270013" />
 
-The `Explore...` menu it is a fixed item at the bottom of the menu.
+The `Explore & Run` menu it is a fixed item at the bottom of the menu.
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.
-You can remove the `Explore...` menu item in configuration (`! /CONFIG`)
+You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 
 
 ## Shutdown/Reboot
-
-<img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/7492b7af-cf84-42bf-bb0b-cb6816792344" />
+<img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/cfbeb9aa-3533-48fa-84cf-7f0d1c6ebb6b" />
 
 The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Shutdown or Reboot.<br/>
 Shutdown flushes DOS and SMARTDrive buffers first and then uses standard ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
