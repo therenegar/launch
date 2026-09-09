@@ -1,4 +1,4 @@
-/* Launch! 1.7 - modal command menu for DOS
+/* Launch! 1.72 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -125,7 +125,7 @@ static EXPLORE_ENTRY explore_entries[MAX_EXPLORE_ENTRIES];
 static int explore_count;
 
 static const char *sample_config[] = {
-  "; Launch! 1.7 menu definition\n",
+  "; Launch! 1.72 menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -632,7 +632,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 1.7 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 1.72 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -658,7 +658,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 1.7 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 1.72 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
@@ -800,10 +800,9 @@ static int confirm_box(const char *title,const char *message)
   unsigned mb;
   char line1[43],line2[43];
   wrap_message(message,line1,line2,42);
+  dialog_box(x,y,48,7,title);textout(x+3,y+2,line1,C_FOLDER,42);textout(x+3,y+3,line2,C_FOLDER,42);
   for(;;){
-    dialog_box(x,y,48,7,title);
-    textout(x+3,y+2,line1,C_FOLDER,42);
-    textout(x+3,y+3,line2,C_FOLDER,42);
+    wait_vertical_retrace();
     draw_button(x+14,y+4,"  Yes  ",7,yes);
     draw_button(x+28,y+4,"  No  ",6,!yes);
     wait_input(&k,&mx,&my,&mb);
@@ -1091,9 +1090,9 @@ static void cold_reboot(void)
 static int power_dialog(void)
 {
   int x=(screen_cols-54)/2,y=(screen_rows-7)/2,k,choice=2,mx=0,my=0;unsigned mb;
+  dialog_box(x,y,54,7,"Shutdown...");textout(x+3,y+2,"What do you want to do?",C_FOLDER,46);
   for(;;){
-    dialog_box(x,y,54,7,"Shutdown...");
-    textout(x+3,y+2,"What do you want to do?",C_FOLDER,46);
+    wait_vertical_retrace();
     draw_button(x+5,y+4,"  Power Off  ",12,choice==0);
     draw_button(x+21,y+4,"  Reboot  ",10,choice==1);
     draw_button(x+35,y+4,"  Cancel  ",10,choice==2);
@@ -1113,8 +1112,9 @@ static int power_dialog(void)
 static int choose_type(void)
 {
   int x=(screen_cols-56)/2,y=(screen_rows-7)/2,k,choice=0,mx=0,my=0;unsigned mb;
+  dialog_box(x,y,56,7,"Add Item");textout(x+3,y+2,"Choose the type of item to add:",C_FOLDER,48);
   for(;;){
-    dialog_box(x,y,56,7,"Add Item"); textout(x+3,y+2,"Choose the type of item to add:",C_FOLDER,48);
+    wait_vertical_retrace();
     draw_button(x+5,y+4,"  Folder  ",10,choice==0);
     draw_button(x+20,y+4,"  Launcher  ",12,choice==1);
     draw_button(x+37,y+4,"  Separator  ",13,choice==2);
@@ -1158,10 +1158,9 @@ static int item_form(int folder,char *name,char *exe,char *params,
   pos[0]=pos[1]=pos[2]=0; count=folder?1:3;
   controls=folder?count:count+3;
   x=(screen_cols-64)/2;y=(screen_rows-(folder?10:14))/2;
+  dialog_box(x,y,64,folder?10:14,editing?(folder?"Edit Folder":"Edit Launcher"):(folder?"Add Folder":"Add Launcher"));
   for(;;){
-    dialog_box(x,y,64,folder?10:14,
-        editing?(folder?"Edit Folder":"Edit Launcher"):
-                (folder?"Add Folder":"Add Launcher"));
+    wait_vertical_retrace();
     field_line(x+3,y+2,"Name:",name,focus==0,pos[0],42);
     if(!folder){
       field_line(x+3,y+4,"Command:",exe,focus==1,pos[1],42);
@@ -1275,8 +1274,9 @@ static int configure_appearance(void)
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
   cursor_hide();mouse_present=mouse_start();
   x=(screen_cols-64)/2;y=(screen_rows-22)/2;
+  dialog_box(x,y,64,22,"Configure Appearance");
   for(;;){
-    dialog_box(x,y,64,22,"Configure Appearance");
+    wait_vertical_retrace();
     textout(x+3,y+2,"Background",C_INPUT_LABEL,18);
     textout(x+3,y+3,"Border",C_INPUT_LABEL,18);
     textout(x+3,y+4,"Main Title",C_INPUT_LABEL,18);
@@ -1480,12 +1480,12 @@ static void command_for_spawn(const char *source,char *destination)
   }
 }
 
-static void capture_command_help(int node)
+static void capture_command_help(const char *command)
 {
   FILE *out;int saved_out,saved_err,result;union REGS r;
   char executable[MAX_CMD],parameters[MAX_CMD],spawn_name[MAX_CMD],shell_line[MAX_CMD];
   const char *comspec;
-  split_command(nodes[node].command,executable,parameters);
+  split_command(command,executable,parameters);
   command_for_spawn(executable,spawn_name);remove(help_file);
   out=fopen(help_file,"wt");
   if(!out){const char *message="Unable to create the temporary help file.";
@@ -1541,25 +1541,25 @@ static int compose_prompt_command(const char *executable,const char *parameters)
   return 1;
 }
 
-static int parameter_prompt(int node)
+static int parameter_prompt_command(const char *title,const char *command)
 {
   int x=(screen_cols-76)/2,y=(screen_rows-22)/2,k=0,mx=0,my=0;
   int focus=1,scroll=0,position,length,i,max_scroll;unsigned mb=0;
   static char executable[MAX_CMD],parameters[MAX_CMD];char filename[19],section[48];
-  split_command(nodes[node].command,executable,parameters);position=strlen(parameters);
+  split_command(command,executable,parameters);position=strlen(parameters);
   command_filename(executable,filename);
   sprintf(section," Run %s with parameters... ",filename);
-  capture_command_help(node);max_scroll=help_line_count>14?help_line_count-14:0;
+  capture_command_help(command);max_scroll=help_line_count>14?help_line_count-14:0;
+  dialog_box(x,y,76,22,title);cell(x,y+18,195,C_BORDER);cell(x+75,y+18,180,C_BORDER);
+  for(i=1;i<75;i++)cell(x+i,y+18,196,C_BORDER);
+  textout(x+2,y+18,section,C_TITLE,strlen(section));
   for(;;){
-    dialog_box(x,y,76,22,nodes[node].title);
+    wait_vertical_retrace();
     for(i=0;i<14;i++)textout(x+2,y+2+i,
        scroll+i<help_line_count?help_lines[scroll+i]:"",C_INPUT_FIELD,HELP_WIDTH);
     cell(x+73,y+2,scroll>0?30:' ',C_BUTTON);
     cell(x+73,y+15,scroll<max_scroll?31:' ',C_BUTTON);
     textout(x+2,y+16,"Up/Down and PgUp/PgDn scroll command help",focus==0?C_SELECTED:C_INPUT_LABEL,52);
-    cell(x,y+18,195,C_BORDER);cell(x+75,y+18,180,C_BORDER);
-    for(i=1;i<75;i++)cell(x+i,y+18,196,C_BORDER);
-    textout(x+2,y+18,section,C_TITLE,strlen(section));
     parameter_field(x+2,y+19,parameters,position,focus==1,44);
     draw_button(x+49,y+19,"  Run  ",7,focus==2);
     draw_button(x+61,y+19,"  Cancel  ",10,focus==3);
@@ -1608,6 +1608,11 @@ static int parameter_prompt(int node)
       notice_box("Parameters Too Long","Shorten the parameters before running.");
     }
   }
+}
+
+static int parameter_prompt(int node)
+{
+  return parameter_prompt_command(nodes[node].title,nodes[node].command);
 }
 
 static int prepare_launcher(int node)
@@ -1706,6 +1711,16 @@ static int explore_activate(char *path,int selected)
   return 1;
 }
 
+static int explore_help(char *path,int selected)
+{
+  char command[MAX_CMD];int needed;
+  if(selected<0 || selected>=explore_count || explore_entries[selected].directory){notice_box("Parameter Help","Select an executable file first.");return 0;}
+  needed=strlen(path)+strlen(explore_entries[selected].name);
+  if(needed>=MAX_CMD){notice_box("Path Too Long","That executable path is too long.");return 0;}
+  strcpy(command,path);strcat(command,explore_entries[selected].name);
+  return parameter_prompt_command(explore_entries[selected].name,command);
+}
+
 static int explore_entry_attribute(int index,int selected)
 {
   if(selected)return C_SELECTED;
@@ -1760,8 +1775,9 @@ static int explore_dialog(void)
     cell(x+73,y+4,top>0?30:' ',C_BUTTON);
     cell(x+73,y+18,top+page<explore_count?31:' ',C_BUTTON);
     if(!explore_count)textout(x+2,y+4,"No executable files or directories",C_EMPTY,38);
-    draw_button(x+48,y+20,"  Run  ",7,focus==1);
-    draw_button(x+60,y+20,"  Cancel  ",10,focus==2);
+    draw_button(x+39,y+20,"  Run  ",7,focus==1);
+    draw_button(x+50,y+20,"  /?  ",7,focus==2);
+    draw_button(x+61,y+20,"  Cancel  ",10,focus==3);
     redraw=0;}
     wait_input(&k,&mx,&my,&mb);
     if(mb&1){
@@ -1790,7 +1806,7 @@ static int explore_dialog(void)
         }
         continue;
       }
-      if(my==y+20 && mx>=x+48 && mx<x+55){
+      if(my==y+20 && mx>=x+39 && mx<x+46){
         focus=1;
         action=explore_activate(path,selected);
         last_click=-1;
@@ -1798,16 +1814,19 @@ static int explore_dialog(void)
         if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;redraw=1;}
         continue;
       }
-      if(my==y+20 && mx>=x+60 && mx<x+70){focus=2;return 0;}
+      if(my==y+20 && mx>=x+50 && mx<x+57){focus=2;if(explore_help(path,selected))return 1;redraw=1;continue;}
+      if(my==y+20 && mx>=x+61 && mx<x+71){focus=3;return 0;}
       continue;
     }
     if(k==27)return 0;
-    if(k==9){focus=(focus+1)%3;redraw=1;continue;}
+    if(k==9){focus=(focus+1)%4;redraw=1;continue;}
     if(focus){
-      if(k==0x4B00 || k==0x4D00)focus=focus==1?2:1;
+      if(k==0x4B00)focus=focus==1?3:focus-1;
+      else if(k==0x4D00)focus=focus==3?1:focus+1;
       else if(k==0x4800)focus=0;
       else if(k==13){
-        if(focus==2)return 0;
+        if(focus==3)return 0;
+        if(focus==2){if(explore_help(path,selected))return 1;redraw=1;continue;}
         action=explore_activate(path,selected);
         if(action==1)return 1;
         if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;redraw=1;}
@@ -2164,7 +2183,7 @@ static int queue_macro(const char *text)
 
 static void show_help(void)
 {
-  puts("Launch! 1.7 - a lightweight command menu for DOS\n");
+  puts("Launch! 1.72 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
