@@ -134,10 +134,14 @@ Within the `LAUNCH.MNU` file, sections represent menu paths. Separate nesting le
 ```
 An ITEM record has this form:
 ```
-  ITEM=title|command and parameters|provide Enter|change directory|prompt
+ITEM=title|command and parameters|provide Enter|change directory|prompt
 ```
 The last three values are 1 for on and 0 for off. Records that do not contain them remain compatible and default to 1|0|0.
 
+A separator is added with
+```
+SEPARATOR=
+```
 
 ## Explore & Run
 `Explore & Run` is a fixed item at the bottom of the menu.<br/>
