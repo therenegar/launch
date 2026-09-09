@@ -2,7 +2,7 @@
 
 Version 1.7
 
-A free, tiny lightweight launcher for any DOS, with huge features to improve usability of the command prompt - and make it friendly and convenient.
+A lightweight launcher for any DOS, with huge features to improve the usability of the command prompt - and make it more convenient and friendly.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
