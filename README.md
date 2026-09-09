@@ -87,11 +87,12 @@ Menu management
 
 
 ## Customizing appearance
-<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/fa6635ea-0740-48a6-8735-3f47a0f7d539" />
+<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/71886efe-e96e-4edd-8107-af827bb6d563" />
 
-Run `! /CONFIG` to configure menu and dialog colors, menu position, and whether options such as Explore & Run, Shutdown, and the live clock are displayed.
+
+Run `! /CONFIG` to configure menu and dialog colors, menu position, screensaver clock, and whether options such as Explore & Run, Shutdown..., and the time are displayed.
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
-Settings are saved to `LAUNCH.CFG`.
+Settings are saved to `LAUNCH.CFG`.<br/>
 Cancel leaves the previous appearance unchanged.
 
 If `LAUNCH.CFG` is absent, Launch! uses the original blue color scheme, opens at the lower-left, and displays the clock. A malformed `LAUNCH.CFG` is ignored with a warning and the defaults are used.
@@ -164,9 +165,10 @@ You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
 ## Screensaver
 If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a big clock.
-Pressing any key or moving the mouse will return to the menu.
+Pressing any key or moving the mouse will return to the menu.<br/>
+You can disable the screensaver or change the color of the clock in configuration `! /CONFIG`.
 
-<img width="720" height="600" alt="!08" src="https://github.com/user-attachments/assets/c44e5ffb-e16a-485c-9e78-0808f74836ae" />
+<img width="720" height="600" alt="clock" src="https://github.com/user-attachments/assets/c626b710-da73-418f-ab23-115f15ef612d" />
 
 Pretty isn't she?
 
