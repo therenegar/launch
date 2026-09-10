@@ -183,15 +183,19 @@ The clock will display in 12 or 24-hour mode depending on your menu time setting
 The screensavers have been designed to use the EGA 640x350 screen mode, using absolutely minimal resources, and look amazing on a CRT!
 
 **Clock**
+
 <img width="720" height="600" alt="Screensaver -Clock" src="https://github.com/user-attachments/assets/679df97c-eb6b-4ae7-8edc-6b056cee98c2" />
 
 **Starry Nite**
+
 <img width="720" height="600" alt="Screensaver - Starry Nite" src="https://github.com/user-attachments/assets/c8916e4b-cfe7-4d72-ae96-531c5eca1ab9" />
 
 **Logo**
+
 <img width="720" height="600" alt="Screensaver - DOS" src="https://github.com/user-attachments/assets/508fa7b6-02f0-4c98-b785-47268aba355e" />
 
 **Warp**
+
 <img width="720" height="600" alt="Screensaver - Warp" src="https://github.com/user-attachments/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
 
 
