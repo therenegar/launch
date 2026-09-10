@@ -20,8 +20,8 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs and create a menu
 - Program parameter help screen to help with supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
-- Built in Shutdown/Reboot control with retro Windows 95 power off experience.
-- Inactivity screensaver with jumbo 7-segment clock.
+- Built in Power Off/Reboot control with retro Windows 95 power off experience.
+- Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo or warp field.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
 
@@ -172,18 +172,28 @@ You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 color bitmap.
 
 
-## Clock/Screensaver
-If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a big clock.<br/>
-You can also show the clock at any time by running `! /NOW`.
+## Screensavers
+If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a screensaver (by default a clock).
+You can disable the screensaver or choose from 4 screensavers by running `! /CONFIG`.
+You can also start the selected screensaver at any time by running `! /NOW`.
 
 Pressing any key or moving the mouse will return to the menu.
 
-You can disable the screensaver or change the color of the clock in configuration `! /CONFIG`.
-It will display in 12 or 24-hour mode depending on your menu time setting.
+The clock will display in 12 or 24-hour mode depending on your menu time setting.
+The screensavers have been designed to use the EGA 640x350 screen mode, using absolutely minimal resources, and look amazing on a CRT!
 
-<img width="720" height="600" alt="Clock" src="https://github.com/user-attachments/assets/679df97c-eb6b-4ae7-8edc-6b056cee98c2" />
+**Clock**
+<img width="720" height="600" alt="Screensaver -Clock" src="https://github.com/user-attachments/assets/679df97c-eb6b-4ae7-8edc-6b056cee98c2" />
 
-Pretty isn't she? It's been specifically designed to use the EGA 640x350 screen mode and looks amazing on a CRT display.
+**Starry Nite**
+<img width="720" height="600" alt="Screensaver - Starry Nite" src="https://github.com/user-attachments/assets/c8916e4b-cfe7-4d72-ae96-531c5eca1ab9" />
+
+**Logo**
+<img width="720" height="600" alt="Screensaver - DOS" src="https://github.com/user-attachments/assets/508fa7b6-02f0-4c98-b785-47268aba355e" />
+
+**Warp**
+<img width="720" height="600" alt="Screensaver - Warp" src="https://github.com/user-attachments/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
+
 
 ## SHORTCUT - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
@@ -226,10 +236,3 @@ Launch! validates `LAUNCH.MNU` before opening the menu. A valid file must contai
 Before every accepted Add, Edit, Delete, Move, or Sort operation, the existing valid `LAUNCH.MNU` is copied to `LAUNCH.BAK`. The new menu is first written fully to `LAUNCH.$$$` and is installed only after writing succeeds. `LAUNCH.BK$` is used briefly while rotating the backup.
 
 If `LAUNCH.MNU` is missing or invalid at startup and `LAUNCH.BAK` is valid, Launch! restores the backup automatically and displays a recovery message. If neither file is usable, the built-in sample menu is installed as both `LAUNCH.MNU` and `LAUNCH.BAK`. An invalid primary file is preserved as `LAUNCH.BAD` when possible.
-
-
-## IRL
-
-<img width="540" height="405" alt="IRL" src="https://github.com/user-attachments/assets/3d96cdec-a188-4d8e-a6e3-29d099f92f84" />
-
-<img width="540" height="405" alt="IRL" src="https://github.com/user-attachments/assets/34cd90e7-4229-4c22-adf4-7431b23358a9" />
