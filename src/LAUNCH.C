@@ -111,6 +111,7 @@ static unsigned char copy_buffer[512];
 static unsigned char key_shift;
 static unsigned char key_scan;
 static int mouse_present;
+static int mouse_visible;
 static unsigned mouse_last_buttons;
 static unsigned mouse_raw_x,mouse_raw_y;
 static int added_visible_node;
@@ -808,8 +809,9 @@ static unsigned char draw_graphics_time(unsigned char previous_second,
 
 static void mouse_show(void)
 {
-  union REGS r;if(!mouse_present)return;
+  union REGS r;if(!mouse_present || mouse_visible)return;
   memset(&r,0,sizeof(r));r.x.ax=1;int86(0x33,&r,&r);
+  mouse_visible=1;
 }
 
 static int saver_input(unsigned start_x,unsigned start_y)
@@ -980,15 +982,16 @@ static void run_screensaver(void)
   if(old_rows>25){memset(&r,0,sizeof(r));r.x.ax=0x1112;r.h.bl=0;int86(0x10,&r,&r);}
   video_init();
   memset(&r,0,sizeof(r));r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);
-  mouse_show();
 }
 
 static int mouse_start(void)
 {
   union REGS r;
+  mouse_visible=0;
   r.x.ax=0;int86(0x33,&r,&r);if(r.x.ax==0)return 0;
   r.x.ax=4;r.x.cx=1;r.x.dx=1;int86(0x33,&r,&r);
   r.x.ax=1;int86(0x33,&r,&r);
+  mouse_visible=1;
   r.x.ax=3;int86(0x33,&r,&r);mouse_last_buttons=r.x.bx;
   mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;
   return 1;
@@ -996,7 +999,8 @@ static int mouse_start(void)
 
 static void mouse_stop(void)
 {
-  union REGS r;if(!mouse_present)return;r.x.ax=2;int86(0x33,&r,&r);
+  union REGS r;if(!mouse_present || !mouse_visible)return;
+  r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;
 }
 
 static unsigned mouse_poll(int *column,int *row)
@@ -1013,10 +1017,12 @@ static unsigned mouse_poll(int *column,int *row)
 static void wait_input(int *key,int *column,int *row,unsigned *buttons)
 {
   *key=0;*buttons=0;
+  mouse_show();
   do {
-    if(key_waiting()){*key=keyread();return;}
+    if(key_waiting()){*key=keyread();mouse_stop();return;}
     *buttons=mouse_poll(column,row);
   } while(!*buttons);
+  mouse_stop();
 }
 
 static int child_count(int parent)
@@ -1771,7 +1777,7 @@ static int configure_appearance(void)
   APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,focus=0,row=-1,redraw=1;
   unsigned mb=0;static const int rows[18]={2,3,4,5,6,7,8,8,9,9,10,12,13,13,15,16,17,17};
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
-  cursor_hide();mouse_present=mouse_start();
+  cursor_hide();mouse_present=mouse_start();mouse_stop();
   x=(screen_cols-64)/2;y=(screen_rows-22)/2;
   for(;;){
     wait_vertical_retrace();
@@ -1988,7 +1994,7 @@ static void command_for_spawn(const char *source,char *destination)
 
 static void capture_command_help(const char *command)
 {
-  FILE *out;int saved_out,saved_err,result;union REGS r;
+  FILE *out;int saved_out,saved_err,result;
   char executable[MAX_CMD],parameters[MAX_CMD],spawn_name[MAX_CMD],shell_line[MAX_CMD];
   const char *comspec;
   split_command(command,executable,parameters);
@@ -2014,7 +2020,6 @@ static void capture_command_help(const char *command)
   }
   fflush(stdout);fflush(stderr);_dup2(saved_out,1);_dup2(saved_err,2);
   _close(saved_out);_close(saved_err);fclose(out);
-  if(mouse_present){memset(&r,0,sizeof(r));r.x.ax=1;int86(0x33,&r,&r);}
   read_help_output();
 }
 
@@ -2385,12 +2390,13 @@ static int menu(void)
   static int parent[MAX_DEPTH],sel[MAX_DEPTH],list[MAX_CHILD];
   static int panel_y[MAX_DEPTH],panel_h[MAX_DEPTH],panel_n[MAX_DEPTH];
   static int draw_list[MAX_CHILD],hitlist[MAX_CHILD];
+  union REGS clock_regs;
   int depth=0,n,k,i,h,x,y,node,redraw=2,mx=0,my=0,hit,pos;
   unsigned mb,last_mouse_x,last_mouse_y;unsigned char last_second=255;
   unsigned long last_activity,now;
   parent[0]=-1; sel[0]=0;
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return -1;}
-  cursor_hide();mouse_present=mouse_start();
+  cursor_hide();mouse_present=mouse_start();mouse_stop();
   last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;last_activity=bios_ticks();
   for(;;){
     n=menu_children(parent[depth],list);
@@ -2434,15 +2440,22 @@ static int menu(void)
       last_activity=bios_ticks();
       redraw=0;
     }
-    k=0;mb=0;
+    k=0;mb=0;mouse_show();
     do {
       if(key_waiting()){k=keyread();break;}
       mb=mouse_poll(&mx,&my);
       if(mouse_raw_x!=last_mouse_x || mouse_raw_y!=last_mouse_y){
         last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;last_activity=bios_ticks();
       }
-      if(appearance.show_time)
-        last_second=draw_clock(panel_y[0]+panel_h[0]-1,last_second);
+      if(appearance.show_time){
+        memset(&clock_regs,0,sizeof(clock_regs));clock_regs.h.ah=0x2C;
+        int86(0x21,&clock_regs,&clock_regs);
+        if(clock_regs.h.dh!=last_second){
+          mouse_stop();
+          last_second=draw_clock(panel_y[0]+panel_h[0]-1,last_second);
+          mouse_show();
+        }
+      }
       now=bios_ticks();
       if(appearance.screensaver && elapsed_ticks(last_activity,now)>=SCREENSAVER_TICKS){
         run_screensaver();
@@ -2450,6 +2463,7 @@ static int menu(void)
         last_activity=bios_ticks();redraw=2;break;
       }
     } while(!mb);
+    mouse_stop();
 
     if(k || mb)last_activity=bios_ticks();
     if(!k && !mb && redraw==2)continue;
