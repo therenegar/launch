@@ -182,7 +182,7 @@ Pressing any key or moving the mouse will return to the menu.
 You can disable the screensaver or change the color of the clock in configuration `! /CONFIG`.
 It will display in 12 or 24-hour mode depending on your menu time setting.
 
-<img width="720" height="600" alt="7-segment clock" src="https://github.com/user-attachments/assets/fbea32c3-dac2-4afe-a73b-1a5678769269" />
+<img width="720" height="600" alt="Clock display" src="https://github.com/user-attachments/assets/574bb24f-6b05-4847-ab2f-d9e89510160f" />
 
 Pretty isn't she? It's been specifically designed to use the EGA 640x350 screen mode and looks amazing on a CRT display.
 
