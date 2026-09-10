@@ -100,7 +100,7 @@ Run `! /CONFIG` to configure
 
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
 
-Cancel leaves retains the previous configuration.
+Cancel retains the previous configuration.
 
 Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
 If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults. 
