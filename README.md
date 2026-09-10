@@ -105,6 +105,9 @@ Cancel retains the previous configuration.
 Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
 If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults. 
 
+<img width="720" height="600" alt="!04" src="https://github.com/user-attachments/assets/72ff4957-7834-4794-a969-e16f5c68543c" />
+
+Make it your own!
 
 ## Live menu management
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to `LAUNCH.MNU`. 
@@ -188,7 +191,7 @@ The screensavers have been designed to use the EGA 640x350 screen mode, using ab
 
 ### Clock
 
-<img width="720" height="600" alt="Screensaver -Clock" src="https://github.com/user-attachments/assets/679df97c-eb6b-4ae7-8edc-6b056cee98c2" />
+<img width="720" height="600" alt="screensaver-clock" src="https://github.com/user-attachments/assets/01be0070-cb66-4cdd-96a8-d58dca7e01e5" />
 
 The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in `! /CONFIG`
 
