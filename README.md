@@ -181,7 +181,7 @@ You can disable the screensaver or change the color of the clock in configuratio
 
 <img width="720" height="600" alt="7-segment clock" src="https://github.com/user-attachments/assets/fbea32c3-dac2-4afe-a73b-1a5678769269" />
 
-Pretty isn't she?
+Pretty isn't she? It's been specifically designed to use the EGA 640x350 screen mode.
 
 ## SHORTCUT - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
