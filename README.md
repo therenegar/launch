@@ -15,7 +15,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 ## Features
 - Displays a hierarchical folder based menu, modally over the top of the existing console contents.
 - Supports trigger by a keyboard shortcut which can be customized.
-- Launches command using the existing command interpreter and shell.
+- Launches commands using the existing command interpreter and shell.
 - Easy visual menu editing.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
