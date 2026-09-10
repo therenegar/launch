@@ -607,7 +607,7 @@ static void draw_clock_shape(int x,int y,const CLOCK_SHAPE *shape,
                              unsigned char colour)
 {
   int row;const CLOCK_SPAN *span=shape->rows;
-  for(row=0;row<shape->count;row++,span++)if(span->left!=255)
+  for(row=0;row<(int)shape->count;row++,span++)if(span->left!=255)
     ega_span(y+shape->top+row,x+span->left,x+span->right,colour);
 }
 
@@ -649,6 +649,18 @@ static void draw_clock_bitmap(int x,int y,const unsigned char *bits,
 static void set_ega_clock_mode(void)
 {
   union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x0010;int86(0x10,&r,&r);
+
+  /* A VGA can give colour 8 a subtler VFD-like inactive glow.  Its DAC
+     components are six-bit values, so 8/63 is approximately RGB #202020
+     (the nearest darker match to #222222).  A genuine EGA has only its
+     fixed 64-colour palette and therefore retains normal dark grey. */
+  memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);
+  if(r.h.al==0x1A){
+    memset(&r,0,sizeof(r));r.x.ax=0x1000;r.h.bl=8;r.h.bh=8;
+    int86(0x10,&r,&r);
+    memset(&r,0,sizeof(r));r.x.ax=0x1010;r.x.bx=8;
+    r.h.dh=8;r.h.ch=8;r.h.cl=8;int86(0x10,&r,&r);
+  }
   _outpw(0x3C4,0x0F02); /* all four planes */
   _outpw(0x3CE,0x0003); /* replace, no rotate */
   _outpw(0x3CE,0x0205); /* write mode 2 */
@@ -678,9 +690,9 @@ static unsigned char draw_graphics_time(unsigned char previous_second,
   draw_clock_dot(343+shift,201,colon_colour);
   if(appearance.hour_12){
     draw_clock_bitmap(21,143,clock_am_bits,CLOCK_AM_WIDTH,CLOCK_AM_HEIGHT,
-                      CLOCK_AM_STRIDE,!is_pm?colour:8);
+                      CLOCK_AM_STRIDE,(unsigned char)(!is_pm?colour:8));
     draw_clock_bitmap(16,191,clock_pm_bits,CLOCK_PM_WIDTH,CLOCK_PM_HEIGHT,
-                      CLOCK_PM_STRIDE,is_pm?colour:8);
+                      CLOCK_PM_STRIDE,(unsigned char)(is_pm?colour:8));
   }
   return r.h.dh;
 }
