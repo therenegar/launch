@@ -90,7 +90,7 @@ Menu management
 ## Customizing appearance
 <img width="720" height="600" alt="Config" src="https://github.com/user-attachments/assets/9fae5688-7e95-40b0-8f9a-a7d3e1dca1a6" />
 
-Run `! /CONFIG` to configure menu and dialog colors, menu position, screensaver clock, and whether options such as Explore & Run, Shutdown..., and the time are displayed. You can also choose 12/24-hour time preferences.
+Run `! /CONFIG` to configure menu and dialog colors, menu position, screensaver clock, and whether options such as Explore & Run, Shutdown..., and the time are displayed. You can also choose 12/24-hour time preferences, note this applies to the clock screensaver as well.
 
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
 
@@ -178,10 +178,11 @@ You can also show the clock at any time by running `! /NOW`.
 Pressing any key or moving the mouse will return to the menu.
 
 You can disable the screensaver or change the color of the clock in configuration `! /CONFIG`.
+It will display in 12 or 24-hour mode depending on your menu time setting.
 
 <img width="720" height="600" alt="7-segment clock" src="https://github.com/user-attachments/assets/fbea32c3-dac2-4afe-a73b-1a5678769269" />
 
-Pretty isn't she? It's been specifically designed to use the EGA 640x350 screen mode.
+Pretty isn't she? It's been specifically designed to use the EGA 640x350 screen mode and looks amazing on a CRT display.
 
 ## SHORTCUT - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
