@@ -9,6 +9,7 @@
 #include <conio.h>
 #include <io.h>
 #include <process.h>
+#include "CLOCKDAT.H"
 
 #define MAX_NODES 96
 #define MAX_TITLE 24
@@ -30,11 +31,11 @@ typedef struct {
   unsigned char background,border,main_title,titles,folders,launchers;
   unsigned char selected_fg,selected_bg,controls_fg,controls_bg,labels;
   unsigned char menu_top,show_explore,show_power,show_time;
-  unsigned char screensaver,saver_color;
+  unsigned char screensaver,saver_color,hour_12;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,11};
-static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,11};
+static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1};
+static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1};
 
 /* VGA attribute byte: high nibble = background, low nibble = foreground. */
 #define ATTR(bg,fg)       (((bg)<<4)|(fg))
@@ -369,6 +370,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SHOW_TIME")){field=&a->show_time;limit=1;}
   else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=1;}
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
+  else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
   if(!field || value<0 || value>limit)return 0;
   *field=(unsigned char)value;return 1;
 }
@@ -537,13 +539,19 @@ static unsigned char draw_clock(int y,unsigned char last_second)
 {
   static unsigned long last_tick=0xFFFFFFFFUL;
   unsigned long tick=*(unsigned long far *)MAKE_FP(0x40,0x6C);
-  union REGS r; char value[9]; int x=MENU_WIDTH-12;
+  union REGS r;char value[9],separator;int x,len,i,hour;
   if(last_second!=255 && tick==last_tick)return last_second;
   last_tick=tick;
   r.h.ah=0x2C;int86(0x21,&r,&r);
   if(r.h.dh!=last_second){
-    sprintf(value,"%02u:%02u:%02u",r.h.ch,r.h.cl,r.h.dh);
-    cell(x-1,y,180,C_BORDER);textout(x,y,value,C_TITLE,8);cell(x+8,y,195,C_BORDER);
+    separator=(r.h.dh&1)?' ':':';hour=r.h.ch;
+    if(appearance.hour_12){
+      const char *period=hour>=12?"PM":"AM";hour%=12;if(!hour)hour=12;
+      sprintf(value,"%u%c%02u %s",hour,separator,r.h.cl,period);
+    } else sprintf(value,"%02u%c%02u",hour,separator,r.h.cl);
+    for(i=8;i<=18;i++)cell(i,y,196,C_BORDER);
+    len=strlen(value);x=18-len;
+    cell(x-1,y,180,C_BORDER);textout(x,y,value,C_TITLE,len);cell(x+len,y,195,C_BORDER);
   }
   return r.h.dh;
 }
@@ -559,53 +567,120 @@ static unsigned long elapsed_ticks(unsigned long start,unsigned long now)
   return (0x1800B0UL-start)+now;
 }
 
-static const char *big_digits[10][7]={
-  {" DBBBBBD ","BBU   UBB","BB     BB","BB     BB","BB     BB","BBD   DBB"," UBBBBBU "},
-  {"   DBB   ","  UUBB   ","    BB   ","    BB   ","    BB   ","    BB   ","  BBBBBB "},
-  {"DBBBBBBBD","UU     BB","     DBBU","   DBBU  "," DBBU    ","BBU      ","BBBBBBBBB"},
-  {"DBBBBBBBD","UU    UBB","      DBB","  BBBBBB ","      UBB","DD    DBB","UBBBBBBBU"},
-  {"    DBBB ","  DBU BB ","DBU   BB ","BBBBBBBBB","      BB ","      BB ","      BB "},
-  {"BBBBBBBBB","BB       ","BB       ","BBBBBBBBD","      UBB","DD    DBB","UBBBBBBBU"},
-  {" DBBBBBBD","BBU    UU","BB       ","BBDBBBBBD","BBU   UBB","BBD   DBB","UBBBBBBBU"},
-  {"BBBBBBBBB","UU     BB","     DBBU","   DBBU  ","   BB    ","   BB    ","   BB    "},
-  {"DBBBBBBBD","BBU   UBB","BBD   DBB"," BBBBBBB ","BBU   UBB","BBD   DBB","UBBBBBBBU"},
-  {"DBBBBBBBD","BBU   UBB","BBD   DBB","UBBBBBBBB","       BB","      DBB"," BBBBBBU "}
+/* Exact 640x350 raster spans generated from the supplied VFD SVG artwork. */
+static const unsigned char segment_mask[10]={
+  0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F
 };
 
-static void draw_big_digit(int x,int y,int digit)
+static unsigned char far *ega_memory=(unsigned char far *)MAKE_FP(0xA000,0);
+
+static void ega_span(int y,int left,int right,unsigned char colour)
 {
-  int row,column,ch;char part;
-  for(row=0;row<7;row++)for(column=0;column<9;column++){
-    part=big_digits[digit][row][column];
-    ch=part=='B'?219:(part=='D'?220:(part=='U'?223:' '));
-    cell(x+column,y+row,ch,appearance.saver_color);
+  int first,last,b;unsigned char mask;unsigned offset;
+  volatile unsigned char latch;
+  if(y<0 || y>=350 || right<0 || left>=640)return;
+  if(left<0)left=0;
+  if(right>639)right=639;
+  if(left>right)return;
+  first=left>>3;last=right>>3;offset=(unsigned)(y*80+first);
+  if(first==last){
+    mask=(unsigned char)((0xFFu>>(left&7))&(0xFFu<<(7-(right&7))));
+    _outpw(0x3CE,(unsigned)((mask<<8)|8));latch=ega_memory[offset];
+    ega_memory[offset]=colour;(void)latch;return;
+  }
+  mask=(unsigned char)(0xFFu>>(left&7));
+  _outpw(0x3CE,(unsigned)((mask<<8)|8));latch=ega_memory[offset];
+  ega_memory[offset++]=colour;
+  _outpw(0x3CE,0xFF08);
+  for(b=first+1;b<last;b++){latch=ega_memory[offset];ega_memory[offset++]=colour;}
+  mask=(unsigned char)(0xFFu<<(7-(right&7)));
+  _outpw(0x3CE,(unsigned)((mask<<8)|8));latch=ega_memory[offset];
+  ega_memory[offset]=colour;(void)latch;
+}
+
+static void ega_rectangle(int x,int y,int width,int height,unsigned char colour)
+{
+  int row;for(row=0;row<height;row++)ega_span(y+row,x,x+width-1,colour);
+}
+
+static void draw_clock_shape(int x,int y,const CLOCK_SHAPE *shape,
+                             unsigned char colour)
+{
+  int row;const CLOCK_SPAN *span=shape->rows;
+  for(row=0;row<shape->count;row++,span++)if(span->left!=255)
+    ega_span(y+shape->top+row,x+span->left,x+span->right,colour);
+}
+
+static void draw_segment_digit(int x,int y,int digit,unsigned char colour)
+{
+  int segment;ega_rectangle(x,y,109,114,0);
+  for(segment=0;segment<7;segment++)draw_clock_shape(x,y,&clock_shapes[segment],8);
+  if(digit>=0)for(segment=0;segment<7;segment++)
+    if(segment_mask[digit]&(1<<segment))
+      draw_clock_shape(x,y,&clock_shapes[segment],colour);
+}
+
+static void draw_clock_dot(int cx,int cy,unsigned char colour)
+{
+  static const unsigned char extents[9]={11,10,10,10,9,8,7,5,3};
+  int dy,extent;
+  for(dy=-8;dy<=8;dy++){
+    extent=extents[dy<0?-dy:dy];
+    ega_span(cy+dy,cx-extent,cx+extent,colour);
   }
 }
 
-static void draw_big_colon(int x,int y)
+static void draw_clock_bitmap(int x,int y,const unsigned char *bits,
+                              int width,int height,int stride,
+                              unsigned char colour)
 {
-  int row,column;
-  for(row=0;row<7;row++)for(column=0;column<2;column++)
-    cell(x+column,y+row,(row==2 || row==4)?219:' ',appearance.saver_color);
+  int row,column,start;
+  for(row=0;row<height;row++){
+    column=0;
+    while(column<width){
+      while(column<width && !(bits[row*stride+(column>>3)]&(0x80>>(column&7))))column++;
+      start=column;
+      while(column<width && (bits[row*stride+(column>>3)]&(0x80>>(column&7))))column++;
+      if(start<column)ega_span(y+row,x+start,x+column-1,colour);
+    }
+  }
 }
 
-static unsigned char draw_big_time(unsigned char previous_second)
+static void set_ega_clock_mode(void)
 {
-  union REGS r;int x,y;
+  union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x0010;int86(0x10,&r,&r);
+  _outpw(0x3C4,0x0F02); /* all four planes */
+  _outpw(0x3CE,0x0003); /* replace, no rotate */
+  _outpw(0x3CE,0x0205); /* write mode 2 */
+}
+
+static unsigned char draw_graphics_time(unsigned char previous_second,
+                                        signed char previous_digits[4])
+{
+  static const int positions[4]={86,206,386,506};
+  union REGS r;signed char digits[4];unsigned char colour,colon_colour;
+  int i,hour,is_pm,shift;
   memset(&r,0,sizeof(r));r.h.ah=0x2C;int86(0x21,&r,&r);
   if(r.h.dh==previous_second)return previous_second;
+  hour=r.h.ch;is_pm=hour>=12;
+  if(appearance.hour_12){hour%=12;if(!hour)hour=12;digits[0]=(signed char)(hour>=10?hour/10:-1);}
+  else digits[0]=(signed char)(hour/10);
+  digits[1]=(signed char)(hour%10);digits[2]=(signed char)(r.h.cl/10);
+  digits[3]=(signed char)(r.h.cl%10);
+  shift=appearance.hour_12?0:-31;
+  colour=(unsigned char)(appearance.saver_color&15);
   wait_vertical_retrace();
-  if(screen_cols>=73 && screen_rows>=7){
-    x=(screen_cols-73+1)/2;y=(screen_rows-7)/2;
-    draw_big_digit(x,y,r.h.ch/10);draw_big_digit(x+10,y,r.h.ch%10);
-    draw_big_colon(x+22,y);
-    draw_big_digit(x+27,y,r.h.cl/10);draw_big_digit(x+37,y,r.h.cl%10);
-    draw_big_colon(x+49,y);
-    draw_big_digit(x+54,y,r.h.dh/10);draw_big_digit(x+64,y,r.h.dh%10);
-  } else {
-    char value[9];
-    sprintf(value,"%02u:%02u:%02u",r.h.ch,r.h.cl,r.h.dh);
-    textout((screen_cols-8)/2,screen_rows/2,value,appearance.saver_color,8);
+  for(i=0;i<4;i++)if(previous_digits[i]!=digits[i]){
+    draw_segment_digit(positions[i]+shift,118,digits[i],colour);previous_digits[i]=digits[i];
+  }
+  colon_colour=(r.h.dh&1)?8:colour;
+  draw_clock_dot(355+shift,150,colon_colour);
+  draw_clock_dot(343+shift,201,colon_colour);
+  if(appearance.hour_12){
+    draw_clock_bitmap(21,143,clock_am_bits,CLOCK_AM_WIDTH,CLOCK_AM_HEIGHT,
+                      CLOCK_AM_STRIDE,!is_pm?colour:8);
+    draw_clock_bitmap(16,191,clock_pm_bits,CLOCK_PM_WIDTH,CLOCK_PM_HEIGHT,
+                      CLOCK_PM_STRIDE,is_pm?colour:8);
   }
   return r.h.dh;
 }
@@ -618,16 +693,26 @@ static void mouse_show(void)
 
 static void clock_screensaver(void)
 {
-  int i,mx=0,my=0;unsigned buttons,start_x=mouse_raw_x,start_y=mouse_raw_y;
-  unsigned char second=255;
+  union REGS r;int mx=0,my=0,old_mode,old_rows=screen_rows;
+  unsigned buttons,start_x,start_y;
+  unsigned char second=255;signed char previous_digits[4]={-2,-2,-2,-2};
   mouse_stop();
-  for(i=0;i<screen_cols*screen_rows;i++)video[i]=(unsigned short)(0x0000|' ');
+  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);old_mode=r.h.al;
+  set_ega_clock_mode();
+  /* A mode change can rescale or reset the mouse driver's coordinates.  Take
+   * the inactivity baseline afterward so that this is not mistaken for real
+   * mouse movement and used to dismiss the clock immediately. */
+  (void)mouse_poll(&mx,&my);start_x=mouse_raw_x;start_y=mouse_raw_y;
   for(;;){
-    second=draw_big_time(second);
+    second=draw_graphics_time(second,previous_digits);
     if(key_waiting()){keyread();break;}
     buttons=mouse_poll(&mx,&my);
     if(buttons || mouse_raw_x!=start_x || mouse_raw_y!=start_y)break;
   }
+  memset(&r,0,sizeof(r));r.h.al=(unsigned char)old_mode;int86(0x10,&r,&r);
+  if(old_rows>25){memset(&r,0,sizeof(r));r.x.ax=0x1112;r.h.bl=0;int86(0x10,&r,&r);}
+  video_init();
+  memset(&r,0,sizeof(r));r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);
   mouse_show();
 }
 
@@ -752,11 +837,11 @@ static int save_appearance(void)
   if(fputs("; Launch! 1.8 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
-      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSCREENSAVER=%u\nSAVER_COLOR=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
+      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSCREENSAVER=%u\nSAVER_COLOR=%u\nHOUR_12=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
       appearance.background,appearance.border,appearance.main_title,appearance.titles,
       appearance.folders,appearance.launchers,appearance.selected_fg,appearance.selected_bg,
       appearance.controls_fg,appearance.controls_bg,appearance.labels,
-      appearance.menu_top,appearance.screensaver,appearance.saver_color,
+      appearance.menu_top,appearance.screensaver,appearance.saver_color,appearance.hour_12,
       appearance.show_explore,appearance.show_power,
       appearance.show_time)<0)ok=0;
   if(fclose(f)!=0)ok=0;
@@ -1384,6 +1469,7 @@ static unsigned char *appearance_field(int focus,int *limit)
     case 11:*limit=1;return &appearance.menu_top;
     case 12:*limit=1;return &appearance.screensaver;
     case 13:return &appearance.saver_color;
+    case 17:*limit=1;return &appearance.hour_12;
   }
   return 0;
 }
@@ -1404,7 +1490,7 @@ static void change_appearance_value(int focus,int direction)
 static int configure_appearance(void)
 {
   APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,focus=0,row=-1,redraw=1;
-  unsigned mb=0;static const int rows[17]={2,3,4,5,6,7,8,8,9,9,10,12,13,13,15,16,17};
+  unsigned mb=0;static const int rows[18]={2,3,4,5,6,7,8,8,9,9,10,12,13,13,15,16,17,17};
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
   cursor_hide();mouse_present=mouse_start();
   x=(screen_cols-64)/2;y=(screen_rows-22)/2;
@@ -1439,17 +1525,19 @@ static int configure_appearance(void)
     check_line(x+22,y+15,"Show 'Explore & Run' menu item",appearance.show_explore,focus==14);
     check_line(x+22,y+16,"Show 'Shutdown...' menu item",appearance.show_power,focus==15);
     check_line(x+22,y+17,"Show the time",appearance.show_time,focus==16);
-    draw_button(x+19,y+19,"  Save  ",8,focus==17);
-    draw_button(x+34,y+19,"  Cancel  ",10,focus==18);
+    cycle_control(x+41,y+17,appearance.hour_12?"12-hour":"24-hour",focus==17);
+    draw_button(x+19,y+19,"  Save  ",8,focus==18);
+    draw_button(x+34,y+19,"  Cancel  ",10,focus==19);
     wait_input(&k,&mx,&my,&mb);
     if(mb){
       row=-1;
       if(mx>=x+22 && mx<x+37){
-        int i;for(i=0;i<17;i++)if(my==y+rows[i]){row=i;break;}
+        int i;for(i=0;i<18;i++)if(my==y+rows[i]){row=i;break;}
       }
       if(mx>=x+41 && mx<x+56 && my==y+8)row=7;
       if(mx>=x+41 && mx<x+56 && my==y+9)row=9;
       if(mx>=x+41 && mx<x+56 && my==y+13)row=13;
+      if(mx>=x+41 && mx<x+56 && my==y+17)row=17;
       if(row>=0){focus=row;change_appearance_value(focus,(mb&2)?-1:1);redraw=1;continue;}
       if(my==y+19 && (mb&1)){
         if(mx>=x+19 && mx<x+27){
@@ -1461,13 +1549,13 @@ static int configure_appearance(void)
       continue;
     }
     if(k==27){appearance=original;close_menu();return 0;}
-    if(k==9 || k==0x5000){focus=(focus+1)%19;continue;}
-    if(k==0x4800){focus=(focus+18)%19;continue;}
+    if(k==9 || k==0x5000){focus=(focus+1)%20;continue;}
+    if(k==0x4800){focus=(focus+19)%20;continue;}
     if(k==0x4B00){change_appearance_value(focus,-1);redraw=1;continue;}
     if(k==0x4D00 || k==' '){change_appearance_value(focus,1);redraw=1;continue;}
     if(k==13){
-      if(focus<17){focus++;continue;}
-      if(focus==17){
+      if(focus<18){focus++;continue;}
+      if(focus==18){
         if(save_appearance()){close_menu();return 1;}
         notice_box("Write Error","Could not update LAUNCH.CFG.");redraw=1;continue;
       }
@@ -2351,15 +2439,20 @@ static void show_help(void)
 
 int main(int argc,char **argv)
 {
-  int i,config_status,config_mode=0;static char macro[MAX_MACRO];
+  int i,config_status,config_mode=0,now_mode=0;static char macro[MAX_MACRO];
   config_path(argv[0]);
   if(!load_appearance())puts("Launch!: LAUNCH.CFG is invalid; using default appearance.");
   for(i=1;i<argc;i++){
     if(!stricmp(argv[i],"/?") || !stricmp(argv[i],"-?")){show_help();return 0;}
     if(!stricmp(argv[i],"/CONFIG"))config_mode=1;
+    else if(!stricmp(argv[i],"/NOW"))now_mode=1;
     else {printf("Launch!: unknown option %s (use ! /?)\n",argv[i]);return 1;}
   }
   if(config_mode){configure_appearance();return 0;}
+  if(now_mode){
+    video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 1;}
+    cursor_hide();mouse_present=mouse_start();clock_screensaver();close_menu();return 0;
+  }
   config_status=prepare_config();
   if(!config_status){printf("Launch!: cannot recover %s\n",config_file);return 1;}
   if(config_status==2)puts("Launch!: LAUNCH.MNU was missing or invalid; restored LAUNCH.BAK.");
