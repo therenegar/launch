@@ -9,7 +9,7 @@ Requires DOS 3.3, 80286, EGA or better. <br/>
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/433ec062-e5e8-4d0b-a764-8263ce5c25ca" />
+<img width="720" height="600" alt="Launch! Menu" src="https://github.com/user-attachments/assets/e4873cd8-d26e-49a1-9338-4d668d65cbfb" />
 
 
 ## Key features
@@ -21,7 +21,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Program parameter help screen to help with supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Shutdown/Reboot control with retro Windows 95 power off experience.
-- Inactivity screensaver with jumbo clock.
+- Inactivity screensaver with jumbo 7-segment clock.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
 
@@ -88,10 +88,9 @@ Menu management
 
 
 ## Customizing appearance
-<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/71886efe-e96e-4edd-8107-af827bb6d563" />
+<img width="720" height="600" alt="Config" src="https://github.com/user-attachments/assets/9fae5688-7e95-40b0-8f9a-a7d3e1dca1a6" />
 
-
-Run `! /CONFIG` to configure menu and dialog colors, menu position, screensaver clock, and whether options such as Explore & Run, Shutdown..., and the time are displayed.
+Run `! /CONFIG` to configure menu and dialog colors, menu position, screensaver clock, and whether options such as Explore & Run, Shutdown..., and the time are displayed. You can also choose 12/24-hour time preferences.
 
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
 
@@ -108,11 +107,11 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="720" height="600" alt="add" src="https://github.com/user-attachments/assets/be2f5567-086a-4337-909e-42f22fa8853a" />
+<img width="720" height="600" alt="Add dialog" src="https://github.com/user-attachments/assets/be2f5567-086a-4337-909e-42f22fa8853a" />
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/dda87955-ad54-4583-b073-996eba095d9d" />
+<img width="720" height="600" alt="Edit dialog" src="https://github.com/user-attachments/assets/dda87955-ad54-4583-b073-996eba095d9d" />
 
 
 When **Change directory first** is selected, Launch! extracts the directory from the first command token. <br/>
@@ -122,7 +121,7 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 If a launcher has `Prompt?` activated, when launched from the menu the parameter help dialog will be displayed.
 It shows useful command help information for the selected command. You can then enter the required parameters and choose `Run` to execute the command.
 
-<img width="720" height="600" alt="param" src="https://github.com/user-attachments/assets/9a8f4694-814e-400a-a6d1-037c8c1a4265" />
+<img width="720" height="600" alt="Parameters" src="https://github.com/user-attachments/assets/9a8f4694-814e-400a-a6d1-037c8c1a4265" />
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
@@ -151,11 +150,11 @@ SEPARATOR=
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
 Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
 
-<img width="720" height="600" alt="explore" src="https://github.com/user-attachments/assets/591ce9e5-f5d7-4d6f-bb0b-b98772545766" />
+<img width="720" height="600" alt="Explore and Run" src="https://github.com/user-attachments/assets/591ce9e5-f5d7-4d6f-bb0b-b98772545766" />
 
 Choosing `/?` for an executable will show the command help (if available) and allow you to provide parameters.
 
-<img width="720" height="600" alt="exechelp" src="https://github.com/user-attachments/assets/7fd4f354-3022-4e90-9283-b6c5a8bd225b" />
+<img width="720" height="600" alt="Command parameter help" src="https://github.com/user-attachments/assets/7fd4f354-3022-4e90-9283-b6c5a8bd225b" />
 
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 
@@ -164,22 +163,23 @@ You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Power Off or Reboot.<br/>
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="720" height="600" alt="power" src="https://github.com/user-attachments/assets/b4743d26-5bbe-4d44-b95d-dfeef85dcafe" />
+<img width="720" height="600" alt="Shutdown dialog" src="https://github.com/user-attachments/assets/b4743d26-5bbe-4d44-b95d-dfeef85dcafe" />
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
-<img width="720" height="600" alt="poweroff" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
+<img width="720" height="600" alt="Power off bitmap" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
 If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 color bitmap.
 
-## Screensaver
-If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a big clock.
+## Clock/Screensaver
+If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a big clock.<br/>
+You can also show the clock at any time by running `! /NOW`.
 
 Pressing any key or moving the mouse will return to the menu.
 
 You can disable the screensaver or change the color of the clock in configuration `! /CONFIG`.
 
-<img width="720" height="600" alt="clock" src="https://github.com/user-attachments/assets/c626b710-da73-418f-ab23-115f15ef612d" />
+<img width="720" height="600" alt="7-segment clock" src="https://github.com/user-attachments/assets/fbea32c3-dac2-4afe-a73b-1a5678769269" />
 
 Pretty isn't she?
 
@@ -202,7 +202,7 @@ Use `SHORTCUT /?` for more information.
 
 
 ## AUTOGEN - an automatic menu generator
-<img width="720" height="600" alt="autogen" src="https://github.com/user-attachments/assets/0430d091-5e71-4613-82a5-545172a2a74a" />
+<img width="720" height="600" alt="Auto menu generator" src="https://github.com/user-attachments/assets/0430d091-5e71-4613-82a5-545172a2a74a" />
 
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
 
