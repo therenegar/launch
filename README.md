@@ -12,13 +12,13 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 <img width="720" height="600" alt="Launch! Menu" src="https://github.com/user-attachments/assets/e4873cd8-d26e-49a1-9338-4d668d65cbfb" />
 
 
-## Key features
+## Features
 - Displays a hierarchical folder based menu, modally over the top of the existing console contents.
-- Supports trigger by keyboard shortcut which can be customized.
-- Launches commands at the existing command prompt. It doesn't interfere with program execution or return meaning maximum compatibility and flexibility.
+- Supports trigger by a keyboard shortcut which can be customized.
+- Launches command using the existing command interpreter and shell.
 - Easy visual menu editing.
-- Automatic menu generator with comprehensive DOS program database to automatically identify programs and create a menu
-- Program parameter help screen to help with supplying parameters to any menu item.
+- Automatic menu generator with comprehensive DOS program database to automatically identify programs.
+- Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo or warp field.
@@ -91,20 +91,25 @@ Menu management
 ## Customizing appearance
 <img width="720" height="600" alt="Config" src="https://github.com/user-attachments/assets/9fae5688-7e95-40b0-8f9a-a7d3e1dca1a6" />
 
-Run `! /CONFIG` to configure menu and dialog colors, menu position, screensaver clock, and whether options such as Explore & Run, Shutdown..., and the time are displayed. You can also choose 12/24-hour time preferences, note this applies to the clock screensaver as well.
+Run `! /CONFIG` to configure 
+- Colors (with live preview)
+- Menu position
+- Screensaver
+- Visible menu options; Explore & Run, Shutdown..., and the time
+- 12/24-hour time preferences
 
 Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
 
-Cancel leaves the previous appearance unchanged.
+Cancel leaves retains the previous configuration.
 
-Settings are saved to `LAUNCH.CFG`.<br/>
-If `LAUNCH.CFG` is absent, Launch! uses the original blue color scheme, opens at the lower-left, and displays the clock. A malformed `LAUNCH.CFG` is ignored with a warning and the defaults are used.
+Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
+If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults. 
 
 
 ## Live menu management
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to `LAUNCH.MNU`. 
 
-Each menu panel can display 20 items. Adding a 21st item automatically creates a **More** folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. **More** is maintained by Launch! and is kept at the bottom when the menu is sorted.
+Each menu panel can display 20 items. Adding a 21st item automatically creates a **More** folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. **More** is kept at the bottom when the menu is sorted.
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
@@ -118,7 +123,7 @@ When **Change directory first** is selected, Launch! extracts the directory from
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
 ### Parameter prompting and help
-If a launcher has `Prompt?` activated, when launched from the menu the parameter help dialog will be displayed.
+If a launcher has `Prompt?` activated, when launched from the menu the parameter help dialog will be displayed.<br/>
 It shows useful command help information for the selected command. You can then enter the required parameters and choose `Run` to execute the command.
 
 <img width="720" height="600" alt="Parameters" src="https://github.com/user-attachments/assets/9a8f4694-814e-400a-a6d1-037c8c1a4265" />
@@ -191,13 +196,19 @@ The clock will display in 12 or 24-hour mode depending on your menu time setting
 
 <img width="720" height="600" alt="Screensaver - Starry Nite" src="https://github.com/user-attachments/assets/c8916e4b-cfe7-4d72-ae96-531c5eca1ab9" />
 
+A random skyline will be generated each time.
+
 ### Logo
 
 <img width="720" height="600" alt="Screensaver - DOS" src="https://github.com/user-attachments/assets/508fa7b6-02f0-4c98-b785-47268aba355e" />
 
+The logo will bounce around the screen to amuse you.
+
 ### Warp
 
 <img width="720" height="600" alt="Screensaver - Warp" src="https://github.com/user-attachments/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
+
+Go at warp speed to absolutely nowhere.
 
 
 ## SHORTCUT - keyboard shortcut tool
