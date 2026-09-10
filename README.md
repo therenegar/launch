@@ -9,7 +9,7 @@ Requires DOS 3.3, 80286, EGA or better. <br/>
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="Launch! Menu" src="https://github.com/user-attachments/assets/e4873cd8-d26e-49a1-9338-4d668d65cbfb" />
+<img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/8a82f1c1-0677-4209-adde-b0f797ecbb21" />
 
 
 ## Features
@@ -90,9 +90,11 @@ Menu management
 You can change the keyboard shortcut any time after install by running `! /SETKEY`
 Press the desired keys, your `AUTOEXEC.BAT` will be updated. Reboot to activate the new shortcut.
 
+<img width="720" height="183" alt="setkey" src="https://github.com/user-attachments/assets/9aac80e7-d60d-4752-ac5d-c0049709ffce" />
 
 ## Customizing appearance
-<img width="720" height="600" alt="Config" src="https://github.com/user-attachments/assets/9fae5688-7e95-40b0-8f9a-a7d3e1dca1a6" />
+
+<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/3de47f48-dfe0-43af-b2b9-51fbc5842a6c" />
 
 Run `! /CONFIG` to configure 
 - Colors (with live preview)
@@ -108,9 +110,6 @@ Cancel retains the previous configuration.
 Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
 If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults. 
 
-<img width="720" height="600" alt="!04" src="https://github.com/user-attachments/assets/72ff4957-7834-4794-a969-e16f5c68543c" />
-
-Make it your own!
 
 ## Live menu management
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to `LAUNCH.MNU`. 
@@ -132,7 +131,7 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 If a launcher has `Prompt?` activated, when launched from the menu the parameter help dialog will be displayed.<br/>
 It shows useful command help information for the selected command. You can then enter the required parameters and choose `Run` to execute the command.
 
-<img width="720" height="600" alt="Parameters" src="https://github.com/user-attachments/assets/9a8f4694-814e-400a-a6d1-037c8c1a4265" />
+<img width="720" height="600" alt="params" src="https://github.com/user-attachments/assets/ecba02c8-33ce-42f9-b307-1ce94d9388d8" />
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
@@ -161,11 +160,11 @@ SEPARATOR=
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
 Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
 
-<img width="720" height="600" alt="Explore and Run" src="https://github.com/user-attachments/assets/591ce9e5-f5d7-4d6f-bb0b-b98772545766" />
+<img width="720" height="600" alt="explore" src="https://github.com/user-attachments/assets/4b31e2c0-8a74-459f-a925-c2131330e4fe" />
 
 Choosing `/?` for an executable will show the command help (if available) and allow you to provide parameters.
 
-<img width="720" height="600" alt="Command parameter help" src="https://github.com/user-attachments/assets/7fd4f354-3022-4e90-9283-b6c5a8bd225b" />
+<img width="720" height="600" alt="explore-params" src="https://github.com/user-attachments/assets/5db92f2c-9737-4492-867e-306ac422e3d0" />
 
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 
@@ -174,7 +173,7 @@ You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Power Off or Reboot.<br/>
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="720" height="600" alt="Shutdown dialog" src="https://github.com/user-attachments/assets/b4743d26-5bbe-4d44-b95d-dfeef85dcafe" />
+<img width="720" height="600" alt="shutdown" src="https://github.com/user-attachments/assets/361ef781-445d-4aff-9773-426e7bd12a05" />
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
@@ -237,7 +236,8 @@ Use `SHORTCUT /?` for more information.
 
 
 ## AUTOGEN - an automatic menu generator
-<img width="720" height="600" alt="Auto menu generator" src="https://github.com/user-attachments/assets/0430d091-5e71-4613-82a5-545172a2a74a" />
+
+<img width="720" height="600" alt="autogen_001" src="https://github.com/user-attachments/assets/b8964c31-f9c4-40d3-87d7-a9dfb9458905" />
 
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
 
