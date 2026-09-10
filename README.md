@@ -173,8 +173,8 @@ If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 colo
 
 
 ## Screensavers
-If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a screensaver (by default a clock).
-You can disable the screensaver or choose from 4 screensavers by running `! /CONFIG`.
+If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a screensaver (by default the Clock).
+You can disable the screensaver completely (choose None) or choose from one of the other 4 screensavers by running `! /CONFIG`.<br/>
 You can also start the selected screensaver at any time by running `! /NOW`.
 
 Pressing any key or moving the mouse will return to the menu.
@@ -184,7 +184,8 @@ The screensavers have been designed to use the EGA 640x350 screen mode, using ab
 ### Clock
 
 <img width="720" height="600" alt="Screensaver -Clock" src="https://github.com/user-attachments/assets/679df97c-eb6b-4ae7-8edc-6b056cee98c2" />
-The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color.<br/>
+
+The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in `! /CONFIG`
 
 ### Starry Nite
 
