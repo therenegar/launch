@@ -118,11 +118,11 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="720" height="600" alt="Add dialog" src="https://github.com/user-attachments/assets/be2f5567-086a-4337-909e-42f22fa8853a" />
+<img width="720" height="600" alt="add" src="https://github.com/user-attachments/assets/de6261c8-c15b-4dd0-8281-ba5cff249edc" />
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="720" height="600" alt="Edit dialog" src="https://github.com/user-attachments/assets/dda87955-ad54-4583-b073-996eba095d9d" />
+<img width="720" height="600" alt="edit" src="https://github.com/user-attachments/assets/ed7a86b8-685b-49d5-a0e9-3dd0af49c822" />
 
 When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.<br/>
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
