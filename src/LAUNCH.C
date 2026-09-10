@@ -1,4 +1,4 @@
-/* Launch! 1.9 - modal command menu for DOS
+/* Launch! 2.0 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -37,6 +37,37 @@ typedef struct {
 
 static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1};
 static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1};
+
+static void (interrupt far *setkey_old_int09)();
+static volatile unsigned char setkey_scan,setkey_e0,setkey_mods;
+static volatile unsigned char setkey_key,setkey_key_mods;
+
+#ifndef __GNUC__
+static void interrupt far setkey_int09()
+{
+  unsigned char scan,base,mask;
+  _asm { in al, 60h }
+  _asm { mov setkey_scan, al }
+  scan=setkey_scan;
+  if(scan==0xE0)setkey_e0=1;
+  else {
+    base=(unsigned char)(scan&0x7F);mask=0;
+    if(base==0x1D)mask=4;
+    else if(base==0x38)mask=8;
+    else if(base==0x2A || base==0x36)mask=1;
+    if(mask){
+      if(scan&0x80)setkey_mods&=(unsigned char)~mask;
+      else setkey_mods|=mask;
+    } else if(!(scan&0x80) && !setkey_key){
+      setkey_key=base;setkey_key_mods=setkey_mods;
+    }
+    setkey_e0=0;
+  }
+  _chain_intr(setkey_old_int09);
+}
+#else
+static void setkey_int09(void) {}
+#endif
 
 /* VGA attribute byte: high nibble = background, low nibble = foreground. */
 #define ATTR(bg,fg)       (((bg)<<4)|(fg))
@@ -112,6 +143,9 @@ static unsigned char key_shift;
 static unsigned char key_scan;
 static int mouse_present;
 static int mouse_visible;
+static int mouse_glyph_saved;
+static unsigned char mouse_old_glyph[32];
+static int screensaver_ran;
 static unsigned mouse_last_buttons;
 static unsigned mouse_raw_x,mouse_raw_y;
 static int added_visible_node;
@@ -121,6 +155,7 @@ static int help_line_count;
 #define BUILTIN_EXPLORE (-3)
 #define BUILTIN_POWER (-2)
 #define SCREENSAVER_TICKS 1092UL
+#define MOUSE_MOVED 0x8000U
 
 typedef struct {
   char name[13];
@@ -131,7 +166,7 @@ static EXPLORE_ENTRY explore_entries[MAX_EXPLORE_ENTRIES];
 static int explore_count;
 
 static const char *sample_config[] = {
-  "; Launch! 1.9 menu definition\n",
+  "; Launch! 2.0 menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -173,6 +208,7 @@ static const char *sample_config[] = {
 
 static void cursor_restore(void);
 static void mouse_stop(void);
+static void mouse_pointer_restore(void);
 static unsigned mouse_poll(int *column,int *row);
 
 static void video_init(void)
@@ -202,9 +238,21 @@ static void restore_screen(void)
   for (i=0; i<n; ++i) video[i] = saved[i];
 }
 
+static void clear_text_screen(void)
+{
+  union REGS r;
+  memset(&r,0,sizeof(r));r.h.ah=6;r.h.al=0;r.h.bh=7;
+  r.x.cx=0;r.h.dh=(unsigned char)(screen_rows-1);
+  r.h.dl=(unsigned char)(screen_cols-1);int86(0x10,&r,&r);
+  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=0;r.x.dx=0;int86(0x10,&r,&r);
+}
+
 static void close_menu(void)
 {
-  mouse_stop();restore_screen();cursor_restore();free(saved);saved=0;
+  mouse_stop();mouse_pointer_restore();
+  if(screensaver_ran)clear_text_screen();else restore_screen();
+  cursor_restore();
+  free(saved);saved=0;
 }
 
 static void cell(int x,int y,int ch,int at)
@@ -807,6 +855,80 @@ static unsigned char draw_graphics_time(unsigned char previous_second,
   return r.h.dh;
 }
 
+typedef struct {
+  unsigned char seq2,seq4,gc4,gc5,gc6;
+} FONT_REGS;
+
+static unsigned char indexed_read(unsigned port,unsigned char index)
+{
+  _outp(port,index);return (unsigned char)_inp(port+1);
+}
+
+static void indexed_write(unsigned port,unsigned char index,unsigned char value)
+{
+  _outp(port,index);_outp(port+1,value);
+}
+
+static void font_plane_open(FONT_REGS *old)
+{
+  old->seq2=indexed_read(0x3C4,2);old->seq4=indexed_read(0x3C4,4);
+  old->gc4=indexed_read(0x3CE,4);old->gc5=indexed_read(0x3CE,5);
+  old->gc6=indexed_read(0x3CE,6);
+  indexed_write(0x3C4,2,4);indexed_write(0x3C4,4,7);
+  indexed_write(0x3CE,4,2);indexed_write(0x3CE,5,0);
+  indexed_write(0x3CE,6,0);
+}
+
+static void font_plane_close(const FONT_REGS *old)
+{
+  indexed_write(0x3C4,2,old->seq2);indexed_write(0x3C4,4,old->seq4);
+  indexed_write(0x3CE,4,old->gc4);indexed_write(0x3CE,5,old->gc5);
+  indexed_write(0x3CE,6,old->gc6);
+}
+
+static void mouse_glyph_write(const unsigned char *glyph)
+{
+  FONT_REGS old;unsigned char far *font;
+  int i;
+  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);
+  for(i=0;i<32;i++)font[i]=glyph[i];
+  font_plane_close(&old);
+}
+
+static void mouse_pointer_install(void)
+{
+  static const unsigned char arrow16[16]={
+    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x10,
+    0x18,0x1C,0x1E,0x1F,0x1E,0x12,0x03,0x01
+  };
+  FONT_REGS old;unsigned char far *font;
+  unsigned char arrow[32];unsigned char far *height_ptr;
+  union REGS r;int i,height,source;
+  if(!mouse_glyph_saved){
+    font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);
+    for(i=0;i<32;i++)mouse_old_glyph[i]=font[i];
+    font_plane_close(&old);mouse_glyph_saved=1;
+  }
+  memset(arrow,0,sizeof(arrow));
+  height_ptr=(unsigned char far *)MAKE_FP(0x40,0x85);height=*height_ptr;
+  if(height<8 || height>32)height=16;
+  for(i=0;i<height;i++){
+    source=i*16/height;if(source>15)source=15;arrow[i]=arrow16[source];
+  }
+  mouse_glyph_write(arrow);
+  memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;
+  r.x.cx=0xF000;r.x.dx=0x0F7F;int86(0x33,&r,&r);
+}
+
+static void mouse_pointer_restore(void)
+{
+  union REGS r;if(!mouse_glyph_saved)return;
+  mouse_glyph_write(mouse_old_glyph);
+  memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;
+  r.x.cx=0xFFFF;r.x.dx=0x7700;int86(0x33,&r,&r);
+  mouse_glyph_saved=0;
+}
+
 static void mouse_show(void)
 {
   union REGS r;if(!mouse_present || mouse_visible)return;
@@ -923,7 +1045,7 @@ static int logo_pixel_set(int x,int y)
   unsigned i;
   if(x<0 || x>=LOGO_WIDTH || y<0 || y>=LOGO_HEIGHT)return 0;
   for(i=logo_row_first[y];i<logo_row_first[y+1];i++)
-    if(x>=logo_spans[i].left && x<=logo_spans[i].right)return 1;
+    if(x>=(int)logo_spans[i].left && x<=(int)logo_spans[i].right)return 1;
   return 0;
 }
 
@@ -932,11 +1054,11 @@ static void erase_old_logo_edges(int old_x,int old_y,int new_x,int new_y)
   unsigned i;int x,start,local_y;const LOGO_SPAN *span;
   for(i=0;i<(unsigned)LOGO_SPAN_COUNT;i++){
     span=&logo_spans[i];x=span->left;local_y=old_y+span->y-new_y;
-    while(x<=span->right){
-      while(x<=span->right &&
+    while(x<=(int)span->right){
+      while(x<=(int)span->right &&
             logo_pixel_set(old_x+x-new_x,local_y))x++;
       start=x;
-      while(x<=span->right &&
+      while(x<=(int)span->right &&
             !logo_pixel_set(old_x+x-new_x,local_y))x++;
       if(start<x)ega_span(old_y+span->y,old_x+start,old_x+x-1,0);
     }
@@ -968,6 +1090,7 @@ static void run_screensaver(void)
   union REGS r;int mx=0,my=0,old_mode,old_rows=screen_rows;
   unsigned start_x,start_y;
   if(!appearance.screensaver)return;
+  screensaver_ran=1;
   mouse_stop();
   memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);old_mode=r.h.al;
   set_ega_saver_mode(appearance.screensaver==1);
@@ -982,6 +1105,7 @@ static void run_screensaver(void)
   if(old_rows>25){memset(&r,0,sizeof(r));r.x.ax=0x1112;r.h.bl=0;int86(0x10,&r,&r);}
   video_init();
   memset(&r,0,sizeof(r));r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);
+  if(mouse_present)mouse_pointer_install();
 }
 
 static int mouse_start(void)
@@ -990,6 +1114,7 @@ static int mouse_start(void)
   mouse_visible=0;
   r.x.ax=0;int86(0x33,&r,&r);if(r.x.ax==0)return 0;
   r.x.ax=4;r.x.cx=1;r.x.dx=1;int86(0x33,&r,&r);
+  mouse_pointer_install();
   r.x.ax=1;int86(0x33,&r,&r);
   mouse_visible=1;
   r.x.ax=3;int86(0x33,&r,&r);mouse_last_buttons=r.x.bx;
@@ -1016,11 +1141,16 @@ static unsigned mouse_poll(int *column,int *row)
 
 static void wait_input(int *key,int *column,int *row,unsigned *buttons)
 {
+  int start_column,start_row;
   *key=0;*buttons=0;
+  start_column=(int)(mouse_raw_x/8);start_row=(int)(mouse_raw_y/8);
   mouse_show();
   do {
     if(key_waiting()){*key=keyread();mouse_stop();return;}
     *buttons=mouse_poll(column,row);
+    if(!*buttons && (*column!=start_column || *row!=start_row)){
+      *buttons=MOUSE_MOVED;mouse_stop();return;
+    }
   } while(!*buttons);
   mouse_stop();
 }
@@ -1081,7 +1211,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 1.9 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 2.0 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1107,7 +1237,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 1.9 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 2.0 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSCREENSAVER=%u\nSAVER_COLOR=%u\nHOUR_12=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
@@ -1232,6 +1362,18 @@ static void draw_button(int x,int y,const char *label,int width,int focused)
   if(focused){cell(x,y,16,C_BUTTON);cell(x+width-1,y,17,C_BUTTON);}
 }
 
+static void press_button(int x,int y,const char *label,int width)
+{
+  int i,mx=0,my=0;
+  /* Remove the right and lower shadows while the physical button is held. */
+  cell(x+width,y,' ',C_MENU_BACKGROUND);
+  for(i=1;i<=width;i++)cell(x+i,y+1,' ',C_MENU_BACKGROUND);
+  textout(x,y,label,C_BUTTON,width);
+  mouse_show();
+  do {(void)mouse_poll(&mx,&my);} while(mouse_last_buttons&1);
+  mouse_stop();
+}
+
 static void wrap_message(const char *message,char *line1,char *line2,int width)
 {
   int len=strlen(message),cut=width;
@@ -1256,9 +1398,14 @@ static int confirm_box(const char *title,const char *message)
     draw_button(x+14,y+4,"  Yes  ",7,yes);
     draw_button(x+28,y+4,"  No  ",6,!yes);
     wait_input(&k,&mx,&my,&mb);
+    if((mb&MOUSE_MOVED) && my==y+4){
+      if(mx>=x+14 && mx<x+21)yes=1;
+      else if(mx>=x+28 && mx<x+34)yes=0;
+      continue;
+    }
     if((mb&1) && my==y+4){
-      if(mx>=x+14 && mx<x+21)return 1;
-      if(mx>=x+28 && mx<x+34)return 0;
+      if(mx>=x+14 && mx<x+21){press_button(x+14,y+4,"  Yes  ",7);return 1;}
+      if(mx>=x+28 && mx<x+34){press_button(x+28,y+4,"  No  ",6);return 0;}
     }
     if(k==27) return 0;
     if(k==0x4B00 || k==0x4D00 || k==9) yes=!yes;
@@ -1273,6 +1420,8 @@ static void notice_box(const char *title,const char *message)
   int x=(screen_cols-48)/2,y=(screen_rows-7)/2,k,mx,my;unsigned mb;
   dialog_box(x,y,48,7,title); textout(x+3,y+2,message,C_FOLDER,42);
   draw_button(x+21,y+4,"  OK  ",6,1);wait_input(&k,&mx,&my,&mb);
+  if((mb&1) && my==y+4 && mx>=x+21 && mx<x+27)
+    press_button(x+21,y+4,"  OK  ",6);
 }
 
 static unsigned char physical_byte(unsigned long address)
@@ -1587,10 +1736,16 @@ static int power_dialog(void)
     draw_button(x+20,y+4,"  Reboot  ",10,choice==1);
     draw_button(x+39,y+4,"  Cancel  ",10,choice==2);
     wait_input(&k,&mx,&my,&mb);
+    if((mb&MOUSE_MOVED) && my==y+4){
+      if(mx>=x+3 && mx<x+16)choice=0;
+      else if(mx>=x+20 && mx<x+30)choice=1;
+      else if(mx>=x+39 && mx<x+49)choice=2;
+      continue;
+    }
     if((mb&1) && my==y+4){
-      if(mx>=x+3 && mx<x+16)return 1;
-      if(mx>=x+20 && mx<x+30)return 2;
-      if(mx>=x+39 && mx<x+49)return 0;
+      if(mx>=x+3 && mx<x+16){press_button(x+3,y+4,"  Power Off  ",13);return 1;}
+      if(mx>=x+20 && mx<x+30){press_button(x+20,y+4,"  Reboot  ",10);return 2;}
+      if(mx>=x+39 && mx<x+49){press_button(x+39,y+4,"  Cancel  ",10);return 0;}
     }
     if(k==27)return 0;
     if(k==0x4B00)choice=(choice+2)%3;
@@ -1609,10 +1764,16 @@ static int choose_type(void)
     draw_button(x+20,y+4,"  Launcher  ",12,choice==1);
     draw_button(x+37,y+4,"  Separator  ",13,choice==2);
     wait_input(&k,&mx,&my,&mb);
+    if((mb&MOUSE_MOVED) && my==y+4){
+      if(mx>=x+5 && mx<x+15)choice=0;
+      else if(mx>=x+20 && mx<x+32)choice=1;
+      else if(mx>=x+37 && mx<x+50)choice=2;
+      continue;
+    }
     if((mb&1) && my==y+4){
-      if(mx>=x+5 && mx<x+15)return 1;
-      if(mx>=x+20 && mx<x+32)return 0;
-      if(mx>=x+37 && mx<x+50)return 2;
+      if(mx>=x+5 && mx<x+15){press_button(x+5,y+4,"  Folder  ",10);return 1;}
+      if(mx>=x+20 && mx<x+32){press_button(x+20,y+4,"  Launcher  ",12);return 0;}
+      if(mx>=x+37 && mx<x+50){press_button(x+37,y+4,"  Separator  ",13);return 2;}
     }
     if(k==27) return -1;
     if(k==0x4B00){choice=(choice+2)%3;}
@@ -1621,12 +1782,14 @@ static int choose_type(void)
   }
 }
 
-static void field_line(int x,int y,const char *label,const char *value,int selected,int pos,int width)
+static void field_line(int x,int y,const char *label,const char *value,
+                       int focused,int hovered,int pos,int width)
 {
-  int len=strlen(label),i,vlen=strlen(value),at=selected?C_SELECTED:C_INPUT_FIELD,scroll=0;
+  int len=strlen(label),i,vlen=strlen(value);
+  int at=(focused||hovered)?C_SELECTED:C_INPUT_FIELD,scroll=0;
   if(pos>=width)scroll=pos-width+1;
   textout(x,y,label,C_INPUT_LABEL,len); textout(x+13,y,value+scroll,at,width);
-  if(selected){i=pos-scroll;cell(x+13+i,y,(pos<vlen)?value[pos]:' ',C_INPUT_FIELD);}
+  if(focused){i=pos-scroll;cell(x+13+i,y,(pos<vlen)?value[pos]:' ',C_INPUT_FIELD);}
 }
 
 static void check_line(int x,int y,const char *label,int checked,int focused)
@@ -1640,7 +1803,8 @@ static void check_line(int x,int y,const char *label,int checked,int focused)
 static int item_form(int folder,char *name,char *exe,char *params,
                      int *press_enter,int *change_dir,int *prompt_params,int editing)
 {
-  char *fields[3]; int limits[3],pos[3],count,controls,focus=0,k,x,y,i,len,mx=0,my=0,scroll;
+  char *fields[3]; int limits[3],pos[3],count,controls,focus=0,hover=-1;
+  int k,x,y,i,len,mx=0,my=0,scroll;
   unsigned mb;
   fields[0]=name;fields[1]=exe;fields[2]=params;
   limits[0]=folder?16:18;limits[1]=MAX_CMD-2;limits[2]=MAX_CMD-1;
@@ -1651,20 +1815,32 @@ static int item_form(int folder,char *name,char *exe,char *params,
   dialog_box(x,y,64,folder?10:14,editing?(folder?"Edit Folder":"Edit Launcher"):(folder?"Add Folder":"Add Launcher"));
   for(;;){
     wait_vertical_retrace();
-    field_line(x+3,y+2,"Name:",name,focus==0,pos[0],42);
+    field_line(x+3,y+2,"Name:",name,focus==0,hover==0,pos[0],42);
     if(!folder){
-      field_line(x+3,y+4,"Command:",exe,focus==1,pos[1],42);
-      field_line(x+3,y+6,"Parameters:",params,focus==2,pos[2],28);
-      textout(x+47,y+6,"Prompt?",focus==3?C_SELECTED:C_INPUT_LABEL,7);
+      field_line(x+3,y+4,"Command:",exe,focus==1,hover==1,pos[1],42);
+      field_line(x+3,y+6,"Parameters:",params,focus==2,hover==2,pos[2],28);
+      textout(x+47,y+6,"Prompt?",(focus==3||hover==3)?C_SELECTED:C_INPUT_LABEL,7);
       textout(x+55,y+6,*prompt_params?"[þ]":"[ ]",C_BUTTON,3);
     }
     if(!folder){
-      check_line(x+16,y+8,"Provide \021\331 after launcher command",*press_enter,focus==4);
-      check_line(x+16,y+9,"Change directory first",*change_dir,focus==5);
+      check_line(x+16,y+8,"Provide \021\331 after launcher command",*press_enter,focus==4||hover==4);
+      check_line(x+16,y+9,"Change directory first",*change_dir,focus==5||hover==5);
     }
-    draw_button(x+16,y+(folder?7:11),"  Save  ",8,focus==controls);
-    draw_button(x+28,y+(folder?7:11),"  Cancel  ",10,focus==controls+1);
+    draw_button(x+16,y+(folder?7:11),"  Save  ",8,focus==controls||hover==controls);
+    draw_button(x+28,y+(folder?7:11),"  Cancel  ",10,focus==controls+1||hover==controls+1);
     wait_input(&k,&mx,&my,&mb);
+    if(mb&MOUSE_MOVED){
+      hover=-1;
+      if(my==y+2 && mx>=x+16 && mx<x+58)hover=0;
+      else if(!folder && my==y+4 && mx>=x+16 && mx<x+58)hover=1;
+      else if(!folder && my==y+6 && mx>=x+16 && mx<x+44)hover=2;
+      else if(!folder && my==y+6 && mx>=x+47 && mx<x+58)hover=3;
+      else if(!folder && my==y+8 && mx>=x+16 && mx<x+54)hover=4;
+      else if(!folder && my==y+9 && mx>=x+16 && mx<x+54)hover=5;
+      else if(my==y+(folder?7:11) && mx>=x+16 && mx<x+24)hover=controls;
+      else if(my==y+(folder?7:11) && mx>=x+28 && mx<x+38)hover=controls+1;
+      continue;
+    }
     if(mb&1){
       if(my==y+2 && mx>=x+16 && mx<x+58){focus=0;i=0;}
       else if(!folder && my==y+4 && mx>=x+16 && mx<x+58){focus=1;i=1;}
@@ -1673,10 +1849,13 @@ static int item_form(int folder,char *name,char *exe,char *params,
       else if(!folder && my==y+8 && mx>=x+16 && mx<x+54){*press_enter=!*press_enter;focus=4;continue;}
       else if(!folder && my==y+9 && mx>=x+16 && mx<x+54){*change_dir=!*change_dir;focus=5;continue;}
       else if(my==y+(folder?7:11) && mx>=x+16 && mx<x+24){
+        press_button(x+16,y+(folder?7:11),"  Save  ",8);
         if(*name && (folder || *exe))return 1;
         focus=controls;continue;
       }
-      else if(my==y+(folder?7:11) && mx>=x+28 && mx<x+38)return 0;
+      else if(my==y+(folder?7:11) && mx>=x+28 && mx<x+38){
+        press_button(x+28,y+(folder?7:11),"  Cancel  ",10);return 0;
+      }
       else continue;
       len=strlen(fields[i]);scroll=pos[i]>(i==2?27:41)?pos[i]-(i==2?27:41):0;
       pos[i]=scroll+mx-(x+16);if(pos[i]>len)pos[i]=len;
@@ -1774,7 +1953,8 @@ static int next_appearance_focus(int focus,int direction)
 
 static int configure_appearance(void)
 {
-  APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,focus=0,row=-1,redraw=1;
+  APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,focus=0,hover=-1;
+  int row=-1,redraw=1;
   unsigned mb=0;static const int rows[18]={2,3,4,5,6,7,8,8,9,9,10,12,13,13,15,16,17,17};
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
   cursor_hide();mouse_present=mouse_start();mouse_stop();
@@ -1791,29 +1971,29 @@ static int configure_appearance(void)
     textout(x+3,y+8,"Selected items",C_INPUT_LABEL,18);
     textout(x+3,y+9,"Controls",C_INPUT_LABEL,18);
     textout(x+3,y+10,"Labels",C_INPUT_LABEL,18);
-    cycle_control(x+22,y+2,colour_names[appearance.background],focus==0);
-    cycle_control(x+22,y+3,colour_names[appearance.border],focus==1);
-    cycle_control(x+22,y+4,colour_names[appearance.main_title],focus==2);
-    cycle_control(x+22,y+5,colour_names[appearance.titles],focus==3);
-    cycle_control(x+22,y+6,colour_names[appearance.folders],focus==4);
-    cycle_control(x+22,y+7,colour_names[appearance.launchers],focus==5);
-    cycle_control(x+22,y+8,colour_names[appearance.selected_fg],focus==6);
-    cycle_control(x+41,y+8,colour_names[appearance.selected_bg],focus==7);
-    cycle_control(x+22,y+9,colour_names[appearance.controls_fg],focus==8);
-    cycle_control(x+41,y+9,colour_names[appearance.controls_bg],focus==9);
-    cycle_control(x+22,y+10,colour_names[appearance.labels],focus==10);
+    cycle_control(x+22,y+2,colour_names[appearance.background],focus==0||hover==0);
+    cycle_control(x+22,y+3,colour_names[appearance.border],focus==1||hover==1);
+    cycle_control(x+22,y+4,colour_names[appearance.main_title],focus==2||hover==2);
+    cycle_control(x+22,y+5,colour_names[appearance.titles],focus==3||hover==3);
+    cycle_control(x+22,y+6,colour_names[appearance.folders],focus==4||hover==4);
+    cycle_control(x+22,y+7,colour_names[appearance.launchers],focus==5||hover==5);
+    cycle_control(x+22,y+8,colour_names[appearance.selected_fg],focus==6||hover==6);
+    cycle_control(x+41,y+8,colour_names[appearance.selected_bg],focus==7||hover==7);
+    cycle_control(x+22,y+9,colour_names[appearance.controls_fg],focus==8||hover==8);
+    cycle_control(x+41,y+9,colour_names[appearance.controls_bg],focus==9||hover==9);
+    cycle_control(x+22,y+10,colour_names[appearance.labels],focus==10||hover==10);
     textout(x+3,y+12,"Menu position",C_INPUT_LABEL,18);
-    cycle_control(x+22,y+12,appearance.menu_top?"Top":"Bottom",focus==11);
+    cycle_control(x+22,y+12,appearance.menu_top?"Top":"Bottom",focus==11||hover==11);
     textout(x+3,y+13,"Screensaver",C_INPUT_LABEL,18);
-    cycle_control(x+22,y+13,screensaver_names[appearance.screensaver],focus==12);
+    cycle_control(x+22,y+13,screensaver_names[appearance.screensaver],focus==12||hover==12);
     if(appearance.screensaver==1)
-      cycle_control(x+41,y+13,colour_names[appearance.saver_color],focus==13);
-    check_line(x+22,y+15,"Show 'Explore & Run' menu item",appearance.show_explore,focus==14);
-    check_line(x+22,y+16,"Show 'Shutdown...' menu item",appearance.show_power,focus==15);
-    check_line(x+22,y+17,"Show the time",appearance.show_time,focus==16);
-    cycle_control(x+41,y+17,appearance.hour_12?"12-hour":"24-hour",focus==17);
-    draw_button(x+19,y+19,"  Save  ",8,focus==18);
-    draw_button(x+34,y+19,"  Cancel  ",10,focus==19);
+      cycle_control(x+41,y+13,colour_names[appearance.saver_color],focus==13||hover==13);
+    check_line(x+22,y+15,"Show 'Explore & Run' menu item",appearance.show_explore,focus==14||hover==14);
+    check_line(x+22,y+16,"Show 'Shutdown...' menu item",appearance.show_power,focus==15||hover==15);
+    check_line(x+22,y+17,"Show the time",appearance.show_time,focus==16||hover==16);
+    cycle_control(x+41,y+17,appearance.hour_12?"12-hour":"24-hour",focus==17||hover==17);
+    draw_button(x+19,y+19,"  Save  ",8,focus==18||hover==18);
+    draw_button(x+34,y+19,"  Cancel  ",10,focus==19||hover==19);
     wait_input(&k,&mx,&my,&mb);
     if(mb){
       row=-1;
@@ -1824,13 +2004,24 @@ static int configure_appearance(void)
       if(mx>=x+41 && mx<x+56 && my==y+9)row=9;
       if(appearance.screensaver==1 && mx>=x+41 && mx<x+56 && my==y+13)row=13;
       if(mx>=x+41 && mx<x+56 && my==y+17)row=17;
+      if(mb&MOUSE_MOVED){
+        hover=-1;
+        if(row>=0)hover=row;
+        else if(my==y+19 && mx>=x+19 && mx<x+27)hover=18;
+        else if(my==y+19 && mx>=x+34 && mx<x+44)hover=19;
+        continue;
+      }
       if(row>=0){focus=row;change_appearance_value(focus,(mb&2)?-1:1);redraw=1;continue;}
       if(my==y+19 && (mb&1)){
         if(mx>=x+19 && mx<x+27){
+          press_button(x+19,y+19,"  Save  ",8);
           if(save_appearance()){close_menu();return 1;}
           notice_box("Write Error","Could not update LAUNCH.CFG.");redraw=1;continue;
         }
-        if(mx>=x+34 && mx<x+44){appearance=original;close_menu();return 0;}
+        if(mx>=x+34 && mx<x+44){
+          press_button(x+34,y+19,"  Cancel  ",10);
+          appearance=original;close_menu();return 0;
+        }
       }
       continue;
     }
@@ -2023,11 +2214,12 @@ static void capture_command_help(const char *command)
   read_help_output();
 }
 
-static void parameter_field(int x,int y,const char *value,int position,int focused,int width)
+static void parameter_field(int x,int y,const char *value,int position,
+                            int focused,int hovered,int width)
 {
   int length=strlen(value),scroll=0,cursor;
   if(position>=width)scroll=position-width+1;
-  textout(x,y,value+scroll,focused?C_SELECTED:C_INPUT_FIELD,width);
+  textout(x,y,value+scroll,(focused||hovered)?C_SELECTED:C_INPUT_FIELD,width);
   if(focused){cursor=position-scroll;cell(x+cursor,y,
       position<length?value[position]:' ',C_INPUT_FIELD);}
 }
@@ -2055,7 +2247,7 @@ static int compose_prompt_command(const char *executable,const char *parameters)
 static int parameter_prompt_command(const char *title,const char *command)
 {
   int x=(screen_cols-76)/2,y=(screen_rows-22)/2,k=0,mx=0,my=0;
-  int focus=1,scroll=0,position,length,i,max_scroll;unsigned mb=0;
+  int focus=1,hover=-1,scroll=0,position,length,i,max_scroll;unsigned mb=0;
   static char executable[MAX_CMD],parameters[MAX_CMD];char filename[19],section[48];
   split_command(command,executable,parameters);position=strlen(parameters);
   command_filename(executable,filename);
@@ -2070,11 +2262,19 @@ static int parameter_prompt_command(const char *title,const char *command)
        scroll+i<help_line_count?help_lines[scroll+i]:"",C_INPUT_FIELD,HELP_WIDTH);
     cell(x+73,y+2,scroll>0?30:' ',C_BUTTON);
     cell(x+73,y+15,scroll<max_scroll?31:' ',C_BUTTON);
-    textout(x+2,y+16,"/ and PgUp/PgDn scrolls command help.",focus==0?C_SELECTED:C_INPUT_LABEL,52);
-    parameter_field(x+2,y+19,parameters,position,focus==1,44);
-    draw_button(x+49,y+19,"  Run  ",7,focus==2);
-    draw_button(x+61,y+19,"  Cancel  ",10,focus==3);
+    textout(x+2,y+16,"/ and PgUp/PgDn scrolls command help.",(focus==0||hover==0)?C_SELECTED:C_INPUT_LABEL,52);
+    parameter_field(x+2,y+19,parameters,position,focus==1,hover==1,44);
+    draw_button(x+49,y+19,"  Run  ",7,focus==2||hover==2);
+    draw_button(x+61,y+19,"  Cancel  ",10,focus==3||hover==3);
     wait_input(&k,&mx,&my,&mb);
+    if(mb&MOUSE_MOVED){
+      hover=-1;
+      if(my>=y+2 && my<=y+15)hover=0;
+      else if(my==y+19 && mx>=x+2 && mx<x+46)hover=1;
+      else if(my==y+19 && mx>=x+49 && mx<x+56)hover=2;
+      else if(my==y+19 && mx>=x+61 && mx<x+71)hover=3;
+      continue;
+    }
     if(mb&1){
       if(my>=y+2 && my<=y+15){
         focus=0;
@@ -2086,10 +2286,13 @@ static int parameter_prompt_command(const char *title,const char *command)
         length=strlen(parameters);if(position>length)position=length;continue;
       }
       if(my==y+19 && mx>=x+49 && mx<x+56){
+        press_button(x+49,y+19,"  Run  ",7);
         if(compose_prompt_command(executable,parameters))return 1;
         notice_box("Parameters Too Long","Shorten the parameters before running.");continue;
       }
-      if(my==y+19 && mx>=x+61 && mx<x+71)return 0;
+      if(my==y+19 && mx>=x+61 && mx<x+71){
+        press_button(x+61,y+19,"  Cancel  ",10);return 0;
+      }
       continue;
     }
     if(k==27)return 0;
@@ -2249,20 +2452,38 @@ static void highlight_explore_entry(int x,int y,int top,int index,int selected)
 }
 
 static void select_explore_entry(int x,int y,int next,int *selected,int *top,
-                                 int page,int *redraw)
+                                 int page,int hover,int *redraw)
 {
   int old=*selected,new_top=(next/page)*page;
   if(next<0 || next>=explore_count || next==old)return;
   if(new_top!=*top){*selected=next;*top=new_top;*redraw=1;return;}
   wait_vertical_retrace();
-  highlight_explore_entry(x,y,*top,old,0);*selected=next;
+  highlight_explore_entry(x,y,*top,old,old==hover);*selected=next;
   highlight_explore_entry(x,y,*top,next,1);
+}
+
+static void change_explore_hover(int x,int y,int top,int old_hover,
+                                 int new_hover,int selected)
+{
+  if(old_hover==new_hover)return;
+  wait_vertical_retrace();
+  if(old_hover>=0 && old_hover!=selected)
+    highlight_explore_entry(x,y,top,old_hover,0);
+  if(new_hover>=0)highlight_explore_entry(x,y,top,new_hover,1);
+}
+
+static void draw_explore_buttons(int x,int y,int focus,int hover)
+{
+  draw_button(x+4,y+20,"  Run  ",7,focus==1||hover==1);
+  draw_button(x+14,y+20,"  /?  ",7,focus==2||hover==2);
+  draw_button(x+61,y+20,"  Cancel  ",10,focus==3||hover==3);
 }
 
 static int explore_dialog(void)
 {
   int x=(screen_cols-76)/2,y=(screen_rows-23)/2,k,mx=0,my=0;
-  int selected=0,top=0,page=EXPLORE_ROWS*EXPLORE_COLS,focus=0,redraw=1;
+  int selected=0,hover_entry=-1,top=0,page=EXPLORE_ROWS*EXPLORE_COLS;
+  int focus=0,hover_control=-1,redraw=1;
   int i,row,column,index,action;unsigned mb;
   int last_click=-1;unsigned long last_click_tick=0,tick;
   static char path[MAX_CMD]="C:\\";
@@ -2280,23 +2501,37 @@ static int explore_dialog(void)
     for(column=0;column<EXPLORE_COLS;column++)for(row=0;row<EXPLORE_ROWS;row++){
       index=top+column*EXPLORE_ROWS+row;
       if(index<explore_count)textout(x+2+column*18,y+4+row,explore_entries[index].name,
-        explore_entry_attribute(index,index==selected),16);
+        explore_entry_attribute(index,index==selected||index==hover_entry),16);
       else textout(x+2+column*18,y+4+row,"",C_MENU_BACKGROUND,16);
     }
     cell(x+73,y+4,top>0?30:' ',C_BUTTON);
     cell(x+73,y+18,top+page<explore_count?31:' ',C_BUTTON);
     if(!explore_count)textout(x+2,y+4,"No executable files or directories",C_EMPTY,38);
-    draw_button(x+4,y+20,"  Run  ",7,focus==1);
-    draw_button(x+14,y+20,"  /?  ",7,focus==2);
-    draw_button(x+61,y+20,"  Cancel  ",10,focus==3);
+    draw_explore_buttons(x,y,focus,hover_control);
     redraw=0;}
     wait_input(&k,&mx,&my,&mb);
+    if(mb&MOUSE_MOVED){
+      int next_hover=-1,next_control=-1;
+      if(my>=y+4 && my<y+19 && mx>=x+2 && mx<x+72){
+        column=(mx-(x+2))/18;row=my-(y+4);
+        index=top+column*EXPLORE_ROWS+row;
+        if(index<explore_count)next_hover=index;
+      }
+      else if(my==y+20 && mx>=x+4 && mx<x+11)next_control=1;
+      else if(my==y+20 && mx>=x+14 && mx<x+21)next_control=2;
+      else if(my==y+20 && mx>=x+61 && mx<x+71)next_control=3;
+      change_explore_hover(x,y,top,hover_entry,next_hover,selected);
+      hover_entry=next_hover;
+      if(next_control!=hover_control){hover_control=next_control;
+        draw_explore_buttons(x,y,focus,hover_control);}
+      continue;
+    }
     if(mb&1){
       if(my>=y+4 && my<y+19 && mx>=x+2 && mx<x+74){
         focus=0;
         if(mx>=x+72){
-          if(my<y+11 && top>0){top-=page;selected=top;redraw=1;}
-          else if(my>=y+11 && top+page<explore_count){top+=page;selected=top;redraw=1;}
+          if(my<y+11 && top>0){top-=page;selected=top;hover_entry=-1;redraw=1;}
+          else if(my>=y+11 && top+page<explore_count){top+=page;selected=top;hover_entry=-1;redraw=1;}
           last_click=-1;
         } else {
           column=(mx-(x+2))/18;row=my-(y+4);index=top+column*EXPLORE_ROWS+row;
@@ -2307,10 +2542,10 @@ static int explore_dialog(void)
               if(action==1)return 1;
               if(action==2){
                 if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");
-                selected=top=0;redraw=1;
+                selected=top=0;hover_entry=-1;redraw=1;
               }
             } else {
-              select_explore_entry(x,y,index,&selected,&top,page,&redraw);
+              select_explore_entry(x,y,index,&selected,&top,page,hover_entry,&redraw);
               last_click=index;last_click_tick=tick;
             }
           }
@@ -2318,15 +2553,21 @@ static int explore_dialog(void)
         continue;
       }
       if(my==y+20 && mx>=x+4 && mx<x+11){
-        focus=1;
+        focus=1;press_button(x+4,y+20,"  Run  ",7);
         action=explore_activate(path,selected);
         last_click=-1;
         if(action==1)return 1;
-        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;redraw=1;}
+        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;hover_entry=-1;redraw=1;}
         continue;
       }
-      if(my==y+20 && mx>=x+14 && mx<x+21){focus=2;if(explore_help(path,selected))return 1;redraw=1;continue;}
-      if(my==y+20 && mx>=x+61 && mx<x+71){focus=3;return 0;}
+      if(my==y+20 && mx>=x+14 && mx<x+21){
+        focus=2;press_button(x+14,y+20,"  /?  ",7);
+        if(explore_help(path,selected))return 1;
+        redraw=1;continue;
+      }
+      if(my==y+20 && mx>=x+61 && mx<x+71){
+        focus=3;press_button(x+61,y+20,"  Cancel  ",10);return 0;
+      }
       continue;
     }
     if(k==27)return 0;
@@ -2340,22 +2581,22 @@ static int explore_dialog(void)
         if(focus==2){if(explore_help(path,selected))return 1;redraw=1;continue;}
         action=explore_activate(path,selected);
         if(action==1)return 1;
-        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;redraw=1;}
+        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;hover_entry=-1;redraw=1;}
       }
       redraw=1;
       continue;
     }
-    if(k==0x4800 && selected>0)select_explore_entry(x,y,selected-1,&selected,&top,page,&redraw);
-    else if(k==0x5000 && selected+1<explore_count)select_explore_entry(x,y,selected+1,&selected,&top,page,&redraw);
-    else if(k==0x4B00){if(selected>=EXPLORE_ROWS)select_explore_entry(x,y,selected-EXPLORE_ROWS,&selected,&top,page,&redraw);else if(!explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;redraw=1;}}
-    else if(k==0x4D00 && selected+EXPLORE_ROWS<explore_count)select_explore_entry(x,y,selected+EXPLORE_ROWS,&selected,&top,page,&redraw);
-    else if(k==0x4900){top=top>=page?top-page:0;selected=top;redraw=1;}
-    else if(k==0x5100 && top+page<explore_count){top+=page;selected=top;redraw=1;}
-    else if(k==8 && !explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;redraw=1;}
+    if(k==0x4800 && selected>0)select_explore_entry(x,y,selected-1,&selected,&top,page,hover_entry,&redraw);
+    else if(k==0x5000 && selected+1<explore_count)select_explore_entry(x,y,selected+1,&selected,&top,page,hover_entry,&redraw);
+    else if(k==0x4B00){if(selected>=EXPLORE_ROWS)select_explore_entry(x,y,selected-EXPLORE_ROWS,&selected,&top,page,hover_entry,&redraw);else if(!explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;hover_entry=-1;redraw=1;}}
+    else if(k==0x4D00 && selected+EXPLORE_ROWS<explore_count)select_explore_entry(x,y,selected+EXPLORE_ROWS,&selected,&top,page,hover_entry,&redraw);
+    else if(k==0x4900){top=top>=page?top-page:0;selected=top;hover_entry=-1;redraw=1;}
+    else if(k==0x5100 && top+page<explore_count){top+=page;selected=top;hover_entry=-1;redraw=1;}
+    else if(k==8 && !explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;hover_entry=-1;redraw=1;}
     else if(k==13){
       action=explore_activate(path,selected);
       if(action==1)return 1;
-      if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=0;redraw=1;}
+      if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=0;hover_entry=-1;redraw=1;}
     }
   }
 }
@@ -2378,6 +2619,18 @@ static void change_menu_selection(int depth,int *list,int n,int *selection,
   int old=*selection,next,x=depth*MENU_WIDTH;
   if(!n)return;
   next=(old+n+direction)%n;if(next==old)return;
+  if(x+MENU_WIDTH>screen_cols)x=screen_cols-MENU_WIDTH;
+  wait_vertical_retrace();
+  row_attribute(x+1,panel_y+1+old,18,menu_entry_attribute(list[old],0));
+  *selection=next;
+  row_attribute(x+1,panel_y+1+next,18,menu_entry_attribute(list[next],1));
+}
+
+static void set_menu_selection(int depth,int *list,int *selection,
+                               int next,int panel_y)
+{
+  int old=*selection,x=depth*MENU_WIDTH;
+  if(next==old)return;
   if(x+MENU_WIDTH>screen_cols)x=screen_cols-MENU_WIDTH;
   wait_vertical_retrace();
   row_attribute(x+1,panel_y+1+old,18,menu_entry_attribute(list[old],0));
@@ -2446,6 +2699,22 @@ static int menu(void)
       mb=mouse_poll(&mx,&my);
       if(mouse_raw_x!=last_mouse_x || mouse_raw_y!=last_mouse_y){
         last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;last_activity=bios_ticks();
+        hit=-1;pos=-1;
+        for(i=depth;i>=0;i--){
+          x=i*MENU_WIDTH;if(x+MENU_WIDTH>screen_cols)x=screen_cols-MENU_WIDTH;
+          if(mx>=x && mx<x+MENU_WIDTH && my>panel_y[i] &&
+             my<=panel_y[i]+panel_n[i]){
+            hit=i;pos=my-panel_y[i]-1;break;
+          }
+        }
+        if(hit>=0 && pos>=0){
+          int hn=menu_children(parent[hit],hitlist);
+          if(pos<hn && pos!=sel[hit]){
+            if(hit<depth){depth=hit;sel[hit]=pos;redraw=2;break;}
+            mouse_stop();set_menu_selection(hit,hitlist,&sel[hit],pos,panel_y[hit]);
+            mouse_show();
+          }
+        }
       }
       if(appearance.show_time){
         memset(&clock_regs,0,sizeof(clock_regs));clock_regs.h.ah=0x2C;
@@ -2716,10 +2985,173 @@ static int queue_macro(const char *text)
   int86x(0x2F,&r,&r,&s);return r.h.al==0;
 }
 
+static unsigned char far *setkey_bios_byte(unsigned offset)
+{
+  return (unsigned char far *)(((unsigned long)0x40<<16)|offset);
+}
+
+static unsigned short far *setkey_bios_word(unsigned offset)
+{
+  return (unsigned short far *)(((unsigned long)0x40<<16)|offset);
+}
+
+static int setkey_ready(void)
+{
+  return *setkey_bios_word(0x1A)!=*setkey_bios_word(0x1C);
+}
+
+static unsigned setkey_read(unsigned char *shift)
+{
+  unsigned short far *head=setkey_bios_word(0x1A);unsigned pos,next,word;
+  _disable();pos=*head;word=*setkey_bios_word(pos);
+  next=pos+2;if(next>=0x3E)next=0x1E;*head=next;
+  *shift=*setkey_bios_byte(0x17);_enable();return word;
+}
+
+static void setkey_label(unsigned scan,char *label)
+{
+  static const unsigned char letters[26]={
+    0x1E,0x30,0x2E,0x20,0x12,0x21,0x22,0x23,0x17,0x24,0x25,0x26,0x32,
+    0x31,0x18,0x19,0x10,0x13,0x1F,0x14,0x16,0x2F,0x11,0x2D,0x15,0x2C
+  };
+  static const char digits[]="1234567890";int i;
+  for(i=0;i<26;i++)if(scan==letters[i]){label[0]=(char)('A'+i);label[1]=0;return;}
+  if(scan>=2 && scan<=11){label[0]=digits[scan-2];label[1]=0;return;}
+  if(scan>=0x3B && scan<=0x44){sprintf(label,"F%d",scan-0x3A);return;}
+  if(scan==0x57){strcpy(label,"F11");return;}
+  if(scan==0x58){strcpy(label,"F12");return;}
+  switch(scan){
+    case 0x0C:strcpy(label,"-");return;case 0x0D:strcpy(label,"=");return;
+    case 0x1A:strcpy(label,"[");return;case 0x1B:strcpy(label,"]");return;
+    case 0x27:strcpy(label,";");return;case 0x29:strcpy(label,"`");return;
+    case 0x2B:strcpy(label,"\\");return;case 0x33:strcpy(label,",");return;
+    case 0x34:strcpy(label,".");return;case 0x35:strcpy(label,"/");return;
+    case 0x39:strcpy(label,"SPACE");return;case 0x48:strcpy(label,"UP");return;
+    case 0x50:strcpy(label,"DOWN");return;case 0x4B:strcpy(label,"LEFT");return;
+    case 0x4D:strcpy(label,"RIGHT");return;case 0x5B:strcpy(label,"LWIN");return;
+    case 0x5C:strcpy(label,"RWIN");return;case 0x5D:strcpy(label,"MENU");return;
+  }
+  sprintf(label,"SCAN %02X",scan);
+}
+
+static void setkey_append_display(char *text,const char *name)
+{
+  if(*text)strcat(text," + ");
+  strcat(text,"[");strcat(text,name);strcat(text,"]");
+}
+
+static void setkey_show(unsigned char shift,unsigned scan)
+{
+  static char text[80],label[16];text[0]=0;
+  if(shift&4)setkey_append_display(text,"CTRL");
+  if(shift&8)setkey_append_display(text,"ALT");
+  if(shift&3)setkey_append_display(text,"SHIFT");
+  if(scan){setkey_label(scan,label);setkey_append_display(text,label);}
+  printf("\rDetected: %-58s",text);fflush(stdout);
+}
+
+static int capture_setkey(char *spec)
+{
+  unsigned word,scan;unsigned char shift,captured_shift,last_shift=0xFF;
+  puts("Press the key/s to use as a shortcut now (Esc cancels).");
+  while(setkey_ready()){shift=0;setkey_read(&shift);}
+  setkey_scan=setkey_e0=setkey_mods=setkey_key=setkey_key_mods=0;
+  setkey_old_int09=_dos_getvect(0x09);_dos_setvect(0x09,setkey_int09);
+  for(;;){
+    shift=*setkey_bios_byte(0x17);
+    if((shift&15)!=(last_shift&15)){setkey_show(shift,0);last_shift=shift;}
+    if(setkey_key){
+      _disable();scan=setkey_key;captured_shift=setkey_key_mods;
+      setkey_key=0;_enable();_dos_setvect(0x09,setkey_old_int09);
+      while(setkey_ready()){word=setkey_read(&shift);(void)word;}
+      shift=captured_shift;if(scan==1){puts("\nShortcut unchanged.");return 0;}
+    } else if(setkey_ready()){
+      word=setkey_read(&shift);scan=word>>8;
+      if(scan==1){_dos_setvect(0x09,setkey_old_int09);
+        puts("\nShortcut unchanged.");return 0;}
+      if(!scan)continue;
+      _dos_setvect(0x09,setkey_old_int09);
+      if(scan>=0x85 && scan<=0x8C){
+        if(scan>=0x87 && scan<=0x88)shift|=1;
+        else if(scan>=0x89 && scan<=0x8A)shift|=4;
+        else if(scan>=0x8B)shift|=8;
+        scan=(scan&1)?0x57:0x58;
+      }
+    } else continue;
+    setkey_show(shift,scan);puts("");spec[0]=0;
+    if(shift&4)strcat(spec,"1D+");
+    if(shift&8)strcat(spec,"38+");
+    if(shift&3)strcat(spec,"2A+");
+    if(scan==0x5B)strcat(spec,"LWIN");
+    else if(scan==0x5C)strcat(spec,"RWIN");
+    else if(scan==0x5D)strcat(spec,"MENU");
+    else sprintf(spec+strlen(spec),"%02X",scan);
+    while((*setkey_bios_byte(0x17)&15)!=0) ;
+    return 1;
+  }
+}
+
+static char *setkey_stristr(char *text,const char *find)
+{
+  char *p;const char *a,*b;
+  for(p=text;*p;p++){
+    for(a=p,b=find;*a && *b && toupper((unsigned char)*a)==
+        toupper((unsigned char)*b);a++,b++) ;
+    if(!*b)return p;
+  }
+  return 0;
+}
+
+static int update_shortcut_key(const char *spec)
+{
+  static char autoexec[20],temp[20],old[20],line[256],output[256];
+  char *comspec,*hit,*key,*end,*p;FILE *in,*out;int found=0,ok=1;
+  comspec=getenv("COMSPEC");autoexec[0]=(comspec && comspec[1]==':')?
+    (char)toupper((unsigned char)comspec[0]):'C';
+  strcpy(autoexec+1,":\\AUTOEXEC.BAT");strcpy(temp,autoexec);
+  strcpy(strrchr(temp,'.'),".$$$");strcpy(old,autoexec);strcpy(strrchr(old,'.'),".L!$");
+  in=fopen(autoexec,"rt");if(!in)return 0;
+  out=fopen(temp,"wt");if(!out){fclose(in);return 0;}
+  while(fgets(line,sizeof(line),in)){
+    strcpy(output,line);p=output;while(*p==' ' || *p=='\t')p++;
+    hit=setkey_stristr(p,"SHORTCUT.COM");
+    if(!found && hit && strnicmp(p,"REM",3)!=0){
+      key=setkey_stristr(hit,"/KEY=");
+      if(key){end=key+5;while(*end && !isspace((unsigned char)*end))end++;
+        memmove(key,end,strlen(end)+1);
+      }
+      end=output+strlen(output);while(end>output && (end[-1]=='\r'||end[-1]=='\n'))end--;
+      *end=0;if(end>output && !isspace((unsigned char)end[-1]))strcat(output," ");
+      strcat(output,"/KEY=");strcat(output,spec);strcat(output,"\n");found=1;
+    }
+    if(fputs(output,out)==EOF){ok=0;break;}
+  }
+  if(ferror(in))ok=0;
+  if(fclose(in)!=0)ok=0;
+  if(fclose(out)!=0)ok=0;
+  if(!ok || !found){remove(temp);return found?-1:0;}
+  remove(old);if(rename(autoexec,old)!=0){remove(temp);return -1;}
+  if(rename(temp,autoexec)!=0){rename(old,autoexec);remove(temp);return -1;}
+  remove(old);return 1;
+}
+
+static int setkey_mode(void)
+{
+  static char spec[64];int result;
+  puts("Launch! 2.0 Shortcut Key Setup\n");
+  if(!capture_setkey(spec))return 0;
+  result=update_shortcut_key(spec);
+  if(result==0){puts("Launch!: no active SHORTCUT.COM entry was found in AUTOEXEC.BAT.");return 1;}
+  if(result<0){puts("Launch!: AUTOEXEC.BAT could not be updated.");return 1;}
+  puts("AUTOEXEC.BAT has been updated.");
+  puts("Restart the computer to activate the new shortcut key combination.");
+  return 0;
+}
+
 static void show_help(void)
 {
-  puts("Launch! 1.9 - a lightweight command menu for DOS\n");
-  puts("Usage: ! [/CONFIG | /?]\n");
+  puts("Launch! 2.0 - a lightweight command menu for DOS\n");
+  puts("Usage: ! [/CONFIG | /SETKEY | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
   puts("  Ctrl+D        Delete the selected item");
@@ -2728,20 +3160,23 @@ static void show_help(void)
   puts("  Ctrl+S        Sort the current menu\n");
   puts("Command-line parameters:");
   puts("  /CONFIG       Configure menu appearance and options");
+  puts("  /SETKEY       Change the resident shortcut in AUTOEXEC.BAT");
   puts("  /?            Show this help");
 }
 
 int main(int argc,char **argv)
 {
-  int i,config_status,config_mode=0,now_mode=0;static char macro[MAX_MACRO];
+  int i,config_status,config_mode=0,now_mode=0,setkey=0;static char macro[MAX_MACRO];
   config_path(argv[0]);
   if(!load_appearance())puts("Launch!: LAUNCH.CFG is invalid; using default appearance.");
   for(i=1;i<argc;i++){
     if(!stricmp(argv[i],"/?") || !stricmp(argv[i],"-?")){show_help();return 0;}
     if(!stricmp(argv[i],"/CONFIG"))config_mode=1;
     else if(!stricmp(argv[i],"/NOW"))now_mode=1;
+    else if(!stricmp(argv[i],"/SETKEY"))setkey=1;
     else {printf("Launch!: unknown option %s (use ! /?)\n",argv[i]);return 1;}
   }
+  if(setkey)return setkey_mode();
   if(config_mode){configure_appearance();return 0;}
   if(now_mode){
     video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 1;}

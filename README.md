@@ -14,7 +14,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 ## Features
 - Displays a hierarchical folder based menu, modally over the top of the existing console contents.
-- Supports trigger by a keyboard shortcut which can be customized.
+- Supports trigger by a customizable keyboard shortcut.
 - Launches commands using the existing command interpreter and shell.
 - Easy visual menu editing.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
@@ -32,9 +32,10 @@ Extract the release zip file or mount the floppy image:
 
 - Run `INSTALL.EXE`
 - You'll be prompted for a directory to place Launch!
-- The necessary files will be copied and your `AUTOEXEC.BAT` will be updated.
-- You can scan your drive and automatically build an initial menu from a comprehensive database of over 1000 DOS programs.
-- Simply reboot after install and you're good to go.
+- The necessary files will be copied and you will be prompted for all changes to `AUTOEXEC.BAT`
+- The keyboard shortcut can be chosen
+- Your drive can be scanned and an initial menu built from a comprehensive database of over 1000 DOS programs.
+- Simply reboot after install and you're ready to go.
 
 > DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
 
@@ -52,8 +53,6 @@ To start Launch! without the keyboard shortcut, at the command prompt, simply en
 ```
 !
 ```
-
-If you want the menu itself to appear immediately after startup, manually add `!` as the last line in your `AUTOEXEC.BAT` file.
 
 ### How it works
 Launch! does not execute the selected program itself. Rather, it returns to the existing command interpreter, types the configured command and, if selected, supplies Enter. This means shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can all be used. No secondary command processor is started or additional shells. Launch! does not interfere with program execution or return.
@@ -84,6 +83,12 @@ Menu management
 
 - Left click opens a folder or runs a launcher; left click outside all visible menu panels closes Launch!.
 - Right click an item opens its Edit dialog. 
+
+
+## Keyboard shortcut
+
+You can change the keyboard shortcut any time after install by running `! /SETKEY`
+Press the desired keys, your `AUTOEXEC.BAT` will be updated. Reboot to activate the new shortcut.
 
 
 ## Customizing appearance
@@ -203,7 +208,7 @@ A random skyline will be generated each time.
 
 <img width="720" height="600" alt="Screensaver - DOS" src="https://github.com/user-attachments/assets/508fa7b6-02f0-4c98-b785-47268aba355e" />
 
-The logo will bounce around the screen to amuse you.
+The DOS logo will bounce around the screen.
 
 ### Warp
 
@@ -215,9 +220,10 @@ Go at warp speed to absolutely nowhere.
 ## SHORTCUT - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
 
-It will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
+If chosen, it will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
 
-You can change the keyboard shortcut used by adding the `/KEY=` parameter with readable names or hexadecimal scan codes, examples:
+Running `! /SETKEY` provides an interactive way to set the shortcut and update your `AUTOEXEC.BAT` automatically.
+Or, you can change the keyboard shortcut used by adding the `/KEY=` parameter to `SHORTCUT.COM` with readable names or hexadecimal scan codes, e.g.
 ```
   SHORTCUT /KEY=LWIN
   SHORTCUT /KEY=CTRL+SPACE
