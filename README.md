@@ -36,8 +36,6 @@ Extract the release zip file or mount the floppy image:
 - You can scan your drive and automatically build an initial menu from a comprehensive database of over 1000 DOS programs.
 - Simply reboot after install and you're good to go.
 
-<img width="720" height="600" alt="Install" src="https://github.com/user-attachments/assets/4bce1997-faa6-4c12-a796-f799faa553ba" />
-
 > DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
 
 
