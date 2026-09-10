@@ -1,4 +1,4 @@
-/* Launch! 1.8 - modal command menu for DOS
+/* Launch! 1.9 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -10,6 +10,7 @@
 #include <io.h>
 #include <process.h>
 #include "CLOCKDAT.H"
+#include "LOGODAT.H"
 
 #define MAX_NODES 96
 #define MAX_TITLE 24
@@ -129,7 +130,7 @@ static EXPLORE_ENTRY explore_entries[MAX_EXPLORE_ENTRIES];
 static int explore_count;
 
 static const char *sample_config[] = {
-  "; Launch! 1.8 menu definition\n",
+  "; Launch! 1.9 menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -368,7 +369,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SHOW_EXPLORE")){field=&a->show_explore;limit=1;}
   else if(!stricmp(key,"SHOW_POWER")){field=&a->show_power;limit=1;}
   else if(!stricmp(key,"SHOW_TIME")){field=&a->show_time;limit=1;}
-  else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=1;}
+  else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=4;}
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
   if(!field || value<0 || value>limit)return 0;
@@ -574,6 +575,102 @@ static const unsigned char segment_mask[10]={
 
 static unsigned char far *ega_memory=(unsigned char far *)MAKE_FP(0xA000,0);
 
+typedef struct { int x,y,z,px,py,qx,qy; } WARP_STAR;
+typedef struct {
+  unsigned short x,y;
+  unsigned short life;
+  unsigned char colour,base;
+} NIGHT_PIXEL;
+typedef struct {
+  int x,y;
+  unsigned short wait;
+  unsigned char on,active;
+} NIGHT_BEACON;
+#define NIGHT_PIXEL_COUNT 1152
+#define NIGHT_BEACON_COUNT 24
+static WARP_STAR warp_stars[56];
+static unsigned short skyline_top[640];
+static unsigned char skyline_colour[640];
+static NIGHT_PIXEL night_pixels[NIGHT_PIXEL_COUNT];
+static NIGHT_BEACON night_beacons[NIGHT_BEACON_COUNT];
+static unsigned long saver_random_state=1;
+
+static void ega_span(int y,int left,int right,unsigned char colour);
+static void ega_rectangle(int x,int y,int width,int height,unsigned char colour);
+
+static unsigned saver_random(unsigned limit)
+{
+  saver_random_state=saver_random_state*1103515245UL+12345UL;
+  return limit?(unsigned)((saver_random_state>>16)%limit):0;
+}
+
+static void night_pixel_draw(const NIGHT_PIXEL *pixel,int erase)
+{
+  unsigned char colour=erase?pixel->base:pixel->colour;
+  if(pixel->base==0)ega_span(pixel->y,pixel->x,pixel->x,colour);
+  else ega_rectangle(pixel->x,pixel->y,2,3,colour);
+}
+
+static void night_pixel_add(int x,int y,unsigned char colour,unsigned char base)
+{
+  int i;
+  for(i=0;i<NIGHT_PIXEL_COUNT;i++)if(night_pixels[i].x==0xFFFF){
+    night_pixels[i].x=(unsigned short)x;night_pixels[i].y=(unsigned short)y;
+    night_pixels[i].life=(unsigned short)SCREENSAVER_TICKS;
+    night_pixels[i].colour=colour;night_pixels[i].base=base;
+    night_pixel_draw(&night_pixels[i],0);return;
+  }
+}
+
+static void night_pixels_decay(void)
+{
+  int i;NIGHT_PIXEL *pixel;
+  for(i=0;i<NIGHT_PIXEL_COUNT;i++){
+    pixel=&night_pixels[i];
+    if(pixel->x!=0xFFFF){
+      if(pixel->life){pixel->life--;continue;}
+      if(saver_random(80)==0){
+        night_pixel_draw(pixel,1);pixel->x=0xFFFF;
+      }
+    }
+  }
+}
+
+static void draw_beacon(const NIGHT_BEACON *beacon,unsigned char colour)
+{
+  ega_span(beacon->y,beacon->x+1,beacon->x+2,colour);
+  ega_span(beacon->y+1,beacon->x,beacon->x+3,colour);
+  ega_span(beacon->y+2,beacon->x,beacon->x+3,colour);
+  ega_span(beacon->y+3,beacon->x+1,beacon->x+2,colour);
+}
+
+static void add_beacon(int x,int y)
+{
+  int i;
+  for(i=0;i<NIGHT_BEACON_COUNT;i++)if(!night_beacons[i].active){
+    night_beacons[i].x=x;night_beacons[i].y=y;
+    night_beacons[i].wait=(unsigned short)(182+saver_random(183));
+    night_beacons[i].on=0;night_beacons[i].active=1;return;
+  }
+}
+
+static void update_beacons(void)
+{
+  int i;NIGHT_BEACON *beacon;
+  for(i=0;i<NIGHT_BEACON_COUNT;i++){
+    beacon=&night_beacons[i];if(!beacon->active)continue;
+    if(beacon->wait){beacon->wait--;continue;}
+    if(beacon->on){
+      draw_beacon(beacon,0);
+      ega_span(beacon->y+2,beacon->x+2,beacon->x+2,8);
+      beacon->on=0;
+      beacon->wait=(unsigned short)(182+saver_random(183));
+    } else {
+      draw_beacon(beacon,12);beacon->on=1;beacon->wait=36;
+    }
+  }
+}
+
 static void ega_span(int y,int left,int right,unsigned char colour)
 {
   int first,last,b;unsigned char mask;unsigned offset;
@@ -601,6 +698,18 @@ static void ega_span(int y,int left,int right,unsigned char colour)
 static void ega_rectangle(int x,int y,int width,int height,unsigned char colour)
 {
   int row;for(row=0;row<height;row++)ega_span(y+row,x,x+width-1,colour);
+}
+
+static void ega_line(int x0,int y0,int x1,int y1,unsigned char colour)
+{
+  int dx=abs(x1-x0),sx=x0<x1?1:-1,dy=-abs(y1-y0),sy=y0<y1?1:-1;
+  int error=dx+dy,twice;
+  for(;;){
+    ega_span(y0,x0,x0,colour);if(x0==x1 && y0==y1)break;
+    twice=error*2;
+    if(twice>=dy){error+=dy;x0+=sx;}
+    if(twice<=dx){error+=dx;y0+=sy;}
+  }
 }
 
 static void draw_clock_shape(int x,int y,const CLOCK_SHAPE *shape,
@@ -646,20 +755,20 @@ static void draw_clock_bitmap(int x,int y,const unsigned char *bits,
   }
 }
 
-static void set_ega_clock_mode(void)
+static void set_ega_saver_mode(int clock_palette)
 {
   union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x0010;int86(0x10,&r,&r);
 
   /* A VGA can give colour 8 a subtler VFD-like inactive glow.  Its DAC
-     components are six-bit values, so 8/63 is approximately RGB #202020
-     (the nearest darker match to #222222).  A genuine EGA has only its
+     components are six-bit values, so 10/63 is approximately RGB #282828.
+     A genuine EGA has only its
      fixed 64-colour palette and therefore retains normal dark grey. */
   memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);
-  if(r.h.al==0x1A){
+  if(clock_palette && r.h.al==0x1A){
     memset(&r,0,sizeof(r));r.x.ax=0x1000;r.h.bl=8;r.h.bh=8;
     int86(0x10,&r,&r);
     memset(&r,0,sizeof(r));r.x.ax=0x1010;r.x.bx=8;
-    r.h.dh=8;r.h.ch=8;r.h.cl=8;int86(0x10,&r,&r);
+    r.h.dh=10;r.h.ch=10;r.h.cl=10;int86(0x10,&r,&r);
   }
   _outpw(0x3C4,0x0F02); /* all four planes */
   _outpw(0x3CE,0x0003); /* replace, no rotate */
@@ -703,24 +812,170 @@ static void mouse_show(void)
   memset(&r,0,sizeof(r));r.x.ax=1;int86(0x33,&r,&r);
 }
 
-static void clock_screensaver(void)
+static int saver_input(unsigned start_x,unsigned start_y)
+{
+  int mx=0,my=0;unsigned buttons;
+  if(key_waiting()){keyread();return 1;}
+  buttons=mouse_poll(&mx,&my);
+  return buttons || mouse_raw_x!=start_x || mouse_raw_y!=start_y;
+}
+
+static void clock_saver_loop(unsigned start_x,unsigned start_y)
+{
+  unsigned char second=255;signed char previous_digits[4]={-2,-2,-2,-2};
+  while(!saver_input(start_x,start_y))
+    second=draw_graphics_time(second,previous_digits);
+}
+
+static void starry_saver_loop(unsigned start_x,unsigned start_y)
+{
+  unsigned long last_tick=bios_ticks();int x=0,i,bx,bw,bh,top,wx,wy,phase=0;
+  unsigned char building;
+  memset(night_pixels,0xFF,sizeof(night_pixels));
+  memset(night_beacons,0,sizeof(night_beacons));
+  for(i=0;i<640;i++){skyline_top[i]=350;skyline_colour[i]=0;}
+  while(!saver_input(start_x,start_y)){
+    unsigned long tick=bios_ticks();
+    wait_vertical_retrace();
+    if(tick==last_tick)continue;
+    last_tick=tick;
+    night_pixels_decay();
+    if(x<640){
+      bw=22+(int)saver_random(43);if(x+bw>640)bw=640-x;
+      bh=42+(int)saver_random(130);top=350-bh;
+      building=(unsigned char)(saver_random(2)?1:8);
+      ega_rectangle(x,top,bw,bh,building);
+      for(i=0;i<NIGHT_PIXEL_COUNT;i++)
+        if(night_pixels[i].x!=0xFFFF && night_pixels[i].base==0 &&
+           night_pixels[i].x>=(unsigned)x && night_pixels[i].x<(unsigned)(x+bw) &&
+           night_pixels[i].y>=(unsigned)top)night_pixels[i].x=0xFFFF;
+      for(i=x;i<x+bw;i++){
+        skyline_top[i]=(unsigned short)top;skyline_colour[i]=building;
+      }
+      if(saver_random(3)==0){
+        int antenna=x+bw/2,antenna_top=top-(8+(int)saver_random(18));
+        ega_line(antenna,top,antenna,antenna_top,8);
+        add_beacon(antenna-2,antenna_top-2);
+      }
+      x+=bw;
+    }
+    if((phase++&1)==0){
+      /* Stars fill the screen behind, rather than stopping above the skyline. */
+      bx=(int)saver_random(640);wy=(int)saver_random(350);
+      if(wy<(int)skyline_top[bx])
+        night_pixel_add(bx,wy,(unsigned char)(saver_random(5)?7:15),0);
+    } else {
+      /* Windows may appear from the roof line to the foot of a building. */
+      wx=(int)saver_random(638);top=(int)skyline_top[wx];
+      if(top<346){
+        wy=top+3+(int)saver_random((unsigned)(346-top));
+        night_pixel_add(wx,wy,(unsigned char)(saver_random(5)?14:7),
+                        skyline_colour[wx]);
+      }
+    }
+    update_beacons();
+  }
+}
+
+static void reset_warp_star(WARP_STAR *star,int varied_depth)
+{
+  star->x=(int)saver_random(641)-320;star->y=(int)saver_random(351)-175;
+  if(star->x>-18 && star->x<18)star->x+=star->x<0?-28:28;
+  if(star->y>-12 && star->y<12)star->y+=star->y<0?-20:20;
+  star->z=varied_depth?18+(int)saver_random(78):95;
+  star->px=star->qx=320;star->py=star->qy=175;
+}
+
+static void warp_saver_loop(unsigned start_x,unsigned start_y)
+{
+  int i,sx,sy,tx,ty;unsigned char colour;WARP_STAR *star;
+  for(i=0;i<56;i++)reset_warp_star(&warp_stars[i],1);
+  while(!saver_input(start_x,start_y)){
+    wait_vertical_retrace();
+    for(i=0;i<56;i++){
+      star=&warp_stars[i];ega_line(star->px,star->py,star->qx,star->qy,0);
+      star->z-=2;
+      if(star->z<6){reset_warp_star(star,0);continue;}
+      sx=320+star->x*72/star->z;sy=175+star->y*72/star->z;
+      tx=320+star->x*66/star->z;ty=175+star->y*66/star->z;
+      if(sx<0 || sx>=640 || sy<0 || sy>=350){reset_warp_star(star,0);continue;}
+      star->px=tx;star->py=ty;star->qx=sx;star->qy=sy;
+      colour=(unsigned char)(star->z<28?15:(star->z<58?7:8));
+      ega_line(tx,ty,sx,sy,colour);
+      if(star->z<20)ega_span(sy+1,sx,sx,colour);
+    }
+  }
+}
+
+static void draw_logo(int x,int y)
+{
+  unsigned i;const LOGO_SPAN *span;
+  for(i=0;i<(unsigned)LOGO_SPAN_COUNT;i++){
+    span=&logo_spans[i];
+    ega_span(y+span->y,x+span->left,x+span->right,span->colour);
+  }
+}
+
+static int logo_pixel_set(int x,int y)
+{
+  unsigned i;
+  if(x<0 || x>=LOGO_WIDTH || y<0 || y>=LOGO_HEIGHT)return 0;
+  for(i=logo_row_first[y];i<logo_row_first[y+1];i++)
+    if(x>=logo_spans[i].left && x<=logo_spans[i].right)return 1;
+  return 0;
+}
+
+static void erase_old_logo_edges(int old_x,int old_y,int new_x,int new_y)
+{
+  unsigned i;int x,start,local_y;const LOGO_SPAN *span;
+  for(i=0;i<(unsigned)LOGO_SPAN_COUNT;i++){
+    span=&logo_spans[i];x=span->left;local_y=old_y+span->y-new_y;
+    while(x<=span->right){
+      while(x<=span->right &&
+            logo_pixel_set(old_x+x-new_x,local_y))x++;
+      start=x;
+      while(x<=span->right &&
+            !logo_pixel_set(old_x+x-new_x,local_y))x++;
+      if(start<x)ega_span(old_y+span->y,old_x+start,old_x+x-1,0);
+    }
+  }
+}
+
+static void logo_saver_loop(unsigned start_x,unsigned start_y)
+{
+  int x=(int)saver_random(640-LOGO_WIDTH+1);
+  int y=(int)saver_random(350-LOGO_HEIGHT+1);
+  int dx=saver_random(2)?2:-2,dy=saver_random(2)?1:-1;
+  unsigned long last_tick=bios_ticks(),tick;
+  draw_logo(x,y);
+  while(!saver_input(start_x,start_y)){
+    int old_x,old_y;
+    tick=bios_ticks();if(tick==last_tick)continue;last_tick=tick;
+    old_x=x;old_y=y;x+=dx;y+=dy;
+    if(x<=0){x=0;dx=abs(dx);}
+    else if(x>=640-LOGO_WIDTH){x=640-LOGO_WIDTH;dx=-abs(dx);}
+    if(y<=0){y=0;dy=abs(dy);}
+    else if(y>=350-LOGO_HEIGHT){y=350-LOGO_HEIGHT;dy=-abs(dy);}
+    wait_vertical_retrace();draw_logo(x,y);
+    erase_old_logo_edges(old_x,old_y,x,y);
+  }
+}
+
+static void run_screensaver(void)
 {
   union REGS r;int mx=0,my=0,old_mode,old_rows=screen_rows;
-  unsigned buttons,start_x,start_y;
-  unsigned char second=255;signed char previous_digits[4]={-2,-2,-2,-2};
+  unsigned start_x,start_y;
+  if(!appearance.screensaver)return;
   mouse_stop();
   memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);old_mode=r.h.al;
-  set_ega_clock_mode();
-  /* A mode change can rescale or reset the mouse driver's coordinates.  Take
-   * the inactivity baseline afterward so that this is not mistaken for real
-   * mouse movement and used to dismiss the clock immediately. */
+  set_ega_saver_mode(appearance.screensaver==1);
+  saver_random_state=bios_ticks()^0xA5A55A5AUL;
+  /* A mode change can rescale or reset the mouse driver's coordinates. */
   (void)mouse_poll(&mx,&my);start_x=mouse_raw_x;start_y=mouse_raw_y;
-  for(;;){
-    second=draw_graphics_time(second,previous_digits);
-    if(key_waiting()){keyread();break;}
-    buttons=mouse_poll(&mx,&my);
-    if(buttons || mouse_raw_x!=start_x || mouse_raw_y!=start_y)break;
-  }
+  if(appearance.screensaver==1)clock_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==2)starry_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==3)warp_saver_loop(start_x,start_y);
+  else logo_saver_loop(start_x,start_y);
   memset(&r,0,sizeof(r));r.h.al=(unsigned char)old_mode;int86(0x10,&r,&r);
   if(old_rows>25){memset(&r,0,sizeof(r));r.x.ax=0x1112;r.h.bl=0;int86(0x10,&r,&r);}
   video_init();
@@ -820,7 +1075,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 1.8 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 1.9 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -846,7 +1101,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 1.8 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 1.9 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSCREENSAVER=%u\nSAVER_COLOR=%u\nHOUR_12=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
@@ -1456,10 +1711,12 @@ static const char *colour_names[16]={
   "Bri Yellow","Bri White"
 };
 
+static const char *screensaver_names[5]={"None","Clock","Starry Nite","Warp","Logo"};
+
 static void cycle_control(int x,int y,const char *value,int focused)
 {
   char field[16];
-  sprintf(field,"[ %-11s ]",value);
+  sprintf(field,"[ %-11.11s ]",value);
   textout(x,y,field,focused?C_SELECTED:C_BUTTON,15);
 }
 
@@ -1479,7 +1736,7 @@ static unsigned char *appearance_field(int focus,int *limit)
     case 9:*limit=7;return &appearance.controls_bg;
     case 10:return &appearance.labels;
     case 11:*limit=1;return &appearance.menu_top;
-    case 12:*limit=1;return &appearance.screensaver;
+    case 12:*limit=4;return &appearance.screensaver;
     case 13:return &appearance.saver_color;
     case 17:*limit=1;return &appearance.hour_12;
   }
@@ -1497,6 +1754,16 @@ static void change_appearance_value(int focus,int direction)
   if(value<0)value=limit;
   if(value>limit)value=0;
   *field=(unsigned char)value;
+}
+
+static int next_appearance_focus(int focus,int direction)
+{
+  do {
+    focus+=direction;
+    if(focus<0)focus=19;
+    if(focus>19)focus=0;
+  } while(focus==13 && appearance.screensaver!=1);
+  return focus;
 }
 
 static int configure_appearance(void)
@@ -1532,8 +1799,9 @@ static int configure_appearance(void)
     textout(x+3,y+12,"Menu position",C_INPUT_LABEL,18);
     cycle_control(x+22,y+12,appearance.menu_top?"Top":"Bottom",focus==11);
     textout(x+3,y+13,"Screensaver",C_INPUT_LABEL,18);
-    cycle_control(x+22,y+13,appearance.screensaver?"Clock":"None",focus==12);
-    cycle_control(x+41,y+13,colour_names[appearance.saver_color],focus==13);
+    cycle_control(x+22,y+13,screensaver_names[appearance.screensaver],focus==12);
+    if(appearance.screensaver==1)
+      cycle_control(x+41,y+13,colour_names[appearance.saver_color],focus==13);
     check_line(x+22,y+15,"Show 'Explore & Run' menu item",appearance.show_explore,focus==14);
     check_line(x+22,y+16,"Show 'Shutdown...' menu item",appearance.show_power,focus==15);
     check_line(x+22,y+17,"Show the time",appearance.show_time,focus==16);
@@ -1548,7 +1816,7 @@ static int configure_appearance(void)
       }
       if(mx>=x+41 && mx<x+56 && my==y+8)row=7;
       if(mx>=x+41 && mx<x+56 && my==y+9)row=9;
-      if(mx>=x+41 && mx<x+56 && my==y+13)row=13;
+      if(appearance.screensaver==1 && mx>=x+41 && mx<x+56 && my==y+13)row=13;
       if(mx>=x+41 && mx<x+56 && my==y+17)row=17;
       if(row>=0){focus=row;change_appearance_value(focus,(mb&2)?-1:1);redraw=1;continue;}
       if(my==y+19 && (mb&1)){
@@ -1561,12 +1829,12 @@ static int configure_appearance(void)
       continue;
     }
     if(k==27){appearance=original;close_menu();return 0;}
-    if(k==9 || k==0x5000){focus=(focus+1)%20;continue;}
-    if(k==0x4800){focus=(focus+19)%20;continue;}
+    if(k==9 || k==0x5000){focus=next_appearance_focus(focus,1);continue;}
+    if(k==0x4800){focus=next_appearance_focus(focus,-1);continue;}
     if(k==0x4B00){change_appearance_value(focus,-1);redraw=1;continue;}
     if(k==0x4D00 || k==' '){change_appearance_value(focus,1);redraw=1;continue;}
     if(k==13){
-      if(focus<18){focus++;continue;}
+      if(focus<18){focus=next_appearance_focus(focus,1);continue;}
       if(focus==18){
         if(save_appearance()){close_menu();return 1;}
         notice_box("Write Error","Could not update LAUNCH.CFG.");redraw=1;continue;
@@ -2177,7 +2445,7 @@ static int menu(void)
         last_second=draw_clock(panel_y[0]+panel_h[0]-1,last_second);
       now=bios_ticks();
       if(appearance.screensaver && elapsed_ticks(last_activity,now)>=SCREENSAVER_TICKS){
-        clock_screensaver();
+        run_screensaver();
         last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;
         last_activity=bios_ticks();redraw=2;break;
       }
@@ -2436,7 +2704,7 @@ static int queue_macro(const char *text)
 
 static void show_help(void)
 {
-  puts("Launch! 1.8 - a lightweight command menu for DOS\n");
+  puts("Launch! 1.9 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
@@ -2463,7 +2731,7 @@ int main(int argc,char **argv)
   if(config_mode){configure_appearance();return 0;}
   if(now_mode){
     video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 1;}
-    cursor_hide();mouse_present=mouse_start();clock_screensaver();close_menu();return 0;
+    cursor_hide();mouse_present=mouse_start();run_screensaver();close_menu();return 0;
   }
   config_status=prepare_config();
   if(!config_status){printf("Launch!: cannot recover %s\n",config_file);return 1;}

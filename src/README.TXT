@@ -12,10 +12,12 @@ FILES
 
 AUTOGEN.DAT  Autogen program ID database
 AUTOGEN.C    Source for the automatic program scanner
-BUILD.BAT   Build command
+BUILD.BAT    Build command
+CLOCKDAT.H   The segmented digits used in the Clock screensaver
 INSTALL.C    Source for the interactive installation utility
-LAUNCH.C    Source, including the compact BIOS keyboard macro helper
-LAUNCH.MNU  Example menu configuration
+LAUNCH.C     Source, including the compact BIOS keyboard macro helper
+LAUNCH.MNU   Example menu configuration
+LOGODAT.H    The DOS logo used in the Logo screensaver
 MACRO.ASM    GNU assembler source for the helper embedded in LAUNCH.C
 SHORTCDB.ASM GNU assembler wrapper source for SHORTCDB.COM
 SHORTCUT.ASM GNU assembler source for SHORTCUT.COM
