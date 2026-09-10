@@ -114,8 +114,7 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 <img width="720" height="600" alt="Edit dialog" src="https://github.com/user-attachments/assets/dda87955-ad54-4583-b073-996eba095d9d" />
 
-
-When **Change directory first** is selected, Launch! extracts the directory from the first command token. <br/>
+When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.<br/>
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
 ### Parameter prompting and help
@@ -172,6 +171,7 @@ You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
 If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 color bitmap.
 
+
 ## Clock/Screensaver
 If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a big clock.<br/>
 You can also show the clock at any time by running `! /NOW`.
@@ -221,10 +221,15 @@ Use `AUTOGEN /?` for more information.
 
 
 ## File safety
-
 Launch! validates `LAUNCH.MNU` before opening the menu. A valid file must contain the [Launcher] root section and every non-comment line must be a valid section, FOLDER, or ITEM record. Empty, truncated, malformed, or oversized records are rejected.
 
 Before every accepted Add, Edit, Delete, Move, or Sort operation, the existing valid `LAUNCH.MNU` is copied to `LAUNCH.BAK`. The new menu is first written fully to `LAUNCH.$$$` and is installed only after writing succeeds. `LAUNCH.BK$` is used briefly while rotating the backup.
 
 If `LAUNCH.MNU` is missing or invalid at startup and `LAUNCH.BAK` is valid, Launch! restores the backup automatically and displays a recovery message. If neither file is usable, the built-in sample menu is installed as both `LAUNCH.MNU` and `LAUNCH.BAK`. An invalid primary file is preserved as `LAUNCH.BAD` when possible.
 
+
+## IRL
+
+<img width="540" height="405" alt="IRL" src="https://github.com/user-attachments/assets/3d96cdec-a188-4d8e-a6e3-29d099f92f84" />
+
+<img width="540" height="405" alt="IRL" src="https://github.com/user-attachments/assets/34cd90e7-4229-4c22-adf4-7431b23358a9" />
