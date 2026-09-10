@@ -56,6 +56,8 @@ To start Launch! without the keyboard shortcut, at the command prompt, simply en
 !
 ```
 
+If you want the menu itself to appear immediately after startup, manually add `!` as the last line in your `AUTOEXEC.BAT` file.
+
 ### How it works
 Launch! does not execute the selected program itself. Rather, it returns to the existing command interpreter, types the configured command and, if selected, supplies Enter. This means shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can all be used. No secondary command processor is started or additional shells. Launch! does not interfere with program execution or return.
 This approach provides maximum flexibility, and compatibility. *If it can be run from the command prompt, it will work with Launch!*.
