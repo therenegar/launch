@@ -33,11 +33,11 @@ typedef struct {
   unsigned char background,border,main_title,titles,folders,launchers;
   unsigned char selected_fg,selected_bg,controls_fg,controls_bg,labels;
   unsigned char menu_top,show_explore,show_power,show_time;
-  unsigned char screensaver,saver_color,hour_12,font_id;
+  unsigned char screensaver,saver_color,hour_12,font_id,font_persist;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1,1};
-static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1,1};
+static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1,1,1};
+static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1,1,1};
 
 static void (interrupt far *setkey_old_int09)();
 static volatile unsigned char setkey_scan,setkey_e0,setkey_mods;
@@ -431,6 +431,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
   else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=21;}
+  else if(!stricmp(key,"FONT_PERSIST")){field=&a->font_persist;limit=1;}
   if(!field || value<0 || value>limit)return 0;
   *field=(unsigned char)value;return 1;
 }
@@ -1250,13 +1251,15 @@ static int save_appearance(void)
   if(fputs("; Launch! 2.2 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
-      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSCREENSAVER=%u\nSAVER_COLOR=%u\nHOUR_12=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\nFONT_ID=%u\n",
+      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\n"
+      "SCREENSAVER=%u\nSAVER_COLOR=%u\nHOUR_12=%u\nSHOW_EXPLORE=%u\n"
+      "SHOW_POWER=%u\nSHOW_TIME=%u\nFONT_ID=%u\nFONT_PERSIST=%u\n",
       appearance.background,appearance.border,appearance.main_title,appearance.titles,
       appearance.folders,appearance.launchers,appearance.selected_fg,appearance.selected_bg,
       appearance.controls_fg,appearance.controls_bg,appearance.labels,
       appearance.menu_top,appearance.screensaver,appearance.saver_color,appearance.hour_12,
       appearance.show_explore,appearance.show_power,
-      appearance.show_time,appearance.font_id)<0)ok=0;
+      appearance.show_time,appearance.font_id,appearance.font_persist)<0)ok=0;
   if(fclose(f)!=0)ok=0;
   if(!ok){remove(appearance_temp_file);return 0;}
   remove(appearance_file);
@@ -1953,7 +1956,7 @@ static int config_count(int tab)
   if(tab==0)return 11;
   if(tab==1)return 5;
   if(tab==2)return appearance.screensaver==1?2:1;
-  return font_is_vga()?1:0;
+  return font_is_vga()?2:0;
 }
 
 static unsigned char *config_field(int tab,int item,int *limit)
@@ -1980,7 +1983,10 @@ static unsigned char *config_field(int tab,int item,int *limit)
     if(item==0){*limit=4;return &appearance.screensaver;}
     if(item==1)return &appearance.saver_color;
   }
-  if(tab==3 && item==0){*limit=21;return &appearance.font_id;}
+  if(tab==3){
+    if(item==0){*limit=21;return &appearance.font_id;}
+    if(item==1){*limit=1;return &appearance.font_persist;}
+  }
   return 0;
 }
 
@@ -1988,10 +1994,12 @@ static void change_config_value(int tab,int item,int direction)
 {
   unsigned char *field;int limit,value;
   field=config_field(tab,item,&limit);if(!field)return;
-  if(tab==1 && item>=1 && item<=3){*field=!*field;return;}
+  if((tab==1 && item>=1 && item<=3) || (tab==3 && item==1)){
+    *field=!*field;return;
+  }
   value=(int)*field+direction;if(value<0)value=limit;if(value>limit)value=0;
   *field=(unsigned char)value;
-  if(tab==3){font_preview(appearance.font_id);mouse_pointer_install();}
+  if(tab==3 && item==0){font_preview(appearance.font_id);mouse_pointer_install();}
 }
 
 static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
@@ -2038,7 +2046,8 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
   } else if(font_is_vga()){
     textout(x+5,y+5,"VGA display font",C_INPUT_LABEL,18);
     cycle_control(x+25,y+5,font_names[appearance.font_id],f==0||h==0);
-    draw_character_preview(x+5,y+9);
+    check_line(x+25,y+7,"Persist",appearance.font_persist,f==1||h==1);
+    draw_character_preview(x+5,y+10);
   } else textout(x+7,y+10,"Font customization requires a VGA display adapter",C_INPUT_LABEL,52);
   draw_button(x+20,y+18,"  Save  ",8,focus==20||hover==20);
   draw_button(x+36,y+18,"  Cancel  ",10,focus==21||hover==21);
@@ -2062,7 +2071,10 @@ static int config_hit(int x,int y,int tab,int mx,int my)
   } else if(tab==2){
     if(my==y+5&&mx>=x+25&&mx<x+40)return 4;
     if(appearance.screensaver==1&&my==y+8&&mx>=x+25&&mx<x+40)return 5;
-  } else if(tab==3&&font_is_vga()&&my==y+5&&mx>=x+25&&mx<x+40)return 4;
+  } else if(tab==3&&font_is_vga()){
+    if(my==y+5&&mx>=x+25&&mx<x+40)return 4;
+    if(my==y+7&&mx>=x+25&&mx<x+36)return 5;
+  }
   if(my==y+18&&mx>=x+20&&mx<x+28)return 20;
   if(my==y+18&&mx>=x+36&&mx<x+46)return 21;
   return -1;
@@ -3235,6 +3247,19 @@ static int font_manager(unsigned *resident)
   dos_set_vector(0x10,seg,FONT_INT10_OFF);*resident=seg;return 1;
 }
 
+static int font_unload(void)
+{
+  union REGS r;unsigned resident,psp;unsigned long old10;
+  unsigned far *owner;
+  if(!font_resident(&resident))return 1;
+  old10=*(unsigned long far *)MAKE_FP(resident,FONT_OLD10_OFF);
+  dos_set_vector(0x10,(unsigned)(old10>>16),(unsigned)old10);
+  memset(&r,0,sizeof(r));r.h.ah=0x51;int86(0x21,&r,&r);psp=r.x.bx;
+  owner=(unsigned far *)MAKE_FP(resident-1,1);*owner=psp;
+  if(_dos_freemem(resident)==0)return 1;
+  *owner=8;dos_set_vector(0x10,resident,FONT_INT10_OFF);return 0;
+}
+
 static void font_bios_load(unsigned font_segment,unsigned font_offset)
 {
 #ifndef __GNUC__
@@ -3278,9 +3303,12 @@ static int font_commit(unsigned char id)
   unsigned resident,temporary;
   if(!font_is_vga())return 1;
   if(!id){
-    if(font_resident(&resident))
-      *(unsigned char far *)MAKE_FP(resident,FONT_ACTIVE_ID_OFF)=0;
+    if(!font_unload())return 0;
     font_bios_standard();return 1;
+  }
+  if(!appearance.font_persist){
+    if(!font_unload())return 0;
+    return font_preview(id);
   }
   if(!font_manager(&resident))return 0;
   if(_dos_allocmem(256,&temporary)!=0)return 0;
@@ -3293,11 +3321,7 @@ static int font_commit(unsigned char id)
 
 static void font_restore(void)
 {
-  unsigned resident;if(!font_is_vga())return;
-  if(font_resident(&resident) &&
-     *(unsigned char far *)MAKE_FP(resident,FONT_ACTIVE_ID_OFF))
-    font_bios_load(resident,FONT_ACTIVE_FONT_OFF);
-  else font_bios_standard();
+  if(font_is_vga())font_preview(appearance.font_id);
 }
 
 static int helper_signature(unsigned seg)
