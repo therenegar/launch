@@ -106,26 +106,29 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can view the current status of the shortcut utility, current key combination, and set a new combination.
 
+<img width="720" height="600" alt="Shortcut" src="https://github.com/user-attachments/assets/ef212013-8ce1-4cc9-a420-29437b6de240" />
+
 
 ### Menu
 
 You can choose where the menu is positioned, what options are displayed, and the time format.
 
-<img width="720" height="600" alt="Menu Configuration" src="https://github.com/user-attachments/assets/dc177f62-9ff0-4820-b7c6-46dbaf92ad21" />
+<img width="720" height="600" alt="Menu" src="https://github.com/user-attachments/assets/bd6d7a01-65eb-4806-a564-a99c97364b52" />
 
 
 ### Colors
 
 You can change the colors for all elements in the user interface.
 
-<img width="720" height="600" alt="Color Configuration" src="https://github.com/user-attachments/assets/e06c8d7a-3660-49d7-a331-88a0b3a3a9b3" />
+<img width="720" height="600" alt="Colors" src="https://github.com/user-attachments/assets/5424386f-4e08-43b5-92a5-761e5eb1727d" />
 
 
 ### Screensaver
 
 You can select which screensaver to show, choose None to disable this functionality. You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).
 
-<img width="720" height="600" alt="Screensaver Configuration" src="https://github.com/user-attachments/assets/cf391032-b969-4070-96b7-f2bef98ede56" />
+<img width="720" height="600" alt="Screensaver" src="https://github.com/user-attachments/assets/e20f0eb0-acff-488b-9357-ea86522d1d0d" />
+
 
 ###  Font
 
@@ -133,7 +136,7 @@ You can change the VGA font used across the entire DOS session. There's 22 diffe
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory. Without `Persist`, no extra memory is consumed. Launch! will still re-apply your font each time the menu is shown anyway.
 
-<img width="720" height="600" alt="Font Configuration" src="https://github.com/user-attachments/assets/be8565de-6f71-4575-8906-5f7f17d9bde8" />
+<img width="720" height="600" alt="Font" src="https://github.com/user-attachments/assets/18b13489-6c9c-4951-b2ea-9a1bf511d21f" />
 
 > Note this feature is not available with an EGA display adapter.
 
