@@ -106,28 +106,32 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can view the current status of the shortcut utility, current key combination, and set a new combination.
 
-<img width="720" height="600" alt="Shortcut" src="https://github.com/user-attachments/assets/ef212013-8ce1-4cc9-a420-29437b6de240" />
+<img width="720" height="600" alt="Config - Shortcut" src="https://github.com/user-attachments/assets/eb8c1a68-d263-40a6-8985-bb90a5287c4f" />
+
 
 
 ### Menu
 
 You can choose where the menu is positioned, what options are displayed, and the time format.
 
-<img width="720" height="600" alt="Menu" src="https://github.com/user-attachments/assets/bd6d7a01-65eb-4806-a564-a99c97364b52" />
+<img width="720" height="600" alt="Config - Menu" src="https://github.com/user-attachments/assets/842163cf-52bb-4a1e-bd40-1ca20393d3a4" />
+
 
 
 ### Colors
 
 You can change the colors for all elements in the user interface.
 
-<img width="720" height="600" alt="Colors" src="https://github.com/user-attachments/assets/5424386f-4e08-43b5-92a5-761e5eb1727d" />
+<img width="720" height="600" alt="Config - Colors" src="https://github.com/user-attachments/assets/957e7ca0-e152-44c3-8a52-26df1ad48bc5" />
+
 
 
 ### Screensaver
 
 You can select which screensaver to show, choose None to disable this functionality. You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).
 
-<img width="720" height="600" alt="Screensaver" src="https://github.com/user-attachments/assets/e20f0eb0-acff-488b-9357-ea86522d1d0d" />
+<img width="720" height="600" alt="Config - Screensaver" src="https://github.com/user-attachments/assets/5eb0e829-c4d8-4e9b-9b6a-18979586753a" />
+
 
 
 ###  Font
@@ -136,7 +140,7 @@ You can change the VGA font used across the entire DOS session. There's 22 diffe
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory. Without `Persist`, no extra memory is consumed. Launch! will still re-apply your font each time the menu is shown anyway.
 
-<img width="720" height="600" alt="Font" src="https://github.com/user-attachments/assets/18b13489-6c9c-4951-b2ea-9a1bf511d21f" />
+<img width="720" height="600" alt="Config - Font" src="https://github.com/user-attachments/assets/fde50c7c-2766-409e-a21f-eb0aadd2b922" />
 
 > Note this feature is not available with an EGA display adapter.
 
