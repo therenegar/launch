@@ -160,7 +160,11 @@ SEPARATOR=
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
 Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
 
-<img width="720" height="600" alt="explore" src="https://github.com/user-attachments/assets/4b31e2c0-8a74-459f-a925-c2131330e4fe" />
+The drive bar shows the available disk drives, and allows you to switch between them.
+
+The path bar shows a preview of the command line that will be executed when `Run` is chosen.
+
+<img width="720" height="600" alt="explore and run" src="https://github.com/user-attachments/assets/323100a1-e415-41ca-8046-5b7f0f418a48" />
 
 Choosing `/?` for an executable will show the command help (if available) and allow you to provide parameters.
 
