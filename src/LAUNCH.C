@@ -2092,15 +2092,33 @@ static void cycle_control(int x,int y,const char *value,int focused)
   textout(x,y,field,focused?C_SELECTED:C_BUTTON,15);
 }
 
-static void draw_config_tab(int x,int y,const char *name,int width,int active,int focused)
+static void draw_config_tabs(int x,int y,int active,int focus,int hover)
 {
-  int i,len=(int)strlen(name);
-  int base=focused?C_SELECTED:C_BUTTON;
-  int at=focused?C_SELECTED:(active?ATTR(appearance.controls_bg,appearance.titles):C_BUTTON);
-  for(i=0;i<width;i++)cell(x+i,y,' ',base);
-  cell(x,y,179,base);cell(x+width-1,y,179,base);
-  textout(x+2,y,name,at,len);
-  if(active)cell(x+width-2,y,4,at);
+  static const int edge[6]={3,15,23,33,48,56};
+  static const char *name[5]={"Shortcut","Menu","Colors","Screensaver","Font"};
+  int i,j,focused,base,text_attr;
+
+  /* Upper edge of the single, joined tab strip. */
+  cell(x+edge[0],y,218,C_BORDER);
+  for(i=0;i<5;i++){
+    for(j=edge[i]+1;j<edge[i+1];j++)cell(x+j,y,196,C_BORDER);
+    cell(x+edge[i+1],y,i==4?191:194,C_BORDER);
+  }
+
+  /* The lower edge forms the divider across the complete dialog. */
+  for(j=1;j<65;j++)cell(x+j,y+1,196,C_BORDER);
+  for(i=0;i<6;i++)cell(x+edge[i],y+1,179,C_BORDER);
+  for(i=0;i<5;i++){
+    focused=(focus==i||hover==i);
+    base=focused?C_SELECTED:ATTR(appearance.background,appearance.labels);
+    text_attr=focused?C_SELECTED:
+      (active==i?ATTR(appearance.background,appearance.titles):
+                 ATTR(appearance.background,appearance.labels));
+    for(j=edge[i]+1;j<edge[i+1];j++)cell(x+j,y+1,' ',base);
+    textout(x+edge[i]+2,y+1,name[i],text_attr,(int)strlen(name[i]));
+    /*if(active==i)
+      cell(x+edge[i]+3+(int)strlen(name[i]),y+1,4,text_attr);*/
+  }
 }
 
 static void draw_character_preview(int x,int y)
@@ -2109,13 +2127,6 @@ static void draw_character_preview(int x,int y)
   for(code=0;code<256;code++){
     row=code/56;column=code%56;cell(x+column,y+row,code,C_BORDER);
   }
-}
-
-static void draw_config_divider(int x,int y,int width)
-{
-  int i;cell(x,y,195,C_BORDER);
-  for(i=1;i<width-1;i++)cell(x+i,y,196,C_BORDER);
-  cell(x+width-1,y,180,C_BORDER);
 }
 
 static int config_count(int tab)
@@ -2177,19 +2188,14 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
 {
   int f=focus-CONFIG_CONTROL_BASE,h=hover-CONFIG_CONTROL_BASE;
   if(full)dialog_box(x,y,66,22,"Launch! Configuration");
-  draw_config_tab(x+1,y+2,"Shortcut",12,tab==0,focus==0||hover==0);
-  draw_config_tab(x+14,y+2,"Menu",9,tab==1,focus==1||hover==1);
-  draw_config_tab(x+24,y+2,"Colors",11,tab==2,focus==2||hover==2);
-  draw_config_tab(x+36,y+2,"Screensaver",16,tab==3,focus==3||hover==3);
-  draw_config_tab(x+53,y+2,"Font",9,tab==4,focus==4||hover==4);
-  draw_config_divider(x,y+3,66);
+  draw_config_tabs(x,y+2,tab,focus,hover);
   if(tab==0){
     textout(x+5,y+6,"Keyboard shortcut status:",C_INPUT_LABEL,25);
-    textout(x+31,y+6,config_shortcut_active?"Active":"Inactive",C_TITLE,12);
+    textout(x+31,y+6,config_shortcut_active?"Active":"Inactive",C_ITEM,12);
     textout(x+5,y+9,"Current combination:",C_INPUT_LABEL,25);
-    textout(x+31,y+9,config_shortcut_combination,C_TITLE,28);
+    textout(x+31,y+9,config_shortcut_combination,C_ITEM,28);
     textout(x+5,y+12,"Set new combination:",C_INPUT_LABEL,25);
-    draw_button(x+31,y+12,"  SET  ",7,f==0||h==0);
+    draw_button(x+31,y+12,"  Choose  ",10,f==0||h==0);
     if(config_shortcut_changed)
       textout(x+5,y+15,"Shortcut combination changed. Restart to take effect.",
               C_INPUT_LABEL,54);
@@ -2242,10 +2248,11 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
 
 static int config_hit(int x,int y,int tab,int mx,int my)
 {
-  static const int tx[5]={1,14,24,36,53},tw[5]={12,9,11,16,9};int i;
-  if(my==y+2)for(i=0;i<5;i++)if(mx>=x+tx[i]&&mx<x+tx[i]+tw[i])return i;
+  static const int left[5]={3,15,23,33,48},right[5]={15,23,33,48,56};int i;
+  if(my==y+2||my==y+3)
+    for(i=0;i<5;i++)if(mx>x+left[i]&&mx<x+right[i])return i;
   if(tab==0){
-    if(my==y+12&&mx>=x+31&&mx<x+38)return CONFIG_CONTROL_BASE;
+    if(my==y+12&&mx>=x+31&&mx<x+41)return CONFIG_CONTROL_BASE;
   } else if(tab==2){
     static const int rows[8]={8,9,10,11,12,13,14,15};
     static const int items[8]={1,2,3,4,5,6,8,10};
@@ -2289,7 +2296,7 @@ static int configure_appearance(void)
       if(hit>=CONFIG_CONTROL_BASE&&hit<20){
         focus=hit;item=hit-CONFIG_CONTROL_BASE;
         if(tab==0&&item==0){
-          press_button(x+31,y+12,"  SET  ",7);
+          press_button(x+31,y+12,"  Choose  ",10);
           if(shortcut_set_dialog())config_shortcut_changed=1;
           shortcut_refresh();
         } else change_config_value(tab,item,1);
@@ -2341,7 +2348,7 @@ static int configure_appearance(void)
       item=focus-CONFIG_CONTROL_BASE;
       if(tab==0&&item==0){
         if(k==13||k==' '){
-          press_button(x+31,y+12,"  SET  ",7);
+          press_button(x+31,y+12,"  Choose  ",10);
           if(shortcut_set_dialog())config_shortcut_changed=1;
           shortcut_refresh();redraw=2;
         }
