@@ -128,7 +128,7 @@ You can select the screensaver to show, choose None to disable this functionalit
 
 ###  Font
 
-You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from.
+You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory.<br/>
 Without `Persist`, no extra memory is consumed. Launch! will still re-apply your font each time the menu is shown.
@@ -166,7 +166,7 @@ Within the `LAUNCH.MNU` file, sections represent menu paths. Separate nesting le
 ```
   [Launcher\Internet]
   FOLDER=Communications
-  ITEM=Telnet|C:\MTCP\TELNET.EXE|1|0|1
+  ITEM=Telnet|C:\MTCP\TELNET.EXE|1|0|101
 
   [Launcher\Internet\Communications]
   ITEM=Pine|C:\COMM\PINE.EXE|1|1|0
