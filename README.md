@@ -21,7 +21,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
-- Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo or warp field.
+- Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes and mystifying polygons.
 - Custom VGA display fonts to change the look of your whole DOS environment.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
