@@ -122,9 +122,9 @@ You can choose where the menu is positioned, what options are displayed, and the
 
 ### Screensaver
 
-You can select the screensaver to show, choose None to disable this functionality.
+You can select which screensaver to show, choose None to disable this functionality. You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).
 
-<img width="720" height="600" alt="Screensaver Configuration" src="https://github.com/user-attachments/assets/ad68072f-d8fd-4059-a10b-6c0d2438a7d4" />
+<img width="720" height="600" alt="Screensaver Configuration" src="https://github.com/user-attachments/assets/cf391032-b969-4070-96b7-f2bef98ede56" />
 
 ###  Font
 
@@ -241,17 +241,20 @@ The DOS logo will bounce around the screen.
 
 ### Warp
 
-<img width="720" height="600" alt="Screensaver - Warp" src="https://github.com/user-attachments/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
+<img width="720" height="600" alt="Screensaver - Warp" src="https://github.com/user-attachmen<img width="720" height="1200" alt="!05" src="https://github.com/user-attachments/assets/13011288-7c8e-48fb-a575-6bd77b853cd5" />
+ts/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
 
 Go at warp speed to absolutely nowhere.
 
-
 ### Pipes
+
+<img width="720" height="600" alt="Screensaver - Pipes" src="https://github.com/user-attachments/assets/e113e7db-1bff-43d2-8a89-4eea13cf0902" />
 
 3-dimensional pipes with a mind of their own.
 
-
 ### Mystify
+
+<img width="720" height="600" alt="Screensaver - Mystify" src="https://github.com/user-attachments/assets/5bc92bfd-1aaa-4625-9a46-1cd1258d1c5c" />
 
 Mystify yourself with the moving polygons.
 
