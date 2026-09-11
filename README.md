@@ -111,23 +111,28 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can change the colors for all elements in the user interface.
 
+<img width="720" height="600" alt="Color Configuration" src="https://github.com/user-attachments/assets/e06c8d7a-3660-49d7-a331-88a0b3a3a9b3" />
 
 ### Menu
 
 You can choose where the menu is positioned, what options are displayed, and the time format.
 
+<img width="720" height="600" alt="Menu Configuration" src="https://github.com/user-attachments/assets/dc177f62-9ff0-4820-b7c6-46dbaf92ad21" />
 
 ### Screensaver
 
 You can select the screensaver to show, choose None to disable this functionality.
 
+<img width="720" height="600" alt="Screensaver Configuration" src="https://github.com/user-attachments/assets/ad68072f-d8fd-4059-a10b-6c0d2438a7d4" />
 
 ###  Font
 
-You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from.
+You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. Your selection will persisted even with screen mode changes..
+This feature is not available with an EGA display adapter.
 
+<img width="720" height="600" alt="Font Configuration" src="https://github.com/user-attachments/assets/d68214ef-f93e-4e79-9cd2-2922ec76a854" />
 
-Note that this will consume 4KB of lower memory (the font data and mode change resident component). Choosing Standard uses the VGA adaptor font and consumes no memory.
+> Note that this will consume 4KB of lower memory (the font data and mode change resident component). Choosing Standard uses the VGA ROM font and consumes no memory.
 
 
 ## Live menu management
