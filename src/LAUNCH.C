@@ -2400,7 +2400,7 @@ static void explore_detect_drives(void)
   }
 }
 
-static void explore_drive_bar(int x,int y)
+static void explore_drive_bar(int x,int y,int focused_drive)
 {
   int drive,pos=0;unsigned char symbol;
   int label_attr=ATTR(appearance.background,appearance.labels);
@@ -2412,14 +2412,43 @@ static void explore_drive_bar(int x,int y)
     if(!symbol)continue;
     if(pos+6>70)break;
     explore_drive_positions[drive]=x+pos;
-    cell(x+pos++,y,'[',label_attr);
-    cell(x+pos++,y,'A'+drive,drive_attr);
-    cell(x+pos++,y,':',drive_attr);
-    cell(x+pos++,y,' ',label_attr);
-    cell(x+pos++,y,symbol,symbol_attr);
-    cell(x+pos++,y,']',label_attr);
+    cell(x+pos++,y,'[',drive==focused_drive?C_SELECTED:label_attr);
+    cell(x+pos++,y,'A'+drive,drive==focused_drive?C_SELECTED:drive_attr);
+    cell(x+pos++,y,':',drive==focused_drive?C_SELECTED:drive_attr);
+    cell(x+pos++,y,' ',drive==focused_drive?C_SELECTED:label_attr);
+    cell(x+pos++,y,symbol,drive==focused_drive?C_SELECTED:symbol_attr);
+    cell(x+pos++,y,']',drive==focused_drive?C_SELECTED:label_attr);
     if(pos<70)cell(x+pos++,y,' ',label_attr);
   }
+}
+
+static int explore_first_drive(void)
+{
+  int drive;
+  for(drive=0;drive<26;drive++)if(explore_drive_positions[drive]>=0)return drive;
+  return -1;
+}
+
+static int explore_adjacent_drive(int drive,int direction)
+{
+  int next=drive+direction;
+  while(next>=0 && next<26){
+    if(explore_drive_positions[next]>=0)return next;
+    next+=direction;
+  }
+  return drive;
+}
+
+static int explore_tab_focus(int focus)
+{
+  int drive;
+  if(focus==0){drive=explore_first_drive();return drive>=0?drive+4:1;}
+  if(focus>=4){
+    drive=explore_adjacent_drive(focus-4,1);
+    return drive==focus-4?1:drive+4;
+  }
+  if(focus<3)return focus+1;
+  return 0;
 }
 
 static int explore_drive_at(int mouse_x)
@@ -2610,7 +2639,7 @@ static int explore_dialog(void)
     if(selected>=0 && selected<top)top=(selected/page)*page;
     if(selected>=0 && selected>=top+page)top=(selected/page)*page;
     if(redraw){dialog_box(x,y,76,23,"Explore & Run");
-    explore_drive_bar(x+2,y+1);
+    explore_drive_bar(x+2,y+1,focus>=4?focus-4:-1);
     explore_selection_field(x+2,y+2,path,selected);
     cell(x,y+3,195,C_BORDER);cell(x+75,y+3,180,C_BORDER);
     cell(x,y+19,195,C_BORDER);cell(x+75,y+19,180,C_BORDER);
@@ -2697,8 +2726,36 @@ static int explore_dialog(void)
       continue;
     }
     if(k==27)return 0;
-    if(k==9){focus=(focus+1)%4;redraw=1;continue;}
+    if(k==9){
+      int old_focus=focus;
+      focus=explore_tab_focus(focus);wait_vertical_retrace();
+      if(old_focus>=4 || focus>=4)
+        explore_drive_bar(x+2,y+1,focus>=4?focus-4:-1);
+      if((old_focus>=1 && old_focus<=3) || (focus>=1 && focus<=3))
+        draw_explore_buttons(x,y,focus,hover_control);
+      continue;
+    }
+    if(focus>=4){
+      int old_drive=focus-4,new_drive=old_drive;
+      if(k==0x4B00)new_drive=explore_adjacent_drive(old_drive,-1);
+      else if(k==0x4D00)new_drive=explore_adjacent_drive(old_drive,1);
+      else if(k==0x5000){focus=0;new_drive=-1;}
+      else if(k==13){
+        drive=old_drive;
+        path[0]=(char)('A'+drive);strcpy(path+1,":\\");
+        if(!explore_load(path))notice_box("Explore Error","Unable to read that drive.");
+        selected=-1;top=0;hover_entry=-1;last_click=-1;redraw=1;
+        continue;
+      }
+      if(new_drive!=old_drive || focus==0){
+        if(focus)focus=new_drive+4;
+        wait_vertical_retrace();
+        explore_drive_bar(x+2,y+1,focus>=4?focus-4:-1);
+      }
+      continue;
+    }
     if(focus){
+      int old_focus=focus;
       if(k==0x4B00)focus=focus==1?3:focus-1;
       else if(k==0x4D00)focus=focus==3?1:focus+1;
       else if(k==0x4800)focus=0;
@@ -2709,7 +2766,8 @@ static int explore_dialog(void)
         if(action==1)return 1;
         if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=-1;top=focus=0;hover_entry=-1;redraw=1;}
       }
-      redraw=1;
+      if(focus!=old_focus){wait_vertical_retrace();
+        draw_explore_buttons(x,y,focus,hover_control);}
       continue;
     }
     if(k==0x4800 && selected>0)select_explore_entry(x,y,selected-1,&selected,&top,page,hover_entry,&redraw,path);
