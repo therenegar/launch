@@ -1,4 +1,4 @@
-/* Launch! 2.0 - modal command menu for DOS
+/* Launch! 2.1 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -164,9 +164,11 @@ typedef struct {
 
 static EXPLORE_ENTRY explore_entries[MAX_EXPLORE_ENTRIES];
 static int explore_count;
+static unsigned char explore_drive_symbols[26];
+static int explore_drive_positions[26];
 
 static const char *sample_config[] = {
-  "; Launch! 2.0 menu definition\n",
+  "; Launch! 2.1 menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -1211,7 +1213,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 2.0 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 2.1 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1237,7 +1239,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 2.0 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 2.1 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSCREENSAVER=%u\nSAVER_COLOR=%u\nHOUR_12=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
@@ -2336,6 +2338,100 @@ static int prepare_launcher(int node)
   return 1;
 }
 
+static int explore_ram_label(unsigned drive)
+{
+  struct find_t found;char mask[8];char *name;int a,b;
+  mask[0]=(char)('A'+drive);strcpy(mask+1,":\\*.*");
+  if(_dos_findfirst(mask,0x08,&found))return 0;
+  name=found.name;
+  a=toupper((unsigned char)name[0]);b=toupper((unsigned char)name[1]);
+  if((a=='R' && (b=='A'||b=='D')) || (a=='X'&&b=='M'))return 1;
+  return a=='M' && b=='S' && name[2]=='-' &&
+         toupper((unsigned char)name[3])=='R' &&
+         toupper((unsigned char)name[4])=='A';
+}
+
+/* Same media classification used by DRIVES 1.2. */
+static unsigned char explore_classify_drive(unsigned drive)
+{
+  union REGS r;struct SREGS s;unsigned char far *dpb;
+  static unsigned char driver_name[2];
+  unsigned offset,segment,word;
+  if(drive<2){
+    int86(0x11,&r,&r);
+    if(!(r.x.ax&1) || drive>=(((r.x.ax>>6)&3)+1))return 0;
+    return '-';
+  }
+  r.x.ax=0x1500;r.x.bx=0;int86(0x2F,&r,&r);
+  if(r.x.bx){
+    r.x.ax=0x150B;r.x.bx=0;r.x.cx=drive;int86(0x2F,&r,&r);
+    if(r.x.bx==0xADAD && r.x.ax)return 9;
+  }
+  r.x.ax=0x4409;r.h.bl=(unsigned char)(drive+1);int86(0x21,&r,&r);
+  if(r.x.cflag)return 0;
+  if(r.x.dx&0x1000)return 18;
+  r.h.ah=0x32;r.h.dl=(unsigned char)(drive+1);segread(&s);
+  int86x(0x21,&r,&r,&s);
+  if(r.h.al!=0xFF){
+    dpb=(unsigned char far *)MAKE_FP(s.ds,r.x.bx);
+    offset=*(unsigned short far *)(dpb+0x13);
+    segment=*(unsigned short far *)(dpb+0x15);
+    offset+=0x0A;
+    segread(&s);
+    movedata(segment,offset,s.ds,(unsigned)driver_name,2);
+    word=(unsigned)toupper(driver_name[0])|
+         ((unsigned)toupper(driver_name[1])<<8);
+    if(word==('R'|('A'<<8)) || word==('V'|('D'<<8)) ||
+       word==('X'|('M'<<8)) || word==('S'|('R'<<8)) ||
+       word==('T'|('D'<<8)) || word==('$'|('R'<<8)))return '#';
+  }
+  if(explore_ram_label(drive))return '#';
+  r.x.ax=0x4408;r.h.bl=(unsigned char)(drive+1);int86(0x21,&r,&r);
+  if(!r.x.cflag && !r.x.ax)return '-';
+  return 240;
+}
+
+static void explore_detect_drives(void)
+{
+  int i;
+  for(i=0;i<26;i++){
+    explore_drive_symbols[i]=explore_classify_drive((unsigned)i);
+    explore_drive_positions[i]=-1;
+  }
+}
+
+static void explore_drive_bar(int x,int y)
+{
+  int drive,pos=0;unsigned char symbol;
+  int label_attr=ATTR(appearance.background,appearance.labels);
+  int drive_attr=ATTR(appearance.background,appearance.launchers);
+  int symbol_attr=ATTR(appearance.background,appearance.titles);
+  textout(x,y,"",label_attr,70);
+  for(drive=0;drive<26;drive++){
+    explore_drive_positions[drive]=-1;symbol=explore_drive_symbols[drive];
+    if(!symbol)continue;
+    if(pos+6>70)break;
+    explore_drive_positions[drive]=x+pos;
+    cell(x+pos++,y,'[',label_attr);
+    cell(x+pos++,y,'A'+drive,drive_attr);
+    cell(x+pos++,y,':',drive_attr);
+    cell(x+pos++,y,' ',label_attr);
+    cell(x+pos++,y,symbol,symbol_attr);
+    cell(x+pos++,y,']',label_attr);
+    if(pos<70)cell(x+pos++,y,' ',label_attr);
+  }
+}
+
+static int explore_drive_at(int mouse_x)
+{
+  int drive;
+  for(drive=0;drive<26;drive++)
+    if(explore_drive_positions[drive]>=0 &&
+       mouse_x>=explore_drive_positions[drive] &&
+       mouse_x<explore_drive_positions[drive]+6)return drive;
+  return -1;
+}
+
 static int explore_compare(const void *aa,const void *bb)
 {
   const EXPLORE_ENTRY *a=(const EXPLORE_ENTRY *)aa;
@@ -2406,6 +2502,24 @@ static void explore_path_field(int x,int y,const char *path)
   }
 }
 
+static void explore_selection_field(int x,int y,const char *path,int selected)
+{
+  static char preview[MAX_CMD+16];int needed;
+  strcpy(preview,path);
+  if(selected>=0 && selected<explore_count){
+    if(explore_entries[selected].directory &&
+       !strcmp(explore_entries[selected].name,".."))explore_parent(preview);
+    else {
+      needed=strlen(preview)+strlen(explore_entries[selected].name)+2;
+      if(needed<(int)sizeof(preview)){
+        strcat(preview,explore_entries[selected].name);
+        if(explore_entries[selected].directory)strcat(preview,"\\");
+      }
+    }
+  }
+  explore_path_field(x,y,preview);
+}
+
 static int explore_activate(char *path,int selected)
 {
   int needed;
@@ -2452,7 +2566,7 @@ static void highlight_explore_entry(int x,int y,int top,int index,int selected)
 }
 
 static void select_explore_entry(int x,int y,int next,int *selected,int *top,
-                                 int page,int hover,int *redraw)
+                                 int page,int hover,int *redraw,const char *path)
 {
   int old=*selected,new_top=(next/page)*page;
   if(next<0 || next>=explore_count || next==old)return;
@@ -2460,6 +2574,7 @@ static void select_explore_entry(int x,int y,int next,int *selected,int *top,
   wait_vertical_retrace();
   highlight_explore_entry(x,y,*top,old,old==hover);*selected=next;
   highlight_explore_entry(x,y,*top,next,1);
+  explore_selection_field(x+2,y+2,path,next);
 }
 
 static void change_explore_hover(int x,int y,int top,int old_hover,
@@ -2485,16 +2600,18 @@ static int explore_dialog(void)
   int selected=0,hover_entry=-1,top=0,page=EXPLORE_ROWS*EXPLORE_COLS;
   int focus=0,hover_control=-1,redraw=1;
   int i,row,column,index,action;unsigned mb;
-  int last_click=-1;unsigned long last_click_tick=0,tick;
+  int last_click=-1,drive;unsigned long last_click_tick=0,tick;
   static char path[MAX_CMD]="C:\\";
   strcpy(path,"C:\\");
+  explore_detect_drives();
   if(!explore_load(path)){notice_box("Explore Error","Unable to read drive C:.");return 0;}
   for(;;){
-    if(selected>=explore_count)selected=explore_count?explore_count-1:0;
-    if(selected<top)top=(selected/page)*page;
-    if(selected>=top+page)top=(selected/page)*page;
+    if(selected>=explore_count)selected=explore_count?explore_count-1:-1;
+    if(selected>=0 && selected<top)top=(selected/page)*page;
+    if(selected>=0 && selected>=top+page)top=(selected/page)*page;
     if(redraw){dialog_box(x,y,76,23,"Explore & Run");
-    explore_path_field(x+2,y+2,path);
+    explore_drive_bar(x+2,y+1);
+    explore_selection_field(x+2,y+2,path,selected);
     cell(x,y+3,195,C_BORDER);cell(x+75,y+3,180,C_BORDER);
     cell(x,y+19,195,C_BORDER);cell(x+75,y+19,180,C_BORDER);
     for(i=1;i<75;i++){cell(x+i,y+3,196,C_BORDER);cell(x+i,y+19,196,C_BORDER);}
@@ -2527,6 +2644,15 @@ static int explore_dialog(void)
       continue;
     }
     if(mb&1){
+      if(my==y+1){
+        drive=explore_drive_at(mx);
+        if(drive>=0 && drive!=toupper((unsigned char)path[0])-'A'){
+          path[0]=(char)('A'+drive);strcpy(path+1,":\\");
+          if(!explore_load(path))notice_box("Explore Error","Unable to read that drive.");
+          selected=-1;top=focus=0;hover_entry=-1;last_click=-1;redraw=1;
+        }
+        continue;
+      }
       if(my>=y+4 && my<y+19 && mx>=x+2 && mx<x+74){
         focus=0;
         if(mx>=x+72){
@@ -2542,10 +2668,10 @@ static int explore_dialog(void)
               if(action==1)return 1;
               if(action==2){
                 if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");
-                selected=top=0;hover_entry=-1;redraw=1;
+                selected=-1;top=0;hover_entry=-1;redraw=1;
               }
             } else {
-              select_explore_entry(x,y,index,&selected,&top,page,hover_entry,&redraw);
+              select_explore_entry(x,y,index,&selected,&top,page,hover_entry,&redraw,path);
               last_click=index;last_click_tick=tick;
             }
           }
@@ -2557,7 +2683,7 @@ static int explore_dialog(void)
         action=explore_activate(path,selected);
         last_click=-1;
         if(action==1)return 1;
-        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;hover_entry=-1;redraw=1;}
+        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=-1;top=focus=0;hover_entry=-1;redraw=1;}
         continue;
       }
       if(my==y+20 && mx>=x+14 && mx<x+21){
@@ -2581,22 +2707,22 @@ static int explore_dialog(void)
         if(focus==2){if(explore_help(path,selected))return 1;redraw=1;continue;}
         action=explore_activate(path,selected);
         if(action==1)return 1;
-        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=focus=0;hover_entry=-1;redraw=1;}
+        if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=-1;top=focus=0;hover_entry=-1;redraw=1;}
       }
       redraw=1;
       continue;
     }
-    if(k==0x4800 && selected>0)select_explore_entry(x,y,selected-1,&selected,&top,page,hover_entry,&redraw);
-    else if(k==0x5000 && selected+1<explore_count)select_explore_entry(x,y,selected+1,&selected,&top,page,hover_entry,&redraw);
-    else if(k==0x4B00){if(selected>=EXPLORE_ROWS)select_explore_entry(x,y,selected-EXPLORE_ROWS,&selected,&top,page,hover_entry,&redraw);else if(!explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;hover_entry=-1;redraw=1;}}
-    else if(k==0x4D00 && selected+EXPLORE_ROWS<explore_count)select_explore_entry(x,y,selected+EXPLORE_ROWS,&selected,&top,page,hover_entry,&redraw);
+    if(k==0x4800 && selected>0)select_explore_entry(x,y,selected-1,&selected,&top,page,hover_entry,&redraw,path);
+    else if(k==0x5000 && selected+1<explore_count)select_explore_entry(x,y,selected+1,&selected,&top,page,hover_entry,&redraw,path);
+    else if(k==0x4B00){if(selected>=EXPLORE_ROWS)select_explore_entry(x,y,selected-EXPLORE_ROWS,&selected,&top,page,hover_entry,&redraw,path);else if(!explore_is_root(path)){explore_parent(path);explore_load(path);selected=-1;top=0;hover_entry=-1;redraw=1;}}
+    else if(k==0x4D00 && selected+EXPLORE_ROWS<explore_count)select_explore_entry(x,y,selected+EXPLORE_ROWS,&selected,&top,page,hover_entry,&redraw,path);
     else if(k==0x4900){top=top>=page?top-page:0;selected=top;hover_entry=-1;redraw=1;}
     else if(k==0x5100 && top+page<explore_count){top+=page;selected=top;hover_entry=-1;redraw=1;}
-    else if(k==8 && !explore_is_root(path)){explore_parent(path);explore_load(path);selected=top=0;hover_entry=-1;redraw=1;}
+    else if(k==8 && !explore_is_root(path)){explore_parent(path);explore_load(path);selected=-1;top=0;hover_entry=-1;redraw=1;}
     else if(k==13){
       action=explore_activate(path,selected);
       if(action==1)return 1;
-      if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=top=0;hover_entry=-1;redraw=1;}
+      if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=-1;top=0;hover_entry=-1;redraw=1;}
     }
   }
 }
@@ -3138,7 +3264,7 @@ static int update_shortcut_key(const char *spec)
 static int setkey_mode(void)
 {
   static char spec[64];int result;
-  puts("Launch! 2.0 Shortcut Key Setup\n");
+  puts("Launch! 2.1 Shortcut Key Setup\n");
   if(!capture_setkey(spec))return 0;
   result=update_shortcut_key(spec);
   if(result==0){puts("Launch!: no active SHORTCUT.COM entry was found in AUTOEXEC.BAT.");return 1;}
@@ -3150,7 +3276,7 @@ static int setkey_mode(void)
 
 static void show_help(void)
 {
-  puts("Launch! 2.0 - a lightweight command menu for DOS\n");
+  puts("Launch! 2.1 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /SETKEY | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
