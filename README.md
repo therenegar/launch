@@ -93,28 +93,41 @@ The arrow shaped cursor will be visible when Launch! is run.
 
 ## Keyboard shortcut
 
-You can change the keyboard shortcut any time after install by running `! /SETKEY`
+You can change the keyboard shortcut any time after install by running `! /SETKEY`<br/>
 Press the desired keys, your `AUTOEXEC.BAT` will be updated. Reboot to activate the new shortcut.
 
 <img width="720" height="183" alt="setkey" src="https://github.com/user-attachments/assets/9aac80e7-d60d-4752-ac5d-c0049709ffce" />
 
-## Customizing appearance
+## Configuration
 
-<img width="720" height="600" alt="config" src="https://github.com/user-attachments/assets/3de47f48-dfe0-43af-b2b9-51fbc5842a6c" />
-
-Run `! /CONFIG` to configure 
-- Colors (with live preview)
-- Menu position
-- Screensaver
-- Visible menu options; Explore & Run, Shutdown..., and the time
-- 12/24-hour time preferences
-
-Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
-
-Cancel retains the previous configuration.
+Run `! /CONFIG` to configure Launch! appearance and preferences.<br/>
+Options are split across 4 tabs.
+Cancel will return the previous configuration.
 
 Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
 If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults. 
+
+### Colors
+
+You can change the colors for all elements in the user interface.
+
+
+### Menu
+
+You can choose where the menu is positioned, what options are displayed, and the time format.
+
+
+### Screensaver
+
+You can select the screensaver to show, choose None to disable this functionality.
+
+
+###  Font
+
+You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from.
+
+
+Note that this will consume 4KB of lower memory (the font data and mode change resident component). Choosing Standard uses the VGA adaptor font and consumes no memory.
 
 
 ## Live menu management

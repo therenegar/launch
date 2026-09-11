@@ -1,10 +1,12 @@
 Launch!
 =======
 
+Release 2.2
+
 A lightweight launcher for any DOS, with huge features to improve the usability of the command prompt - and make it more convenient and friendly.
 
 Download the latest release at https://github.com/therenegar/launch/releases/latest
-You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
+> You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
 
 Requires DOS 3.3, 80286, EGA or better. 
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.
@@ -28,7 +30,6 @@ Features
 
 Install it
 ----------
-
 Extract the release zip file or mount the floppy image:
 
 - Run INSTALL.EXE
@@ -43,8 +44,7 @@ Extract the release zip file or mount the floppy image:
 
 Usage
 -----
-
-At the **command prompt**, display your menu by pressing the keyboard shortcut which by default is set to:
+At the command prompt, display your menu by pressing the keyboard shortcut which by default is set to:
 
 CTRL + ALT + .
 
@@ -56,8 +56,8 @@ To start Launch! without the keyboard shortcut, at the command prompt, simply en
 !
 
 
-* How it works
-
+How it works
+------------
 Launch! does not execute the selected program itself. Rather, it returns to the existing command interpreter, types the configured command and, if selected, supplies Enter. This means shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can all be used. No secondary command processor is started or additional shells. Launch! does not interfere with program execution or return.
 This approach provides maximum flexibility, and compatibility. *If it can be run from the command prompt, it will work with Launch!*.
 
@@ -68,14 +68,14 @@ Launch! locates and saves LAUNCH.MNU beside !.EXE, regardless of the current wor
 Keyboard usage
 --------------
 
-General navigation
+* General navigation
 - Up/Down       - Select an entry
 - Right         - Open a selected folder
 - Left          - Close the current folder
 - Enter         - Open a folder or send a launcher command to the prompt
 - Esc           - Close the complete menu
 
-Menu management
+* Menu management
 - Ctrl+A        - Add a folder or launcher to the open menu
 - Ctrl+D        - Delete the selected item after confirmation
 - Ctrl+E        - Edit the selected folder or launcher
@@ -85,6 +85,9 @@ Menu management
 
 Mouse usage
 -----------
+If a suitable mouse driver has been loaded (MOUSE.COM, MOUSE.SYS, CTMOUSE.EXE, etc.) you will be able to use a mouse with Launch!
+
+The arrow shaped cursor will be visible when Launch! is run.
 
 - Left click opens a folder or runs a launcher; left click outside all visible menu panels closes Launch!.
 - Right click an item opens its Edit dialog. 
@@ -97,44 +100,49 @@ You can change the keyboard shortcut any time after install by running ! /SETKEY
 Press the desired keys, your AUTOEXEC.BAT will be updated. Reboot to activate the new shortcut.
 
 
-Customizing appearance
-----------------------
+Configuration
+-------------
 
-Run ! /CONFIG to configure 
-- Colors (with live preview)
-- Menu position
-- Screensaver
-- Visible menu options; Explore & Run, Shutdown..., and the time
-- 12/24-hour time preferences
-
-Use Left/Right to cycle a focused value; Tab or Up/Down moves between controls. Space advances a value or toggles checkbox items. Mouse clicks are also supported. 
-
-Cancel retains the previous configuration.
+Run ! /CONFIG to configure Launch! appearance and preferences.
+Options are split across 4 tabs.
+Cancel will return the previous configuration.
 
 Settings are saved to LAUNCH.CFG, a plain text file you can also edit yourself.
 If LAUNCH.CFG is absent or malformed, Launch! uses the defaults. 
 
+* Colors
+You can change the colors for all elements in the user interface.
+
+* Menu
+You can choose where the menu is positioned, what options are displayed, and the time format.
+
+* Screensaver
+You can select the screensaver to show, choose None to disable this functionality.
+
+* Font
+You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from.
+Note that this will consume 4KB of lower memory (the font data and mode change resident component). Choosing Standard uses the VGA adaptor font and consumes no memory.
+
 
 Live menu management
 --------------------
-
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to LAUNCH.MNU. 
 
-Each menu panel can display 20 items. Adding a 21st item automatically creates a **More** folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. **More** is kept at the bottom when the menu is sorted.
+Each menu panel can display 20 items. Adding a 21st item automatically creates a More folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. More is kept at the bottom when the menu is sorted.
 
 CTRL+A allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
 CTRL+E will show you the edit dialog to modify a launcher.
 
-When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.
+When Change directory first is selected, Launch! extracts the directory from the first command token when the launcher is run.
 E.g. for C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. Commands without a path do not cause a directory change.
 
+* Parameter prompting and help
 If a launcher has Prompt? activated, when launched from the menu the parameter help dialog will be displayed.
 It shows useful command help information for the selected command. You can then enter the required parameters and choose Run to execute the command.
 
 
 * Manual menu configuration
-
 LAUNCH.MNU is a plain text file that you can edit yourself with any text editor.
 Within the LAUNCH.MNU file, sections represent menu paths. Separate nesting levels with a backslash:
 
@@ -158,10 +166,13 @@ SEPARATOR=
 
 Explore & Run
 -------------
-
 Explore & Run is a fixed item at the bottom of the menu.
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.
 Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
+
+The drive bar shows the available disk drives, and allows you to switch between them.
+
+The path bar shows a preview of the command line that will be executed when Run is chosen.
 
 Choosing /? for an executable will show the command help (if available) and allow you to provide parameters.
 
@@ -170,7 +181,6 @@ You can remove the Explore & Run menu item in configuration (! /CONFIG)
 
 Shutdown
 --------
-
 The Shutdown... menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Power Off or Reboot.
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.
 
@@ -181,7 +191,6 @@ If desired, you can replace this image as PWROFF.BMP with any 320x400 256 color 
 
 Screensavers
 ------------
-
 If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a screensaver (by default the Clock).
 You can disable the screensaver completely (choose None) or choose from one of the other 4 screensavers by running ! /CONFIG.
 You can also start the selected screensaver at any time by running ! /NOW.
@@ -205,7 +214,6 @@ Go at warp speed to absolutely nowhere.
 
 SHORTCUT - keyboard shortcut tool
 ---------------------------------
-
 The keyboard shortcut is provided by a separate utility as it is not required to use !.EXE on its own. 
 
 If chosen, it will be added to AUTOEXEC.BAT by install so the shortcut is available after startup.
@@ -226,7 +234,6 @@ Use SHORTCUT /? for more information.
 
 AUTOGEN - an automatic menu generator
 -------------------------------------
-
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
 
 You will be prompted to resolve any ambiguous items found.

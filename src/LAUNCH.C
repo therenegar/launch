@@ -1,4 +1,4 @@
-/* Launch! 2.1 - modal command menu for DOS
+/* Launch! 2.2 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -11,6 +11,7 @@
 #include <process.h>
 #include "CLOCKDAT.H"
 #include "LOGODAT.H"
+#include "FONTRES.H"
 
 #define MAX_NODES 96
 #define MAX_TITLE 24
@@ -32,11 +33,11 @@ typedef struct {
   unsigned char background,border,main_title,titles,folders,launchers;
   unsigned char selected_fg,selected_bg,controls_fg,controls_bg,labels;
   unsigned char menu_top,show_explore,show_power,show_time;
-  unsigned char screensaver,saver_color,hour_12;
+  unsigned char screensaver,saver_color,hour_12,font_id;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1};
-static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1};
+static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1,1};
+static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1,1};
 
 static void (interrupt far *setkey_old_int09)();
 static volatile unsigned char setkey_scan,setkey_e0,setkey_mods;
@@ -137,6 +138,11 @@ static char appearance_file[MAX_CMD];
 static char appearance_temp_file[MAX_CMD];
 static char logos_file[MAX_CMD];
 static char help_file[MAX_CMD];
+static char font_file[MAX_CMD];
+static int font_is_vga(void);
+static int font_preview(unsigned char id);
+static int font_commit(unsigned char id);
+static void font_restore(void);
 static char write_path[MAX_CMD];
 static unsigned char copy_buffer[512];
 static unsigned char key_shift;
@@ -168,7 +174,7 @@ static unsigned char explore_drive_symbols[26];
 static int explore_drive_positions[26];
 
 static const char *sample_config[] = {
-  "; Launch! 2.1 menu definition\n",
+  "; Launch! 2.2 menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -400,6 +406,7 @@ static void config_path(const char *program)
   strncpy(appearance_temp_file,exe,n);appearance_temp_file[n]=0;strcat(appearance_temp_file,"LAUNCH.CF$");
   strncpy(logos_file,exe,n);logos_file[n]=0;strcat(logos_file,"PWROFF.BMP");
   strncpy(help_file,exe,n);help_file[n]=0;strcat(help_file,"LAUNCH.HLP");
+  strncpy(font_file,exe,n);font_file[n]=0;strcat(font_file,"FONT.DAT");
 }
 
 static int appearance_value(APPEARANCE *a,const char *key,int value)
@@ -423,6 +430,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=4;}
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
+  else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=21;}
   if(!field || value<0 || value>limit)return 0;
   *field=(unsigned char)value;return 1;
 }
@@ -1213,7 +1221,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 2.1 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 2.2 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1239,16 +1247,16 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 2.1 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 2.2 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
-      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSCREENSAVER=%u\nSAVER_COLOR=%u\nHOUR_12=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\n",
+      "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\nSCREENSAVER=%u\nSAVER_COLOR=%u\nHOUR_12=%u\nSHOW_EXPLORE=%u\nSHOW_POWER=%u\nSHOW_TIME=%u\nFONT_ID=%u\n",
       appearance.background,appearance.border,appearance.main_title,appearance.titles,
       appearance.folders,appearance.launchers,appearance.selected_fg,appearance.selected_bg,
       appearance.controls_fg,appearance.controls_bg,appearance.labels,
       appearance.menu_top,appearance.screensaver,appearance.saver_color,appearance.hour_12,
       appearance.show_explore,appearance.show_power,
-      appearance.show_time)<0)ok=0;
+      appearance.show_time,appearance.font_id)<0)ok=0;
   if(fclose(f)!=0)ok=0;
   if(!ok){remove(appearance_temp_file);return 0;}
   remove(appearance_file);
@@ -1900,146 +1908,223 @@ static const char *colour_names[16]={
 
 static const char *screensaver_names[5]={"None","Clock","Starry Nite","Warp","Logo"};
 
+static const char *font_names[22]={
+  "Standard","Bold Sans","Tall Sans","IBM ISO","CGAlike","Elite",
+  "Oakley","Oakley Big","Sans Serif","Howard","Neil","Italic",
+  "Olde Eng","DOS/V","MSDOS/V","Roman","Fatscii","Elergon",
+  "Police","Espy","Scribble","Script"
+};
+
 static void cycle_control(int x,int y,const char *value,int focused)
 {
-  char field[16];
-  sprintf(field,"[ %-11.11s ]",value);
+  char field[24];
+  sprintf(field,"® %-11.11s ¯",value);
   textout(x,y,field,focused?C_SELECTED:C_BUTTON,15);
 }
 
-static unsigned char *appearance_field(int focus,int *limit)
+static void draw_config_tab(int x,int y,const char *name,int width,int active,int focused)
+{
+  int i,len=(int)strlen(name);
+  int base=focused?C_SELECTED:C_BUTTON;
+  int at=focused?C_SELECTED:(active?ATTR(appearance.controls_bg,appearance.titles):C_BUTTON);
+  for(i=0;i<width;i++)cell(x+i,y,' ',base);
+  cell(x,y,179,base);cell(x+width-1,y,179,base);
+  textout(x+2,y,name,at,len);
+  if(active)cell(x+width-2,y,4,at);
+}
+
+static void draw_character_preview(int x,int y)
+{
+  int code,row,column;
+  for(code=0;code<256;code++){
+    row=code/56;column=code%56;cell(x+column,y+row,code,C_BORDER);
+  }
+}
+
+static void draw_config_divider(int x,int y,int width)
+{
+  int i;cell(x,y,195,C_BORDER);
+  for(i=1;i<width-1;i++)cell(x+i,y,196,C_BORDER);
+  cell(x+width-1,y,180,C_BORDER);
+}
+
+static int config_count(int tab)
+{
+  if(tab==0)return 11;
+  if(tab==1)return 5;
+  if(tab==2)return appearance.screensaver==1?2:1;
+  return font_is_vga()?1:0;
+}
+
+static unsigned char *config_field(int tab,int item,int *limit)
 {
   *limit=15;
-  switch(focus){
+  if(tab==0)switch(item){
     case 0:*limit=7;return &appearance.background;
-    case 1:return &appearance.border;
-    case 2:return &appearance.main_title;
-    case 3:return &appearance.titles;
-    case 4:return &appearance.folders;
-    case 5:return &appearance.launchers;
-    case 6:return &appearance.selected_fg;
+    case 1:return &appearance.border;case 2:return &appearance.main_title;
+    case 3:return &appearance.titles;case 4:return &appearance.folders;
+    case 5:return &appearance.launchers;case 6:return &appearance.selected_fg;
     case 7:*limit=7;return &appearance.selected_bg;
     case 8:return &appearance.controls_fg;
     case 9:*limit=7;return &appearance.controls_bg;
     case 10:return &appearance.labels;
-    case 11:*limit=1;return &appearance.menu_top;
-    case 12:*limit=4;return &appearance.screensaver;
-    case 13:return &appearance.saver_color;
-    case 17:*limit=1;return &appearance.hour_12;
   }
+  if(tab==1){
+    if(item==0){*limit=1;return &appearance.menu_top;}
+    if(item==1)return &appearance.show_explore;
+    if(item==2)return &appearance.show_power;
+    if(item==3)return &appearance.show_time;
+    if(item==4){*limit=1;return &appearance.hour_12;}
+  }
+  if(tab==2){
+    if(item==0){*limit=4;return &appearance.screensaver;}
+    if(item==1)return &appearance.saver_color;
+  }
+  if(tab==3 && item==0){*limit=21;return &appearance.font_id;}
   return 0;
 }
 
-static void change_appearance_value(int focus,int direction)
+static void change_config_value(int tab,int item,int direction)
 {
   unsigned char *field;int limit,value;
-  if(focus==14){appearance.show_explore=!appearance.show_explore;return;}
-  if(focus==15){appearance.show_power=!appearance.show_power;return;}
-  if(focus==16){appearance.show_time=!appearance.show_time;return;}
-  field=appearance_field(focus,&limit);if(!field)return;
-  value=(int)*field+direction;
-  if(value<0)value=limit;
-  if(value>limit)value=0;
+  field=config_field(tab,item,&limit);if(!field)return;
+  if(tab==1 && item>=1 && item<=3){*field=!*field;return;}
+  value=(int)*field+direction;if(value<0)value=limit;if(value>limit)value=0;
   *field=(unsigned char)value;
+  if(tab==3){font_preview(appearance.font_id);mouse_pointer_install();}
 }
 
-static int next_appearance_focus(int focus,int direction)
+static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
 {
-  do {
-    focus+=direction;
-    if(focus<0)focus=19;
-    if(focus>19)focus=0;
-  } while(focus==13 && appearance.screensaver!=1);
-  return focus;
+  int f=focus-4,h=hover-4;
+  if(full)dialog_box(x,y,66,22,"Launch! Configuration");
+  draw_config_tab(x+2,y+2,"Colors",11,tab==0,focus==0||hover==0);
+  draw_config_tab(x+14,y+2,"Menu",9,tab==1,focus==1||hover==1);
+  draw_config_tab(x+24,y+2,"Screensaver",16,tab==2,focus==2||hover==2);
+  draw_config_tab(x+41,y+2,"Font",9,tab==3,focus==3||hover==3);
+  draw_config_divider(x,y+3,66);
+  if(tab==0){
+    static const char *labels[9]={"Panels","Border","Main Title","Titles","Folders","Launchers","Selected items","Controls","Labels"};
+    int i;
+    textout(x+25,y+5,"Foreground text",C_INPUT_LABEL,15);
+    textout(x+45,y+5,"Background",C_INPUT_LABEL,15);
+    for(i=0;i<9;i++)textout(x+5,y+7+i,labels[i],C_INPUT_LABEL,18);
+    cycle_control(x+45,y+7,colour_names[appearance.background],f==0||h==0);
+    cycle_control(x+25,y+8,colour_names[appearance.border],f==1||h==1);
+    cycle_control(x+25,y+9,colour_names[appearance.main_title],f==2||h==2);
+    cycle_control(x+25,y+10,colour_names[appearance.titles],f==3||h==3);
+    cycle_control(x+25,y+11,colour_names[appearance.folders],f==4||h==4);
+    cycle_control(x+25,y+12,colour_names[appearance.launchers],f==5||h==5);
+    cycle_control(x+25,y+13,colour_names[appearance.selected_fg],f==6||h==6);
+    cycle_control(x+45,y+13,colour_names[appearance.selected_bg],f==7||h==7);
+    cycle_control(x+25,y+14,colour_names[appearance.controls_fg],f==8||h==8);
+    cycle_control(x+45,y+14,colour_names[appearance.controls_bg],f==9||h==9);
+    cycle_control(x+25,y+15,colour_names[appearance.labels],f==10||h==10);
+  } else if(tab==1){
+    textout(x+5,y+5,"Menu position",C_INPUT_LABEL,18);
+    cycle_control(x+25,y+5,appearance.menu_top?"Top":"Bottom",f==0||h==0);
+    check_line(x+25,y+7,"Show 'Explore & Run' menu item",appearance.show_explore,f==1||h==1);
+    check_line(x+25,y+9,"Show 'Shutdown...' menu item",appearance.show_power,f==2||h==2);
+    check_line(x+25,y+11,"Show the time",appearance.show_time,f==3||h==3);
+    textout(x+5,y+13,"Time format",C_INPUT_LABEL,18);
+    cycle_control(x+25,y+13,appearance.hour_12?"12-hour":"24-hour",f==4||h==4);
+  } else if(tab==2){
+    textout(x+5,y+5,"Screensaver",C_INPUT_LABEL,18);
+    cycle_control(x+25,y+5,screensaver_names[appearance.screensaver],f==0||h==0);
+    if(appearance.screensaver==1){
+      textout(x+5,y+8,"Clock colour",C_INPUT_LABEL,18);
+      cycle_control(x+25,y+8,colour_names[appearance.saver_color],f==1||h==1);
+    }
+  } else if(font_is_vga()){
+    textout(x+5,y+5,"VGA display font",C_INPUT_LABEL,18);
+    cycle_control(x+25,y+5,font_names[appearance.font_id],f==0||h==0);
+    draw_character_preview(x+5,y+9);
+  } else textout(x+7,y+10,"Font customization requires a VGA display adapter",C_INPUT_LABEL,52);
+  draw_button(x+20,y+18,"  Save  ",8,focus==20||hover==20);
+  draw_button(x+36,y+18,"  Cancel  ",10,focus==21||hover==21);
+}
+
+static int config_hit(int x,int y,int tab,int mx,int my)
+{
+  static const int tx[4]={2,14,24,41},tw[4]={11,9,16,9};int i;
+  if(my==y+2)for(i=0;i<4;i++)if(mx>=x+tx[i]&&mx<x+tx[i]+tw[i])return i;
+  if(tab==0){
+    static const int rows[8]={8,9,10,11,12,13,14,15};
+    static const int items[8]={1,2,3,4,5,6,8,10};
+    if(mx>=x+25&&mx<x+40)
+      for(i=0;i<8;i++)if(my==y+rows[i])return 4+items[i];
+    if(mx>=x+45&&mx<x+60&&my==y+7)return 4;
+    if(mx>=x+45&&mx<x+60&&my==y+13)return 11;
+    if(mx>=x+45&&mx<x+60&&my==y+14)return 13;
+  } else if(tab==1){
+    static const int rows[5]={5,7,9,11,13};
+    for(i=0;i<5;i++)if(my==y+rows[i]&&mx>=x+25&&mx<x+63)return 4+i;
+  } else if(tab==2){
+    if(my==y+5&&mx>=x+25&&mx<x+40)return 4;
+    if(appearance.screensaver==1&&my==y+8&&mx>=x+25&&mx<x+40)return 5;
+  } else if(tab==3&&font_is_vga()&&my==y+5&&mx>=x+25&&mx<x+40)return 4;
+  if(my==y+18&&mx>=x+20&&mx<x+28)return 20;
+  if(my==y+18&&mx>=x+36&&mx<x+46)return 21;
+  return -1;
 }
 
 static int configure_appearance(void)
 {
-  APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,focus=0,hover=-1;
-  int row=-1,redraw=1;
-  unsigned mb=0;static const int rows[18]={2,3,4,5,6,7,8,8,9,9,10,12,13,13,15,16,17,17};
+  APPEARANCE original=appearance;int x,y,k=0,mx=0,my=0,tab=0,focus=0,hover=-1;
+  int hit,count,item,redraw=2;unsigned mb=0;
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
   cursor_hide();mouse_present=mouse_start();mouse_stop();
-  x=(screen_cols-64)/2;y=(screen_rows-22)/2;
+  x=(screen_cols-66)/2;y=(screen_rows-22)/2;
   for(;;){
-    wait_vertical_retrace();
-    if(redraw){dialog_box(x,y,64,22,"Configure Appearance");redraw=0;}
-    textout(x+3,y+2,"Background",C_INPUT_LABEL,18);
-    textout(x+3,y+3,"Border",C_INPUT_LABEL,18);
-    textout(x+3,y+4,"Main Title",C_INPUT_LABEL,18);
-    textout(x+3,y+5,"Titles",C_INPUT_LABEL,18);
-    textout(x+3,y+6,"Folders",C_INPUT_LABEL,18);
-    textout(x+3,y+7,"Launchers",C_INPUT_LABEL,18);
-    textout(x+3,y+8,"Selected items",C_INPUT_LABEL,18);
-    textout(x+3,y+9,"Controls",C_INPUT_LABEL,18);
-    textout(x+3,y+10,"Labels",C_INPUT_LABEL,18);
-    cycle_control(x+22,y+2,colour_names[appearance.background],focus==0||hover==0);
-    cycle_control(x+22,y+3,colour_names[appearance.border],focus==1||hover==1);
-    cycle_control(x+22,y+4,colour_names[appearance.main_title],focus==2||hover==2);
-    cycle_control(x+22,y+5,colour_names[appearance.titles],focus==3||hover==3);
-    cycle_control(x+22,y+6,colour_names[appearance.folders],focus==4||hover==4);
-    cycle_control(x+22,y+7,colour_names[appearance.launchers],focus==5||hover==5);
-    cycle_control(x+22,y+8,colour_names[appearance.selected_fg],focus==6||hover==6);
-    cycle_control(x+41,y+8,colour_names[appearance.selected_bg],focus==7||hover==7);
-    cycle_control(x+22,y+9,colour_names[appearance.controls_fg],focus==8||hover==8);
-    cycle_control(x+41,y+9,colour_names[appearance.controls_bg],focus==9||hover==9);
-    cycle_control(x+22,y+10,colour_names[appearance.labels],focus==10||hover==10);
-    textout(x+3,y+12,"Menu position",C_INPUT_LABEL,18);
-    cycle_control(x+22,y+12,appearance.menu_top?"Top":"Bottom",focus==11||hover==11);
-    textout(x+3,y+13,"Screensaver",C_INPUT_LABEL,18);
-    cycle_control(x+22,y+13,screensaver_names[appearance.screensaver],focus==12||hover==12);
-    if(appearance.screensaver==1)
-      cycle_control(x+41,y+13,colour_names[appearance.saver_color],focus==13||hover==13);
-    check_line(x+22,y+15,"Show 'Explore & Run' menu item",appearance.show_explore,focus==14||hover==14);
-    check_line(x+22,y+16,"Show 'Shutdown...' menu item",appearance.show_power,focus==15||hover==15);
-    check_line(x+22,y+17,"Show the time",appearance.show_time,focus==16||hover==16);
-    cycle_control(x+41,y+17,appearance.hour_12?"12-hour":"24-hour",focus==17||hover==17);
-    draw_button(x+19,y+19,"  Save  ",8,focus==18||hover==18);
-    draw_button(x+34,y+19,"  Cancel  ",10,focus==19||hover==19);
-    wait_input(&k,&mx,&my,&mb);
-    if(mb){
-      row=-1;
-      if(mx>=x+22 && mx<x+37){
-        int i;for(i=0;i<18;i++)if(my==y+rows[i]){row=i;break;}
+    wait_vertical_retrace();if(redraw){draw_config_page(x,y,tab,focus,hover,redraw==2);redraw=0;}
+    wait_input(&k,&mx,&my,&mb);hit=config_hit(x,y,tab,mx,my);
+    if(mb&MOUSE_MOVED){if(hover!=hit){hover=hit;redraw=1;}continue;}
+    if(mb&1){
+      if(hit>=0&&hit<4){tab=hit;focus=hit;hover=-1;redraw=2;continue;}
+      if(hit>=4&&hit<20){focus=hit;change_config_value(tab,hit-4,1);redraw=2;continue;}
+      if(hit==20){
+        press_button(x+20,y+18,"  Save  ",8);
+        if(font_commit(appearance.font_id)&&save_appearance()){close_menu();return 1;}
+        notice_box("Write Error","Could not save the configuration.");redraw=2;continue;
       }
-      if(mx>=x+41 && mx<x+56 && my==y+8)row=7;
-      if(mx>=x+41 && mx<x+56 && my==y+9)row=9;
-      if(appearance.screensaver==1 && mx>=x+41 && mx<x+56 && my==y+13)row=13;
-      if(mx>=x+41 && mx<x+56 && my==y+17)row=17;
-      if(mb&MOUSE_MOVED){
-        hover=-1;
-        if(row>=0)hover=row;
-        else if(my==y+19 && mx>=x+19 && mx<x+27)hover=18;
-        else if(my==y+19 && mx>=x+34 && mx<x+44)hover=19;
-        continue;
-      }
-      if(row>=0){focus=row;change_appearance_value(focus,(mb&2)?-1:1);redraw=1;continue;}
-      if(my==y+19 && (mb&1)){
-        if(mx>=x+19 && mx<x+27){
-          press_button(x+19,y+19,"  Save  ",8);
-          if(save_appearance()){close_menu();return 1;}
-          notice_box("Write Error","Could not update LAUNCH.CFG.");redraw=1;continue;
-        }
-        if(mx>=x+34 && mx<x+44){
-          press_button(x+34,y+19,"  Cancel  ",10);
-          appearance=original;close_menu();return 0;
-        }
-      }
+      if(hit==21){press_button(x+36,y+18,"  Cancel  ",10);appearance=original;font_restore();close_menu();return 0;}
       continue;
     }
-    if(k==27){appearance=original;close_menu();return 0;}
-    if(k==9 || k==0x5000){focus=next_appearance_focus(focus,1);continue;}
-    if(k==0x4800){focus=next_appearance_focus(focus,-1);continue;}
-    if(k==0x4B00){change_appearance_value(focus,-1);redraw=1;continue;}
-    if(k==0x4D00 || k==' '){change_appearance_value(focus,1);redraw=1;continue;}
-    if(k==13){
-      if(focus<18){focus=next_appearance_focus(focus,1);continue;}
-      if(focus==18){
-        if(save_appearance()){close_menu();return 1;}
-        notice_box("Write Error","Could not update LAUNCH.CFG.");redraw=1;continue;
-      }
-      appearance=original;close_menu();return 0;
+    if(k==27){appearance=original;font_restore();close_menu();return 0;}
+    count=config_count(tab);
+    if(k==9||k==0x5000){
+      if(focus<3)focus++;
+      else if(focus==3)focus=count?4:20;
+      else if(focus>=4&&focus<4+count-1)focus++;
+      else if(focus<20)focus=20;else if(focus==20)focus=21;else focus=0;
+      redraw=1;continue;
     }
+    if(k==0x4800){
+      if(focus==0)focus=21;else if(focus<=3)focus--;else if(focus==20)focus=count?3+count:3;
+      else if(focus==21)focus=20;
+      else if(focus==4)focus=3;
+      else focus--;
+      redraw=1;continue;
+    }
+    if(focus<4){
+      if(k==0x4B00){focus=(focus+3)%4;tab=focus;redraw=2;continue;}
+      else if(k==0x4D00){focus=(focus+1)%4;tab=focus;redraw=2;continue;}
+      else if(k==13||k==' '){tab=focus;focus=config_count(tab)?4:20;redraw=2;continue;}
+      redraw=1;
+      continue;
+    }
+    if(focus<20){
+      item=focus-4;
+      if(k==0x4B00){change_config_value(tab,item,-1);redraw=2;}
+      else if(k==0x4D00||k==' '){change_config_value(tab,item,1);redraw=2;}
+      else if(k==13){focus=(item+1<count)?focus+1:20;redraw=1;}
+      continue;
+    }
+    if(k==0x4B00||k==0x4D00){focus=focus==20?21:20;redraw=1;}
+    else if(k==13&&focus==20){
+      if(font_commit(appearance.font_id)&&save_appearance()){close_menu();return 1;}
+      notice_box("Write Error","Could not save the configuration.");redraw=2;
+    } else if(k==13){appearance=original;font_restore();close_menu();return 0;}
   }
 }
 
@@ -3089,6 +3174,132 @@ static void dos_set_vector(unsigned char vector,unsigned seg,unsigned off)
   int86x(0x21,&r,&r,&s);
 }
 
+#define FONT_OLD10_OFF       0
+#define FONT_ACTIVE_ID_OFF   4
+#define FONT_MARK_OFF        5
+#define FONT_ACTIVE_FONT_OFF 0x000E
+#define FONT_INT10_OFF       0x1064
+
+static int font_is_vga(void)
+{
+  union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);
+  return r.h.al==0x1A && (r.h.bl==7 || r.h.bl==8 || r.h.bh==7 || r.h.bh==8);
+}
+
+static int font_read(unsigned char id,unsigned segment)
+{
+  FILE *f;long offset;size_t got;unsigned total=0;struct SREGS s;
+  if(id==0)return 1;
+  f=fopen(font_file,"rb");if(!f)return 0;
+  offset=((long)id-1L)*4096L;
+  if(fseek(f,offset,SEEK_SET)!=0){fclose(f);return 0;}
+  segread(&s);
+  while(total<4096){
+    got=fread(copy_buffer,1,sizeof(copy_buffer),f);
+    if(!got)break;
+    movedata(s.ds,(unsigned)copy_buffer,segment,total,(unsigned)got);
+    total+=(unsigned)got;
+  }
+  fclose(f);return total==4096;
+}
+
+static int font_resident(unsigned *resident)
+{
+  unsigned long vector=dos_get_vector(0x10);unsigned seg=(unsigned)(vector>>16);
+  unsigned char far *p;
+  if((unsigned)vector!=FONT_INT10_OFF)return 0;
+  p=(unsigned char far *)MAKE_FP(seg,FONT_MARK_OFF);
+  if(p[0]!='L'||p[1]!='A'||p[2]!='F'||p[3]!='O'||p[4]!='N'||p[5]!='T'||
+     p[6]!='2'||p[7]!='2')return 0;
+  *resident=seg;return 1;
+}
+
+static int font_manager(unsigned *resident)
+{
+  union REGS r;unsigned seg,paragraphs,old_strategy;unsigned long old10;
+  const unsigned char far *source=font_resident_blob;int alloc_error;
+  if(font_resident(resident))return 1;
+  paragraphs=(FONT_RESIDENT_SIZE+15)/16;
+  r.x.ax=0x5800;int86(0x21,&r,&r);old_strategy=r.x.ax;
+  if(old_strategy<=2){r.x.ax=0x5801;r.x.bx=2;int86(0x21,&r,&r);}
+  alloc_error=_dos_allocmem(paragraphs,&seg);
+  if(old_strategy<=2){r.x.ax=0x5801;r.x.bx=old_strategy;int86(0x21,&r,&r);}
+  if(alloc_error!=0)return 0;
+  movedata(FP_SEG(source),FP_OFF(source),seg,0,FONT_RESIDENT_SIZE);
+  if(*(unsigned char far *)MAKE_FP(seg,FONT_MARK_OFF)!='L' ||
+     *(unsigned char far *)MAKE_FP(seg,FONT_MARK_OFF+7)!='2'){
+    _dos_freemem(seg);return 0;
+  }
+  old10=dos_get_vector(0x10);far_write_long(seg,FONT_OLD10_OFF,old10);
+  *(unsigned far *)MAKE_FP(seg-1,1)=8;
+  dos_set_vector(0x10,seg,FONT_INT10_OFF);*resident=seg;return 1;
+}
+
+static void font_bios_load(unsigned font_segment,unsigned font_offset)
+{
+#ifndef __GNUC__
+  _asm {
+    push bp
+    push es
+    mov ax,font_segment
+    mov es,ax
+    mov bp,font_offset
+    mov ax,1100h
+    mov bx,1000h
+    mov cx,256
+    xor dx,dx
+    int 10h
+    pop es
+    pop bp
+  }
+#else
+  (void)font_segment;(void)font_offset;
+#endif
+}
+
+static void font_bios_standard(void)
+{
+  union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1104;r.x.bx=0;
+  int86(0x10,&r,&r);
+}
+
+static int font_preview(unsigned char id)
+{
+  unsigned segment;
+  if(!font_is_vga())return 1;
+  if(!id){font_bios_standard();return 1;}
+  if(_dos_allocmem(256,&segment)!=0)return 0;
+  if(!font_read(id,segment)){_dos_freemem(segment);return 0;}
+  font_bios_load(segment,0);_dos_freemem(segment);return 1;
+}
+
+static int font_commit(unsigned char id)
+{
+  unsigned resident,temporary;
+  if(!font_is_vga())return 1;
+  if(!id){
+    if(font_resident(&resident))
+      *(unsigned char far *)MAKE_FP(resident,FONT_ACTIVE_ID_OFF)=0;
+    font_bios_standard();return 1;
+  }
+  if(!font_manager(&resident))return 0;
+  if(_dos_allocmem(256,&temporary)!=0)return 0;
+  if(!font_read(id,temporary)){_dos_freemem(temporary);return 0;}
+  movedata(temporary,0,resident,FONT_ACTIVE_FONT_OFF,4096);
+  _dos_freemem(temporary);
+  *(unsigned char far *)MAKE_FP(resident,FONT_ACTIVE_ID_OFF)=id;
+  font_bios_load(resident,FONT_ACTIVE_FONT_OFF);return 1;
+}
+
+static void font_restore(void)
+{
+  unsigned resident;if(!font_is_vga())return;
+  if(font_resident(&resident) &&
+     *(unsigned char far *)MAKE_FP(resident,FONT_ACTIVE_ID_OFF))
+    font_bios_load(resident,FONT_ACTIVE_FONT_OFF);
+  else font_bios_standard();
+}
+
 static int helper_signature(unsigned seg)
 {
   unsigned char far *p=(unsigned char far *)MAKE_FP(seg,0);
@@ -3322,7 +3533,7 @@ static int update_shortcut_key(const char *spec)
 static int setkey_mode(void)
 {
   static char spec[64];int result;
-  puts("Launch! 2.1 Shortcut Key Setup\n");
+  puts("Launch! 2.2 Shortcut Key Setup\n");
   if(!capture_setkey(spec))return 0;
   result=update_shortcut_key(spec);
   if(result==0){puts("Launch!: no active SHORTCUT.COM entry was found in AUTOEXEC.BAT.");return 1;}
@@ -3334,7 +3545,7 @@ static int setkey_mode(void)
 
 static void show_help(void)
 {
-  puts("Launch! 2.1 - a lightweight command menu for DOS\n");
+  puts("Launch! 2.2 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /SETKEY | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
@@ -3359,6 +3570,9 @@ int main(int argc,char **argv)
     else if(!stricmp(argv[i],"/NOW"))now_mode=1;
     else if(!stricmp(argv[i],"/SETKEY"))setkey=1;
     else {printf("Launch!: unknown option %s (use ! /?)\n",argv[i]);return 1;}
+  }
+  if(!font_commit(appearance.font_id)){
+    font_commit(0);puts("Launch!: FONT.DAT could not be read; using the standard VGA font.");
   }
   if(setkey)return setkey_mode();
   if(config_mode){configure_appearance();return 0;}
