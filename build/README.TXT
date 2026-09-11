@@ -1,7 +1,7 @@
 Launch!
 =======
 
-Release 2.4
+Release 2.5
 
 A lightweight launcher for any DOS, with huge features to improve the usability of the command prompt - and make it more convenient and friendly.
 
@@ -142,8 +142,8 @@ When Change directory first is selected, Launch! extracts the directory from the
 E.g. for C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. Commands without a path do not cause a directory change.
 
 * Parameter prompting and help
-If a launcher has Prompt? activated, when launched from the menu the parameter help dialog will be displayed.
-It shows useful command help information for the selected command. You can then enter the required parameters and choose Run to execute the command.
+If a launcher has Prompt? activated, when launched from the menu, the parameter entry dialog will be displayed.
+You will be able to enter parameters before running the program. You can also view command help for assistance in entering parameters.
 
 
 * Manual menu configuration
@@ -179,7 +179,9 @@ The drive bar shows the available disk drives, and allows you to switch between 
 
 The path bar shows a preview of the command line that will be executed when Run is chosen.
 
-Choosing /? for an executable will show the command help (if available) and allow you to provide parameters.
+Choosing Params for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
+
+Choosing /? will show the command's help information (if available) and allow you to provide parameters.
 
 You can remove the Explore & Run menu item in configuration (! /CONFIG)
 

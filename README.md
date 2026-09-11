@@ -162,8 +162,8 @@ When **Change directory first** is selected, Launch! extracts the directory from
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
 ### Parameter prompting and help
-If a launcher has `Prompt?` activated, when launched from the menu the parameter help dialog will be displayed.<br/>
-It shows useful command help information for the selected command. You can then enter the required parameters and choose `Run` to execute the command.
+If a launcher has Prompt? activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
+You will be able to enter parameters before running the program. You can also view command help for assistance in entering parameters.<br/>
 
 <img width="720" height="600" alt="params" src="https://github.com/user-attachments/assets/ecba02c8-33ce-42f9-b307-1ce94d9388d8" />
 
@@ -200,7 +200,11 @@ The path bar shows a preview of the command line that will be executed when `Run
 
 <img width="720" height="600" alt="explore and run" src="https://github.com/user-attachments/assets/323100a1-e415-41ca-8046-5b7f0f418a48" />
 
-Choosing `/?` for an executable will show the command help (if available) and allow you to provide parameters.
+Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
+
+
+
+Choosing `/?` will show the command's help information (if available) and allow you to provide parameters.
 
 <img width="720" height="600" alt="explore-params" src="https://github.com/user-attachments/assets/5db92f2c-9737-4492-867e-306ac422e3d0" />
 
