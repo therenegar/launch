@@ -95,7 +95,7 @@ The arrow shaped cursor will be visible when Launch! is run.
 ## Configuration
 
 Run `! /CONFIG` to configure Launch! appearance and preferences. You can also right-click on the Launch! menu title.<br/>
-Options are split across 4 tabs.
+Options are split across 5 tabs.
 Cancel will return the previous configuration.
 
 Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
