@@ -241,8 +241,7 @@ The DOS logo will bounce around the screen.
 
 ### Warp
 
-<img width="720" height="600" alt="Screensaver - Warp" src="https://github.com/user-attachmen<img width="720" height="1200" alt="!05" src="https://github.com/user-attachments/assets/13011288-7c8e-48fb-a575-6bd77b853cd5" />
-ts/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
+<img width="720" height="600" alt="Screensaver - Warp" src="https://github.com/user-attachments/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
 
 Go at warp speed to absolutely nowhere.
 
