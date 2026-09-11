@@ -81,6 +81,10 @@ Menu management
 
 ## Mouse usage
 
+If a suitable mouse driver has been loaded ('MOUSE.COM', 'MOUSE.SYS', 'CTMOUSE.EXE', etc.) you will be able to use a mouse with Launch!
+
+The arrow shaped cursor will be visible when Launch! is run.
+
 - Left click opens a folder or runs a launcher; left click outside all visible menu panels closes Launch!.
 - Right click an item opens its Edit dialog. 
 
