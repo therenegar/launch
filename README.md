@@ -81,7 +81,9 @@ Menu management
 
 ## Mouse usage
 
-If a suitable mouse driver has been loaded ('MOUSE.COM', 'MOUSE.SYS', 'CTMOUSE.EXE', etc.) you will be able to use a mouse with Launch!
+If a suitable mouse driver has been loaded (`MOUSE.COM`, `MOUSE.SYS`, `CTMOUSE.EXE`, etc.) you will be able to use a mouse with Launch!
+
+<img width="70" height="70" alt="cursor" src="https://github.com/user-attachments/assets/c0fb9398-7623-408e-bc30-d3d7a6beb940" />
 
 The arrow shaped cursor will be visible when Launch! is run.
 
