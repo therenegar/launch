@@ -101,38 +101,29 @@ Cancel will return the previous configuration.
 Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
 If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults. 
 
-
 ### Shortcut
 
 You can view the current status of the shortcut utility, current key combination, and set a new combination.
 
-<img width="720" height="600" alt="Config - Shortcut" src="https://github.com/user-attachments/assets/eb8c1a68-d263-40a6-8985-bb90a5287c4f" />
-
-
+<img width="720" height="600" alt="ConfigShortcut" src="https://github.com/user-attachments/assets/aa22ad0f-d974-48ec-9c6d-9ad987f88167" />
 
 ### Menu
 
 You can choose where the menu is positioned, what options are displayed, and the time format.
 
-<img width="720" height="600" alt="Config - Menu" src="https://github.com/user-attachments/assets/842163cf-52bb-4a1e-bd40-1ca20393d3a4" />
-
-
+<img width="720" height="600" alt="ConfigMenu" src="https://github.com/user-attachments/assets/7ea945d4-5f70-4fb0-9527-f255e636b300" />
 
 ### Colors
 
 You can change the colors for all elements in the user interface.
 
-<img width="720" height="600" alt="Config - Colors" src="https://github.com/user-attachments/assets/957e7ca0-e152-44c3-8a52-26df1ad48bc5" />
-
-
+<img width="720" height="600" alt="ConfigColors" src="https://github.com/user-attachments/assets/bc091252-5411-452c-8c46-b09c79af715a" />
 
 ### Screensaver
 
 You can select which screensaver to show, choose None to disable this functionality. You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).
 
-<img width="720" height="600" alt="Config - Screensaver" src="https://github.com/user-attachments/assets/5eb0e829-c4d8-4e9b-9b6a-18979586753a" />
-
-
+<img width="720" height="600" alt="ConfigSaver" src="https://github.com/user-attachments/assets/4e271a89-63f6-486f-a10c-27330660ff06" />
 
 ###  Font
 
@@ -140,7 +131,7 @@ You can change the VGA font used across the entire DOS session. There's 22 diffe
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory. Without `Persist`, no extra memory is consumed. Launch! will still re-apply your font each time the menu is shown anyway.
 
-<img width="720" height="600" alt="Config - Font" src="https://github.com/user-attachments/assets/fde50c7c-2766-409e-a21f-eb0aadd2b922" />
+<img width="720" height="600" alt="ConfigFont" src="https://github.com/user-attachments/assets/d04106fd-d6fe-492b-b9f7-1c631b1892a7" />
 
 > Note this feature is not available with an EGA display adapter.
 
@@ -162,8 +153,12 @@ When **Change directory first** is selected, Launch! extracts the directory from
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
 ### Parameter prompting and help
-If a launcher has Prompt? activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
-You will be able to enter parameters before running the program. You can also view command help for assistance in entering parameters.<br/>
+If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
+You will be able to enter parameters before running the program. 
+
+<img width="720" height="600" alt="RunParams" src="https://github.com/user-attachments/assets/d38fcd21-ea43-4101-85cf-4aa71118d455" />
+
+You can also choose to view command help for assistance in entering parameters.
 
 <img width="720" height="600" alt="params" src="https://github.com/user-attachments/assets/ecba02c8-33ce-42f9-b307-1ce94d9388d8" />
 
@@ -198,15 +193,15 @@ The drive bar shows the available disk drives, and allows you to switch between 
 
 The path bar shows a preview of the command line that will be executed when `Run` is chosen.
 
-<img width="720" height="600" alt="explore and run" src="https://github.com/user-attachments/assets/323100a1-e415-41ca-8046-5b7f0f418a48" />
+<img width="720" height="600" alt="ExploreRun" src="https://github.com/user-attachments/assets/d042444e-9b33-407b-986b-e11bda93734c" />
 
 Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
 
-
+<img width="720" height="600" alt="ExploreParams" src="https://github.com/user-attachments/assets/1d6b5f55-203a-422b-97f6-9d8db0e6e458" />
 
 Choosing `/?` will show the command's help information (if available) and allow you to provide parameters.
 
-<img width="720" height="600" alt="explore-params" src="https://github.com/user-attachments/assets/5db92f2c-9737-4492-867e-306ac422e3d0" />
+<img width="720" height="600" alt="ExploreHelp" src="https://github.com/user-attachments/assets/a7eb618a-b0ad-4ab3-9d8c-3b1b999ab9fb" />
 
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
 
