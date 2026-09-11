@@ -103,7 +103,7 @@ Press the desired keys, your AUTOEXEC.BAT will be updated. Reboot to activate th
 Configuration
 -------------
 
-Run ! /CONFIG to configure Launch! appearance and preferences.
+Run ! /CONFIG to configure Launch! appearance and preferences. You can also right-click on the Launch! title in the menu. 
 Options are split across 4 tabs.
 Cancel will return the previous configuration.
 
@@ -149,7 +149,6 @@ It shows useful command help information for the selected command. You can then 
 * Manual menu configuration
 LAUNCH.MNU is a plain text file that you can edit yourself with any text editor.
 Within the LAUNCH.MNU file, sections represent menu paths. Separate nesting levels with a backslash:
-
   [Launcher\Internet]
   FOLDER=Communications
   ITEM=Telnet|C:\MTCP\TELNET.EXE|1|0|1
@@ -195,9 +194,9 @@ If desired, you can replace this image as PWROFF.BMP with any 320x400 256 color 
 
 Screensavers
 ------------
-If the menu is open and there has been inactivity for 1 minute, the screen will blank and show a screensaver (by default the Clock).
-You can disable the screensaver completely (choose None) or choose from one of the other 4 screensavers by running ! /CONFIG.
-You can also start the selected screensaver at any time by running ! /NOW.
+If the menu is open and there has been inactivity for the configured time (1 minute by default), the screen will blank and show a screensaver (by default the Clock).
+You can disable the screensaver completely (choose None) or choose from one of the other 6 screensavers by running ! /CONFIG
+You can also start the selected screensaver at any time by running ! /NOW
 
 Pressing any key or moving the mouse will return to the menu.
 
@@ -214,6 +213,12 @@ The DOS logo will bounce around the screen.
 
 * Warp
 Go at warp speed to absolutely nowhere.
+
+* Pipes
+3-dimensional pipes with a mind of their own.
+
+* Mystify
+Mystify yourself with the moving polygons.
 
 
 SHORTCUT - keyboard shortcut tool

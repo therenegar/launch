@@ -1,4 +1,4 @@
-/* Launch! 2.2 - modal command menu for DOS
+/* Launch! 2.3 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -33,11 +33,12 @@ typedef struct {
   unsigned char background,border,main_title,titles,folders,launchers;
   unsigned char selected_fg,selected_bg,controls_fg,controls_bg,labels;
   unsigned char menu_top,show_explore,show_power,show_time;
-  unsigned char screensaver,saver_color,hour_12,font_id,font_persist;
+  unsigned char screensaver,saver_color,saver_delay,hour_12;
+  unsigned char font_id,font_persist;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1,1,1};
-static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,1,1,1};
+static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1};
+static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1};
 
 static void (interrupt far *setkey_old_int09)();
 static volatile unsigned char setkey_scan,setkey_e0,setkey_mods;
@@ -160,7 +161,8 @@ static int help_line_count;
 
 #define BUILTIN_EXPLORE (-3)
 #define BUILTIN_POWER (-2)
-#define SCREENSAVER_TICKS 1092UL
+#define BUILTIN_CONFIG (-4)
+#define MINUTE_TICKS 1092UL
 #define MOUSE_MOVED 0x8000U
 
 typedef struct {
@@ -174,7 +176,7 @@ static unsigned char explore_drive_symbols[26];
 static int explore_drive_positions[26];
 
 static const char *sample_config[] = {
-  "; Launch! 2.2 menu definition\n",
+  "; Launch! 2.3 menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -427,8 +429,9 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SHOW_EXPLORE")){field=&a->show_explore;limit=1;}
   else if(!stricmp(key,"SHOW_POWER")){field=&a->show_power;limit=1;}
   else if(!stricmp(key,"SHOW_TIME")){field=&a->show_time;limit=1;}
-  else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=4;}
+  else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=6;}
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
+  else if(!stricmp(key,"SAVER_DELAY")){field=&a->saver_delay;limit=3;}
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
   else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=21;}
   else if(!stricmp(key,"FONT_PERSIST")){field=&a->font_persist;limit=1;}
@@ -628,6 +631,12 @@ static unsigned long elapsed_ticks(unsigned long start,unsigned long now)
   return (0x1800B0UL-start)+now;
 }
 
+static unsigned long saver_delay_ticks(void)
+{
+  static const unsigned char minutes[4]={1,5,15,30};
+  return (unsigned long)minutes[appearance.saver_delay&3]*MINUTE_TICKS;
+}
+
 /* Exact 640x350 raster spans generated from the supplied VFD SVG artwork. */
 static const unsigned char segment_mask[10]={
   0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F
@@ -636,6 +645,12 @@ static const unsigned char segment_mask[10]={
 static unsigned char far *ega_memory=(unsigned char far *)MAKE_FP(0xA000,0);
 
 typedef struct { int x,y,z,px,py,qx,qy; } WARP_STAR;
+typedef struct { int x,y,direction;unsigned char colour; } PIPE_HEAD;
+typedef struct {
+  int x[4],y[4],dx[4],dy[4];
+  int old_x[12][4],old_y[12][4];
+  unsigned char old_colour[12],used[12],slot,colour;
+} MYSTIFY_SHAPE;
 typedef struct {
   unsigned short x,y;
   unsigned short life;
@@ -649,6 +664,8 @@ typedef struct {
 #define NIGHT_PIXEL_COUNT 1152
 #define NIGHT_BEACON_COUNT 24
 static WARP_STAR warp_stars[56];
+static PIPE_HEAD pipe_heads[5];
+static MYSTIFY_SHAPE mystify_shapes[2];
 static unsigned short skyline_top[640];
 static unsigned char skyline_colour[640];
 static NIGHT_PIXEL night_pixels[NIGHT_PIXEL_COUNT];
@@ -676,7 +693,7 @@ static void night_pixel_add(int x,int y,unsigned char colour,unsigned char base)
   int i;
   for(i=0;i<NIGHT_PIXEL_COUNT;i++)if(night_pixels[i].x==0xFFFF){
     night_pixels[i].x=(unsigned short)x;night_pixels[i].y=(unsigned short)y;
-    night_pixels[i].life=(unsigned short)SCREENSAVER_TICKS;
+    night_pixels[i].life=(unsigned short)MINUTE_TICKS;
     night_pixels[i].colour=colour;night_pixels[i].base=base;
     night_pixel_draw(&night_pixels[i],0);return;
   }
@@ -770,6 +787,18 @@ static void ega_line(int x0,int y0,int x1,int y1,unsigned char colour)
     if(twice>=dy){error+=dy;x0+=sx;}
     if(twice<=dx){error+=dx;y0+=sy;}
   }
+}
+
+static unsigned char ega_pixel(int x,int y)
+{
+  unsigned offset,mask,plane;unsigned char colour=0,value;
+  if(x<0 || x>=640 || y<0 || y>=350)return 0;
+  offset=(unsigned)(y*80+(x>>3));mask=0x80u>>(x&7);
+  for(plane=0;plane<4;plane++){
+    _outpw(0x3CE,(unsigned)((plane<<8)|4));value=ega_memory[offset];
+    if(value&mask)colour|=(unsigned char)(1u<<plane);
+  }
+  return colour;
 }
 
 static void draw_clock_shape(int x,int y,const CLOCK_SHAPE *shape,
@@ -1042,6 +1071,128 @@ static void warp_saver_loop(unsigned start_x,unsigned start_y)
   }
 }
 
+static int pipe_area_used(int x,int y,int horizontal)
+{
+  int d;
+  for(d=-6;d<=6;d++)
+    if(ega_pixel(horizontal?x:x+d,horizontal?y+d:y))return 1;
+  return 0;
+}
+
+static void pipe_segment(int x0,int y0,int x1,int y1,
+                         unsigned char colour,int under)
+{
+  int horizontal=y0==y1,step,i=0,x=x0,y=y0,used;
+  if(!under){
+    if(horizontal){
+      ega_rectangle(x0<x1?x0:x1,y0-5,abs(x1-x0)+1,10,0);
+      ega_rectangle(x0<x1?x0:x1,y0-3,abs(x1-x0)+1,6,colour);
+    } else {
+      ega_rectangle(x0-5,y0<y1?y0:y1,10,abs(y1-y0)+1,0);
+      ega_rectangle(x0-3,y0<y1?y0:y1,6,abs(y1-y0)+1,colour);
+    }
+    return;
+  }
+  step=horizontal?(x1>=x0?1:-1):(y1>=y0?1:-1);
+  for(;;){
+    used=i>4&&pipe_area_used(x,y,horizontal);
+    if(!used){
+      if(horizontal){ega_rectangle(x,y-5,1,10,0);ega_rectangle(x,y-3,1,6,colour);}
+      else {ega_rectangle(x-5,y,10,1,0);ega_rectangle(x-3,y,6,1,colour);}
+    }
+    if(x==x1&&y==y1)break;
+    if(horizontal)x+=step;else y+=step;i++;
+  }
+}
+
+static void pipe_reset(void)
+{
+  static const unsigned char colours[7]={9,10,11,12,13,14,15};
+  int i;ega_rectangle(0,0,640,350,0);
+  for(i=0;i<5;i++){
+    pipe_heads[i].x=20+(int)saver_random(600);
+    pipe_heads[i].y=20+(int)saver_random(310);
+    pipe_heads[i].direction=(int)saver_random(4);
+    pipe_heads[i].colour=colours[saver_random(7)];
+    ega_rectangle(pipe_heads[i].x-5,pipe_heads[i].y-5,10,10,0);
+    ega_rectangle(pipe_heads[i].x-3,pipe_heads[i].y-3,6,6,
+                  pipe_heads[i].colour);
+  }
+}
+
+static void pipes_saver_loop(unsigned start_x,unsigned start_y)
+{
+  static const int vx[4]={1,0,-1,0},vy[4]={0,1,0,-1};
+  unsigned long last_tick=bios_ticks(),tick;int index=0,segments=0;
+  PIPE_HEAD *head;int length,nx,ny,turn,under;
+  pipe_reset();
+  while(!saver_input(start_x,start_y)){
+    tick=bios_ticks();if(tick==last_tick)continue;last_tick=tick;
+    head=&pipe_heads[index];length=12+(int)saver_random(33);
+    nx=head->x+vx[head->direction]*length;
+    ny=head->y+vy[head->direction]*length;
+    if(nx<7)nx=7;
+    if(nx>632)nx=632;
+    if(ny<7)ny=7;
+    if(ny>342)ny=342;
+    under=(int)(saver_random(3)==0);
+    wait_vertical_retrace();
+    pipe_segment(head->x,head->y,nx,ny,head->colour,under);
+    head->x=nx;head->y=ny;
+    turn=saver_random(2)?1:-1;
+    if(nx<=7||nx>=632||ny<=7||ny>=342||saver_random(4)!=0)
+      head->direction=(head->direction+turn+4)%4;
+    index=(index+1)%5;
+    if(++segments>=500){pipe_reset();segments=0;}
+  }
+}
+
+static void mystify_draw(const int *x,const int *y,unsigned char colour)
+{
+  int i;for(i=0;i<4;i++)ega_line(x[i],y[i],x[(i+1)&3],y[(i+1)&3],colour);
+}
+
+static void mystify_reset(void)
+{
+  int shape,point;MYSTIFY_SHAPE *m;
+  ega_rectangle(0,0,640,350,0);
+  memset(mystify_shapes,0,sizeof(mystify_shapes));
+  for(shape=0;shape<2;shape++){
+    m=&mystify_shapes[shape];m->colour=(unsigned char)(9+saver_random(7));
+    for(point=0;point<4;point++){
+      m->x[point]=20+(int)saver_random(600);
+      m->y[point]=20+(int)saver_random(310);
+      m->dx[point]=(int)saver_random(7)-3;if(!m->dx[point])m->dx[point]=1;
+      m->dy[point]=(int)saver_random(5)-2;if(!m->dy[point])m->dy[point]=-1;
+    }
+  }
+}
+
+static void mystify_saver_loop(unsigned start_x,unsigned start_y)
+{
+  unsigned long last_tick=bios_ticks(),tick;int shape,point,slot;
+  MYSTIFY_SHAPE *m;mystify_reset();
+  while(!saver_input(start_x,start_y)){
+    tick=bios_ticks();if(tick==last_tick)continue;last_tick=tick;
+    wait_vertical_retrace();
+    for(shape=0;shape<2;shape++){
+      m=&mystify_shapes[shape];slot=m->slot;
+      if(m->used[slot])mystify_draw(m->old_x[slot],m->old_y[slot],0);
+      for(point=0;point<4;point++){
+        m->x[point]+=m->dx[point];m->y[point]+=m->dy[point];
+        if(m->x[point]<=2){m->x[point]=2;m->dx[point]=abs(m->dx[point]);}
+        else if(m->x[point]>=637){m->x[point]=637;m->dx[point]=-abs(m->dx[point]);}
+        if(m->y[point]<=2){m->y[point]=2;m->dy[point]=abs(m->dy[point]);}
+        else if(m->y[point]>=347){m->y[point]=347;m->dy[point]=-abs(m->dy[point]);}
+        m->old_x[slot][point]=m->x[point];m->old_y[slot][point]=m->y[point];
+      }
+      m->colour=(unsigned char)(9+((m->colour-8)%7));
+      m->old_colour[slot]=m->colour;m->used[slot]=1;
+      mystify_draw(m->x,m->y,m->colour);m->slot=(unsigned char)((slot+1)%12);
+    }
+  }
+}
+
 static void draw_logo(int x,int y)
 {
   unsigned i;const LOGO_SPAN *span;
@@ -1111,7 +1262,9 @@ static void run_screensaver(void)
   if(appearance.screensaver==1)clock_saver_loop(start_x,start_y);
   else if(appearance.screensaver==2)starry_saver_loop(start_x,start_y);
   else if(appearance.screensaver==3)warp_saver_loop(start_x,start_y);
-  else logo_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==4)logo_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==5)pipes_saver_loop(start_x,start_y);
+  else mystify_saver_loop(start_x,start_y);
   memset(&r,0,sizeof(r));r.h.al=(unsigned char)old_mode;int86(0x10,&r,&r);
   if(old_rows>25){memset(&r,0,sizeof(r));r.x.ax=0x1112;r.h.bl=0;int86(0x10,&r,&r);}
   video_init();
@@ -1222,7 +1375,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 2.2 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 2.3 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1248,16 +1401,18 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 2.2 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 2.3 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\n"
-      "SCREENSAVER=%u\nSAVER_COLOR=%u\nHOUR_12=%u\nSHOW_EXPLORE=%u\n"
+      "SCREENSAVER=%u\nSAVER_COLOR=%u\nSAVER_DELAY=%u\nHOUR_12=%u\n"
+      "SHOW_EXPLORE=%u\n"
       "SHOW_POWER=%u\nSHOW_TIME=%u\nFONT_ID=%u\nFONT_PERSIST=%u\n",
       appearance.background,appearance.border,appearance.main_title,appearance.titles,
       appearance.folders,appearance.launchers,appearance.selected_fg,appearance.selected_bg,
       appearance.controls_fg,appearance.controls_bg,appearance.labels,
-      appearance.menu_top,appearance.screensaver,appearance.saver_color,appearance.hour_12,
+      appearance.menu_top,appearance.screensaver,appearance.saver_color,
+      appearance.saver_delay,appearance.hour_12,
       appearance.show_explore,appearance.show_power,
       appearance.show_time,appearance.font_id,appearance.font_persist)<0)ok=0;
   if(fclose(f)!=0)ok=0;
@@ -1909,7 +2064,13 @@ static const char *colour_names[16]={
   "Bri Yellow","Bri White"
 };
 
-static const char *screensaver_names[5]={"None","Clock","Starry Nite","Warp","Logo"};
+static const char *screensaver_names[7]={
+  "None","Clock","Starry Nite","Warp","Logo","Pipes","Mystify"
+};
+
+static const char *saver_delay_names[4]={
+  "1 minute","5 minutes","15 minutes","30 minutes"
+};
 
 static const char *font_names[22]={
   "Standard","Bold Sans","Tall Sans","IBM ISO","CGAlike","Elite",
@@ -1955,7 +2116,7 @@ static int config_count(int tab)
 {
   if(tab==0)return 11;
   if(tab==1)return 5;
-  if(tab==2)return appearance.screensaver==1?2:1;
+  if(tab==2)return appearance.screensaver==1?3:2;
   return font_is_vga()?2:0;
 }
 
@@ -1980,8 +2141,11 @@ static unsigned char *config_field(int tab,int item,int *limit)
     if(item==4){*limit=1;return &appearance.hour_12;}
   }
   if(tab==2){
-    if(item==0){*limit=4;return &appearance.screensaver;}
-    if(item==1)return &appearance.saver_color;
+    if(item==0){*limit=6;return &appearance.screensaver;}
+    if(appearance.screensaver==1){
+      if(item==1)return &appearance.saver_color;
+      if(item==2){*limit=3;return &appearance.saver_delay;}
+    } else if(item==1){*limit=3;return &appearance.saver_delay;}
   }
   if(tab==3){
     if(item==0){*limit=21;return &appearance.font_id;}
@@ -2042,6 +2206,11 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
     if(appearance.screensaver==1){
       textout(x+5,y+8,"Clock colour",C_INPUT_LABEL,18);
       cycle_control(x+25,y+8,colour_names[appearance.saver_color],f==1||h==1);
+      textout(x+5,y+11,"Blank after...",C_INPUT_LABEL,18);
+      cycle_control(x+25,y+11,saver_delay_names[appearance.saver_delay],f==2||h==2);
+    } else {
+      textout(x+5,y+8,"Blank after...",C_INPUT_LABEL,18);
+      cycle_control(x+25,y+8,saver_delay_names[appearance.saver_delay],f==1||h==1);
     }
   } else if(font_is_vga()){
     textout(x+5,y+5,"VGA display font",C_INPUT_LABEL,18);
@@ -2070,7 +2239,8 @@ static int config_hit(int x,int y,int tab,int mx,int my)
     for(i=0;i<5;i++)if(my==y+rows[i]&&mx>=x+25&&mx<x+63)return 4+i;
   } else if(tab==2){
     if(my==y+5&&mx>=x+25&&mx<x+40)return 4;
-    if(appearance.screensaver==1&&my==y+8&&mx>=x+25&&mx<x+40)return 5;
+    if(my==y+8&&mx>=x+25&&mx<x+40)return 5;
+    if(appearance.screensaver==1&&my==y+11&&mx>=x+25&&mx<x+40)return 6;
   } else if(tab==3&&font_is_vga()){
     if(my==y+5&&mx>=x+25&&mx<x+40)return 4;
     if(my==y+7&&mx>=x+25&&mx<x+36)return 5;
@@ -2869,7 +3039,15 @@ static int explore_dialog(void)
     }
     if(k==0x4800 && selected>0)select_explore_entry(x,y,selected-1,&selected,&top,page,hover_entry,&redraw,path);
     else if(k==0x5000 && selected+1<explore_count)select_explore_entry(x,y,selected+1,&selected,&top,page,hover_entry,&redraw,path);
-    else if(k==0x4B00){if(selected>=EXPLORE_ROWS)select_explore_entry(x,y,selected-EXPLORE_ROWS,&selected,&top,page,hover_entry,&redraw,path);else if(!explore_is_root(path)){explore_parent(path);explore_load(path);selected=-1;top=0;hover_entry=-1;redraw=1;}}
+    else if(k==0x4B00){
+      if(selected>=EXPLORE_ROWS)
+        select_explore_entry(x,y,selected-EXPLORE_ROWS,&selected,&top,page,
+                             hover_entry,&redraw,path);
+      else if(!explore_is_root(path)){
+        explore_parent(path);explore_load(path);selected=-1;top=0;
+        hover_entry=-1;redraw=1;
+      }
+    }
     else if(k==0x4D00 && selected+EXPLORE_ROWS<explore_count)select_explore_entry(x,y,selected+EXPLORE_ROWS,&selected,&top,page,hover_entry,&redraw,path);
     else if(k==0x4900){top=top>=page?top-page:0;selected=top;hover_entry=-1;redraw=1;}
     else if(k==0x5100 && top+page<explore_count){top+=page;selected=top;hover_entry=-1;redraw=1;}
@@ -3007,7 +3185,8 @@ static int menu(void)
         }
       }
       now=bios_ticks();
-      if(appearance.screensaver && elapsed_ticks(last_activity,now)>=SCREENSAVER_TICKS){
+      if(appearance.screensaver &&
+         elapsed_ticks(last_activity,now)>=saver_delay_ticks()){
         run_screensaver();
         last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;
         last_activity=bios_ticks();redraw=2;break;
@@ -3025,6 +3204,9 @@ static int menu(void)
         if(mx>=x && mx<x+MENU_WIDTH && my>=panel_y[i] && my<panel_y[i]+panel_h[i]){
           hit=i;if(my>panel_y[i] && my<=panel_y[i]+panel_n[i])pos=my-panel_y[i]-1;break;
         }
+      }
+      if((mb&2) && hit==0 && my==panel_y[0] && mx>=3 && mx<10){
+        close_menu();return BUILTIN_CONFIG;
       }
       if((mb&1) && hit<0){close_menu();return -1;}
       if(hit>=0 && pos>=0){
@@ -3557,7 +3739,7 @@ static int update_shortcut_key(const char *spec)
 static int setkey_mode(void)
 {
   static char spec[64];int result;
-  puts("Launch! 2.2 Shortcut Key Setup\n");
+  puts("Launch! 2.3 Shortcut Key Setup\n");
   if(!capture_setkey(spec))return 0;
   result=update_shortcut_key(spec);
   if(result==0){puts("Launch!: no active SHORTCUT.COM entry was found in AUTOEXEC.BAT.");return 1;}
@@ -3569,7 +3751,7 @@ static int setkey_mode(void)
 
 static void show_help(void)
 {
-  puts("Launch! 2.2 - a lightweight command menu for DOS\n");
+  puts("Launch! 2.3 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /SETKEY | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
@@ -3585,7 +3767,8 @@ static void show_help(void)
 
 int main(int argc,char **argv)
 {
-  int i,config_status,config_mode=0,now_mode=0,setkey=0;static char macro[MAX_MACRO];
+  int i,result,config_status,config_mode=0,now_mode=0,setkey=0;
+  static char macro[MAX_MACRO];
   config_path(argv[0]);
   if(!load_appearance())puts("Launch!: LAUNCH.CFG is invalid; using default appearance.");
   for(i=1;i<argc;i++){
@@ -3608,7 +3791,11 @@ int main(int argc,char **argv)
   if(!config_status){printf("Launch!: cannot recover %s\n",config_file);return 1;}
   if(config_status==2)puts("Launch!: LAUNCH.MNU was missing or invalid; restored LAUNCH.BAK.");
   else if(config_status==3)puts("Launch!: no valid menu file was found; installed the sample menu.");
-  if(menu()>=0){
+  do {
+    result=menu();
+    if(result==BUILTIN_CONFIG)configure_appearance();
+  } while(result==BUILTIN_CONFIG);
+  if(result>=0){
     build_macro(run_node,run_command,macro);
     if(!queue_macro(macro)){puts("Launch!: cannot install keyboard macro helper");return 1;}
   }
