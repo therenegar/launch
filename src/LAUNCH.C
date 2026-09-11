@@ -1,4 +1,4 @@
-/* Launch! 2.3 - modal command menu for DOS
+/* Launch! 2.4 - modal command menu for DOS
  * Microsoft C/C++ 7.0, small model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -144,6 +144,8 @@ static int font_is_vga(void);
 static int font_preview(unsigned char id);
 static int font_commit(unsigned char id);
 static void font_restore(void);
+static void shortcut_refresh(void);
+static int shortcut_set_dialog(void);
 static char write_path[MAX_CMD];
 static unsigned char copy_buffer[512];
 static unsigned char key_shift;
@@ -158,12 +160,16 @@ static unsigned mouse_raw_x,mouse_raw_y;
 static int added_visible_node;
 static char help_lines[MAX_HELP_LINES][HELP_WIDTH+1];
 static int help_line_count;
+static int config_shortcut_active,config_shortcut_changed;
+static char config_shortcut_combination[64];
 
 #define BUILTIN_EXPLORE (-3)
 #define BUILTIN_POWER (-2)
 #define BUILTIN_CONFIG (-4)
 #define MINUTE_TICKS 1092UL
 #define MOUSE_MOVED 0x8000U
+#define CONFIG_TAB_COUNT 5
+#define CONFIG_CONTROL_BASE 5
 
 typedef struct {
   char name[13];
@@ -176,7 +182,7 @@ static unsigned char explore_drive_symbols[26];
 static int explore_drive_positions[26];
 
 static const char *sample_config[] = {
-  "; Launch! 2.3 menu definition\n",
+  "; Launch! 2.4 menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -1375,7 +1381,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 2.3 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 2.4 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1401,7 +1407,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 2.3 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 2.4 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\n"
@@ -2114,16 +2120,17 @@ static void draw_config_divider(int x,int y,int width)
 
 static int config_count(int tab)
 {
-  if(tab==0)return 11;
+  if(tab==0)return 1;
   if(tab==1)return 5;
-  if(tab==2)return appearance.screensaver==1?3:2;
+  if(tab==2)return 11;
+  if(tab==3)return appearance.screensaver==1?3:2;
   return font_is_vga()?2:0;
 }
 
 static unsigned char *config_field(int tab,int item,int *limit)
 {
   *limit=15;
-  if(tab==0)switch(item){
+  if(tab==2)switch(item){
     case 0:*limit=7;return &appearance.background;
     case 1:return &appearance.border;case 2:return &appearance.main_title;
     case 3:return &appearance.titles;case 4:return &appearance.folders;
@@ -2140,14 +2147,14 @@ static unsigned char *config_field(int tab,int item,int *limit)
     if(item==3)return &appearance.show_time;
     if(item==4){*limit=1;return &appearance.hour_12;}
   }
-  if(tab==2){
+  if(tab==3){
     if(item==0){*limit=6;return &appearance.screensaver;}
     if(appearance.screensaver==1){
       if(item==1)return &appearance.saver_color;
       if(item==2){*limit=3;return &appearance.saver_delay;}
     } else if(item==1){*limit=3;return &appearance.saver_delay;}
   }
-  if(tab==3){
+  if(tab==4){
     if(item==0){*limit=21;return &appearance.font_id;}
     if(item==1){*limit=1;return &appearance.font_persist;}
   }
@@ -2158,24 +2165,35 @@ static void change_config_value(int tab,int item,int direction)
 {
   unsigned char *field;int limit,value;
   field=config_field(tab,item,&limit);if(!field)return;
-  if((tab==1 && item>=1 && item<=3) || (tab==3 && item==1)){
+  if((tab==1 && item>=1 && item<=3) || (tab==4 && item==1)){
     *field=!*field;return;
   }
   value=(int)*field+direction;if(value<0)value=limit;if(value>limit)value=0;
   *field=(unsigned char)value;
-  if(tab==3 && item==0){font_preview(appearance.font_id);mouse_pointer_install();}
+  if(tab==4 && item==0){font_preview(appearance.font_id);mouse_pointer_install();}
 }
 
 static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
 {
-  int f=focus-4,h=hover-4;
+  int f=focus-CONFIG_CONTROL_BASE,h=hover-CONFIG_CONTROL_BASE;
   if(full)dialog_box(x,y,66,22,"Launch! Configuration");
-  draw_config_tab(x+2,y+2,"Colors",11,tab==0,focus==0||hover==0);
+  draw_config_tab(x+1,y+2,"Shortcut",12,tab==0,focus==0||hover==0);
   draw_config_tab(x+14,y+2,"Menu",9,tab==1,focus==1||hover==1);
-  draw_config_tab(x+24,y+2,"Screensaver",16,tab==2,focus==2||hover==2);
-  draw_config_tab(x+41,y+2,"Font",9,tab==3,focus==3||hover==3);
+  draw_config_tab(x+24,y+2,"Colors",11,tab==2,focus==2||hover==2);
+  draw_config_tab(x+36,y+2,"Screensaver",16,tab==3,focus==3||hover==3);
+  draw_config_tab(x+53,y+2,"Font",9,tab==4,focus==4||hover==4);
   draw_config_divider(x,y+3,66);
   if(tab==0){
+    textout(x+5,y+6,"Keyboard shortcut status:",C_INPUT_LABEL,25);
+    textout(x+31,y+6,config_shortcut_active?"Active":"Inactive",C_TITLE,12);
+    textout(x+5,y+9,"Current combination:",C_INPUT_LABEL,25);
+    textout(x+31,y+9,config_shortcut_combination,C_TITLE,28);
+    textout(x+5,y+12,"Set new combination:",C_INPUT_LABEL,25);
+    draw_button(x+31,y+12,"  SET  ",7,f==0||h==0);
+    if(config_shortcut_changed)
+      textout(x+5,y+15,"Shortcut combination changed. Restart to take effect.",
+              C_INPUT_LABEL,54);
+  } else if(tab==2){
     static const char *labels[9]={"Panels","Border","Main Title","Titles","Folders","Launchers","Selected items","Controls","Labels"};
     int i;
     textout(x+25,y+5,"Foreground text",C_INPUT_LABEL,15);
@@ -2200,7 +2218,7 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
     check_line(x+25,y+11,"Show the time",appearance.show_time,f==3||h==3);
     textout(x+5,y+13,"Time format",C_INPUT_LABEL,18);
     cycle_control(x+25,y+13,appearance.hour_12?"12-hour":"24-hour",f==4||h==4);
-  } else if(tab==2){
+  } else if(tab==3){
     textout(x+5,y+5,"Screensaver",C_INPUT_LABEL,18);
     cycle_control(x+25,y+5,screensaver_names[appearance.screensaver],f==0||h==0);
     if(appearance.screensaver==1){
@@ -2212,7 +2230,7 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
       textout(x+5,y+8,"Blank after...",C_INPUT_LABEL,18);
       cycle_control(x+25,y+8,saver_delay_names[appearance.saver_delay],f==1||h==1);
     }
-  } else if(font_is_vga()){
+  } else if(tab==4&&font_is_vga()){
     textout(x+5,y+5,"VGA display font",C_INPUT_LABEL,18);
     cycle_control(x+25,y+5,font_names[appearance.font_id],f==0||h==0);
     check_line(x+25,y+7,"Persist",appearance.font_persist,f==1||h==1);
@@ -2224,26 +2242,30 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
 
 static int config_hit(int x,int y,int tab,int mx,int my)
 {
-  static const int tx[4]={2,14,24,41},tw[4]={11,9,16,9};int i;
-  if(my==y+2)for(i=0;i<4;i++)if(mx>=x+tx[i]&&mx<x+tx[i]+tw[i])return i;
+  static const int tx[5]={1,14,24,36,53},tw[5]={12,9,11,16,9};int i;
+  if(my==y+2)for(i=0;i<5;i++)if(mx>=x+tx[i]&&mx<x+tx[i]+tw[i])return i;
   if(tab==0){
+    if(my==y+12&&mx>=x+31&&mx<x+38)return CONFIG_CONTROL_BASE;
+  } else if(tab==2){
     static const int rows[8]={8,9,10,11,12,13,14,15};
     static const int items[8]={1,2,3,4,5,6,8,10};
     if(mx>=x+25&&mx<x+40)
-      for(i=0;i<8;i++)if(my==y+rows[i])return 4+items[i];
-    if(mx>=x+45&&mx<x+60&&my==y+7)return 4;
-    if(mx>=x+45&&mx<x+60&&my==y+13)return 11;
-    if(mx>=x+45&&mx<x+60&&my==y+14)return 13;
+      for(i=0;i<8;i++)if(my==y+rows[i])return CONFIG_CONTROL_BASE+items[i];
+    if(mx>=x+45&&mx<x+60&&my==y+7)return CONFIG_CONTROL_BASE;
+    if(mx>=x+45&&mx<x+60&&my==y+13)return CONFIG_CONTROL_BASE+7;
+    if(mx>=x+45&&mx<x+60&&my==y+14)return CONFIG_CONTROL_BASE+9;
   } else if(tab==1){
     static const int rows[5]={5,7,9,11,13};
-    for(i=0;i<5;i++)if(my==y+rows[i]&&mx>=x+25&&mx<x+63)return 4+i;
-  } else if(tab==2){
-    if(my==y+5&&mx>=x+25&&mx<x+40)return 4;
-    if(my==y+8&&mx>=x+25&&mx<x+40)return 5;
-    if(appearance.screensaver==1&&my==y+11&&mx>=x+25&&mx<x+40)return 6;
-  } else if(tab==3&&font_is_vga()){
-    if(my==y+5&&mx>=x+25&&mx<x+40)return 4;
-    if(my==y+7&&mx>=x+25&&mx<x+36)return 5;
+    for(i=0;i<5;i++)if(my==y+rows[i]&&mx>=x+25&&mx<x+63)
+      return CONFIG_CONTROL_BASE+i;
+  } else if(tab==3){
+    if(my==y+5&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE;
+    if(my==y+8&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE+1;
+    if(appearance.screensaver==1&&my==y+11&&mx>=x+25&&mx<x+40)
+      return CONFIG_CONTROL_BASE+2;
+  } else if(tab==4&&font_is_vga()){
+    if(my==y+5&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE;
+    if(my==y+7&&mx>=x+25&&mx<x+36)return CONFIG_CONTROL_BASE+1;
   }
   if(my==y+18&&mx>=x+20&&mx<x+28)return 20;
   if(my==y+18&&mx>=x+36&&mx<x+46)return 21;
@@ -2256,14 +2278,23 @@ static int configure_appearance(void)
   int hit,count,item,redraw=2;unsigned mb=0;
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
   cursor_hide();mouse_present=mouse_start();mouse_stop();
+  config_shortcut_changed=0;shortcut_refresh();
   x=(screen_cols-66)/2;y=(screen_rows-22)/2;
   for(;;){
     wait_vertical_retrace();if(redraw){draw_config_page(x,y,tab,focus,hover,redraw==2);redraw=0;}
     wait_input(&k,&mx,&my,&mb);hit=config_hit(x,y,tab,mx,my);
     if(mb&MOUSE_MOVED){if(hover!=hit){hover=hit;redraw=1;}continue;}
     if(mb&1){
-      if(hit>=0&&hit<4){tab=hit;focus=hit;hover=-1;redraw=2;continue;}
-      if(hit>=4&&hit<20){focus=hit;change_config_value(tab,hit-4,1);redraw=2;continue;}
+      if(hit>=0&&hit<CONFIG_TAB_COUNT){tab=hit;focus=hit;hover=-1;redraw=2;continue;}
+      if(hit>=CONFIG_CONTROL_BASE&&hit<20){
+        focus=hit;item=hit-CONFIG_CONTROL_BASE;
+        if(tab==0&&item==0){
+          press_button(x+31,y+12,"  SET  ",7);
+          if(shortcut_set_dialog())config_shortcut_changed=1;
+          shortcut_refresh();
+        } else change_config_value(tab,item,1);
+        redraw=2;continue;
+      }
       if(hit==20){
         press_button(x+20,y+18,"  Save  ",8);
         if(font_commit(appearance.font_id)&&save_appearance()){close_menu();return 1;}
@@ -2275,29 +2306,46 @@ static int configure_appearance(void)
     if(k==27){appearance=original;font_restore();close_menu();return 0;}
     count=config_count(tab);
     if(k==9||k==0x5000){
-      if(focus<3)focus++;
-      else if(focus==3)focus=count?4:20;
-      else if(focus>=4&&focus<4+count-1)focus++;
+      if(focus<CONFIG_TAB_COUNT-1)focus++;
+      else if(focus==CONFIG_TAB_COUNT-1)
+        focus=count?CONFIG_CONTROL_BASE:20;
+      else if(focus>=CONFIG_CONTROL_BASE&&
+              focus<CONFIG_CONTROL_BASE+count-1)focus++;
       else if(focus<20)focus=20;else if(focus==20)focus=21;else focus=0;
       redraw=1;continue;
     }
     if(k==0x4800){
-      if(focus==0)focus=21;else if(focus<=3)focus--;else if(focus==20)focus=count?3+count:3;
+      if(focus==0)focus=21;
+      else if(focus<CONFIG_TAB_COUNT)focus--;
+      else if(focus==20)
+        focus=count?CONFIG_CONTROL_BASE+count-1:CONFIG_TAB_COUNT-1;
       else if(focus==21)focus=20;
-      else if(focus==4)focus=3;
+      else if(focus==CONFIG_CONTROL_BASE)focus=CONFIG_TAB_COUNT-1;
       else focus--;
       redraw=1;continue;
     }
-    if(focus<4){
-      if(k==0x4B00){focus=(focus+3)%4;tab=focus;redraw=2;continue;}
-      else if(k==0x4D00){focus=(focus+1)%4;tab=focus;redraw=2;continue;}
-      else if(k==13||k==' '){tab=focus;focus=config_count(tab)?4:20;redraw=2;continue;}
+    if(focus<CONFIG_TAB_COUNT){
+      if(k==0x4B00){
+        focus=(focus+CONFIG_TAB_COUNT-1)%CONFIG_TAB_COUNT;
+        tab=focus;redraw=2;continue;
+      } else if(k==0x4D00){
+        focus=(focus+1)%CONFIG_TAB_COUNT;tab=focus;redraw=2;continue;
+      } else if(k==13||k==' '){
+        tab=focus;focus=config_count(tab)?CONFIG_CONTROL_BASE:20;
+        redraw=2;continue;
+      }
       redraw=1;
       continue;
     }
     if(focus<20){
-      item=focus-4;
-      if(k==0x4B00){change_config_value(tab,item,-1);redraw=2;}
+      item=focus-CONFIG_CONTROL_BASE;
+      if(tab==0&&item==0){
+        if(k==13||k==' '){
+          press_button(x+31,y+12,"  SET  ",7);
+          if(shortcut_set_dialog())config_shortcut_changed=1;
+          shortcut_refresh();redraw=2;
+        }
+      } else if(k==0x4B00){change_config_value(tab,item,-1);redraw=2;}
       else if(k==0x4D00||k==' '){change_config_value(tab,item,1);redraw=2;}
       else if(k==13){focus=(item+1<count)?focus+1:20;redraw=1;}
       continue;
@@ -3641,35 +3689,63 @@ static void setkey_append_display(char *text,const char *name)
   strcat(text,"[");strcat(text,name);strcat(text,"]");
 }
 
-static void setkey_show(unsigned char shift,unsigned scan)
+static void setkey_display(unsigned char shift,unsigned scan,char *text)
 {
-  static char text[80],label[16];text[0]=0;
+  char label[16];text[0]=0;
   if(shift&4)setkey_append_display(text,"CTRL");
   if(shift&8)setkey_append_display(text,"ALT");
   if(shift&3)setkey_append_display(text,"SHIFT");
   if(scan){setkey_label(scan,label);setkey_append_display(text,label);}
-  printf("\rDetected: %-58s",text);fflush(stdout);
 }
 
-static int capture_setkey(char *spec)
+static void setkey_spec(unsigned char shift,unsigned scan,char *spec)
 {
-  unsigned word,scan;unsigned char shift,captured_shift,last_shift=0xFF;
-  puts("Press the key/s to use as a shortcut now (Esc cancels).");
+  spec[0]=0;
+  if(shift&4)strcat(spec,"1D+");
+  if(shift&8)strcat(spec,"38+");
+  if(shift&3)strcat(spec,"2A+");
+  if(scan==0x5B)strcat(spec,"LWIN");
+  else if(scan==0x5C)strcat(spec,"RWIN");
+  else if(scan==0x5D)strcat(spec,"MENU");
+  else sprintf(spec+strlen(spec),"%02X",scan);
+}
+
+static void setkey_dialog_display(int x,int y,unsigned char shift,unsigned scan)
+{
+  char text[80];setkey_display(shift,scan,text);
+  textout(x+4,y+4,"Detected:",C_INPUT_LABEL,10);
+  textout(x+14,y+4,text,C_TITLE,36);
+}
+
+static int capture_setkey_dialog(char *spec)
+{
+  unsigned word,scan,buttons;unsigned char shift,captured_shift,last_shift=0xFF;
+  int x=(screen_cols-54)/2,y=(screen_rows-10)/2,mx=0,my=0,focus=0,k;
+  dialog_box(x,y,54,10,"Set Keyboard Shortcut");
+  textout(x+4,y+2,"Press the keys you want to use now",C_INPUT_LABEL,45);
+  draw_button(x+14,y+7,"  Save  ",8,0);
+  draw_button(x+32,y+7,"  Cancel  ",10,0);
   while(setkey_ready()){shift=0;setkey_read(&shift);}
   setkey_scan=setkey_e0=setkey_mods=setkey_key=setkey_key_mods=0;
   setkey_old_int09=_dos_getvect(0x09);_dos_setvect(0x09,setkey_int09);
   for(;;){
     shift=*setkey_bios_byte(0x17);
-    if((shift&15)!=(last_shift&15)){setkey_show(shift,0);last_shift=shift;}
+    if((shift&15)!=(last_shift&15)){
+      mouse_stop();setkey_dialog_display(x,y,shift,0);mouse_show();last_shift=shift;
+    }
+    buttons=mouse_poll(&mx,&my);
+    if((buttons&1)&&my==y+7&&mx>=x+32&&mx<x+42){
+      _dos_setvect(0x09,setkey_old_int09);mouse_stop();
+      press_button(x+32,y+7,"  Cancel  ",10);return 0;
+    }
     if(setkey_key){
       _disable();scan=setkey_key;captured_shift=setkey_key_mods;
       setkey_key=0;_enable();_dos_setvect(0x09,setkey_old_int09);
       while(setkey_ready()){word=setkey_read(&shift);(void)word;}
-      shift=captured_shift;if(scan==1){puts("\nShortcut unchanged.");return 0;}
+      shift=captured_shift;if(scan==1)return 0;
     } else if(setkey_ready()){
       word=setkey_read(&shift);scan=word>>8;
-      if(scan==1){_dos_setvect(0x09,setkey_old_int09);
-        puts("\nShortcut unchanged.");return 0;}
+      if(scan==1){_dos_setvect(0x09,setkey_old_int09);return 0;}
       if(!scan)continue;
       _dos_setvect(0x09,setkey_old_int09);
       if(scan>=0x85 && scan<=0x8C){
@@ -3679,16 +3755,32 @@ static int capture_setkey(char *spec)
         scan=(scan&1)?0x57:0x58;
       }
     } else continue;
-    setkey_show(shift,scan);puts("");spec[0]=0;
-    if(shift&4)strcat(spec,"1D+");
-    if(shift&8)strcat(spec,"38+");
-    if(shift&3)strcat(spec,"2A+");
-    if(scan==0x5B)strcat(spec,"LWIN");
-    else if(scan==0x5C)strcat(spec,"RWIN");
-    else if(scan==0x5D)strcat(spec,"MENU");
-    else sprintf(spec+strlen(spec),"%02X",scan);
+    mouse_stop();setkey_dialog_display(x,y,shift,scan);
+    setkey_spec(shift,scan,spec);
     while((*setkey_bios_byte(0x17)&15)!=0) ;
-    return 1;
+    break;
+  }
+  for(;;){
+    draw_button(x+14,y+7,"  Save  ",8,focus==0);
+    draw_button(x+32,y+7,"  Cancel  ",10,focus==1);
+    wait_input(&k,&mx,&my,&buttons);
+    if(buttons&MOUSE_MOVED){
+      if(my==y+7&&mx>=x+14&&mx<x+22)focus=0;
+      else if(my==y+7&&mx>=x+32&&mx<x+42)focus=1;
+      continue;
+    }
+    if((buttons&1)&&my==y+7&&mx>=x+14&&mx<x+22){
+      press_button(x+14,y+7,"  Save  ",8);return 1;
+    }
+    if((buttons&1)&&my==y+7&&mx>=x+32&&mx<x+42){
+      press_button(x+32,y+7,"  Cancel  ",10);return 0;
+    }
+    if(k==27)return 0;
+    if(k==9||k==0x4B00||k==0x4D00)focus=!focus;
+    else if(k==13){
+      if(!focus){press_button(x+14,y+7,"  Save  ",8);return 1;}
+      press_button(x+32,y+7,"  Cancel  ",10);return 0;
+    }
   }
 }
 
@@ -3736,23 +3828,82 @@ static int update_shortcut_key(const char *spec)
   remove(old);return 1;
 }
 
-static int setkey_mode(void)
+static void shortcut_append(char *text,const char *part)
 {
-  static char spec[64];int result;
-  puts("Launch! 2.3 Shortcut Key Setup\n");
-  if(!capture_setkey(spec))return 0;
+  if(*text)strcat(text,"+");
+  strcat(text,part);
+}
+
+static void shortcut_format_spec(const char *spec,char *display)
+{
+  char copy[64],*token,*end,label[16];unsigned long scan;
+  strncpy(copy,spec,sizeof(copy)-1);copy[sizeof(copy)-1]=0;display[0]=0;
+  token=strtok(copy,"+");
+  while(token){
+    if(!stricmp(token,"CTRL")||!stricmp(token,"1D"))shortcut_append(display,"CTRL");
+    else if(!stricmp(token,"ALT")||!stricmp(token,"38"))shortcut_append(display,"ALT");
+    else if(!stricmp(token,"SHIFT")||!stricmp(token,"2A")||!stricmp(token,"36"))
+      shortcut_append(display,"SHIFT");
+    else if(!stricmp(token,"WIN")||!stricmp(token,"LWIN"))shortcut_append(display,"LWIN");
+    else if(!stricmp(token,"RWIN"))shortcut_append(display,"RWIN");
+    else if(!stricmp(token,"MENU"))shortcut_append(display,"MENU");
+    else {
+      scan=strtoul(token,&end,16);
+      if(*token&&!*end&&scan<=255){setkey_label((unsigned)scan,label);shortcut_append(display,label);}
+      else shortcut_append(display,token);
+    }
+    token=strtok(0,"+");
+  }
+  if(!*display)strcpy(display,"CTRL+ALT+.");
+}
+
+static void shortcut_refresh(void)
+{
+  union REGS r;FILE *f;char line[256],spec[64],*p,*hit,*key,*end,*comspec;
+  char autoexec[20];
+  memset(&r,0,sizeof(r));r.x.ax=0xD5B0;int86(0x2F,&r,&r);
+  config_shortcut_active=r.x.bx==0x5343;
+  strcpy(spec,"1D+38+34");
+  comspec=getenv("COMSPEC");autoexec[0]=(comspec&&comspec[1]==':')?
+    (char)toupper((unsigned char)comspec[0]):'C';
+  strcpy(autoexec+1,":\\AUTOEXEC.BAT");f=fopen(autoexec,"rt");
+  if(f){
+    while(fgets(line,sizeof(line),f)){
+      p=line;while(*p==' '||*p=='\t')p++;
+      hit=setkey_stristr(p,"SHORTCUT.COM");
+      if(hit&&strnicmp(p,"REM",3)!=0){
+        key=setkey_stristr(hit,"/KEY=");
+        if(key){
+          key+=5;end=key;while(*end&&!isspace((unsigned char)*end))end++;
+          if(end-key<(int)sizeof(spec)){memcpy(spec,key,end-key);spec[end-key]=0;}
+        }
+        break;
+      }
+    }
+    fclose(f);
+  }
+  shortcut_format_spec(spec,config_shortcut_combination);
+}
+
+static int shortcut_set_dialog(void)
+{
+  char spec[64];int result;
+  if(!capture_setkey_dialog(spec))return 0;
   result=update_shortcut_key(spec);
-  if(result==0){puts("Launch!: no active SHORTCUT.COM entry was found in AUTOEXEC.BAT.");return 1;}
-  if(result<0){puts("Launch!: AUTOEXEC.BAT could not be updated.");return 1;}
-  puts("AUTOEXEC.BAT has been updated.");
-  puts("Restart the computer to activate the new shortcut key combination.");
-  return 0;
+  if(result==0){
+    notice_box("Shortcut Error","No active SHORTCUT.COM entry exists in AUTOEXEC.BAT.");
+    return 0;
+  }
+  if(result<0){
+    notice_box("Shortcut Error","AUTOEXEC.BAT could not be updated.");return 0;
+  }
+  return 1;
 }
 
 static void show_help(void)
 {
-  puts("Launch! 2.3 - a lightweight command menu for DOS\n");
-  puts("Usage: ! [/CONFIG | /SETKEY | /?]\n");
+  puts("Launch! 2.4 - a lightweight command menu for DOS\n");
+  puts("Usage: ! [/CONFIG | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
   puts("  Ctrl+D        Delete the selected item");
@@ -3761,13 +3912,12 @@ static void show_help(void)
   puts("  Ctrl+S        Sort the current menu\n");
   puts("Command-line parameters:");
   puts("  /CONFIG       Configure menu appearance and options");
-  puts("  /SETKEY       Change the resident shortcut in AUTOEXEC.BAT");
   puts("  /?            Show this help");
 }
 
 int main(int argc,char **argv)
 {
-  int i,result,config_status,config_mode=0,now_mode=0,setkey=0;
+  int i,result,config_status,config_mode=0,now_mode=0;
   static char macro[MAX_MACRO];
   config_path(argv[0]);
   if(!load_appearance())puts("Launch!: LAUNCH.CFG is invalid; using default appearance.");
@@ -3775,13 +3925,11 @@ int main(int argc,char **argv)
     if(!stricmp(argv[i],"/?") || !stricmp(argv[i],"-?")){show_help();return 0;}
     if(!stricmp(argv[i],"/CONFIG"))config_mode=1;
     else if(!stricmp(argv[i],"/NOW"))now_mode=1;
-    else if(!stricmp(argv[i],"/SETKEY"))setkey=1;
     else {printf("Launch!: unknown option %s (use ! /?)\n",argv[i]);return 1;}
   }
   if(!font_commit(appearance.font_id)){
     font_commit(0);puts("Launch!: FONT.DAT could not be read; using the standard VGA font.");
   }
-  if(setkey)return setkey_mode();
   if(config_mode){configure_appearance();return 0;}
   if(now_mode){
     video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 1;}

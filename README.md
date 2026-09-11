@@ -92,13 +92,6 @@ The arrow shaped cursor will be visible when Launch! is run.
 - Right click an item opens its Edit dialog. 
 
 
-## Keyboard shortcut
-
-You can change the keyboard shortcut any time after install by running `! /SETKEY`<br/>
-Press the desired keys, your `AUTOEXEC.BAT` will be updated. Reboot to activate the new shortcut.
-
-<img width="720" height="183" alt="setkey" src="https://github.com/user-attachments/assets/9aac80e7-d60d-4752-ac5d-c0049709ffce" />
-
 ## Configuration
 
 Run `! /CONFIG` to configure Launch! appearance and preferences. You can also right-click on the Launch! menu title.<br/>
@@ -108,17 +101,25 @@ Cancel will return the previous configuration.
 Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
 If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults. 
 
-### Colors
 
-You can change the colors for all elements in the user interface.
+### Shortcut
 
-<img width="720" height="600" alt="Color Configuration" src="https://github.com/user-attachments/assets/e06c8d7a-3660-49d7-a331-88a0b3a3a9b3" />
+You can view the current status of the shortcut utility, current key combination, and set a new combination.
+
 
 ### Menu
 
 You can choose where the menu is positioned, what options are displayed, and the time format.
 
 <img width="720" height="600" alt="Menu Configuration" src="https://github.com/user-attachments/assets/dc177f62-9ff0-4820-b7c6-46dbaf92ad21" />
+
+
+### Colors
+
+You can change the colors for all elements in the user interface.
+
+<img width="720" height="600" alt="Color Configuration" src="https://github.com/user-attachments/assets/e06c8d7a-3660-49d7-a331-88a0b3a3a9b3" />
+
 
 ### Screensaver
 
@@ -262,9 +263,9 @@ Mystify yourself with the moving polygons.
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
 
 If chosen, it will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
+The combination can be changed any time after install in `! /CONFIG`.
 
-Running `! /SETKEY` provides an interactive way to set the shortcut and update your `AUTOEXEC.BAT` automatically.
-Or, you can change the keyboard shortcut used by adding the `/KEY=` parameter to `SHORTCUT.COM` with readable names or hexadecimal scan codes, e.g.
+You can change the keyboard shortcut used by manually adding the `/KEY=` parameter to `SHORTCUT.COM` with readable names or hexadecimal scan codes, e.g.
 ```
   SHORTCUT /KEY=LWIN
   SHORTCUT /KEY=CTRL+SPACE
