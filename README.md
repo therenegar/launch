@@ -130,8 +130,7 @@ You can select the screensaver to show, choose None to disable this functionalit
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
-If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory.<br/>
-Without `Persist`, no extra memory is consumed. Launch! will still re-apply your font each time the menu is shown.
+If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory. Without `Persist`, no extra memory is consumed. Launch! will still re-apply your font each time the menu is shown anyway.
 
 <img width="720" height="600" alt="Font Configuration" src="https://github.com/user-attachments/assets/be8565de-6f71-4575-8906-5f7f17d9bde8" />
 
