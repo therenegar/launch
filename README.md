@@ -256,60 +256,59 @@ Pressing any key or moving the mouse will return the screen.
 
 The screensavers have been designed to use the EGA 16 color 640x350 screen mode, using absolutely minimal resources (procedurally generated graphics, no bitmaps), run smoothly on a 286, and look great on a CRT!
 
-**Clock** <br/>
-The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in ! /CONFIG
+**Clock** The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in ! /CONFIG
 
 <img width="360" height="300" alt="Clock" src="https://github.com/user-attachments/assets/fa3521ee-3c3f-4db6-9be6-c7f471258980" />
 
-**Boing**
+**Boing** The famous pseudo-3D bouncing ball
 
 <img width="360" height="300" alt="Boing" src="https://github.com/user-attachments/assets/fb46506d-d19e-48ca-b390-6e2ade1ed28d" />
 
-**Logo**
+**Logo** The DOS logo bouncing around
 
 <img width="360" height="300" alt="Logo" src="https://github.com/user-attachments/assets/5cf5181f-1bf4-46f4-82c9-3fae201a393c" />
 
-**Mosaic**
+**Mosaic** A random mosaic tile pattern fills the screen
 
 <img width="360" height="300" alt="Mosaic" src="https://github.com/user-attachments/assets/00af5d79-19b1-4ba2-b4a7-7c2915e5292d" />
 
-**Mystic**
+**Mystic** Mystical polygons make moves
 
 <img width="360" height="300" alt="Mystic" src="https://github.com/user-attachments/assets/48c0f0ac-5f6e-4bf8-921b-ce0344062a47" />
 
-**Paintball**
+**Paintball** Dripping paint splotches
 
 <img width="360" height="300" alt="Paintball" src="https://github.com/user-attachments/assets/dc05581c-704b-49db-8e11-b1d4c25cf7a4" />
 
-**Particles**
+**Particles** Particle masses intertwine, random colors each time
 
 <img width="360" height="300" alt="Particles" src="https://github.com/user-attachments/assets/b3ea5e20-e25d-433c-acda-bc1047161974" />
 
-**Pipes**
+**Pipes** The 3-dimensional pipes with a mind of their own
 
 <img width="360" height="300" alt="Pipes" src="https://github.com/user-attachments/assets/18b5e9b6-a217-4d91-9aba-c24617648fc1" />
 
-**Scooter**
+**Scooter** Scoot through the universe
 
 <img width="360" height="300" alt="Scooter" src="https://github.com/user-attachments/assets/81b2a363-84df-4e87-b3d9-d3da62fc721e" />
 
-**Space Junk**
+**Space Junk** Damn junk flying around in space
 
 <img width="360" height="300" alt="SpaceJunk" src="https://github.com/user-attachments/assets/ed5fdc8b-7936-4c5b-a2b0-b2eb610d7555" />
 
-**Space Wars**
+**Space Wars** A space battle before your eyes
 
 <img width="360" height="300" alt="SpaceWars" src="https://github.com/user-attachments/assets/98b53a86-547d-4f1d-bfb9-e76c0f42ac8c" />
 
-**Spiro**
+**Spiro** Spiraling snakes fill the screen with pixels
 
 <img width="360" height="300" alt="Spiro" src="https://github.com/user-attachments/assets/61cc9193-ae96-4eed-a858-0241cdfad46a" />
 
-**Starry Nite**
+**Starry Nite** A city skyline twinkles at night
 
 <img width="360" height="300" alt="StarryNite" src="https://github.com/user-attachments/assets/f8db1076-934a-44ec-828d-24a633c52f6a" />
 
-**Warp**
+**Warp** Zoom through the universe to nowhere
 
 <img width="360" height="300" alt="Warp" src="https://github.com/user-attachments/assets/79a98013-a37a-4690-9eef-cbe7f30f10a5" />
 
