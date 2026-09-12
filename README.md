@@ -136,6 +136,8 @@ You can choose where the menu is positioned, what options are displayed, the tim
 
 There are 8 pre-defined color schemes to choose from, or you can change the colors for any interface element to your liking.
 
+If using a monochrome display, use the 'Mono' scheme for best results.
+
 <img width="720" height="600" alt="Screenshot: Color Configuration" src="https://github.com/user-attachments/assets/a9a2b958-0a1d-4bb1-96ca-f5fec64a7832" />
 
 <img width="720" height="600" alt="Screenshot: Color Schemes" src="https://github.com/user-attachments/assets/03caa612-1fa3-4587-bcd1-256dc0b17d35" />
