@@ -177,11 +177,11 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 
 ### Parameter prompting and help
 If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
-You will be able to enter parameters before running the program. 
+You will be able to enter parameters before running the program.
 
 <img width="720" height="600" alt="MenuRun" src="https://github.com/user-attachments/assets/3cc1d875-f708-4db7-a9ff-993d334795f4" />
 
-You can also choose to view command help for assistance in entering parameters.
+You can also view command help for assistance in entering parameters by choosing `/?`.
 
 <img width="720" height="600" alt="params" src="https://github.com/user-attachments/assets/ecba02c8-33ce-42f9-b307-1ce94d9388d8" />
 
