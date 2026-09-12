@@ -1,4 +1,4 @@
-/* Launch! 2.5 - modal command menu for DOS
+/* Launch! 2.6 - modal command menu for DOS
  * Microsoft C/C++ 7.0, medium model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -34,11 +34,11 @@ typedef struct {
   unsigned char selected_fg,selected_bg,controls_fg,controls_bg,labels;
   unsigned char menu_top,show_explore,show_power,show_time;
   unsigned char screensaver,saver_color,saver_delay,hour_12;
-  unsigned char font_id,font_persist;
+  unsigned char font_id,font_persist,mouse_cursor,prompt_inactivity;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1};
-static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1};
+static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1,0,0};
+static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1,0,0};
 
 static void (interrupt far *setkey_old_int09)();
 static volatile unsigned char setkey_scan,setkey_e0,setkey_mods;
@@ -140,12 +140,16 @@ static char appearance_temp_file[MAX_CMD];
 static char logos_file[MAX_CMD];
 static char help_file[MAX_CMD];
 static char font_file[MAX_CMD];
+static char program_dir[MAX_CMD];
 static int font_is_vga(void);
 static int font_preview(unsigned char id);
 static int font_commit(unsigned char id);
 static void font_restore(void);
 static void shortcut_refresh(void);
 static int shortcut_set_dialog(void);
+static int shortcut_unload(void);
+static int shortcut_activate(void);
+static void shortcut_idle_sync(void);
 static char write_path[MAX_CMD];
 static unsigned char copy_buffer[512];
 static unsigned char key_shift;
@@ -155,6 +159,7 @@ static int mouse_visible;
 static int mouse_glyph_saved;
 static unsigned char mouse_old_glyph[32];
 static int screensaver_ran;
+static int dialog_close_x=-1,dialog_close_y=-1;
 static unsigned mouse_last_buttons;
 static unsigned mouse_raw_x,mouse_raw_y;
 static int added_visible_node;
@@ -182,43 +187,22 @@ static unsigned char explore_drive_symbols[26];
 static int explore_drive_positions[26];
 
 static const char *sample_config[] = {
-  "; Launch! 2.5 menu definition\n",
+  "; Launch! 2.6 initial menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
   "[Launcher]\n",
-  "FOLDER=Office\n",
-  "FOLDER=Internet\n",
-  "FOLDER=Multimedia\n",
-  "FOLDER=Games\n",
-  "FOLDER=Utilities\n",
-  "FOLDER=System Tools\n",
+  "FOLDER=DOS Commands\n",
+  "SEPARATOR=\n",
   "\n",
-  "[Launcher\\Office]\n",
-  "ITEM=WordPerfect 5.1|C:\\WP51\\WP.EXE|1|1|0\n",
-  "ITEM=Microsoft Word 5.5|C:\\WORD55\\WORD.EXE|1|1|0\n",
-  "ITEM=Lotus 1-2-3|C:\\123R34\\123.EXE|1|1|0\n",
-  "\n",
-  "[Launcher\\Internet]\n",
-  "ITEM=FTP2P|C:\\MTCP\\FTP2P.EXE|1|0|0\n",
-  "ITEM=Telnet|C:\\MTCP\\TELNET.EXE|1|0|0\n",
-  "ITEM=LYNX|C:\\LYNX\\LYNX.EXE|1|0|0\n",
-  "ITEM=Arachne|C:\\ARACHNE\\ARACHNE.BAT|1|1|0\n",
-  "FOLDER=Communications\n",
-  "\n",
-  "[Launcher\\Internet\\Communications]\n",
-  "ITEM=Pegasus|C:\\COMM\\PEGASUS.EXE|1|0|0\n",
-  "ITEM=Pine|C:\\COMM\\PINE.EXE|1|0|0\n",
-  "ITEM=Compuserve|C:\\COMM\\CIS.BAT|1|0|0\n",
-  "ITEM=Prodigy|C:\\COMM\\PRODIGY.BAT|1|0|0\n",
-  "\n",
-  "[Launcher\\Utilities]\n",
-  "ITEM=Font Selector|C:\\UTILS\\FONTSEL.COM|1|0|0\n",
-  "ITEM=File Manager|C:\\4DOS\\4START.BAT|1|0|0\n",
-  "\n",
-  "[Launcher\\System Tools]\n",
-  "ITEM=Memory Report|MEM /C /P|1|0|0\n",
-  "ITEM=System Information|C:\\UTILS\\NSSI.EXE|1|0|0\n",
+  "[Launcher\\DOS Commands]\n",
+  "ITEM=Check Disk|CHKDSK|1|0|0\n",
+  "ITEM=Format Disk|FORMAT|0|0|0\n",
+  "ITEM=Partition Disk|FDISK|1|0|0\n",
+  "ITEM=Memory Information|MEM|1|0|0\n",
+  "ITEM=File Attributes|ATTRIB|0|0|0\n",
+  "ITEM=Find Text|FIND|0|0|0\n",
+  "ITEM=Sort Text|SORT|0|0|0\n",
   0
 };
 
@@ -338,6 +322,8 @@ static void dialog_box(int x,int y,int w,int h,const char *title)
 {
   int i; unsigned short v;
   box(x,y,w,h,title,C_TITLE);
+  cell(x+w-5,y,180,C_BORDER);cell(x+w-4,y,'X',C_ROOT_TITLE);
+  cell(x+w-3,y,195,C_BORDER);dialog_close_x=x+w-4;dialog_close_y=y;
   for(i=1;i<=h;i++){
     v=video[(y+i)*screen_cols+x+w];
     cell(x+w,y+i,v&255,C_FAUX_SHADOW);
@@ -405,6 +391,7 @@ static void config_path(const char *program)
   else if(exe[0] && exe[1]==':')n=2;
   else n=0;
   if(n>MAX_CMD-11)n=0;
+  strncpy(program_dir,exe,n);program_dir[n]=0;
   strncpy(config_file,exe,n);config_file[n]=0;strcat(config_file,"LAUNCH.MNU");
   strncpy(backup_file,exe,n);backup_file[n]=0;strcat(backup_file,"LAUNCH.BAK");
   strncpy(temp_file,exe,n);temp_file[n]=0;strcat(temp_file,"LAUNCH.$$$");
@@ -415,6 +402,26 @@ static void config_path(const char *program)
   strncpy(logos_file,exe,n);logos_file[n]=0;strcat(logos_file,"PWROFF.BMP");
   strncpy(help_file,exe,n);help_file[n]=0;strcat(help_file,"LAUNCH.HLP");
   strncpy(font_file,exe,n);font_file[n]=0;strcat(font_file,"FONT.DAT");
+}
+
+static int select_menu_file(const char *name)
+{
+  char base[MAX_CMD],*slash,*dot;int n;
+  if(!name||!*name)return 0;
+  if(strchr(name,'\\')||strchr(name,'/')||strchr(name,':')){
+    if(strlen(name)>=MAX_CMD)return 0;
+    strcpy(config_file,name);
+  } else {
+    if(strlen(program_dir)+strlen(name)>=MAX_CMD)return 0;
+    strcpy(config_file,program_dir);strcat(config_file,name);
+  }
+  strcpy(base,config_file);slash=strrchr(base,'\\');dot=strrchr(base,'.');
+  if(dot&&(!slash||dot>slash))*dot=0;
+  n=strlen(base);if(n>MAX_CMD-6)return 0;
+  strcpy(backup_file,base);strcat(backup_file,".BAK");
+  strcpy(temp_file,base);strcat(temp_file,".$$$");
+  strcpy(backup_temp_file,base);strcat(backup_temp_file,".BK$");
+  strcpy(bad_file,base);strcat(bad_file,".BAD");return 1;
 }
 
 static int appearance_value(APPEARANCE *a,const char *key,int value)
@@ -441,6 +448,8 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
   else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=21;}
   else if(!stricmp(key,"FONT_PERSIST")){field=&a->font_persist;limit=1;}
+  else if(!stricmp(key,"MOUSE_CURSOR")){field=&a->mouse_cursor;limit=2;}
+  else if(!stricmp(key,"PROMPT_INACTIVITY")){field=&a->prompt_inactivity;limit=1;}
   if(!field || value<0 || value>limit)return 0;
   *field=(unsigned char)value;return 1;
 }
@@ -950,6 +959,18 @@ static void mouse_pointer_install(void)
   FONT_REGS old;unsigned char far *font;
   unsigned char arrow[32];unsigned char far *height_ptr;
   union REGS r;int i,height,source;
+  if(appearance.mouse_cursor){
+    if(mouse_glyph_saved)mouse_pointer_restore();
+    memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;
+    if(appearance.mouse_cursor==1){
+      /* Retain the underlying glyph and invert its foreground/background. */
+      r.x.cx=0xFFFF;r.x.dx=0x7700;
+    } else {
+      /* Target retains the underlying attribute but substitutes glyph 8. */
+      r.x.cx=0xFF00;r.x.dx=0x7708;
+    }
+    int86(0x33,&r,&r);return;
+  }
   if(!mouse_glyph_saved){
     font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);
     for(i=0;i<32;i++)mouse_old_glyph[i]=font[i];
@@ -1323,6 +1344,9 @@ static void wait_input(int *key,int *column,int *row,unsigned *buttons)
     }
   } while(!*buttons);
   mouse_stop();
+  if((*buttons&1) && *column==dialog_close_x && *row==dialog_close_y){
+    *buttons=0;*key=27;
+  }
 }
 
 static int child_count(int parent)
@@ -1381,7 +1405,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 2.5 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 2.6 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1407,24 +1431,27 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 2.5 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 2.6 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\n"
       "SCREENSAVER=%u\nSAVER_COLOR=%u\nSAVER_DELAY=%u\nHOUR_12=%u\n"
       "SHOW_EXPLORE=%u\n"
-      "SHOW_POWER=%u\nSHOW_TIME=%u\nFONT_ID=%u\nFONT_PERSIST=%u\n",
+      "SHOW_POWER=%u\nSHOW_TIME=%u\nFONT_ID=%u\nFONT_PERSIST=%u\n"
+      "MOUSE_CURSOR=%u\n",
       appearance.background,appearance.border,appearance.main_title,appearance.titles,
       appearance.folders,appearance.launchers,appearance.selected_fg,appearance.selected_bg,
       appearance.controls_fg,appearance.controls_bg,appearance.labels,
       appearance.menu_top,appearance.screensaver,appearance.saver_color,
       appearance.saver_delay,appearance.hour_12,
       appearance.show_explore,appearance.show_power,
-      appearance.show_time,appearance.font_id,appearance.font_persist)<0)ok=0;
+      appearance.show_time,appearance.font_id,appearance.font_persist,
+      appearance.mouse_cursor)<0)ok=0;
   if(fclose(f)!=0)ok=0;
   if(!ok){remove(appearance_temp_file);return 0;}
   remove(appearance_file);
   if(rename(appearance_temp_file,appearance_file)!=0)return 0;
+  shortcut_idle_sync();
   return 1;
 }
 
@@ -1591,11 +1618,22 @@ static int confirm_box(const char *title,const char *message)
 
 static void notice_box(const char *title,const char *message)
 {
-  int x=(screen_cols-48)/2,y=(screen_rows-7)/2,k,mx,my;unsigned mb;
-  dialog_box(x,y,48,7,title); textout(x+3,y+2,message,C_FOLDER,42);
-  draw_button(x+21,y+4,"  OK  ",6,1);wait_input(&k,&mx,&my,&mb);
-  if((mb&1) && my==y+4 && mx>=x+21 && mx<x+27)
-    press_button(x+21,y+4,"  OK  ",6);
+  int w=strlen(message)>42?54:48;
+  int x=(screen_cols-w)/2,y=(screen_rows-7)/2,k,mx,my,button_x=x+(w-6)/2;
+  unsigned mb;
+  dialog_box(x,y,w,7,title);textout(x+3,y+2,message,C_FOLDER,w-6);
+  draw_button(button_x,y+4,"  OK  ",6,1);
+  for(;;){
+    wait_input(&k,&mx,&my,&mb);
+    if(mb&MOUSE_MOVED)continue;
+    if(mb&1){
+      if(my==y+4 && mx>=button_x && mx<button_x+6){
+        press_button(button_x,y+4,"  OK  ",6);return;
+      }
+      continue;
+    }
+    if(k)return;
+  }
 }
 
 static unsigned char physical_byte(unsigned long address)
@@ -1969,7 +2007,7 @@ static void field_line(int x,int y,const char *label,const char *value,
 static void check_line(int x,int y,const char *label,int checked,int focused)
 {
   char mark[4];
-  sprintf(mark,"[%c]",checked?'þ':' ');
+  sprintf(mark,"[%c]",checked?(char)254:' ');
   textout(x,y,mark,C_BUTTON,3);
   textout(x+4,y,label,focused?C_SELECTED:C_INPUT_LABEL,34);
 }
@@ -1994,7 +2032,9 @@ static int item_form(int folder,char *name,char *exe,char *params,
       field_line(x+3,y+4,"Command:",exe,focus==1,hover==1,pos[1],42);
       field_line(x+3,y+6,"Parameters:",params,focus==2,hover==2,pos[2],28);
       textout(x+47,y+6,"Prompt?",(focus==3||hover==3)?C_SELECTED:C_INPUT_LABEL,7);
-      textout(x+55,y+6,*prompt_params?"[þ]":"[ ]",C_BUTTON,3);
+      cell(x+55,y+6,'[',C_BUTTON);
+      cell(x+56,y+6,*prompt_params?(char)254:' ',C_BUTTON);
+      cell(x+57,y+6,']',C_BUTTON);
     }
     if(!folder){
       check_line(x+16,y+8,"Provide \021\331 after launcher command",*press_enter,focus==4||hover==4);
@@ -2077,6 +2117,7 @@ static const char *screensaver_names[7]={
 static const char *saver_delay_names[4]={
   "1 minute","5 minutes","15 minutes","30 minutes"
 };
+static const char *mouse_cursor_names[3]={"Pointer","Block","Target"};
 
 static const char *font_names[22]={
   "Standard","Bold Sans","Tall Sans","IBM ISO","CGAlike","Elite",
@@ -2088,7 +2129,7 @@ static const char *font_names[22]={
 static void cycle_control(int x,int y,const char *value,int focused)
 {
   char field[24];
-  sprintf(field,"® %-11.11s ¯",value);
+  sprintf(field,"%c %-11.11s %c",(char)174,value,(char)175);
   textout(x,y,field,focused?C_SELECTED:C_BUTTON,15);
 }
 
@@ -2129,10 +2170,10 @@ static void draw_character_preview(int x,int y)
 
 static int config_count(int tab)
 {
-  if(tab==0)return 1;
-  if(tab==1)return 5;
+  if(tab==0)return 2;
+  if(tab==1)return 6;
   if(tab==2)return 11;
-  if(tab==3)return appearance.screensaver==1?3:2;
+  if(tab==3)return appearance.screensaver==1?4:3;
   return font_is_vga()?2:0;
 }
 
@@ -2155,13 +2196,16 @@ static unsigned char *config_field(int tab,int item,int *limit)
     if(item==2)return &appearance.show_power;
     if(item==3)return &appearance.show_time;
     if(item==4){*limit=1;return &appearance.hour_12;}
+    if(item==5){*limit=2;return &appearance.mouse_cursor;}
   }
   if(tab==3){
     if(item==0){*limit=6;return &appearance.screensaver;}
     if(appearance.screensaver==1){
       if(item==1)return &appearance.saver_color;
       if(item==2){*limit=3;return &appearance.saver_delay;}
-    } else if(item==1){*limit=3;return &appearance.saver_delay;}
+    } else {
+      if(item==1){*limit=3;return &appearance.saver_delay;}
+    }
   }
   if(tab==4){
     if(item==0){*limit=21;return &appearance.font_id;}
@@ -2180,6 +2224,7 @@ static void change_config_value(int tab,int item,int direction)
   value=(int)*field+direction;if(value<0)value=limit;if(value>limit)value=0;
   *field=(unsigned char)value;
   if(tab==4 && item==0){font_preview(appearance.font_id);mouse_pointer_install();}
+  if(tab==1 && item==5)mouse_pointer_install();
 }
 
 static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
@@ -2190,10 +2235,13 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
   if(tab==0){
     textout(x+5,y+5,"Keyboard shortcut status:",C_INPUT_LABEL,25);
     textout(x+31,y+5,config_shortcut_active?"Active":"Inactive",C_ITEM,12);
+    if(config_shortcut_active)
+      draw_button(x+45,y+5,"  Unload  ",10,f==0||h==0);
+    else draw_button(x+45,y+5,"  Activate  ",12,f==0||h==0);
     textout(x+5,y+8,"Current combination:",C_INPUT_LABEL,25);
     textout(x+31,y+8,config_shortcut_combination,C_ITEM,28);
     textout(x+5,y+11,"Set new combination:",C_INPUT_LABEL,25);
-    draw_button(x+31,y+11,"  Choose  ",10,f==0||h==0);
+    draw_button(x+31,y+11,"  Choose  ",10,f==1||h==1);
     if(config_shortcut_changed)
       textout(x+5,y+14,"Shortcut combination changed. Restart to take effect.",
               C_INPUT_LABEL,54);
@@ -2222,17 +2270,25 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
     check_line(x+25,y+10,"Show the time",appearance.show_time,f==3||h==3);
     textout(x+5,y+12,"Time format",C_INPUT_LABEL,18);
     cycle_control(x+25,y+12,appearance.hour_12?"12-hour":"24-hour",f==4||h==4);
+    textout(x+5,y+14,"Mouse cursor",C_INPUT_LABEL,18);
+    cycle_control(x+25,y+14,mouse_cursor_names[appearance.mouse_cursor],f==5||h==5);
   } else if(tab==3){
     textout(x+5,y+4,"Screensaver",C_INPUT_LABEL,18);
     cycle_control(x+25,y+4,screensaver_names[appearance.screensaver],f==0||h==0);
     if(appearance.screensaver==1){
-      textout(x+5,y+7,"Clock colour",C_INPUT_LABEL,18);
-      cycle_control(x+25,y+7,colour_names[appearance.saver_color],f==1||h==1);
-      textout(x+5,y+10,"Blank after...",C_INPUT_LABEL,18);
-      cycle_control(x+25,y+10,saver_delay_names[appearance.saver_delay],f==2||h==2);
+      textout(x+5,y+6,"Clock colour",C_INPUT_LABEL,18);
+      cycle_control(x+25,y+6,colour_names[appearance.saver_color],f==1||h==1);
+      textout(x+5,y+8,"Inactivity period",C_INPUT_LABEL,18);
+      cycle_control(x+25,y+8,saver_delay_names[appearance.saver_delay],f==2||h==2);
+      draw_button(x+25,y+10,"  Preview   ",11,f==3||h==3);
+      textout(x+5,y+12,"Monitoring",C_INPUT_LABEL,18);
+      textout(x+25,y+12,config_shortcut_active?"Command Prompt and Menu":"Menu only",C_ITEM,23);
     } else {
-      textout(x+5,y+7,"Blank after...",C_INPUT_LABEL,18);
-      cycle_control(x+25,y+7,saver_delay_names[appearance.saver_delay],f==1||h==1);
+      textout(x+5,y+6,"Inactivity period",C_INPUT_LABEL,18);
+      cycle_control(x+25,y+6,saver_delay_names[appearance.saver_delay],f==1||h==1);
+      draw_button(x+25,y+8,"  Preview   ",11,f==2||h==2);
+      textout(x+5,y+10,"Monitoring",C_INPUT_LABEL,18);
+      textout(x+25,y+10,config_shortcut_active?"Command Prompt and Menu":"Menu only",C_ITEM,23);
     }
   } else if(tab==4&&font_is_vga()){
     textout(x+5,y+4,"VGA display font",C_INPUT_LABEL,18);
@@ -2250,7 +2306,9 @@ static int config_hit(int x,int y,int tab,int mx,int my)
   if(my==y+1||my==y+2)
     for(i=0;i<5;i++)if(mx>x+left[i]&&mx<x+right[i])return i;
   if(tab==0){
-    if(my==y+11&&mx>=x+31&&mx<x+41)return CONFIG_CONTROL_BASE;
+    if(my==y+5&&mx>=x+45&&
+       mx<(config_shortcut_active?x+55:x+57))return CONFIG_CONTROL_BASE;
+    if(my==y+11&&mx>=x+31&&mx<x+41)return CONFIG_CONTROL_BASE+1;
   } else if(tab==2){
     static const int rows[8]={7,8,9,10,11,12,13,14};
     static const int items[8]={1,2,3,4,5,6,8,10};
@@ -2260,14 +2318,16 @@ static int config_hit(int x,int y,int tab,int mx,int my)
     if(mx>=x+45&&mx<x+60&&my==y+12)return CONFIG_CONTROL_BASE+7;
     if(mx>=x+45&&mx<x+60&&my==y+13)return CONFIG_CONTROL_BASE+9;
   } else if(tab==1){
-    static const int rows[5]={4,6,8,10,12};
-    for(i=0;i<5;i++)if(my==y+rows[i]&&mx>=x+25&&mx<x+63)
+    static const int rows[6]={4,6,8,10,12,14};
+    for(i=0;i<6;i++)if(my==y+rows[i]&&mx>=x+25&&mx<x+63)
       return CONFIG_CONTROL_BASE+i;
   } else if(tab==3){
     if(my==y+4&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE;
-    if(my==y+7&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE+1;
-    if(appearance.screensaver==1&&my==y+10&&mx>=x+25&&mx<x+40)
+    if(my==y+6&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE+1;
+    if(appearance.screensaver==1&&my==y+8&&mx>=x+25&&mx<x+40)
       return CONFIG_CONTROL_BASE+2;
+    if(appearance.screensaver==1&&my==y+10&&mx>=x+25&&mx<x+36)return CONFIG_CONTROL_BASE+3;
+    if(appearance.screensaver!=1&&my==y+8&&mx>=x+25&&mx<x+36)return CONFIG_CONTROL_BASE+2;
   } else if(tab==4&&font_is_vga()){
     if(my==y+4&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE;
     if(my==y+6&&mx>=x+25&&mx<x+36)return CONFIG_CONTROL_BASE+1;
@@ -2294,9 +2354,20 @@ static int configure_appearance(void)
       if(hit>=CONFIG_CONTROL_BASE&&hit<20){
         focus=hit;item=hit-CONFIG_CONTROL_BASE;
         if(tab==0&&item==0){
+          if(config_shortcut_active){
+            press_button(x+45,y+5,"  Unload  ",10);shortcut_unload();
+          } else {
+            press_button(x+45,y+5,"  Activate  ",12);shortcut_activate();
+          }
+          shortcut_refresh();
+        } else if(tab==0&&item==1){
           press_button(x+31,y+11,"  Choose  ",10);
           if(shortcut_set_dialog())config_shortcut_changed=1;
           shortcut_refresh();
+        } else if(tab==3&&((appearance.screensaver==1&&item==3) ||
+                           (appearance.screensaver!=1&&item==2))){
+          press_button(x+25,appearance.screensaver==1?y+10:y+8,"  Preview   ",11);
+          run_screensaver();screensaver_ran=0;
         } else change_config_value(tab,item,1);
         redraw=2;continue;
       }
@@ -2346,10 +2417,22 @@ static int configure_appearance(void)
       item=focus-CONFIG_CONTROL_BASE;
       if(tab==0&&item==0){
         if(k==13||k==' '){
+          if(config_shortcut_active){
+            press_button(x+45,y+5,"  Unload  ",10);shortcut_unload();
+          } else {
+            press_button(x+45,y+5,"  Activate  ",12);shortcut_activate();
+          }
+          shortcut_refresh();redraw=2;
+        }
+      } else if(tab==0&&item==1){
+        if(k==13||k==' '){
           press_button(x+31,y+11,"  Choose  ",10);
           if(shortcut_set_dialog())config_shortcut_changed=1;
           shortcut_refresh();redraw=2;
         }
+      } else if(tab==3&&((appearance.screensaver==1&&item==3) ||
+                         (appearance.screensaver!=1&&item==2))){
+        if(k==13||k==' '){run_screensaver();screensaver_ran=0;redraw=2;}
       } else if(k==0x4B00){change_config_value(tab,item,-1);redraw=2;}
       else if(k==0x4D00||k==' '){change_config_value(tab,item,1);redraw=2;}
       else if(k==13){focus=(item+1<count)?focus+1:20;redraw=1;}
@@ -3253,7 +3336,25 @@ static void set_menu_selection(int depth,int *list,int *selection,
   row_attribute(x+1,panel_y+1+next,18,menu_entry_attribute(list[next],1));
 }
 
-static int menu(void)
+static int menu_open_folder(const char *name,int *parent,int *sel)
+{
+  int target=-1,chain[MAX_DEPTH],count=0,i,j,n,list[MAX_CHILD],p;
+  if(!name||!*name)return 0;
+  for(i=0;i<node_count;i++)if(nodes[i].active&&nodes[i].folder&&
+     !stricmp(nodes[i].title,name)){target=i;break;}
+  if(target<0)return 0;
+  p=target;while(p>=0&&count<MAX_DEPTH){chain[count++]=p;p=nodes[p].parent;}
+  if(p>=0)return 0;
+  parent[0]=-1;sel[0]=0;
+  for(i=count-1,j=0;i>=0&&j<MAX_DEPTH-1;i--,j++){
+    n=menu_children(parent[j],list);sel[j]=0;
+    for(p=0;p<n;p++)if(list[p]==chain[i]){sel[j]=p;break;}
+    parent[j+1]=chain[i];sel[j+1]=0;
+  }
+  return count<MAX_DEPTH?count:MAX_DEPTH-1;
+}
+
+static int menu(const char *open_to)
 {
   static int parent[MAX_DEPTH],sel[MAX_DEPTH],list[MAX_CHILD];
   static int panel_y[MAX_DEPTH],panel_h[MAX_DEPTH],panel_n[MAX_DEPTH];
@@ -3262,7 +3363,7 @@ static int menu(void)
   int depth=0,n,k,i,h,x,y,node,redraw=2,mx=0,my=0,hit,pos;
   unsigned mb,last_mouse_x,last_mouse_y;unsigned char last_second=255;
   unsigned long last_activity,now;
-  parent[0]=-1; sel[0]=0;
+  parent[0]=-1; sel[0]=0;depth=menu_open_folder(open_to,parent,sel);
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return -1;}
   cursor_hide();mouse_present=mouse_start();mouse_stop();
   last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;last_activity=bios_ticks();
@@ -4008,10 +4109,74 @@ static int shortcut_set_dialog(void)
   return 1;
 }
 
+static int ensure_shortcut_autoexec(void)
+{
+  char autoexec[20],line[256],*p,*comspec;FILE *f;long size;int last=0;
+  comspec=getenv("COMSPEC");autoexec[0]=(comspec&&comspec[1]==':')?
+    (char)toupper((unsigned char)comspec[0]):'C';
+  strcpy(autoexec+1,":\\AUTOEXEC.BAT");f=fopen(autoexec,"rt");
+  if(f){
+    while(fgets(line,sizeof(line),f)){
+      p=line;while(*p==' '||*p=='\t')p++;
+      if(strnicmp(p,"REM",3)!=0&&setkey_stristr(p,"SHORTCUT.COM")){
+        fclose(f);return 1;
+      }
+    }
+    fclose(f);
+  }
+  f=fopen(autoexec,"a+b");if(!f)return 0;
+  fseek(f,0L,SEEK_END);size=ftell(f);
+  if(size>0){fseek(f,-1L,SEEK_END);last=fgetc(f);fseek(f,0L,SEEK_END);}
+  if(size>0&&last!='\n'&&fputs("\r\n",f)==EOF){fclose(f);return 0;}
+  if(fprintf(f,"LOADHIGH %sSHORTCUT.COM\r\n",program_dir)<0){fclose(f);return 0;}
+  return fclose(f)==0;
+}
+
+static int shortcut_activate(void)
+{
+  if(!confirm_box("Activate Shortcut","Do you want to reboot to activate the shortcut?"))return 0;
+  if(!ensure_shortcut_autoexec()){
+    notice_box("Shortcut Error","AUTOEXEC.BAT could not be updated.");return 0;
+  }
+  cold_reboot();return 1;
+}
+
+static int shortcut_unload(void)
+{
+  char shortcut[MAX_CMD];int result,saved_out=-1,saved_err=-1;FILE *nullout;
+  strcpy(shortcut,program_dir);strcat(shortcut,"SHORTCUT.COM");
+  mouse_stop();fflush(stdout);fflush(stderr);nullout=fopen("NUL","wt");
+  if(nullout){
+    saved_out=_dup(1);saved_err=_dup(2);
+    if(saved_out>=0)_dup2(_fileno(nullout),1);
+    if(saved_err>=0)_dup2(_fileno(nullout),2);
+  }
+  result=spawnl(P_WAIT,shortcut,shortcut,"/UNLOAD",NULL);
+  fflush(stdout);fflush(stderr);
+  if(saved_out>=0){_dup2(saved_out,1);_close(saved_out);}
+  if(saved_err>=0){_dup2(saved_err,2);_close(saved_err);}
+  if(nullout)fclose(nullout);
+  if(result==-1){notice_box("Shortcut Error","SHORTCUT.COM could not be started.");return 0;}
+  shortcut_refresh();
+  if(config_shortcut_active){notice_box("Shortcut Error","The resident shortcut could not be unloaded.");return 0;}
+  return 1;
+}
+
+static void shortcut_idle_sync(void)
+{
+  union REGS r;unsigned long ticks=saver_delay_ticks();
+  memset(&r,0,sizeof(r));r.x.ax=0xD5B0;int86(0x2F,&r,&r);
+  if(r.x.bx!=0x5343)return;
+  memset(&r,0,sizeof(r));r.x.ax=0xD5B4;
+  r.h.bl=(unsigned char)(appearance.screensaver!=0);
+  r.x.cx=(unsigned)(ticks&0xFFFFUL);r.x.dx=(unsigned)(ticks>>16);
+  int86(0x2F,&r,&r);
+}
+
 static void show_help(void)
 {
-  puts("Launch! 2.5 - a lightweight command menu for DOS\n");
-  puts("Usage: ! [/CONFIG | /?]\n");
+  puts("Launch! 2.6 - a lightweight command menu for DOS\n");
+  puts("Usage: ! [/CONFIG | /EXPLORE | /NOW | /USE=file.mnu | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
   puts("  Ctrl+D        Delete the selected item");
@@ -4020,25 +4185,49 @@ static void show_help(void)
   puts("  Ctrl+S        Sort the current menu\n");
   puts("Command-line parameters:");
   puts("  /CONFIG       Configure menu appearance and options");
+  puts("  /EXPLORE      Open Explore & Run directly");
+  puts("  /NOW          Start the selected screensaver immediately");
+  puts("  /USE=file.mnu Use another menu file beside !.EXE (or a full path)");
+  puts("  /OPENTO=name  Open directly to the first folder with this name");
   puts("  /?            Show this help");
 }
 
 int main(int argc,char **argv)
 {
-  int i,result,config_status,config_mode=0,now_mode=0;
-  static char macro[MAX_MACRO];
+  int i,result,config_status,config_mode=0,explore_mode=0,now_mode=0;
+  static char macro[MAX_MACRO],open_to[MAX_TITLE];
   config_path(argv[0]);
   if(!load_appearance())puts("Launch!: LAUNCH.CFG is invalid; using default appearance.");
+  shortcut_idle_sync();
   for(i=1;i<argc;i++){
     if(!stricmp(argv[i],"/?") || !stricmp(argv[i],"-?")){show_help();return 0;}
     if(!stricmp(argv[i],"/CONFIG"))config_mode=1;
+    else if(!stricmp(argv[i],"/EXPLORE"))explore_mode=1;
     else if(!stricmp(argv[i],"/NOW"))now_mode=1;
+    else if(!strnicmp(argv[i],"/USE=",5)){
+      if(!select_menu_file(argv[i]+5)){puts("Launch!: invalid /USE menu filename.");return 1;}
+    }
+    else if(!strnicmp(argv[i],"/OPENTO=",8)){
+      strncpy(open_to,argv[i]+8,MAX_TITLE-1);open_to[MAX_TITLE-1]=0;
+    }
     else {printf("Launch!: unknown option %s (use ! /?)\n",argv[i]);return 1;}
   }
   if(!font_commit(appearance.font_id)){
     font_commit(0);puts("Launch!: FONT.DAT could not be read; using the standard VGA font.");
   }
   if(config_mode){configure_appearance();return 0;}
+  if(explore_mode){
+    video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 1;}
+    cursor_hide();mouse_present=mouse_start();mouse_stop();
+    result=explore_dialog();
+    if(result)run_node=BUILTIN_EXPLORE;
+    close_menu();
+    if(result){
+      build_macro(run_node,run_command,macro);
+      if(!queue_macro(macro)){puts("Launch!: cannot install keyboard macro helper");return 1;}
+    }
+    return 0;
+  }
   if(now_mode){
     video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 1;}
     cursor_hide();mouse_present=mouse_start();run_screensaver();close_menu();return 0;
@@ -4046,9 +4235,9 @@ int main(int argc,char **argv)
   config_status=prepare_config();
   if(!config_status){printf("Launch!: cannot recover %s\n",config_file);return 1;}
   if(config_status==2)puts("Launch!: LAUNCH.MNU was missing or invalid; restored LAUNCH.BAK.");
-  else if(config_status==3)puts("Launch!: no valid menu file was found; installed the sample menu.");
+  else if(config_status==3)puts("Launch!: no valid menu file was found; installed the initial DOS menu.");
   do {
-    result=menu();
+    result=menu(open_to);open_to[0]=0;
     if(result==BUILTIN_CONFIG)configure_appearance();
   } while(result==BUILTIN_CONFIG);
   if(result>=0){

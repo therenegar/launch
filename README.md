@@ -25,6 +25,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Custom VGA display fonts to change the look of your whole DOS environment.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
+- Extremely minimal memory footprint. All resident components can be disabled to have zero memory impact if desired. 
 
 
 ## Install it
@@ -39,6 +40,8 @@ Extract the release zip file or mount the floppy image:
 - Simply reboot after install and you're ready to go.
 
 > DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
+
+> If you already have Launch! installed, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
 
 
 ## Usage
@@ -61,6 +64,17 @@ This approach provides maximum flexibility, and compatibility. *If it can be run
 
 `LAUNCH.CFG` stores configuration settings and `LAUNCH.MNU` contains the menu data. Whenever a change is made to the menu, a `LAUNCH.BAK` file will also be created containing a backup of the menu.
 Launch! locates and saves `LAUNCH.MNU` beside `!.EXE,` regardless of the current working directory. This works both with a full executable path and when `!.EXE` is found via `PATH`.
+
+
+### Parameters
+The Launch! executable `!` has some useful parameters:
+
+- `/?` - show Launch! help
+- `/CONFIG` - show the configuration dialog
+- `/EXPLORE` - open the Explore & Run dialog directly without the menu
+- `/NOW` - start the configured screensaver immediately
+- `/USE=file.mnu` - use an alternative menu file from the default `launch.mnu`. It will be assumed to be beside `!.EXE` unless a full path is provided. This can allow to make use of different menu configurations. 
+- `/OPENTO=folder` - open the Launch! menu to the specified folder, e.g. `/OPENTO=Games` would show the menu with the Games sub-menu already open.
 
 
 ## Keyboard usage
@@ -86,7 +100,7 @@ If a suitable mouse driver has been loaded (`MOUSE.COM`, `MOUSE.SYS`, `CTMOUSE.E
 
 <img width="70" height="70" alt="cursor" src="https://github.com/user-attachments/assets/c0fb9398-7623-408e-bc30-d3d7a6beb940" />
 
-The arrow shaped cursor will be visible when Launch! is run.
+The arrow shaped cursor will be visible when Launch! is run.<br/>
 
 - Left click opens a folder or runs a launcher; left click outside all visible menu panels closes Launch!.
 - Right click an item opens its Edit dialog. 
@@ -94,7 +108,7 @@ The arrow shaped cursor will be visible when Launch! is run.
 
 ## Configuration
 
-Run `! /CONFIG` to configure Launch! appearance and preferences. You can also right-click on the Launch! menu title.<br/>
+Run `! /CONFIG` to configure Launch! appearance and preferences. You can also right-click on the main "Launch!" menu title.<br/>
 Options are split across 5 tabs.
 Cancel will return the previous configuration.
 
@@ -103,13 +117,16 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 ### Shortcut
 
-You can view the current status of the shortcut utility, current key combination, and set a new combination.
+You can view the current status of the shortcut utility, current key combination, and set a new combination.<br/>
+If the shortcut is active, you can unload it - removing all traces of the TSR from memory.<br/>
+If the shortcut is inactive, you and activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
+Note that changing the combination also requires a reboot to apply.
 
 <img width="720" height="600" alt="ConfigShortcut" src="https://github.com/user-attachments/assets/aa22ad0f-d974-48ec-9c6d-9ad987f88167" />
 
 ### Menu
 
-You can choose where the menu is positioned, what options are displayed, and the time format.
+You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
 <img width="720" height="600" alt="ConfigMenu" src="https://github.com/user-attachments/assets/7ea945d4-5f70-4fb0-9527-f255e636b300" />
 
@@ -121,17 +138,22 @@ You can change the colors for all elements in the user interface.
 
 ### Screensaver
 
-You can select which screensaver to show, choose None to disable this functionality. You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).
+You can select which screensaver to show, choose `None` to disable this functionality.<br/>
+You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).<br/>
+Click `Preview` for an instant preview of the currently selected screensaver.
 
 <img width="720" height="600" alt="ConfigSaver" src="https://github.com/user-attachments/assets/4e271a89-63f6-486f-a10c-27330660ff06" />
+
+If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
+If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
 
 ###  Font
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
-If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory. Without `Persist`, no extra memory is consumed. Launch! will still re-apply your font each time the menu is shown anyway.
-
 <img width="720" height="600" alt="ConfigFont" src="https://github.com/user-attachments/assets/d04106fd-d6fe-492b-b9f7-1c631b1892a7" />
+
+If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
 > Note this feature is not available with an EGA display adapter.
 
@@ -203,7 +225,8 @@ Choosing `/?` will show the command's help information (if available) and allow 
 
 <img width="720" height="600" alt="ExploreHelp" src="https://github.com/user-attachments/assets/a7eb618a-b0ad-4ab3-9d8c-3b1b999ab9fb" />
 
-You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)
+You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)<br/>
+The dialog can also be shown on its own, without the menu, by running `! /EXPLORE`.
 
 
 ## Shutdown
@@ -220,11 +243,11 @@ If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 colo
 
 
 ## Screensavers
-If the menu is open and there has been inactivity for the configured time (1 minute by default), the screen will blank and show a screensaver (by default the Clock).
+If there has been inactivity for the configured time (1 minute by default), the screen will blank and show a screensaver (by default the Clock).
 You can disable the screensaver completely (choose None) or choose from one of the other 6 screensavers by running `! /CONFIG`.<br/>
 You can also start the selected screensaver at any time by running `! /NOW`.
 
-Pressing any key or moving the mouse will return to the menu.
+Pressing any key or moving the mouse will return the screen.
 
 The screensavers have been designed to use the EGA 640x350 screen mode, using absolutely minimal resources, and look amazing on a CRT!
 
@@ -268,8 +291,10 @@ Mystify yourself with the moving polygons.
 ## SHORTCUT - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
 
+If you don't load the keyboard shortcut tool, you'll regain 500 bytes of memory - although `LOADHIGH` is used with `SHORTCUT.COM` to move this to upper memory anyway.
+
 If chosen, it will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
-The combination can be changed any time after install in `! /CONFIG`.
+The combination can be changed any time after install in Configuration.
 
 You can change the keyboard shortcut used by manually adding the `/KEY=` parameter to `SHORTCUT.COM` with readable names or hexadecimal scan codes, e.g.
 ```

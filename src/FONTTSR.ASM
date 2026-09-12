@@ -1,4 +1,4 @@
-/* Launch! 2.5 resident VGA font keeper.
+/* Launch! 2.6 resident VGA font keeper.
  * Hooks only INT 10h; previews and selection use the VGA BIOS directly.
  */
 .code16

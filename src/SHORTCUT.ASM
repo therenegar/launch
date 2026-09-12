@@ -3,7 +3,7 @@
 .section .text
 .global _start
 
-/* SHORTCUT.COM 2.5 - tiny prompt-aware Launch! hotkey TSR.
+/* SHORTCUT.COM 2.6 - tiny prompt-aware Launch! hotkey TSR.
  * Build on a modern GNU binutils host:
  *   as --32 SHORTCUT.ASM -o SHORTCUT.O
  *   ld -m elf_i386 -Ttext 0x100 --oformat binary --entry=_start \
@@ -29,6 +29,10 @@ raw_e0:         .byte 0
 hot_down:       .byte 0
 pending:        .byte 0
 macro_active:   .byte 0
+idle_enabled:   .byte 0
+idle_timeout:   .long 0
+idle_last:      .long 0
+idle_macro:     .byte 27,'!',' ','/','N','O','W',13
 hotkey_len:     .word 0
 launch_macro:   .space 132,0           /* Esc + ! command/path + Enter */
 queue_pos:      .word 0
@@ -36,6 +40,16 @@ queue_len:      .word 0
 macro_queue:    .space 384,0
 
 int09_handler:
+    push ax
+    push es
+    mov ax,0x40
+    mov es,ax
+    mov ax,word ptr es:[0x6c]
+    mov word ptr cs:[idle_last],ax
+    mov ax,word ptr es:[0x6e]
+    mov word ptr cs:[idle_last+2],ax
+    pop es
+    pop ax
 .ifdef DOSBOX_BUILD
     /* Inspect the raw Set-1 byte before the DOSBox-X BIOS consumes the IRQ.
      * Every non-hotkey byte is still passed to the original handler. */
@@ -330,6 +344,24 @@ int28_handler:
     pushf
     call far ptr cs:[old28]
     cmp byte ptr cs:[pending],0
+    jne int28_have_pending
+    cmp byte ptr cs:[idle_enabled],0
+    je int28_done
+    mov ax,0x40
+    mov es,ax
+    mov ax,word ptr es:[0x6c]
+    mov dx,word ptr es:[0x6e]
+    sub ax,word ptr cs:[idle_last]
+    sbb dx,word ptr cs:[idle_last+2]
+    cmp dx,word ptr cs:[idle_timeout+2]
+    jb int28_done
+    ja int28_idle_due
+    cmp ax,word ptr cs:[idle_timeout]
+    jb int28_done
+int28_idle_due:
+    mov byte ptr cs:[pending],2
+int28_have_pending:
+    cmp byte ptr cs:[pending],0
     je int28_done
     mov ah,0x51                       /* current PSP */
     int 0x21
@@ -344,15 +376,28 @@ int28_handler:
     pop ds
     push cs
     pop es
+    cmp byte ptr cs:[pending],2
+    jne int28_hotkey_macro
+    mov si,offset idle_macro
+    mov cx,8
+    jmp int28_copy_macro
+int28_hotkey_macro:
     mov si,offset launch_macro
-    mov di,offset macro_queue
     mov cx,word ptr cs:[hotkey_len]
+int28_copy_macro:
+    mov di,offset macro_queue
     mov word ptr cs:[queue_len],cx
     cld
     rep movsb
     mov word ptr cs:[queue_pos],0
     mov byte ptr cs:[macro_active],1
     mov byte ptr cs:[pending],0
+    mov ax,0x40
+    mov es,ax
+    mov ax,word ptr es:[0x6c]
+    mov word ptr cs:[idle_last],ax
+    mov ax,word ptr es:[0x6e]
+    mov word ptr cs:[idle_last+2],ax
     call fill_keyboard_buffer
 int28_done:
     pop es
@@ -368,14 +413,14 @@ int2f_handler:
     cmp ax,0xd5b0
     jne 6f
     mov bx,0x5343                     /* "SC" installation signature */
-    mov cx,0x0205                     /* version 2.5 */
+    mov cx,0x0206                     /* version 2.6 */
     push cs
     pop es
     iret
 6:  cmp ax,0xd5b1
     jne 7f
     mov bx,0x554e                     /* "UN" unload-query signature */
-    mov cx,0x0205
+    mov cx,0x0206
     push cs
     pop es
     iret
@@ -387,7 +432,7 @@ int2f_handler:
     pop es
     iret
 8:  cmp ax,0xd5b2
-    jne 10f
+    jne 22f
     push ax
     push cx
     push si
@@ -411,6 +456,19 @@ int2f_handler:
     pop cx
     pop ax
     call fill_keyboard_buffer
+    xor al,al
+    iret
+22: cmp ax,0xd5b4
+    jne 10f
+    mov byte ptr cs:[idle_enabled],bl
+    mov word ptr cs:[idle_timeout],cx
+    mov word ptr cs:[idle_timeout+2],dx
+    mov ax,0x40
+    mov es,ax
+    mov ax,word ptr es:[0x6c]
+    mov word ptr cs:[idle_last],ax
+    mov ax,word ptr es:[0x6e]
+    mov word ptr cs:[idle_last+2],ax
     xor al,al
     iret
 10: jmp far ptr cs:[old2f]
@@ -733,7 +791,7 @@ unload_shortcut:
     int 0x2f
     cmp bx,0x554e
     jne not_installed
-    cmp cx,0x0205
+    cmp cx,0x0206
     jne unload_unsafe
     mov word ptr [resident_seg],es
 
@@ -1449,12 +1507,12 @@ msg_unload_unsafe:
     .ascii "Unload that TSR first, or reboot.\r\n$"
 msg_help:
 .ifdef DOSBOX_BUILD
-    .ascii "SHORTCDB 2.5 - DOSBox-X hotkey for Launch!\r\n\r\n"
+    .ascii "SHORTCDB 2.6 - DOSBox-X hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCDB [/KEY=keys]\r\n"
     .ascii "       SHORTCDB /UNLOAD\r\n"
     .ascii "       SHORTCDB /?\r\n\r\n"
 .else
-    .ascii "SHORTCUT 2.5 - prompt-aware hotkey for Launch!\r\n\r\n"
+    .ascii "SHORTCUT 2.6 - prompt-aware hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCUT [/KEY=keys]\r\n"
     .ascii "       SHORTCUT /UNLOAD\r\n"
     .ascii "       SHORTCUT /?\r\n\r\n"

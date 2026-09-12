@@ -1,4 +1,4 @@
-/* Launch! 2.5 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 2.6 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -287,11 +287,12 @@ int main(int argc,char **argv)
   static char install[PATH_SIZE],source_dir[PATH_SIZE],source[PATH_SIZE];
   static char destination[PATH_SIZE],autoexec[16],answer[16],key_spec[64];
   char *comspec;
-  int n,dosbox_detected,use_dosbox,update_autoexec=0;
+  int n,dosbox_detected,use_dosbox,update_autoexec=0,upgrade=0;
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
-  puts("Launch! 2.5 Installation");
-  puts("컴컴컴컴컴컴컴컴컴컴컴컴\n\n");
+  puts("\n");
+  puts("Launch! 2.6 Installation");
+  puts("컴컴컴컴컴컴컴컴컴컴컴컴\n");
   printf("Install to directory [C:\\LAUNCH]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
   strip_line(install);
@@ -302,6 +303,9 @@ int main(int argc,char **argv)
   }
   while(n>3 && (install[n-1]=='\\' || install[n-1]=='/'))install[--n]=0;
   if(!make_directories(install)){printf("Cannot create or access %s\n",install);return 1;}
+  sprintf(destination,"%s\\LAUNCH.MNU",install);upgrade=exists(destination);
+  if(!upgrade){sprintf(destination,"%s\\LAUNCH.CFG",install);upgrade=exists(destination);}
+  if(upgrade)puts("\nExisting Launch! installation detected.\nPerforming upgrade only, existing menu and configuration will be retained.");
   dosbox_detected=running_in_dosbox();
   if(dosbox_detected){
     printf("\nIt looks like you're running in DOSBox, is that correct? [Y/n]: ");
@@ -332,7 +336,7 @@ int main(int argc,char **argv)
   strcpy(autoexec+1,":\\AUTOEXEC.BAT");
   key_spec[0]=0;
   printf("\n");
-  update_autoexec=ask_yes("Do you want to update your AUTOEXEC.BAT file?",1);
+  update_autoexec=!upgrade&&ask_yes("Do you want to update your AUTOEXEC.BAT file?",1);
   if(update_autoexec){
     add_path=ask_yes("Add Launch! to PATH?",1);
     add_shortcut=ask_yes("Enable keyboard shortcut?",1);
@@ -349,16 +353,16 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 2.5 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- SHORTCUT 2.6 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
-  printf("\nScan the C drive now for recognized programs\n");
+  if(!upgrade){printf("\nScan the C drive now for recognized programs\n");
   printf("and build an initial Launch! menu? [y/N]: ");
   if(fgets(answer,sizeof(answer),stdin)&&toupper(answer[0])=='Y'){
     sprintf(destination,"%s\\AUTOGEN.EXE",install);
     if(spawnl(P_WAIT,destination,"AUTOGEN.EXE",NULL)==-1)
       puts("AutoGen could not be started. Run AUTOGEN manually after installation.");
-  }
+  }}
   if(autoexec_changed)
     puts("\nInstall is complete. Reboot to activate the selected startup options.");
   else puts("\nInstall is complete.");

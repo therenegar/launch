@@ -1,43 +1,17 @@
-; Launch! 2.4 menu definition
+; Launch! 2.6 initial menu definition
 ; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)
 ; SEPARATOR= adds a movable horizontal separator
 
 [Launcher]
-FOLDER=Office
-FOLDER=Internet
-FOLDER=Multimedia
-FOLDER=Games
-FOLDER=Utilities
-FOLDER=System Tools
+FOLDER=DOS Commands
 SEPARATOR=
 
-[Launcher\Office]
-ITEM=WordPerfect 5.1|C:\WP51\WP.EXE|1|1|0
-ITEM=Microsoft Word 5.5|C:\WORD55\WORD.EXE|1|1|0
-ITEM=Lotus 1-2-3|C:\123R34\123.EXE|1|1|0
-
-[Launcher\Internet]
-ITEM=FTP2P|C:\MTCP\FTP2P.EXE|1|0|0
-ITEM=Telnet|C:\MTCP\TELNET.EXE|1|0|0
-ITEM=LYNX|C:\LYNX\LYNX.EXE|1|0|0
-ITEM=Arachne|C:\ARACHNE\ARACHNE.BAT|1|1|0
-FOLDER=Communications
-
-[Launcher\Internet\Communications]
-ITEM=Pegasus|C:\COMM\PEGASUS.EXE|1|0|0
-ITEM=Pine|C:\COMM\PINE.EXE|1|0|0
-ITEM=Compuserve|C:\COMM\CIS.BAT|1|0|0
-ITEM=Prodigy|C:\COMM\PRODIGY.BAT|1|0|0
-
-[Launcher\Multimedia]
-
-[Launcher\Games]
-
-[Launcher\Utilities]
-ITEM=Font Selector|C:\UTILS\FONTSEL.COM|1|0|0
-ITEM=File Manager|C:\4DOS\4START.BAT|1|0|0
-
-[Launcher\System Tools]
-ITEM=Memory Report|MEM /C /P|1|0|0
-ITEM=System Information|C:\UTILS\NSSI.EXE|1|0|0
+[Launcher\DOS Commands]
+ITEM=Check Disk|CHKDSK|1|0|0
+ITEM=Format Disk|FORMAT|0|0|0
+ITEM=Partition Disk|FDISK|1|0|0
+ITEM=Memory Information|MEM|1|0|0
+ITEM=File Attributes|ATTRIB|0|0|0
+ITEM=Find Text|FIND|0|0|0
+ITEM=Sort Text|SORT|0|0|0
 
