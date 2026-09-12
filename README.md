@@ -9,7 +9,7 @@ Requires DOS 3.3, 80286, EGA or better. <br/>
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/8a82f1c1-0677-4209-adde-b0f797ecbb21" />
+<img width="720" height="600" alt="Screenshot: Launch! Menu" src="https://github.com/user-attachments/assets/8a82f1c1-0677-4209-adde-b0f797ecbb21" />
 
 
 ## Features
@@ -98,7 +98,7 @@ Menu management
 
 If a suitable mouse driver has been loaded (`MOUSE.COM`, `MOUSE.SYS`, `CTMOUSE.EXE`, etc.) you will be able to use a mouse with Launch!
 
-<img width="70" height="70" alt="cursor" src="https://github.com/user-attachments/assets/c0fb9398-7623-408e-bc30-d3d7a6beb940" />
+<img width="70" height="70" alt="Screenshot: Cursor" src="https://github.com/user-attachments/assets/c0fb9398-7623-408e-bc30-d3d7a6beb940" />
 
 The arrow shaped cursor will be visible when Launch! is run.<br/>
 
@@ -122,19 +122,23 @@ If the shortcut is active, you can unload it - removing all traces of the TSR fr
 If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
 Note that changing the key combination also requires a reboot to apply.
 
-<img width="720" height="600" alt="ShortcutActive" src="https://github.com/user-attachments/assets/a63a7ddb-bc65-438f-8f03-646005e2aac9" />
+<img width="720" height="600" alt="Screenshot: Shortcut Configuration" src="https://github.com/user-attachments/assets/5a102b16-a6e8-44c0-ab04-83673c0bfcc6" />
+
 
 ### Menu
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="720" height="600" alt="Config-Menu" src="https://github.com/user-attachments/assets/042c6b47-037f-45b3-9a7b-c753a87ec623" />
+<img width="720" height="600" alt="Screenshot: Menu Configuration" src="https://github.com/user-attachments/assets/1474c7a2-cb22-4153-9844-3355f919523a" />
+
 
 ### Colors
 
 There are 8 pre-defined color schemes to choose from, or you can change the colors for any interface element to your liking.
 
-<img width="720" height="600" alt="Config-Colors" src="https://github.com/user-attachments/assets/dc8772c4-12b2-471f-9337-807a9d25e363" />
+<img width="720" height="600" alt="Screenshot: Color Configuration" src="https://github.com/user-attachments/assets/a9a2b958-0a1d-4bb1-96ca-f5fec64a7832" />
+
+<img width="720" height="600" alt="Screenshot: Color Schemes" src="https://github.com/user-attachments/assets/03caa612-1fa3-4587-bcd1-256dc0b17d35" />
 
 
 ### Screensaver
@@ -143,7 +147,7 @@ You can select which screensaver to show, choose `None` to disable this function
 You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).<br/>
 Click `Preview` for an instant preview of the currently selected screensaver.
 
-<img width="720" height="600" alt="Config-Screensaver" src="https://github.com/user-attachments/assets/c6288041-8362-42b1-9fc7-0d42d2a383ed" />
+<img width="720" height="600" alt="Screenshot: Screensaver Configuration" src="https://github.com/user-attachments/assets/47331309-23ae-4f15-81f7-5db16eb4b33f" />
 
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
@@ -152,7 +156,8 @@ If the shortcut utility is not loaded, the screensaver will only start when the 
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
-<img width="720" height="600" alt="Config-Font" src="https://github.com/user-attachments/assets/e6497a92-45bf-44ea-b8cf-d5dcd2c43f91" />
+<img width="720" height="600" alt="Screenshot: Font Configuration" src="https://github.com/user-attachments/assets/ef85c274-7ad9-4888-b633-56b4f109495e" />
+
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
@@ -166,11 +171,11 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="720" height="600" alt="MenuAdd" src="https://github.com/user-attachments/assets/762c882c-e5b3-4dcf-9c8f-9a4ac13f281c" />
+<img width="720" height="600" alt="Screenshot: Add item to menu" src="https://github.com/user-attachments/assets/762c882c-e5b3-4dcf-9c8f-9a4ac13f281c" />
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="720" height="600" alt="MenuEdit" src="https://github.com/user-attachments/assets/3d3e5725-83a6-4df2-b8f8-57d792739f5d" />
+<img width="720" height="600" alt="Screenshot: Edit launcher" src="https://github.com/user-attachments/assets/3d3e5725-83a6-4df2-b8f8-57d792739f5d" />
 
 When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.<br/>
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
@@ -179,11 +184,11 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
 You will be able to enter parameters before running the program.
 
-<img width="720" height="600" alt="MenuRun" src="https://github.com/user-attachments/assets/3cc1d875-f708-4db7-a9ff-993d334795f4" />
+<img width="720" height="600" alt="Screenshot: Run with parameters" src="https://github.com/user-attachments/assets/3cc1d875-f708-4db7-a9ff-993d334795f4" />
 
 You can also view command help for assistance in entering parameters by choosing `/?`.
 
-<img width="720" height="600" alt="params" src="https://github.com/user-attachments/assets/ecba02c8-33ce-42f9-b307-1ce94d9388d8" />
+<img width="720" height="600" alt="Screenshot: Parameter help" src="https://github.com/user-attachments/assets/ecba02c8-33ce-42f9-b307-1ce94d9388d8" />
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
@@ -216,16 +221,13 @@ The drive bar shows the available disk drives, and allows you to switch between 
 
 The path bar shows a preview of the command line that will be executed when `Run` is chosen.
 
-<img width="720" height="600" alt="ExploreRun" src="https://github.com/user-attachments/assets/9ab7cc9b-003a-4377-8124-1f71ce8c56d1" />
+<img width="720" height="600" alt="Screenshot: Explore & Run" src="https://github.com/user-attachments/assets/f76fddd1-f183-49ff-80c9-0a15b8b28240" />
 
 Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
 
-<img width="720" height="600" alt="ExploreParams" src="https://github.com/user-attachments/assets/37d437a6-748a-4033-8c47-37ff3b75ba86" />
+<img width="720" height="600" alt="Screenshot: Run with parameters" src="https://github.com/user-attachments/assets/48d860ce-83fb-4dd0-9c2b-a82f8a79d26b" />
 
 Choosing `/?` will show the command's help information (if available) and allow you to provide parameters.
-
-<img width="720" height="600" alt="ExploreHelp" src="https://github.com/user-attachments/assets/f564992b-fc0a-44a9-b2df-b83ac072e446" />
-
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)<br/>
 The dialog can also be shown on its own, without the menu, by running `! /EXPLORE`.
 
@@ -234,7 +236,7 @@ The dialog can also be shown on its own, without the menu, by running `! /EXPLOR
 The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Power Off or Reboot.<br/>
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="720" height="600" alt="MenuShutdown" src="https://github.com/user-attachments/assets/067a0daa-2b71-419e-baa5-4406fe889435" />
+<img width="720" height="600" alt="Screenshot: Shutdown" src="https://github.com/user-attachments/assets/067a0daa-2b71-419e-baa5-4406fe889435" />
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
@@ -254,49 +256,51 @@ The screensavers have been designed to use the EGA 640x350 screen mode, using ab
 
 ### Clock
 
-<img width="720" height="600" alt="screensaver-clock" src="https://github.com/user-attachments/assets/01be0070-cb66-4cdd-96a8-d58dca7e01e5" />
+<img width="720" height="600" alt="Screenshot: Clock Screensaver" src="https://github.com/user-attachments/assets/01be0070-cb66-4cdd-96a8-d58dca7e01e5" />
 
 The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in `! /CONFIG`
 
 ### Starry Nite
 
-<img width="720" height="600" alt="Screensaver - Starry Nite" src="https://github.com/user-attachments/assets/c8916e4b-cfe7-4d72-ae96-531c5eca1ab9" />
+<img width="720" height="600" alt="Screenshot: Starry Nite Screensaver" src="https://github.com/user-attachments/assets/c8916e4b-cfe7-4d72-ae96-531c5eca1ab9" />
 
 A random skyline will be generated each time.
 
 ### Logo
 
-<img width="720" height="600" alt="Screensaver - DOS" src="https://github.com/user-attachments/assets/508fa7b6-02f0-4c98-b785-47268aba355e" />
+<img width="720" height="600" alt="Screenshot: DOS Logo Screensaver" src="https://github.com/user-attachments/assets/508fa7b6-02f0-4c98-b785-47268aba355e" />
 
 The DOS logo will bounce around the screen.
 
 ### Warp
 
-<img width="720" height="600" alt="Screensaver - Warp" src="https://github.com/user-attachments/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
+<img width="720" height="600" alt="Screenshot: Warp Screensaver" src="https://github.com/user-attachments/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
 
 Go at warp speed to absolutely nowhere.
 
 ### Pipes
 
-<img width="720" height="600" alt="Screensaver - Pipes" src="https://github.com/user-attachments/assets/e113e7db-1bff-43d2-8a89-4eea13cf0902" />
+<img width="720" height="600" alt="Screenshot: Pipes Screensaver" src="https://github.com/user-attachments/assets/e113e7db-1bff-43d2-8a89-4eea13cf0902" />
 
 3-dimensional pipes with a mind of their own.
 
 ### Mystify
 
-<img width="720" height="600" alt="Screensaver - Mystify" src="https://github.com/user-attachments/assets/5bc92bfd-1aaa-4625-9a46-1cd1258d1c5c" />
+<img width="720" height="600" alt="Screenshot: Mystify Screensaver" src="https://github.com/user-attachments/assets/5bc92bfd-1aaa-4625-9a46-1cd1258d1c5c" />
 
 Mystify yourself with the moving polygons.
-
 
 ### Boing
 
 It's a famous 3D bouncing ball.
 
+<img width="720" height="600" alt="Screenshot: Boing Screensaver" src="https://github.com/user-attachments/assets/9f53999d-33b4-4441-ba52-b954c7417140" />
 
 ### Halftone
 
 Random halftone gravity-mass pattern, random colors each time.
+
+<img width="720" height="600" alt="Screenshot: Halftone Screensaver" src="https://github.com/user-attachments/assets/6993019b-3c27-4c80-9a1a-d6119a9a67cf" />
 
 
 ## SHORTCUT - keyboard shortcut tool
