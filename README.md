@@ -73,7 +73,7 @@ The Launch! executable `!` has some useful parameters:
 - `/CONFIG` - show the configuration dialog
 - `/EXPLORE` - open the Explore & Run dialog directly without the menu
 - `/NOW` - start the configured screensaver immediately
-- `/USE=file.mnu` - use an alternative menu file from the default `launch.mnu`. It will be assumed to be beside `!.EXE` unless a full path is provided. This can allow to make use of different menu configurations. 
+- `/USE=file.mnu` - use an alternative menu file from the default `launch.mnu`. It will be assumed to be beside `!.EXE` unless a full path is provided. This allows you to make use of different menu configurations. 
 - `/OPENTO=folder` - open the Launch! menu to the specified folder, e.g. `/OPENTO=Games` would show the menu with the Games sub-menu already open.
 
 
