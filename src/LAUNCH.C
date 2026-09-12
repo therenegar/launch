@@ -1,4 +1,4 @@
-/* Launch! 2.6 - modal command menu for DOS
+/* Launch! 2.7 - modal command menu for DOS
  * Microsoft C/C++ 7.0, medium model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <conio.h>
 #include <io.h>
+#include <malloc.h>
 #include <process.h>
 #include "CLOCKDAT.H"
 #include "LOGODAT.H"
@@ -24,7 +25,7 @@
 #define MAX_HELP_LINES 96
 #define HELP_WIDTH 70
 #define MAX_EXPLORE_ENTRIES 256
-#define EXPLORE_ROWS 14
+#define EXPLORE_ROWS 11
 #define EXPLORE_COLS 4
 #define MAKE_FP(seg,off) ((void far *)((((unsigned long)(seg))<<16) | \
                                       (unsigned short)(off)))
@@ -126,7 +127,7 @@ static NODE nodes[MAX_NODES];
 static int node_count;
 static int screen_cols, screen_rows;
 static unsigned short far *video;
-static unsigned short *saved;
+static unsigned short far *saved;
 static unsigned char cursor_start,cursor_end;
 static int run_node;
 static char run_command[MAX_CMD];
@@ -187,7 +188,7 @@ static unsigned char explore_drive_symbols[26];
 static int explore_drive_positions[26];
 
 static const char *sample_config[] = {
-  "; Launch! 2.6 initial menu definition\n",
+  "; Launch! 2.7 initial menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -225,7 +226,7 @@ static void video_init(void)
 static int save_screen(void)
 {
   int i, n = screen_cols * screen_rows;
-  saved=(unsigned short *)malloc(n*sizeof(unsigned short));
+  saved=(unsigned short far *)_fmalloc((unsigned long)n*sizeof(unsigned short));
   if(!saved)return 0;
   for (i=0; i<n; ++i) saved[i] = video[i];
   return 1;
@@ -252,7 +253,7 @@ static void close_menu(void)
   mouse_stop();mouse_pointer_restore();
   if(screensaver_ran)clear_text_screen();else restore_screen();
   cursor_restore();
-  free(saved);saved=0;
+  _ffree(saved);saved=0;
 }
 
 static void cell(int x,int y,int ch,int at)
@@ -442,7 +443,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SHOW_EXPLORE")){field=&a->show_explore;limit=1;}
   else if(!stricmp(key,"SHOW_POWER")){field=&a->show_power;limit=1;}
   else if(!stricmp(key,"SHOW_TIME")){field=&a->show_time;limit=1;}
-  else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=6;}
+  else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=8;}
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
   else if(!stricmp(key,"SAVER_DELAY")){field=&a->saver_delay;limit=3;}
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
@@ -661,6 +662,7 @@ static unsigned char far *ega_memory=(unsigned char far *)MAKE_FP(0xA000,0);
 
 typedef struct { int x,y,z,px,py,qx,qy; } WARP_STAR;
 typedef struct { int x,y,direction;unsigned char colour; } PIPE_HEAD;
+typedef struct { int x,y,dx,dy,mass; } HALFTONE_MASS;
 typedef struct {
   int x[4],y[4],dx[4],dy[4];
   int old_x[12][4],old_y[12][4];
@@ -678,6 +680,9 @@ typedef struct {
 } NIGHT_BEACON;
 #define NIGHT_PIXEL_COUNT 1152
 #define NIGHT_BEACON_COUNT 24
+#define HALFTONE_COLS 40
+#define HALFTONE_ROWS 25
+#define HALFTONE_MASSES 6
 static WARP_STAR warp_stars[56];
 static PIPE_HEAD pipe_heads[5];
 static MYSTIFY_SHAPE mystify_shapes[2];
@@ -685,6 +690,8 @@ static unsigned short skyline_top[640];
 static unsigned char skyline_colour[640];
 static NIGHT_PIXEL night_pixels[NIGHT_PIXEL_COUNT];
 static NIGHT_BEACON night_beacons[NIGHT_BEACON_COUNT];
+static HALFTONE_MASS halftone_masses[HALFTONE_MASSES];
+static unsigned char halftone_previous[HALFTONE_COLS*HALFTONE_ROWS];
 static unsigned long saver_random_state=1;
 
 static void ega_span(int y,int left,int right,unsigned char colour);
@@ -1174,6 +1181,226 @@ static void pipes_saver_loop(unsigned start_x,unsigned start_y)
   }
 }
 
+static int boing_isqrt(int value)
+{
+  int root=0,bit=0x4000,trial;
+  while(bit>value)bit>>=2;
+  while(bit){
+    trial=root+bit;root>>=1;
+    if(value>=trial){value-=trial;root+=bit;}
+    bit>>=2;
+  }
+  return root;
+}
+
+static unsigned char boing_background_colour(int y)
+{
+  int stripe=y&7;
+  return (unsigned char)(stripe==0?9:(stripe==1?1:0));
+}
+
+static void boing_restore_area(int left,int top,int right,int bottom)
+{
+  int y;if(left<0)left=0;if(right>639)right=639;
+  if(top<0)top=0;if(bottom>349)bottom=349;
+  for(y=top;y<=bottom;y++)ega_span(y,left,right,boing_background_colour(y));
+}
+
+static void boing_background(void)
+{
+  boing_restore_area(0,0,639,349);
+}
+
+static int boing_half_width(int dy,int x_radius,int y_radius)
+{
+  if(dy< -y_radius || dy>y_radius)return -1;
+  return x_radius*boing_isqrt(y_radius*y_radius-dy*dy)/y_radius;
+}
+
+static void boing_shadow(int cx,int cy,int x_radius,int y_radius)
+{
+  int row,half,ball_half,screen_y,left,right;
+  for(row=-y_radius;row<=y_radius;row++){
+    screen_y=cy+5+row;
+    if(boing_background_colour(screen_y)){
+      half=boing_half_width(row,x_radius,y_radius);
+      left=cx+6-half;right=cx+6+half;
+      ball_half=boing_half_width(screen_y-cy,x_radius,y_radius);
+      if(ball_half<0)ega_span(screen_y,left,right,5);
+      else {
+        if(left<cx-ball_half)ega_span(screen_y,left,cx-ball_half-1,5);
+        if(right>cx+ball_half)ega_span(screen_y,cx+ball_half+1,right,5);
+      }
+    }
+  }
+}
+
+static void boing_ball(int cx,int cy,int x_radius,int y_radius,int phase)
+{
+  int dy,dx,half,inner,left,right,start,longitude,latitude,cell;
+  unsigned char colour,last;
+  for(dy=-y_radius;dy<=y_radius;dy++){
+    half=boing_half_width(dy,x_radius,y_radius);
+    left=cx-half;right=cx+half;
+    inner=half-2;
+    if(inner<=0){ega_span(cy+dy,left,right,0);continue;}
+    start=-inner;last=255;
+    for(dx=-inner;dx<=inner;dx++){
+      longitude=((dx+inner)*128)/(inner*2+1)+phase;
+      latitude=((dy+y_radius)*6)/(y_radius*2+1);
+      cell=((longitude/16)+latitude)&1;
+      colour=(unsigned char)(cell?12:15);
+      if(last==255){last=colour;start=dx;}
+      else if(colour!=last){ega_span(cy+dy,cx+start,cx+dx-1,last);start=dx;last=colour;}
+    }
+    ega_span(cy+dy,cx+start,cx+inner,last);
+    ega_span(cy+dy,left,left+1,0);ega_span(cy+dy,right-1,right,0);
+  }
+}
+
+static int boing_silhouette_bounds(int screen_y,int cx,int cy,
+                                   int x_radius,int y_radius,
+                                   int *left,int *right)
+{
+  int half,valid=0;
+  half=boing_half_width(screen_y-cy,x_radius,y_radius);
+  if(half>=0){*left=cx-half;*right=cx+half;valid=1;}
+  if(boing_background_colour(screen_y)){
+    half=boing_half_width(screen_y-(cy+5),x_radius,y_radius);
+    if(half>=0){
+      if(!valid){*left=cx+6-half;*right=cx+6+half;valid=1;}
+      else {if(cx+6-half<*left)*left=cx+6-half;if(cx+6+half>*right)*right=cx+6+half;}
+    }
+  }
+  return valid;
+}
+
+static void boing_restore_exposed(int old_x,int old_y,int new_x,int new_y,
+                                  int x_radius,int y_radius)
+{
+  int row,old_left,old_right,new_left,new_right,old_used,new_used;
+  for(row=old_y-y_radius;row<=old_y+y_radius+5;row++){
+    old_used=boing_silhouette_bounds(row,old_x,old_y,x_radius,y_radius,
+                                     &old_left,&old_right);
+    if(!old_used)continue;
+    new_used=boing_silhouette_bounds(row,new_x,new_y,x_radius,y_radius,
+                                     &new_left,&new_right);
+    if(!new_used || new_right<old_left || new_left>old_right)
+      ega_span(row,old_left,old_right,boing_background_colour(row));
+    else {
+      if(old_left<new_left)
+        ega_span(row,old_left,new_left-1,boing_background_colour(row));
+      if(old_right>new_right)
+        ega_span(row,new_right+1,old_right,boing_background_colour(row));
+    }
+  }
+}
+
+static void boing_saver_loop(unsigned start_x,unsigned start_y)
+{
+  const int x_radius=80,y_radius=58,floor_y=334;
+  int x=90,y=70,old_x=x,old_y=y,phase=0;
+  int x_fixed=x*16,y_fixed=y*16,dx_fixed=40,dy_fixed=8,phase_fixed=0;
+  unsigned long last_tick=bios_ticks(),tick;
+  boing_background();
+  boing_shadow(x,y,x_radius,y_radius);
+  boing_ball(x,y,x_radius,y_radius,phase);
+  while(!saver_input(start_x,start_y)){
+    tick=bios_ticks();if(tick==last_tick)continue;last_tick=tick;
+    old_x=x;old_y=y;
+    x_fixed+=dx_fixed;y_fixed+=dy_fixed;dy_fixed+=2;
+    phase_fixed=(phase_fixed+24)&511;
+    x=x_fixed/16;y=y_fixed/16;phase=phase_fixed/16;
+    if(x-x_radius<10){x=x_radius+10;x_fixed=x*16;dx_fixed=abs(dx_fixed);}
+    else if(x+x_radius>629){x=629-x_radius;x_fixed=x*16;dx_fixed=-abs(dx_fixed);}
+    if(y+y_radius>=floor_y){y=floor_y-y_radius;y_fixed=y*16;dy_fixed=-112;}
+    if(y-y_radius<8){y=y_radius+8;y_fixed=y*16;dy_fixed=abs(dy_fixed);}
+    wait_vertical_retrace();
+    boing_shadow(x,y,x_radius,y_radius);
+    boing_ball(x,y,x_radius,y_radius,phase);
+    boing_restore_exposed(old_x,old_y,x,y,x_radius,y_radius);
+  }
+}
+
+static void halftone_dot(int column,int row,int radius,
+                         unsigned char background,unsigned char foreground)
+{
+  int x=column*16,y=row*14,dy,half,x_radius;
+  ega_rectangle(x,y,16,14,background);
+  if(!radius)return;
+  x+=8;y+=7;x_radius=(radius*4+2)/3;
+  for(dy=-radius;dy<=radius;dy++){
+    half=x_radius*boing_isqrt(radius*radius-dy*dy)/radius;
+    ega_span(y+dy,x-half,x+half,foreground);
+  }
+}
+
+static void halftone_reset(unsigned char *background,unsigned char *foreground)
+{
+  static const unsigned char dark[7]={1,2,3,4,5,6,8};
+  static const unsigned char bright[7]={9,10,11,12,13,14,15};
+  int i;HALFTONE_MASS *mass;
+  *background=dark[saver_random(7)];*foreground=bright[saver_random(7)];
+  ega_rectangle(0,0,640,350,*background);
+  memset(halftone_previous,0xFF,sizeof(halftone_previous));
+  for(i=0;i<HALFTONE_MASSES;i++){
+    mass=&halftone_masses[i];
+    mass->x=20+(int)saver_random(600);mass->y=20+(int)saver_random(310);
+    mass->dx=1+(int)saver_random(3);mass->dy=1+(int)saver_random(2);
+    if(saver_random(2))mass->dx=-mass->dx;
+    if(saver_random(2))mass->dy=-mass->dy;
+    mass->mass=3600+(int)saver_random(5200);
+  }
+}
+
+static void halftone_move_masses(void)
+{
+  int i;HALFTONE_MASS *mass;
+  for(i=0;i<HALFTONE_MASSES;i++){
+    mass=&halftone_masses[i];mass->x+=mass->dx;mass->y+=mass->dy;
+    if(mass->x<0){mass->x=0;mass->dx=abs(mass->dx);}
+    else if(mass->x>639){mass->x=639;mass->dx=-abs(mass->dx);}
+    if(mass->y<0){mass->y=0;mass->dy=abs(mass->dy);}
+    else if(mass->y>349){mass->y=349;mass->dy=-abs(mass->dy);}
+  }
+}
+
+static void halftone_frame(unsigned char background,unsigned char foreground)
+{
+  int column,row,index,mass_index,px,py,dx,dy,strength,radius;
+  long scaled_dx,scaled_dy;unsigned long distance;
+  HALFTONE_MASS *mass;
+  for(row=0;row<HALFTONE_ROWS;row++)for(column=0;column<HALFTONE_COLS;column++){
+    px=column*16+8;py=row*14+7;strength=0;
+    for(mass_index=0;mass_index<HALFTONE_MASSES;mass_index++){
+      mass=&halftone_masses[mass_index];
+      dx=(px-mass->x)*3/4;dy=py-mass->y;
+      scaled_dx=dx;scaled_dy=dy;
+      distance=(unsigned long)(scaled_dx*scaled_dx+scaled_dy*scaled_dy+80L);
+      strength+=(int)((unsigned long)mass->mass/distance);
+    }
+    radius=strength;if(radius>6)radius=6;
+    index=row*HALFTONE_COLS+column;
+    if(halftone_previous[index]!=(unsigned char)radius){
+      halftone_dot(column,row,radius,background,foreground);
+      halftone_previous[index]=(unsigned char)radius;
+    }
+  }
+}
+
+static void halftone_saver_loop(unsigned start_x,unsigned start_y)
+{
+  unsigned char background,foreground;
+  unsigned long last_tick=bios_ticks(),tick;unsigned frames=0;
+  halftone_reset(&background,&foreground);halftone_frame(background,foreground);
+  while(!saver_input(start_x,start_y)){
+    tick=bios_ticks();if(tick==last_tick)continue;last_tick=tick;
+    halftone_move_masses();wait_vertical_retrace();
+    halftone_frame(background,foreground);
+    if(++frames>=900){halftone_reset(&background,&foreground);frames=0;}
+  }
+}
+
 static void mystify_draw(const int *x,const int *y,unsigned char colour)
 {
   int i;for(i=0;i<4;i++)ega_line(x[i],y[i],x[(i+1)&3],y[(i+1)&3],colour);
@@ -1256,19 +1483,25 @@ static void erase_old_logo_edges(int old_x,int old_y,int new_x,int new_y)
 
 static void logo_saver_loop(unsigned start_x,unsigned start_y)
 {
-  int x=(int)saver_random(640-LOGO_WIDTH+1);
-  int y=(int)saver_random(350-LOGO_HEIGHT+1);
-  int dx=saver_random(2)?2:-2,dy=saver_random(2)?1:-1;
+  const int floor_y=334;
+  int x=(int)saver_random(620-LOGO_WIDTH+1)+10;
+  int y=8+(int)saver_random(floor_y-LOGO_HEIGHT-7);
+  int x_fixed=x*16,y_fixed=y*16;
+  int dx_fixed=saver_random(2)?40:-40,dy_fixed=8;
   unsigned long last_tick=bios_ticks(),tick;
   draw_logo(x,y);
   while(!saver_input(start_x,start_y)){
     int old_x,old_y;
     tick=bios_ticks();if(tick==last_tick)continue;last_tick=tick;
-    old_x=x;old_y=y;x+=dx;y+=dy;
-    if(x<=0){x=0;dx=abs(dx);}
-    else if(x>=640-LOGO_WIDTH){x=640-LOGO_WIDTH;dx=-abs(dx);}
-    if(y<=0){y=0;dy=abs(dy);}
-    else if(y>=350-LOGO_HEIGHT){y=350-LOGO_HEIGHT;dy=-abs(dy);}
+    old_x=x;old_y=y;
+    x_fixed+=dx_fixed;y_fixed+=dy_fixed;dy_fixed+=2;
+    x=x_fixed/16;y=y_fixed/16;
+    if(x<10){x=10;x_fixed=x*16;dx_fixed=abs(dx_fixed);}
+    else if(x+LOGO_WIDTH>630){x=630-LOGO_WIDTH;x_fixed=x*16;dx_fixed=-abs(dx_fixed);}
+    if(y+LOGO_HEIGHT>=floor_y){
+      y=floor_y-LOGO_HEIGHT;y_fixed=y*16;dy_fixed=-112;
+    }
+    if(y<8){y=8;y_fixed=y*16;dy_fixed=abs(dy_fixed);}
     wait_vertical_retrace();draw_logo(x,y);
     erase_old_logo_edges(old_x,old_y,x,y);
   }
@@ -1291,7 +1524,9 @@ static void run_screensaver(void)
   else if(appearance.screensaver==3)warp_saver_loop(start_x,start_y);
   else if(appearance.screensaver==4)logo_saver_loop(start_x,start_y);
   else if(appearance.screensaver==5)pipes_saver_loop(start_x,start_y);
-  else mystify_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==6)mystify_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==7)boing_saver_loop(start_x,start_y);
+  else halftone_saver_loop(start_x,start_y);
   memset(&r,0,sizeof(r));r.h.al=(unsigned char)old_mode;int86(0x10,&r,&r);
   if(old_rows>25){memset(&r,0,sizeof(r));r.x.ax=0x1112;r.h.bl=0;int86(0x10,&r,&r);}
   video_init();
@@ -1405,7 +1640,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 2.6 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 2.7 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1431,7 +1666,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 2.6 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 2.7 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\n"
@@ -1794,7 +2029,7 @@ static void text_safe_screen(void)
   textout(x,y,first,0x0C,(int)strlen(first));
   x=(screen_cols-(int)strlen(second))/2;
   textout(x,y+1,second,0x0C,(int)strlen(second));
-  wait_for_escape();restore_screen();cursor_restore();free(saved);saved=0;
+  wait_for_escape();restore_screen();cursor_restore();_ffree(saved);saved=0;
 }
 
 static int bitmap_header(FILE *f,unsigned long *bits)
@@ -1861,7 +2096,7 @@ static int graphics_safe_screen(void)
   video=(unsigned short far *)MAKE_FP(old_mode==7?0xB000:0xB800,0);
   restore_screen();cursor_restore();
   memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=0;r.x.dx=old_cursor;int86(0x10,&r,&r);
-  free(saved);saved=0;return !failed;
+  _ffree(saved);saved=0;return !failed;
 }
 
 static void safe_to_turn_off(void)
@@ -2110,8 +2345,40 @@ static const char *colour_names[16]={
   "Bri Yellow","Bri White"
 };
 
-static const char *screensaver_names[7]={
-  "None","Clock","Starry Nite","Warp","Logo","Pipes","Mystify"
+typedef struct {
+  const char *name;
+  unsigned char colour[11];
+} COLOUR_SCHEME;
+
+static const COLOUR_SCHEME colour_schemes[8]={
+  {"Standard", {1,11,12,14,15,10,15,3,0,7,7}},
+  {"Hot Dog",  {4,0,14,14,7,15,14,0,4,7,12}},
+  {"Mono",     {7,8,0,0,8,0,15,0,7,0,0}},
+  {"Pretty",   {5,12,14,13,7,12,5,3,5,7,15}},
+  {"Pro Style",{7,15,9,0,8,0,11,3,9,1,8}},
+  {"Stealth",  {0,9,14,14,7,15,12,0,9,0,15}},
+  {"Swiss",    {7,8,4,4,8,0,15,0,7,4,8}},
+  {"Tranquil", {3,11,10,10,8,0,10,0,15,2,15}}
+};
+
+static int colour_scheme_index(void)
+{
+  const unsigned char *current=&appearance.background;int i,j;
+  for(i=0;i<8;i++){
+    for(j=0;j<11;j++)if(current[j]!=colour_schemes[i].colour[j])break;
+    if(j==11)return i;
+  }
+  return -1;
+}
+
+static void apply_colour_scheme(int index)
+{
+  unsigned char *current=&appearance.background;int i;
+  for(i=0;i<11;i++)current[i]=colour_schemes[index].colour[i];
+}
+
+static const char *screensaver_names[9]={
+  "None","Clock","Starry Nite","Warp","Logo","Pipes","Mystify","Boing","Halftone"
 };
 
 static const char *saver_delay_names[4]={
@@ -2172,7 +2439,7 @@ static int config_count(int tab)
 {
   if(tab==0)return 2;
   if(tab==1)return 6;
-  if(tab==2)return 11;
+  if(tab==2)return 12;
   if(tab==3)return appearance.screensaver==1?4:3;
   return font_is_vga()?2:0;
 }
@@ -2181,14 +2448,14 @@ static unsigned char *config_field(int tab,int item,int *limit)
 {
   *limit=15;
   if(tab==2)switch(item){
-    case 0:*limit=7;return &appearance.background;
-    case 1:return &appearance.border;case 2:return &appearance.main_title;
-    case 3:return &appearance.titles;case 4:return &appearance.folders;
-    case 5:return &appearance.launchers;case 6:return &appearance.selected_fg;
-    case 7:*limit=7;return &appearance.selected_bg;
-    case 8:return &appearance.controls_fg;
-    case 9:*limit=7;return &appearance.controls_bg;
-    case 10:return &appearance.labels;
+    case 1:*limit=7;return &appearance.background;
+    case 2:return &appearance.border;case 3:return &appearance.main_title;
+    case 4:return &appearance.titles;case 5:return &appearance.folders;
+    case 6:return &appearance.launchers;case 7:return &appearance.selected_fg;
+    case 8:*limit=7;return &appearance.selected_bg;
+    case 9:return &appearance.controls_fg;
+    case 10:*limit=7;return &appearance.controls_bg;
+    case 11:return &appearance.labels;
   }
   if(tab==1){
     if(item==0){*limit=1;return &appearance.menu_top;}
@@ -2199,7 +2466,7 @@ static unsigned char *config_field(int tab,int item,int *limit)
     if(item==5){*limit=2;return &appearance.mouse_cursor;}
   }
   if(tab==3){
-    if(item==0){*limit=6;return &appearance.screensaver;}
+    if(item==0){*limit=8;return &appearance.screensaver;}
     if(appearance.screensaver==1){
       if(item==1)return &appearance.saver_color;
       if(item==2){*limit=3;return &appearance.saver_delay;}
@@ -2217,6 +2484,12 @@ static unsigned char *config_field(int tab,int item,int *limit)
 static void change_config_value(int tab,int item,int direction)
 {
   unsigned char *field;int limit,value;
+  if(tab==2 && item==0){
+    value=colour_scheme_index();
+    if(value<0)value=direction>0?0:7;
+    else {value+=direction;if(value<0)value=7;if(value>7)value=0;}
+    apply_colour_scheme(value);return;
+  }
   field=config_field(tab,item,&limit);if(!field)return;
   if((tab==1 && item>=1 && item<=3) || (tab==4 && item==1)){
     *field=!*field;return;
@@ -2229,7 +2502,7 @@ static void change_config_value(int tab,int item,int direction)
 
 static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
 {
-  int f=focus-CONFIG_CONTROL_BASE,h=hover-CONFIG_CONTROL_BASE;
+  int f=focus-CONFIG_CONTROL_BASE,h=hover-CONFIG_CONTROL_BASE,i;
   if(full)dialog_box(x,y,66,20,"Launch! Configuration");
   draw_config_tabs(x,y+1,tab,focus,hover);
   if(tab==0){
@@ -2247,21 +2520,23 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
               C_INPUT_LABEL,54);
   } else if(tab==2){
     static const char *labels[9]={"Panels","Border","Main Title","Titles","Folders","Launchers","Selected items","Controls","Labels"};
-    int i;
-    textout(x+25,y+4,"Foreground text",C_INPUT_LABEL,15);
-    textout(x+45,y+4,"Background",C_INPUT_LABEL,15);
-    for(i=0;i<9;i++)textout(x+5,y+6+i,labels[i],C_INPUT_LABEL,18);
-    cycle_control(x+45,y+6,colour_names[appearance.background],f==0||h==0);
-    cycle_control(x+25,y+7,colour_names[appearance.border],f==1||h==1);
-    cycle_control(x+25,y+8,colour_names[appearance.main_title],f==2||h==2);
-    cycle_control(x+25,y+9,colour_names[appearance.titles],f==3||h==3);
-    cycle_control(x+25,y+10,colour_names[appearance.folders],f==4||h==4);
-    cycle_control(x+25,y+11,colour_names[appearance.launchers],f==5||h==5);
-    cycle_control(x+25,y+12,colour_names[appearance.selected_fg],f==6||h==6);
-    cycle_control(x+45,y+12,colour_names[appearance.selected_bg],f==7||h==7);
-    cycle_control(x+25,y+13,colour_names[appearance.controls_fg],f==8||h==8);
-    cycle_control(x+45,y+13,colour_names[appearance.controls_bg],f==9||h==9);
-    cycle_control(x+25,y+14,colour_names[appearance.labels],f==10||h==10);
+    int scheme=colour_scheme_index();
+    textout(x+5,y+4,"Color scheme",C_INPUT_LABEL,18);
+    cycle_control(x+25,y+4,scheme<0?"Custom":colour_schemes[scheme].name,f==0||h==0);
+    textout(x+25,y+6,"Foreground",C_INPUT_LABEL,15);
+    textout(x+45,y+6,"Background",C_INPUT_LABEL,15);
+    for(i=0;i<9;i++)textout(x+5,y+7+i,labels[i],C_INPUT_LABEL,18);
+    cycle_control(x+45,y+7,colour_names[appearance.background],f==1||h==1);
+    cycle_control(x+25,y+8,colour_names[appearance.border],f==2||h==2);
+    cycle_control(x+25,y+9,colour_names[appearance.main_title],f==3||h==3);
+    cycle_control(x+25,y+10,colour_names[appearance.titles],f==4||h==4);
+    cycle_control(x+25,y+11,colour_names[appearance.folders],f==5||h==5);
+    cycle_control(x+25,y+12,colour_names[appearance.launchers],f==6||h==6);
+    cycle_control(x+25,y+13,colour_names[appearance.selected_fg],f==7||h==7);
+    cycle_control(x+45,y+13,colour_names[appearance.selected_bg],f==8||h==8);
+    cycle_control(x+25,y+14,colour_names[appearance.controls_fg],f==9||h==9);
+    cycle_control(x+45,y+14,colour_names[appearance.controls_bg],f==10||h==10);
+    cycle_control(x+25,y+15,colour_names[appearance.labels],f==11||h==11);
   } else if(tab==1){
     textout(x+5,y+4,"Menu position",C_INPUT_LABEL,18);
     cycle_control(x+25,y+4,appearance.menu_top?"Top":"Bottom",f==0||h==0);
@@ -2296,8 +2571,10 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
     check_line(x+25,y+6,"Persist",appearance.font_persist,f==1||h==1);
     draw_character_preview(x+5,y+9);
   } else textout(x+7,y+9,"Font customization requires a VGA display adapter",C_INPUT_LABEL,52);
+  for(i=1;i<65;i++)cell(x+i,y+16,196,C_BORDER);
   draw_button(x+5,y+17,"  Save  ",8,focus==20||hover==20);
   draw_button(x+16,y+17,"  Cancel  ",10,focus==21||hover==21);
+  textout(x+50,y+17,"Version 2.7",C_INPUT_LABEL,11);
 }
 
 static int config_hit(int x,int y,int tab,int mx,int my)
@@ -2310,13 +2587,13 @@ static int config_hit(int x,int y,int tab,int mx,int my)
        mx<(config_shortcut_active?x+55:x+57))return CONFIG_CONTROL_BASE;
     if(my==y+11&&mx>=x+31&&mx<x+41)return CONFIG_CONTROL_BASE+1;
   } else if(tab==2){
-    static const int rows[8]={7,8,9,10,11,12,13,14};
-    static const int items[8]={1,2,3,4,5,6,8,10};
+    static const int rows[9]={4,8,9,10,11,12,13,14,15};
+    static const int items[9]={0,2,3,4,5,6,7,9,11};
     if(mx>=x+25&&mx<x+40)
-      for(i=0;i<8;i++)if(my==y+rows[i])return CONFIG_CONTROL_BASE+items[i];
-    if(mx>=x+45&&mx<x+60&&my==y+6)return CONFIG_CONTROL_BASE;
-    if(mx>=x+45&&mx<x+60&&my==y+12)return CONFIG_CONTROL_BASE+7;
-    if(mx>=x+45&&mx<x+60&&my==y+13)return CONFIG_CONTROL_BASE+9;
+      for(i=0;i<9;i++)if(my==y+rows[i])return CONFIG_CONTROL_BASE+items[i];
+    if(mx>=x+45&&mx<x+60&&my==y+7)return CONFIG_CONTROL_BASE+1;
+    if(mx>=x+45&&mx<x+60&&my==y+13)return CONFIG_CONTROL_BASE+8;
+    if(mx>=x+45&&mx<x+60&&my==y+14)return CONFIG_CONTROL_BASE+10;
   } else if(tab==1){
     static const int rows[6]={4,6,8,10,12,14};
     for(i=0;i<6;i++)if(my==y+rows[i]&&mx>=x+25&&mx<x+63)
@@ -3088,7 +3365,7 @@ static void highlight_explore_entry(int x,int y,int top,int index,int selected)
   if(relative<0 || relative>=EXPLORE_ROWS*EXPLORE_COLS ||
      index<0 || index>=explore_count)return;
   column=relative/EXPLORE_ROWS;row=relative%EXPLORE_ROWS;
-  row_attribute(x+2+column*18,y+5+row,16,
+  row_attribute(x+2+column*18,y+6+row,16,
                 explore_entry_attribute(index,selected));
 }
 
@@ -3101,7 +3378,7 @@ static void select_explore_entry(int x,int y,int next,int *selected,int *top,
   wait_vertical_retrace();
   highlight_explore_entry(x,y,*top,old,old==hover);*selected=next;
   highlight_explore_entry(x,y,*top,next,1);
-  explore_selection_field(x+2,y+3,path,next);
+  explore_selection_field(x+2,y+2,path,next);
 }
 
 static void change_explore_hover(int x,int y,int top,int old_hover,
@@ -3116,15 +3393,15 @@ static void change_explore_hover(int x,int y,int top,int old_hover,
 
 static void draw_explore_buttons(int x,int y,int focus,int hover)
 {
-  draw_button(x+4,y+20,"  Run  ",7,focus==1||hover==1);
-  draw_button(x+14,y+20,"  Params  ",10,focus==2||hover==2);
-  draw_button(x+27,y+20,"  /?  ",7,focus==3||hover==3);
-  draw_button(x+61,y+20,"  Cancel  ",10,focus==4||hover==4);
+  draw_button(x+4,y+18,"  Run  ",7,focus==1||hover==1);
+  draw_button(x+14,y+18,"  Params  ",10,focus==2||hover==2);
+  draw_button(x+27,y+18,"  /?  ",7,focus==3||hover==3);
+  draw_button(x+61,y+18,"  Cancel  ",10,focus==4||hover==4);
 }
 
 static int explore_dialog(void)
 {
-  int x=(screen_cols-76)/2,y=(screen_rows-23)/2,k,mx=0,my=0;
+  int x=(screen_cols-76)/2,y=(screen_rows-21)/2,k,mx=0,my=0;
   int selected=0,hover_entry=-1,top=0,page=EXPLORE_ROWS*EXPLORE_COLS;
   int focus=0,hover_control=-1,redraw=1;
   int i,row,column,index,action;unsigned mb;
@@ -3137,35 +3414,38 @@ static int explore_dialog(void)
     if(selected>=explore_count)selected=explore_count?explore_count-1:-1;
     if(selected>=0 && selected<top)top=(selected/page)*page;
     if(selected>=0 && selected>=top+page)top=(selected/page)*page;
-    if(redraw){dialog_box(x,y,76,23,"Explore & Run");
-    explore_drive_bar(x+2,y+2,focus>=5?focus-5:-1);
-    explore_selection_field(x+2,y+3,path,selected);
-    cell(x,y+4,195,C_BORDER);cell(x+75,y+4,180,C_BORDER);
-    cell(x,y+19,195,C_BORDER);cell(x+75,y+19,180,C_BORDER);
-    for(i=1;i<75;i++){cell(x+i,y+4,196,C_BORDER);cell(x+i,y+19,196,C_BORDER);}
+    if(redraw){dialog_box(x,y,76,21,"Explore & Run");
+    explore_selection_field(x+2,y+2,path,selected);
+    cell(x,y+3,195,C_BORDER);cell(x+75,y+3,180,C_BORDER);
+    for(i=1;i<75;i++)cell(x+i,y+3,196,C_BORDER);
+    explore_drive_bar(x+2,y+4,focus>=5?focus-5:-1);
+    cell(x,y+5,195,C_BORDER);cell(x+75,y+5,180,C_BORDER);
+    for(i=1;i<75;i++)cell(x+i,y+5,196,C_BORDER);
+    cell(x,y+17,195,C_BORDER);cell(x+75,y+17,180,C_BORDER);
+    for(i=1;i<75;i++)cell(x+i,y+17,196,C_BORDER);
     for(column=0;column<EXPLORE_COLS;column++)for(row=0;row<EXPLORE_ROWS;row++){
       index=top+column*EXPLORE_ROWS+row;
-      if(index<explore_count)textout(x+2+column*18,y+5+row,explore_entries[index].name,
+      if(index<explore_count)textout(x+2+column*18,y+6+row,explore_entries[index].name,
         explore_entry_attribute(index,index==selected||index==hover_entry),16);
-      else textout(x+2+column*18,y+5+row,"",C_MENU_BACKGROUND,16);
+      else textout(x+2+column*18,y+6+row,"",C_MENU_BACKGROUND,16);
     }
-    cell(x+73,y+5,top>0?30:' ',C_BUTTON);
-    cell(x+73,y+18,top+page<explore_count?31:' ',C_BUTTON);
-    if(!explore_count)textout(x+2,y+5,"No executable files or directories",C_EMPTY,38);
+    cell(x+73,y+6,top>0?30:' ',C_BUTTON);
+    cell(x+73,y+16,top+page<explore_count?31:' ',C_BUTTON);
+    if(!explore_count)textout(x+2,y+6,"No executable files or directories",C_EMPTY,38);
     draw_explore_buttons(x,y,focus,hover_control);
     redraw=0;}
     wait_input(&k,&mx,&my,&mb);
     if(mb&MOUSE_MOVED){
       int next_hover=-1,next_control=-1;
-      if(my>=y+5 && my<y+19 && mx>=x+2 && mx<x+72){
-        column=(mx-(x+2))/18;row=my-(y+5);
+      if(my>=y+6 && my<y+17 && mx>=x+2 && mx<x+72){
+        column=(mx-(x+2))/18;row=my-(y+6);
         index=top+column*EXPLORE_ROWS+row;
         if(index<explore_count)next_hover=index;
       }
-      else if(my==y+20 && mx>=x+4 && mx<x+11)next_control=1;
-      else if(my==y+20 && mx>=x+14 && mx<x+24)next_control=2;
-      else if(my==y+20 && mx>=x+27 && mx<x+34)next_control=3;
-      else if(my==y+20 && mx>=x+61 && mx<x+71)next_control=4;
+      else if(my==y+18 && mx>=x+4 && mx<x+11)next_control=1;
+      else if(my==y+18 && mx>=x+14 && mx<x+24)next_control=2;
+      else if(my==y+18 && mx>=x+27 && mx<x+34)next_control=3;
+      else if(my==y+18 && mx>=x+61 && mx<x+71)next_control=4;
       change_explore_hover(x,y,top,hover_entry,next_hover,selected);
       hover_entry=next_hover;
       if(next_control!=hover_control){hover_control=next_control;
@@ -3173,7 +3453,7 @@ static int explore_dialog(void)
       continue;
     }
     if(mb&1){
-      if(my==y+2){
+      if(my==y+4){
         drive=explore_drive_at(mx);
         if(drive>=0 && drive!=toupper((unsigned char)path[0])-'A'){
           path[0]=(char)('A'+drive);strcpy(path+1,":\\");
@@ -3182,14 +3462,14 @@ static int explore_dialog(void)
         }
         continue;
       }
-      if(my>=y+5 && my<y+19 && mx>=x+2 && mx<x+74){
+      if(my>=y+6 && my<y+17 && mx>=x+2 && mx<x+74){
         focus=0;
         if(mx>=x+72){
           if(my<y+12 && top>0){top-=page;selected=top;hover_entry=-1;redraw=1;}
           else if(my>=y+12 && top+page<explore_count){top+=page;selected=top;hover_entry=-1;redraw=1;}
           last_click=-1;
         } else {
-          column=(mx-(x+2))/18;row=my-(y+5);index=top+column*EXPLORE_ROWS+row;
+          column=(mx-(x+2))/18;row=my-(y+6);index=top+column*EXPLORE_ROWS+row;
           if(index<explore_count){
             tick=*(unsigned long far *)MAKE_FP(0x40,0x6C);
             if(index==last_click && tick>=last_click_tick && tick-last_click_tick<=9UL){
@@ -3207,26 +3487,26 @@ static int explore_dialog(void)
         }
         continue;
       }
-      if(my==y+20 && mx>=x+4 && mx<x+11){
-        focus=1;press_button(x+4,y+20,"  Run  ",7);
+      if(my==y+18 && mx>=x+4 && mx<x+11){
+        focus=1;press_button(x+4,y+18,"  Run  ",7);
         action=explore_activate(path,selected);
         last_click=-1;
         if(action==1)return 1;
         if(action==2){if(!explore_load(path))notice_box("Explore Error","Unable to read that directory.");selected=-1;top=focus=0;hover_entry=-1;redraw=1;}
         continue;
       }
-      if(my==y+20 && mx>=x+14 && mx<x+24){
-        focus=2;press_button(x+14,y+20,"  Params  ",10);
+      if(my==y+18 && mx>=x+14 && mx<x+24){
+        focus=2;press_button(x+14,y+18,"  Params  ",10);
         if(explore_params(path,selected))return 1;
         redraw=1;continue;
       }
-      if(my==y+20 && mx>=x+27 && mx<x+34){
-        focus=3;press_button(x+27,y+20,"  /?  ",7);
+      if(my==y+18 && mx>=x+27 && mx<x+34){
+        focus=3;press_button(x+27,y+18,"  /?  ",7);
         if(explore_help(path,selected))return 1;
         redraw=1;continue;
       }
-      if(my==y+20 && mx>=x+61 && mx<x+71){
-        focus=4;press_button(x+61,y+20,"  Cancel  ",10);return 0;
+      if(my==y+18 && mx>=x+61 && mx<x+71){
+        focus=4;press_button(x+61,y+18,"  Cancel  ",10);return 0;
       }
       continue;
     }
@@ -3235,7 +3515,7 @@ static int explore_dialog(void)
       int old_focus=focus;
       focus=explore_tab_focus(focus);wait_vertical_retrace();
       if(old_focus>=5 || focus>=5)
-        explore_drive_bar(x+2,y+2,focus>=5?focus-5:-1);
+        explore_drive_bar(x+2,y+4,focus>=5?focus-5:-1);
       if((old_focus>=1 && old_focus<=4) || (focus>=1 && focus<=4))
         draw_explore_buttons(x,y,focus,hover_control);
       continue;
@@ -3255,7 +3535,7 @@ static int explore_dialog(void)
       if(new_drive!=old_drive || focus==0){
         if(focus)focus=new_drive+5;
         wait_vertical_retrace();
-        explore_drive_bar(x+2,y+2,focus>=5?focus-5:-1);
+        explore_drive_bar(x+2,y+4,focus>=5?focus-5:-1);
       }
       continue;
     }
@@ -3659,6 +3939,7 @@ static int font_resident(unsigned *resident)
   unsigned long vector=dos_get_vector(0x10);unsigned seg=(unsigned)(vector>>16);
   unsigned char far *p;
   if((unsigned)vector!=FONT_INT10_OFF)return 0;
+  /* LAFONT22 is the stable resident ABI signature, not the release number. */
   p=(unsigned char far *)MAKE_FP(seg,FONT_MARK_OFF);
   if(p[0]!='L'||p[1]!='A'||p[2]!='F'||p[3]!='O'||p[4]!='N'||p[5]!='T'||
      p[6]!='2'||p[7]!='2')return 0;
@@ -4175,7 +4456,7 @@ static void shortcut_idle_sync(void)
 
 static void show_help(void)
 {
-  puts("Launch! 2.6 - a lightweight command menu for DOS\n");
+  puts("Launch! 2.7 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /EXPLORE | /NOW | /USE=file.mnu | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");

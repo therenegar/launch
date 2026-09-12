@@ -1,10 +1,11 @@
 Launch!
 =======
 
+Release 2.7
+
 A lightweight launcher for any DOS, with huge features to improve the usability of the command prompt - and make it more convenient and friendly.
 
 Download the latest release at https://github.com/therenegar/launch/releases/latest
-
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
 
 Requires DOS 3.3, 80286, EGA or better. 
@@ -22,7 +23,7 @@ Features
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
-- Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes and mystifying polygons.
+- Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball and halftone pattern.
 - Custom VGA display fonts to change the look of your whole DOS environment.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
@@ -37,7 +38,7 @@ Extract the release zip file or mount the floppy image:
 - You'll be prompted for a directory to place Launch!
 - The necessary files will be copied and you will be prompted for all changes to AUTOEXEC.BAT
 - The keyboard shortcut can be chosen
-- Your drive can be scanned and an initial menu built from a comprehensive database of over 1000 DOS programs.
+- Your drive can be scanned and an initial menu built.
 - Simply reboot after install and you're ready to go.
 
 > DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
@@ -59,7 +60,8 @@ To start Launch! without the keyboard shortcut, at the command prompt, simply en
 !
 
 
-* How it works
+--- How it works ---
+
 Launch! does not execute the selected program itself. Rather, it returns to the existing command interpreter, types the configured command and, if selected, supplies Enter. This means shell commands, redirection, pipelines, batch files, executable files and deliberately unfinished command lines can all be used. No secondary command processor is started or additional shells. Launch! does not interfere with program execution or return.
 This approach provides maximum flexibility, and compatibility. *If it can be run from the command prompt, it will work with Launch!*.
 
@@ -67,16 +69,15 @@ LAUNCH.CFG stores configuration settings and LAUNCH.MNU contains the menu data. 
 Launch! locates and saves LAUNCH.MNU beside !.EXE, regardless of the current working directory. This works both with a full executable path and when !.EXE is found via PATH.
 
 
-* Parameters
+--- Parameters ---
 The Launch! executable ! has some useful parameters:
 
 - /? - show Launch! help
 - /CONFIG - show the configuration dialog
 - /EXPLORE - open the Explore & Run dialog directly without the menu
 - /NOW - start the configured screensaver immediately
-- /USE=file.mnu - use an alternative menu file from the default launch.mnu. It will be assumed to be beside !.EXE unless a full path is provided. 
-  This can allow to make use of different menu configurations. 
-- /OPENTO=folder - open the Launch! menu to the specified folder, e.g. /OPENTO=Games would show the menu with the Games sub-menu already open.
+- /USE=file.mnu - use an alternative menu file from the default launch.mnu. It will be assumed to be beside !.EXE unless a full path is provided. This allows you to make use of different menu configurations. 
+- /OPENTO=folder - open the Launch! menu to the specified folder, e.g. /OPENTO="System Tools" would show the menu with the System Tools sub-menu already open. 
 
 
 Keyboard usage
@@ -115,19 +116,23 @@ Cancel will return the previous configuration.
 Settings are saved to LAUNCH.CFG, a plain text file you can also edit yourself.
 If LAUNCH.CFG is absent or malformed, Launch! uses the defaults. 
 
-* Shortcut
+--- Shortcut 
+
 You can view the current status of the shortcut utility, current key combination, and set a new combination.
 If the shortcut is active, you can unload it - removing all traces of the TSR from memory.
-If the shortcut is inactive, you and activate the shortcut - which will install the required line in your AUTOEXEC.BAT and reboot.
-Note that changing the combination also requires a reboot to apply.
+If the shortcut is inactive, you can activate the shortcut - which will install the required line in your AUTOEXEC.BAT and reboot.
+Note that changing the key combination also requires a reboot to apply.
 
-* Menu
+--- Menu 
+
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-* Colors
-You can change the colors for all elements in the user interface.
+--- Colors 
 
-* Screensaver
+There are 8 pre-defined color schemes to choose from, or you can change the colors for any interface element to your liking.
+
+--- Screensaver 
+
 You can select which screensaver to show, choose None to disable this functionality.
 You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).
 Click Preview for an instant preview of the currently selected screensaver.
@@ -135,7 +140,8 @@ Click Preview for an instant preview of the currently selected screensaver.
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
 
-*  Font
+--- Font 
+
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. Standard uses the system VGA BIOS rom font. 
 
 If you choose Persist, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without Persist, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking Persist if already active at any time, will release the 4KB of memory back.
@@ -147,22 +153,25 @@ Live menu management
 --------------------
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to LAUNCH.MNU. 
 
-Each menu panel can display 20 items. Adding a 21st item automatically creates a **More** folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. **More** is kept at the bottom when the menu is sorted.
+Each menu panel can display 20 items. Adding a 21st item automatically creates a More folder at the bottom and moves the overflow into it. Further overflow is handled the same way, up to the four-level menu limit. More is kept at the bottom when the menu is sorted.
 
 CTRL+A allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
 CTRL+E will show you the edit dialog to modify a launcher.
 
-When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.
+When Change directory first is selected, Launch! extracts the directory from the first command token when the launcher is run.
 E.g. for C:\TOOLS\APP.EXE it types C:, presses Enter, types CD C:\TOOLS, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. Commands without a path do not cause a directory change.
 
-* Parameter prompting and help
+--- Parameter prompting and help 
+
 If a launcher has Prompt? activated, when launched from the menu, the parameter entry dialog will be displayed.
-You will be able to enter parameters before running the program. 
+You will be able to enter parameters before running the program.
 
-You can also choose to view command help for assistance in entering parameters.
+You can also view command help for assistance in entering parameters by choosing /?.
 
-* Manual menu configuration
+
+Manual menu configuration
+-------------------------
 LAUNCH.MNU is a plain text file that you can edit yourself with any text editor.
 Within the LAUNCH.MNU file, sections represent menu paths. Separate nesting levels with a backslash:
 
@@ -222,23 +231,29 @@ Pressing any key or moving the mouse will return the screen.
 
 The screensavers have been designed to use the EGA 640x350 screen mode, using absolutely minimal resources, and look amazing on a CRT!
 
-* Clock
+--- Clock 
 The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in ! /CONFIG
 
-* Starry Nite
+--- Starry Nite 
 A random skyline will be generated each time.
 
-* Logo
+--- Logo 
 The DOS logo will bounce around the screen.
 
-* Warp
+--- Warp 
 Go at warp speed to absolutely nowhere.
 
-* Pipes
+--- Pipes 
 3-dimensional pipes with a mind of their own.
 
-* Mystify
+--- Mystify 
 Mystify yourself with the moving polygons.
+
+--- Boing 
+It's a famous 3D bouncing ball.
+
+--- Halftone 
+Random halftone gravity-mass pattern, random colors each time.
 
 
 SHORTCUT - keyboard shortcut tool

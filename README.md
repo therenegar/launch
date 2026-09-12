@@ -21,7 +21,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
-- Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes and mystifying polygons.
+- Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball and halftone pattern.
 - Custom VGA display fonts to change the look of your whole DOS environment.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
@@ -41,7 +41,7 @@ Extract the release zip file or mount the floppy image:
 
 > DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
 
-> If you already have Launch! installed, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
+> **If you already have Launch! installed**, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
 
 
 ## Usage
@@ -132,7 +132,7 @@ You can choose where the menu is positioned, what options are displayed, the tim
 
 ### Colors
 
-You can change the colors for all elements in the user interface.
+There are 8 pre-defined color schemes to choose from, or you can change the colors for any interface element to your liking.
 
 <img width="720" height="600" alt="Config-Colors" src="https://github.com/user-attachments/assets/dc8772c4-12b2-471f-9337-807a9d25e363" />
 
@@ -287,6 +287,16 @@ Go at warp speed to absolutely nowhere.
 <img width="720" height="600" alt="Screensaver - Mystify" src="https://github.com/user-attachments/assets/5bc92bfd-1aaa-4625-9a46-1cd1258d1c5c" />
 
 Mystify yourself with the moving polygons.
+
+
+### Boing
+
+It's a famous 3D bouncing ball.
+
+
+### Halftone
+
+Random halftone gravity-mass pattern, random colors each time.
 
 
 ## SHORTCUT - keyboard shortcut tool

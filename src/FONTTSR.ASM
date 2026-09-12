@@ -1,4 +1,4 @@
-/* Launch! 2.6 resident VGA font keeper.
+/* Launch! 2.7 resident VGA font keeper.
  * Hooks only INT 10h; previews and selection use the VGA BIOS directly.
  */
 .code16
@@ -10,6 +10,7 @@
 _start:
 old_int10:      .word 0, 0
 active_id:      .byte 0
+/* Stable resident ABI signature; this is not the Launch! release number. */
 resident_mark:  .ascii "LAFONT22"
 .balign 2
 active_font:
