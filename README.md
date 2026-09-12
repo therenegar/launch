@@ -119,8 +119,8 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can view the current status of the shortcut utility, current key combination, and set a new combination.<br/>
 If the shortcut is active, you can unload it - removing all traces of the TSR from memory.<br/>
-If the shortcut is inactive, you and activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
-Note that changing the combination also requires a reboot to apply.
+If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
+Note that changing the key combination also requires a reboot to apply.
 
 <img width="720" height="600" alt="ShortcutActive" src="https://github.com/user-attachments/assets/a63a7ddb-bc65-438f-8f03-646005e2aac9" />
 
