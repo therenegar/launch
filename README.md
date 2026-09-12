@@ -292,13 +292,13 @@ Mystify yourself with the moving polygons.
 
 ### Boing
 
-It's a famous 3D bouncing ball.
+It's the famous 3D bouncing ball.
 
 <img width="720" height="600" alt="Screenshot: Boing Screensaver" src="https://github.com/user-attachments/assets/9f53999d-33b4-4441-ba52-b954c7417140" />
 
 ### Halftone
 
-Random halftone gravity-mass pattern, random colors each time.
+Random halftone gravity-mass pattern with cycling colors.
 
 <img width="720" height="600" alt="Screenshot: Halftone Screensaver" src="https://github.com/user-attachments/assets/6993019b-3c27-4c80-9a1a-d6119a9a67cf" />
 
