@@ -122,19 +122,20 @@ If the shortcut is active, you can unload it - removing all traces of the TSR fr
 If the shortcut is inactive, you and activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
 Note that changing the combination also requires a reboot to apply.
 
-<img width="720" height="600" alt="ConfigShortcut" src="https://github.com/user-attachments/assets/aa22ad0f-d974-48ec-9c6d-9ad987f88167" />
+<img width="720" height="600" alt="ShortcutActive" src="https://github.com/user-attachments/assets/a63a7ddb-bc65-438f-8f03-646005e2aac9" />
 
 ### Menu
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="720" height="600" alt="ConfigMenu" src="https://github.com/user-attachments/assets/7ea945d4-5f70-4fb0-9527-f255e636b300" />
+<img width="720" height="600" alt="Config-Menu" src="https://github.com/user-attachments/assets/042c6b47-037f-45b3-9a7b-c753a87ec623" />
 
 ### Colors
 
 You can change the colors for all elements in the user interface.
 
-<img width="720" height="600" alt="ConfigColors" src="https://github.com/user-attachments/assets/bc091252-5411-452c-8c46-b09c79af715a" />
+<img width="720" height="600" alt="Config-Colors" src="https://github.com/user-attachments/assets/dc8772c4-12b2-471f-9337-807a9d25e363" />
+
 
 ### Screensaver
 
@@ -142,7 +143,7 @@ You can select which screensaver to show, choose `None` to disable this function
 You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).<br/>
 Click `Preview` for an instant preview of the currently selected screensaver.
 
-<img width="720" height="600" alt="ConfigSaver" src="https://github.com/user-attachments/assets/4e271a89-63f6-486f-a10c-27330660ff06" />
+<img width="720" height="600" alt="Config-Screensaver" src="https://github.com/user-attachments/assets/c6288041-8362-42b1-9fc7-0d42d2a383ed" />
 
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
@@ -151,7 +152,7 @@ If the shortcut utility is not loaded, the screensaver will only start when the 
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
-<img width="720" height="600" alt="ConfigFont" src="https://github.com/user-attachments/assets/d04106fd-d6fe-492b-b9f7-1c631b1892a7" />
+<img width="720" height="600" alt="Config-Font" src="https://github.com/user-attachments/assets/e6497a92-45bf-44ea-b8cf-d5dcd2c43f91" />
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
