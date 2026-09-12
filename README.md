@@ -254,7 +254,7 @@ You can also start the selected screensaver at any time by running ! /NOW.
 
 Pressing any key or moving the mouse will return the screen.
 
-The screensavers have been designed to use the EGA 640x350 screen mode, using absolutely minimal resources (16 color procedurally generated graphics, no bitmaps), and look amazing on a CRT!
+The screensavers have been designed to use the EGA 16 color 640x350 screen mode, using absolutely minimal resources (procedurally generated graphics, no bitmaps), run smoothly on a 286, and look great on a CRT!
 
 **Clock** <br/>
 The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in ! /CONFIG
