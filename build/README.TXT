@@ -23,7 +23,7 @@ Features
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
-- Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball and halftone pattern.
+- 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Custom VGA display fonts to change the look of your whole DOS environment.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
@@ -229,31 +229,24 @@ You can also start the selected screensaver at any time by running ! /NOW.
 
 Pressing any key or moving the mouse will return the screen.
 
-The screensavers have been designed to use the EGA 640x350 screen mode, using absolutely minimal resources, and look amazing on a CRT!
+The screensavers have been designed to use the EGA 640x350 screen mode, using absolutely minimal resources (16 color procedurally generated graphics, no bitmaps), and look amazing on a CRT!
 
---- Clock 
+- Clock 
 The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in ! /CONFIG
 
---- Starry Nite 
-A random skyline will be generated each time.
-
---- Logo 
-The DOS logo will bounce around the screen.
-
---- Warp 
-Go at warp speed to absolutely nowhere.
-
---- Pipes 
-3-dimensional pipes with a mind of their own.
-
---- Mystify 
-Mystify yourself with the moving polygons.
-
---- Boing 
-It's a famous 3D bouncing ball.
-
---- Halftone 
-Random halftone gravity-mass pattern, random colors each time.
+- Boing
+- Logo 
+- Mosaic
+- Mystic
+- Paintball
+- Particles
+- Pipes
+- Scooter
+- Space Junk
+- Space Wars
+- Spiro
+- Starry Nite
+- Warp
 
 
 SHORTCUT - keyboard shortcut tool

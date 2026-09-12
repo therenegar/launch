@@ -3,7 +3,7 @@
 .section .text
 .global _start
 
-/* SHORTCUT.COM 2.7 - tiny prompt-aware Launch! hotkey TSR.
+/* SHORTCUT.COM 2.71 - tiny prompt-aware Launch! hotkey TSR.
  * Build on a modern GNU binutils host:
  *   as --32 SHORTCUT.ASM -o SHORTCUT.O
  *   ld -m elf_i386 -Ttext 0x100 --oformat binary --entry=_start \
@@ -18,6 +18,7 @@ _start:
 old09:          .word 0,0
 old15:          .word 0,0
 old16:          .word 0,0
+old21:          .word 0,0
 old28:          .word 0,0
 old2f:          .word 0,0
 shell_psp:      .word 0
@@ -333,6 +334,34 @@ fill_keyboard_buffer:
     popf
     ret
 
+/* INT 21h/AH=4Bh remains active for the duration of a child program.  Reset
+ * inactivity only after EXEC returns, so time spent outside the command
+ * processor never accrues toward the screen-saver timeout. */
+int21_handler:
+    cmp ah,0x4b
+    jne int21_chain
+    pushf
+    call far ptr cs:[old21]
+    pushf
+    push ax
+    push es
+    mov ax,0x40
+    mov es,ax
+    mov ax,word ptr es:[0x6c]
+    mov word ptr cs:[idle_last],ax
+    mov ax,word ptr es:[0x6e]
+    mov word ptr cs:[idle_last+2],ax
+    cmp byte ptr cs:[pending],2
+    jne int21_exec_done
+    mov byte ptr cs:[pending],0
+int21_exec_done:
+    pop es
+    pop ax
+    popf
+    retf 2
+int21_chain:
+    jmp far ptr cs:[old21]
+
 int28_handler:
     push ax
     push bx
@@ -347,6 +376,18 @@ int28_handler:
     jne int28_have_pending
     cmp byte ptr cs:[idle_enabled],0
     je int28_done
+    mov ah,0x51                       /* do not count child-program idle time */
+    int 0x21
+    cmp bx,word ptr cs:[shell_psp]
+    je int28_check_timeout
+    mov ax,0x40
+    mov es,ax
+    mov ax,word ptr es:[0x6c]
+    mov word ptr cs:[idle_last],ax
+    mov ax,word ptr es:[0x6e]
+    mov word ptr cs:[idle_last+2],ax
+    jmp int28_done
+int28_check_timeout:
     mov ax,0x40
     mov es,ax
     mov ax,word ptr es:[0x6c]
@@ -413,14 +454,14 @@ int2f_handler:
     cmp ax,0xd5b0
     jne 6f
     mov bx,0x5343                     /* "SC" installation signature */
-    mov cx,0x0207                     /* version 2.7 */
+    mov cx,0x0271                     /* version 2.71 */
     push cs
     pop es
     iret
 6:  cmp ax,0xd5b1
     jne 7f
     mov bx,0x554e                     /* "UN" unload-query signature */
-    mov cx,0x0207
+    mov cx,0x0271
     push cs
     pop es
     iret
@@ -511,6 +552,10 @@ installer:
     int 0x21
     mov word ptr [old16],bx
     mov word ptr [old16+2],es
+    mov ax,0x3521
+    int 0x21
+    mov word ptr [old21],bx
+    mov word ptr [old21+2],es
     mov ax,0x3528
     int 0x21
     mov word ptr [old28],bx
@@ -537,6 +582,9 @@ installer:
     int 0x21
     mov dx,offset int2f_handler
     mov ax,0x252f
+    int 0x21
+    mov dx,offset int21_handler
+    mov ax,0x2521
     int 0x21
     pop ds
 
@@ -791,7 +839,7 @@ unload_shortcut:
     int 0x2f
     cmp bx,0x554e
     jne not_installed
-    cmp cx,0x0207
+    cmp cx,0x0271
     jne unload_unsafe
     mov word ptr [resident_seg],es
 
@@ -806,6 +854,10 @@ unload_shortcut:
     mov ax,0x3516
     int 0x21
     call check_16
+    jc unload_unsafe
+    mov ax,0x3521
+    int 0x21
+    call check_21
     jc unload_unsafe
     mov ax,0x3528
     int 0x21
@@ -831,6 +883,9 @@ unload_shortcut:
     mov al,0x2f
     mov bx,offset old2f
     call restore_vector
+    mov al,0x21
+    mov bx,offset old21
+    call restore_vector
     mov es,word ptr [resident_seg]
     mov ah,0x49
     int 0x21
@@ -846,6 +901,9 @@ check_15:
     jmp check_vector
 check_16:
     mov dx,offset int16_handler
+    jmp check_vector
+check_21:
+    mov dx,offset int21_handler
     jmp check_vector
 check_28:
     mov dx,offset int28_handler
@@ -1507,12 +1565,12 @@ msg_unload_unsafe:
     .ascii "Unload that TSR first, or reboot.\r\n$"
 msg_help:
 .ifdef DOSBOX_BUILD
-    .ascii "SHORTCDB 2.7 - DOSBox-X hotkey for Launch!\r\n\r\n"
+    .ascii "SHORTCDB 2.71 - DOSBox-X hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCDB [/KEY=keys]\r\n"
     .ascii "       SHORTCDB /UNLOAD\r\n"
     .ascii "       SHORTCDB /?\r\n\r\n"
 .else
-    .ascii "SHORTCUT 2.7 - prompt-aware hotkey for Launch!\r\n\r\n"
+    .ascii "SHORTCUT 2.71 - prompt-aware hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCUT [/KEY=keys]\r\n"
     .ascii "       SHORTCUT /UNLOAD\r\n"
     .ascii "       SHORTCUT /?\r\n\r\n"

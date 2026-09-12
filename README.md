@@ -21,7 +21,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
-- Awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball and halftone pattern.
+- 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Custom VGA display fonts to change the look of your whole DOS environment.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
@@ -247,60 +247,30 @@ If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 colo
 
 ## Screensavers
 If there has been inactivity for the configured time (1 minute by default), the screen will blank and show a screensaver (by default the Clock).
-You can disable the screensaver completely (choose None) or choose from one of the other 6 screensavers by running `! /CONFIG`.<br/>
-You can also start the selected screensaver at any time by running `! /NOW`.
+
+You can disable the screensaver completely (choose None) or choose from one of the other 6 screensavers by running ! /CONFIG.
+
+You can also start the selected screensaver at any time by running ! /NOW.
 
 Pressing any key or moving the mouse will return the screen.
 
-The screensavers have been designed to use the EGA 640x350 screen mode, using absolutely minimal resources, and look amazing on a CRT!
+The screensavers have been designed to use the EGA 640x350 screen mode, using absolutely minimal resources (16 color procedurally generated graphics, no bitmaps), and look amazing on a CRT!
 
-### Clock
-
-<img width="720" height="600" alt="Screenshot: Clock Screensaver" src="https://github.com/user-attachments/assets/01be0070-cb66-4cdd-96a8-d58dca7e01e5" />
-
-The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in `! /CONFIG`
-
-### Starry Nite
-
-<img width="720" height="600" alt="Screenshot: Starry Nite Screensaver" src="https://github.com/user-attachments/assets/c8916e4b-cfe7-4d72-ae96-531c5eca1ab9" />
-
-A random skyline will be generated each time.
-
-### Logo
-
-<img width="720" height="600" alt="Screenshot: DOS Logo Screensaver" src="https://github.com/user-attachments/assets/508fa7b6-02f0-4c98-b785-47268aba355e" />
-
-The DOS logo will bounce around the screen.
-
-### Warp
-
-<img width="720" height="600" alt="Screenshot: Warp Screensaver" src="https://github.com/user-attachments/assets/5a21e623-d5ad-4776-a455-67af11d40d62" />
-
-Go at warp speed to absolutely nowhere.
-
-### Pipes
-
-<img width="720" height="600" alt="Screenshot: Pipes Screensaver" src="https://github.com/user-attachments/assets/e113e7db-1bff-43d2-8a89-4eea13cf0902" />
-
-3-dimensional pipes with a mind of their own.
-
-### Mystify
-
-<img width="720" height="600" alt="Screenshot: Mystify Screensaver" src="https://github.com/user-attachments/assets/5bc92bfd-1aaa-4625-9a46-1cd1258d1c5c" />
-
-Mystify yourself with the moving polygons.
-
-### Boing
-
-It's the famous 3D bouncing ball.
-
-<img width="720" height="600" alt="Screenshot: Boing Screensaver" src="https://github.com/user-attachments/assets/9f53999d-33b4-4441-ba52-b954c7417140" />
-
-### Halftone
-
-Random halftone gravity-mass pattern with cycling colors.
-
-<img width="720" height="600" alt="Screenshot: Halftone Screensaver" src="https://github.com/user-attachments/assets/6993019b-3c27-4c80-9a1a-d6119a9a67cf" />
+- Clock 
+The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in ! /CONFIG
+- Boing
+- Logo 
+- Mosaic
+- Mystic
+- Paintball
+- Particles
+- Pipes
+- Scooter
+- Space Junk
+- Space Wars
+- Spiro
+- Starry Nite
+- Warp
 
 
 ## SHORTCUT - keyboard shortcut tool

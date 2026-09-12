@@ -1,4 +1,4 @@
-/* Launch! 2.7 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 2.71 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -291,7 +291,7 @@ int main(int argc,char **argv)
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 2.7 Installation");
+  puts("Launch! 2.71 Installation");
   puts("컴컴컴컴컴컴컴컴컴컴컴컴\n");
   printf("Install to directory [C:\\LAUNCH]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
@@ -353,7 +353,7 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 2.7 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- SHORTCUT 2.71 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
   if(!upgrade){printf("\nScan the C drive now for recognized programs\n");

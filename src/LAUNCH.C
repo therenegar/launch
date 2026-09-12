@@ -1,4 +1,4 @@
-/* Launch! 2.7 - modal command menu for DOS
+/* Launch! 2.71 - modal command menu for DOS
  * Microsoft C/C++ 7.0, medium model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -188,7 +188,7 @@ static unsigned char explore_drive_symbols[26];
 static int explore_drive_positions[26];
 
 static const char *sample_config[] = {
-  "; Launch! 2.7 initial menu definition\n",
+  "; Launch! 2.71 initial menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -225,8 +225,8 @@ static void video_init(void)
 
 static int save_screen(void)
 {
-  int i, n = screen_cols * screen_rows;
-  saved=(unsigned short far *)_fmalloc((unsigned long)n*sizeof(unsigned short));
+  unsigned i,n=(unsigned)(screen_cols*screen_rows);
+  saved=(unsigned short far *)_fmalloc(n*2U);
   if(!saved)return 0;
   for (i=0; i<n; ++i) saved[i] = video[i];
   return 1;
@@ -262,7 +262,7 @@ static void cell(int x,int y,int ch,int at)
     video[y*screen_cols+x] = (unsigned short)((at<<8)|(ch&255));
 }
 
-static void wait_vertical_retrace(void)
+void wait_vertical_retrace(void)
 {
   unsigned port=(*(unsigned far *)MAKE_FP(0x40,0x63))+6;
   unsigned count=0xFFFF;
@@ -443,7 +443,9 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SHOW_EXPLORE")){field=&a->show_explore;limit=1;}
   else if(!stricmp(key,"SHOW_POWER")){field=&a->show_power;limit=1;}
   else if(!stricmp(key,"SHOW_TIME")){field=&a->show_time;limit=1;}
-  else if(!stricmp(key,"SCREENSAVER")){field=&a->screensaver;limit=8;}
+  else if(!stricmp(key,"SCREENSAVER")){
+    field=&a->screensaver;limit=14;
+  }
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
   else if(!stricmp(key,"SAVER_DELAY")){field=&a->saver_delay;limit=3;}
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
@@ -636,7 +638,7 @@ static unsigned char draw_clock(int y,unsigned char last_second)
   return r.h.dh;
 }
 
-static unsigned long bios_ticks(void)
+unsigned long bios_ticks(void)
 {
   return *(unsigned long far *)MAKE_FP(0x40,0x6C);
 }
@@ -694,10 +696,11 @@ static HALFTONE_MASS halftone_masses[HALFTONE_MASSES];
 static unsigned char halftone_previous[HALFTONE_COLS*HALFTONE_ROWS];
 static unsigned long saver_random_state=1;
 
-static void ega_span(int y,int left,int right,unsigned char colour);
-static void ega_rectangle(int x,int y,int width,int height,unsigned char colour);
+void ega_span(int y,int left,int right,unsigned char colour);
+void ega_rectangle(int x,int y,int width,int height,unsigned char colour);
+void ega_line(int x0,int y0,int x1,int y1,unsigned char colour);
 
-static unsigned saver_random(unsigned limit)
+unsigned saver_random(unsigned limit)
 {
   saver_random_state=saver_random_state*1103515245UL+12345UL;
   return limit?(unsigned)((saver_random_state>>16)%limit):0;
@@ -770,7 +773,7 @@ static void update_beacons(void)
   }
 }
 
-static void ega_span(int y,int left,int right,unsigned char colour)
+void ega_span(int y,int left,int right,unsigned char colour)
 {
   int first,last,b;unsigned char mask;unsigned offset;
   volatile unsigned char latch;
@@ -794,12 +797,12 @@ static void ega_span(int y,int left,int right,unsigned char colour)
   ega_memory[offset]=colour;(void)latch;
 }
 
-static void ega_rectangle(int x,int y,int width,int height,unsigned char colour)
+void ega_rectangle(int x,int y,int width,int height,unsigned char colour)
 {
   int row;for(row=0;row<height;row++)ega_span(y+row,x,x+width-1,colour);
 }
 
-static void ega_line(int x0,int y0,int x1,int y1,unsigned char colour)
+void ega_line(int x0,int y0,int x1,int y1,unsigned char colour)
 {
   int dx=abs(x1-x0),sx=x0<x1?1:-1,dy=-abs(y1-y0),sy=y0<y1?1:-1;
   int error=dx+dy,twice;
@@ -1010,7 +1013,7 @@ static void mouse_show(void)
   mouse_visible=1;
 }
 
-static int saver_input(unsigned start_x,unsigned start_y)
+int saver_input(unsigned start_x,unsigned start_y)
 {
   int mx=0,my=0;unsigned buttons;
   if(key_waiting()){keyread();return 1;}
@@ -1181,7 +1184,7 @@ static void pipes_saver_loop(unsigned start_x,unsigned start_y)
   }
 }
 
-static int boing_isqrt(int value)
+int boing_isqrt(int value)
 {
   int root=0,bit=0x4000,trial;
   while(bit>value)bit>>=2;
@@ -1507,6 +1510,8 @@ static void logo_saver_loop(unsigned start_x,unsigned start_y)
   }
 }
 
+#include "SAVERS.H"
+
 static void run_screensaver(void)
 {
   union REGS r;int mx=0,my=0,old_mode,old_rows=screen_rows;
@@ -1520,13 +1525,19 @@ static void run_screensaver(void)
   /* A mode change can rescale or reset the mouse driver's coordinates. */
   (void)mouse_poll(&mx,&my);start_x=mouse_raw_x;start_y=mouse_raw_y;
   if(appearance.screensaver==1)clock_saver_loop(start_x,start_y);
-  else if(appearance.screensaver==2)starry_saver_loop(start_x,start_y);
-  else if(appearance.screensaver==3)warp_saver_loop(start_x,start_y);
-  else if(appearance.screensaver==4)logo_saver_loop(start_x,start_y);
-  else if(appearance.screensaver==5)pipes_saver_loop(start_x,start_y);
-  else if(appearance.screensaver==6)mystify_saver_loop(start_x,start_y);
-  else if(appearance.screensaver==7)boing_saver_loop(start_x,start_y);
-  else halftone_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==2)boing_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==3)logo_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==4)abstractile_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==5)mystify_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==6)splotchy_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==7)halftone_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==8)pipes_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==9)scooter_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==10)rocks_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==11)blaster_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==12)squiral_saver_loop(start_x,start_y);
+  else if(appearance.screensaver==13)starry_saver_loop(start_x,start_y);
+  else warp_saver_loop(start_x,start_y);
   memset(&r,0,sizeof(r));r.h.al=(unsigned char)old_mode;int86(0x10,&r,&r);
   if(old_rows>25){memset(&r,0,sizeof(r));r.x.ax=0x1112;r.h.bl=0;int86(0x10,&r,&r);}
   video_init();
@@ -1640,7 +1651,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 2.7 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 2.71 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1666,7 +1677,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 2.7 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 2.71 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\n"
@@ -2377,8 +2388,9 @@ static void apply_colour_scheme(int index)
   for(i=0;i<11;i++)current[i]=colour_schemes[index].colour[i];
 }
 
-static const char *screensaver_names[9]={
-  "None","Clock","Starry Nite","Warp","Logo","Pipes","Mystify","Boing","Halftone"
+static const char *screensaver_names[15]={
+  "None","Clock","Boing","Logo","Mosaic","Mystic","Paintball","Particles",
+  "Pipes","Scooter","Space Junk","Space Wars","Spiro","Starry Nite","Warp"
 };
 
 static const char *saver_delay_names[4]={
@@ -2466,7 +2478,7 @@ static unsigned char *config_field(int tab,int item,int *limit)
     if(item==5){*limit=2;return &appearance.mouse_cursor;}
   }
   if(tab==3){
-    if(item==0){*limit=8;return &appearance.screensaver;}
+    if(item==0){*limit=14;return &appearance.screensaver;}
     if(appearance.screensaver==1){
       if(item==1)return &appearance.saver_color;
       if(item==2){*limit=3;return &appearance.saver_delay;}
@@ -2489,6 +2501,11 @@ static void change_config_value(int tab,int item,int direction)
     if(value<0)value=direction>0?0:7;
     else {value+=direction;if(value<0)value=7;if(value>7)value=0;}
     apply_colour_scheme(value);return;
+  }
+  if(tab==3 && item==0){
+    value=(int)appearance.screensaver;
+    value+=direction;if(value<0)value=14;if(value>14)value=0;
+    appearance.screensaver=(unsigned char)value;return;
   }
   field=config_field(tab,item,&limit);if(!field)return;
   if((tab==1 && item>=1 && item<=3) || (tab==4 && item==1)){
@@ -2574,7 +2591,7 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
   for(i=1;i<65;i++)cell(x+i,y+16,196,C_BORDER);
   draw_button(x+5,y+17,"  Save  ",8,focus==20||hover==20);
   draw_button(x+16,y+17,"  Cancel  ",10,focus==21||hover==21);
-  textout(x+50,y+17,"Version 2.7",C_INPUT_LABEL,11);
+    textout(x+49,y+17,"Version 2.71",C_INPUT_LABEL,12);
 }
 
 static int config_hit(int x,int y,int tab,int mx,int my)
@@ -4456,7 +4473,7 @@ static void shortcut_idle_sync(void)
 
 static void show_help(void)
 {
-  puts("Launch! 2.7 - a lightweight command menu for DOS\n");
+  puts("Launch! 2.71 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /EXPLORE | /NOW | /USE=file.mnu | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
