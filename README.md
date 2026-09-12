@@ -36,7 +36,7 @@ Extract the release zip file or mount the floppy image:
 - You'll be prompted for a directory to place Launch!
 - The necessary files will be copied and you will be prompted for all changes to `AUTOEXEC.BAT`
 - The keyboard shortcut can be chosen
-- Your drive can be scanned and an initial menu built from a comprehensive database of over 1000 DOS programs.
+- Your drive can be scanned and an initial menu built.
 - Simply reboot after install and you're ready to go.
 
 > DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
