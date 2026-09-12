@@ -228,12 +228,15 @@ Choosing `Params` for an executable will show the parameter entry dialog, so you
 <img width="720" height="600" alt="Screenshot: Run with parameters" src="https://github.com/user-attachments/assets/48d860ce-83fb-4dd0-9c2b-a82f8a79d26b" />
 
 Choosing `/?` will show the command's help information (if available) and allow you to provide parameters.
+
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)<br/>
+
 The dialog can also be shown on its own, without the menu, by running `! /EXPLORE`.
 
 
 ## Shutdown
 The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Power Off or Reboot.<br/>
+
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
 <img width="720" height="600" alt="Screenshot: Shutdown" src="https://github.com/user-attachments/assets/067a0daa-2b71-419e-baa5-4406fe889435" />
@@ -248,7 +251,7 @@ If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 colo
 ## Screensavers
 If there has been inactivity for the configured time (1 minute by default), the screen will blank and show a screensaver (by default the Clock).
 
-You can disable the screensaver completely (choose None) or choose from one of the other 6 screensavers by running ! /CONFIG.
+You can disable the screensaver completely (choose None) or choose from one of the other screensavers by running ! /CONFIG.
 
 You can also start the selected screensaver at any time by running ! /NOW.
 
