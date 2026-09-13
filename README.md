@@ -336,7 +336,8 @@ The text contents are persisted when you close the Note, and will be there when 
 
 Choose `Clear` to erase the notepad.
 
-<img width="720" height="600" alt="Accessory - Note" src="https://github.com/user-attachments/assets/79980012-cda5-4757-853a-308a2a940f38" />
+<img width="720" height="600" alt="Accessory - Note" src="https://github.com/user-attachments/assets/ec212315-5595-4a66-b98d-ec32dfd1bd48" />
+
 
 ### !DRAW - Pixel Draw
 
@@ -349,7 +350,8 @@ Right clicking a cell erases it (back to black).
 
 The drawing is persisted and will be there when the program is re-opened.
 
-<img width="720" height="600" alt="Accessory - Pixel Draw" src="https://github.com/user-attachments/assets/af7ce9fb-a154-4c08-841a-ead8d934f9b9" />
+<img width="720" height="600" alt="Accessory - Pixel Draw" src="https://github.com/user-attachments/assets/314f6c6c-763d-4a35-86b2-2c48e528843f" />
+
 
 ### !SYSINFO - System Information
 
