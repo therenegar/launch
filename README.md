@@ -10,7 +10,7 @@ Requires DOS 3.3, 80286, EGA or better.
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="Screenshot: Launch! Menu" src="https://github.com/user-attachments/assets/8a82f1c1-0677-4209-adde-b0f797ecbb21" />
+<img width="720" height="600" alt="menu" src="https://github.com/user-attachments/assets/747d5840-d352-4abb-a22f-9ac6dbeb2f0d" />
 
 
 ## Features
@@ -133,7 +133,7 @@ Note that changing the key combination also requires a reboot to apply.
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="720" height="600" alt="Screenshot: Menu Configuration" src="https://github.com/user-attachments/assets/1474c7a2-cb22-4153-9844-3355f919523a" />
+<img width="720" height="600" alt="config-menu" src="https://github.com/user-attachments/assets/f4ca4382-dc2b-47f2-a6f4-f8817e526009" />
 
 
 ### Colors
@@ -142,7 +142,7 @@ There are 8 pre-defined color schemes to choose from, or you can change the colo
 
 If using a monochrome display, use the 'Mono' scheme for best results.
 
-<img width="720" height="600" alt="Screenshot: Color Configuration" src="https://github.com/user-attachments/assets/a9a2b958-0a1d-4bb1-96ca-f5fec64a7832" />
+<img width="720" height="600" alt="config-colors" src="https://github.com/user-attachments/assets/ca803e62-4f4c-44f5-846a-5707354bd1c7" />
 
 <img width="720" height="600" alt="Screenshot: Color Schemes" src="https://github.com/user-attachments/assets/03caa612-1fa3-4587-bcd1-256dc0b17d35" />
 
@@ -153,7 +153,7 @@ You can select which screensaver to show, choose `None` to disable this function
 You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).<br/>
 Click `Preview` for an instant preview of the currently selected screensaver.
 
-<img width="720" height="600" alt="Screenshot: Screensaver Configuration" src="https://github.com/user-attachments/assets/47331309-23ae-4f15-81f7-5db16eb4b33f" />
+<img width="720" height="600" alt="config-saver" src="https://github.com/user-attachments/assets/68b876aa-5cf4-45e2-8948-812a1bbae3d7" />
 
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
@@ -162,8 +162,7 @@ If the shortcut utility is not loaded, the screensaver will only start when the 
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
-<img width="720" height="600" alt="Screenshot: Font Configuration" src="https://github.com/user-attachments/assets/ef85c274-7ad9-4888-b633-56b4f109495e" />
-
+<img width="720" height="600" alt="config-fonts" src="https://github.com/user-attachments/assets/0c4d728e-4054-43df-abbd-6914cb62f2ad" />
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
