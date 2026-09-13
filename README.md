@@ -126,7 +126,7 @@ If the shortcut is active, you can unload it - removing all traces of the TSR fr
 If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
 Note that changing the key combination also requires a reboot to apply.
 
-<img width="720" height="600" alt="Screenshot: Shortcut Configuration" src="https://github.com/user-attachments/assets/5a102b16-a6e8-44c0-ab04-83673c0bfcc6" />
+<img width="720" height="600" alt="config-shortcut" src="https://github.com/user-attachments/assets/273e451f-d9e1-4995-8069-51a28a761150" />
 
 
 ### Menu
