@@ -320,8 +320,9 @@ A simple calculator, pretty self explanatory!
 A stack of cards. Each card has a title and text, and you can navigate between them. 
 
 Add/Delete cards with the respective buttons.
-
 You can also export all the cards (everything concatenated) into a text file.
+
+Entries are automatically saved, everything is persisted, and all cards will be visible when the program is re-opened.
 
 <img width="720" height="600" alt="Accessory - Cardfile" src="https://github.com/user-attachments/assets/8e2cc58a-cc04-4fb5-965c-516e824df831" />
 
@@ -342,9 +343,9 @@ Choose `Clear` to erase the notepad.
 You can create simple 28 x 12 pixel images, they can be exported as a large bitmap image.
 
 Click a palette color and then draw in the drawing area. The grid can be toggled on/off.
-.
-
 Right clicking a cell erases it (back to black).
+
+The drawing is persisted and will be there when the program is re-opened.
 
 <img width="720" height="600" alt="Accessory - Pixel Draw" src="https://github.com/user-attachments/assets/af7ce9fb-a154-4c08-841a-ead8d934f9b9" />
 
