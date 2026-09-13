@@ -265,94 +265,66 @@ Pressing any key or moving the mouse will return the screen.
 
 The screensavers have been designed to use the EGA 16 color 640x350 screen mode, using absolutely minimal resources (procedurally generated graphics, no bitmaps), run smoothly on a 286, and look great on a CRT!
 
-**Clock** The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in ! /CONFIG
+- **Clock** The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in ! /CONFIG
+- **Boing** The famous pseudo-3D bouncing ball
+- **Logo** The DOS logo bouncing around
+- **Mosaic** A random mosaic tile pattern fills the screen
+- **Mystic** Mystical polygons make moves
+- **Paintball** Dripping paint splotches
+- **Particles** Particle masses intertwine, random colors each time
+- **Pipes** The 3-dimensional pipes with a mind of their own
+- **Scooter** Scoot through the universe
+- **Space Junk** Damn junk flying around in space
+- **Space Wars** A space battle before your eyes
+- **Spiro** Spiraling snakes fill the screen with pixels
+- **Starry Nite** A city skyline twinkles at night
+- **Warp** Zoom through the universe to nowhere
 
 <img width="360" height="300" alt="Clock" src="https://github.com/user-attachments/assets/fa3521ee-3c3f-4db6-9be6-c7f471258980" />
-
-**Boing** The famous pseudo-3D bouncing ball
-
 <img width="360" height="300" alt="Boing" src="https://github.com/user-attachments/assets/fb46506d-d19e-48ca-b390-6e2ade1ed28d" />
-
-**Logo** The DOS logo bouncing around
-
 <img width="360" height="300" alt="Logo" src="https://github.com/user-attachments/assets/5cf5181f-1bf4-46f4-82c9-3fae201a393c" />
-
-**Mosaic** A random mosaic tile pattern fills the screen
-
 <img width="360" height="300" alt="Mosaic" src="https://github.com/user-attachments/assets/00af5d79-19b1-4ba2-b4a7-7c2915e5292d" />
-
-**Mystic** Mystical polygons make moves
-
 <img width="360" height="300" alt="Mystic" src="https://github.com/user-attachments/assets/48c0f0ac-5f6e-4bf8-921b-ce0344062a47" />
-
-**Paintball** Dripping paint splotches
-
 <img width="360" height="300" alt="Paintball" src="https://github.com/user-attachments/assets/dc05581c-704b-49db-8e11-b1d4c25cf7a4" />
-
-**Particles** Particle masses intertwine, random colors each time
-
 <img width="360" height="300" alt="Particles" src="https://github.com/user-attachments/assets/b3ea5e20-e25d-433c-acda-bc1047161974" />
-
-**Pipes** The 3-dimensional pipes with a mind of their own
-
 <img width="360" height="300" alt="Pipes" src="https://github.com/user-attachments/assets/18b5e9b6-a217-4d91-9aba-c24617648fc1" />
-
-**Scooter** Scoot through the universe
-
 <img width="360" height="300" alt="Scooter" src="https://github.com/user-attachments/assets/81b2a363-84df-4e87-b3d9-d3da62fc721e" />
-
-**Space Junk** Damn junk flying around in space
-
 <img width="360" height="300" alt="SpaceJunk" src="https://github.com/user-attachments/assets/ed5fdc8b-7936-4c5b-a2b0-b2eb610d7555" />
-
-**Space Wars** A space battle before your eyes
-
 <img width="360" height="300" alt="SpaceWars" src="https://github.com/user-attachments/assets/98b53a86-547d-4f1d-bfb9-e76c0f42ac8c" />
-
-**Spiro** Spiraling snakes fill the screen with pixels
-
 <img width="360" height="300" alt="Spiro" src="https://github.com/user-attachments/assets/61cc9193-ae96-4eed-a858-0241cdfad46a" />
-
-**Starry Nite** A city skyline twinkles at night
-
 <img width="360" height="300" alt="StarryNite" src="https://github.com/user-attachments/assets/f8db1076-934a-44ec-828d-24a633c52f6a" />
-
-**Warp** Zoom through the universe to nowhere
-
 <img width="360" height="300" alt="Warp" src="https://github.com/user-attachments/assets/79a98013-a37a-4690-9eef-cbe7f30f10a5" />
 
 
 ## Accessories
-
 Launch! comes with 6 handy accessories that can be useful in a basic DOS environment.
 
-If you installed during the Install program, there will be an Accessories menu created for you in Launch! providing quick access.
+If selected during the Install program, there will be an **Accessories** menu created for you in Launch! providing quick access.
 
 All accessories depend on Launch! (`!.EXE`), and will take on Launch! configuration settings such as color scheme and mouse cursor.
 
 Usable with either keyboard or mouse interaction.
 
-
 ### !CAL - Calendar
-
 A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate months, `Home` returns to the current month.
 
 You can print the calendar out, it will create a full page calendar with big enough space to write. 
 
+<img width="720" height="600" alt="Accessory - Calendar" src="https://github.com/user-attachments/assets/b7ce1a65-db5e-4a01-80cb-4b9b7dd31d79" />
 
 ### !CALC - Calculator
-
 A simple calculator, pretty self explanatory!
 
+<img width="720" height="600" alt="Accessory - Calculator" src="https://github.com/user-attachments/assets/e06a32ef-11cd-4c02-bbad-127743ca83d5" />
 
 ### !CFILE - Cardfile
-
 A stack of cards. Each card has a title and text, and you can navigate between them. 
 
 Add/Delete cards with the respective buttons.
 
 You can also export all the cards (everything concatenated) into a text file.
 
+<img width="720" height="600" alt="Accessory - Cardfile" src="https://github.com/user-attachments/assets/8e2cc58a-cc04-4fb5-965c-516e824df831" />
 
 ### !NOTE - Note
 
@@ -364,15 +336,18 @@ The text contents are persisted when you close the Note, and will be there when 
 
 Choose `Clear` to erase the notepad.
 
+<img width="720" height="600" alt="Accessory - Note" src="https://github.com/user-attachments/assets/79980012-cda5-4757-853a-308a2a940f38" />
 
 ### !DRAW - Pixel Draw
 
 You can create simple 28 x 12 pixel images, they can be exported as a large bitmap image.
 
 Click a palette color and then draw in the drawing area. The grid can be toggled on/off.
+.
 
 Right clicking a cell erases it (back to black).
 
+<img width="720" height="600" alt="Accessory - Pixel Draw" src="https://github.com/user-attachments/assets/af7ce9fb-a154-4c08-841a-ead8d934f9b9" />
 
 ### !SYSINFO - System Information
 
@@ -380,6 +355,7 @@ View useful information about your system, including free memory and disk space.
 
 The system information report can be printed for reference.
 
+<img width="720" height="600" alt="Accessory - System Info" src="https://github.com/user-attachments/assets/04679e04-0d74-432f-be4c-1da311701ddd" />
 
 
 ## SHORTCUT - keyboard shortcut tool
