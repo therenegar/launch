@@ -126,14 +126,14 @@ If the shortcut is active, you can unload it - removing all traces of the TSR fr
 If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
 Note that changing the key combination also requires a reboot to apply.
 
-<img width="720" height="600" alt="config-shortcut" src="https://github.com/user-attachments/assets/273e451f-d9e1-4995-8069-51a28a761150" />
+<img width="360" height="300" alt="config-shortcut" src="https://github.com/user-attachments/assets/273e451f-d9e1-4995-8069-51a28a761150" />
 
 
 ### Menu
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="720" height="600" alt="config-menu" src="https://github.com/user-attachments/assets/f4ca4382-dc2b-47f2-a6f4-f8817e526009" />
+<img width="360" height="300" alt="config-menu" src="https://github.com/user-attachments/assets/f4ca4382-dc2b-47f2-a6f4-f8817e526009" />
 
 
 ### Colors
@@ -142,9 +142,9 @@ There are 8 pre-defined color schemes to choose from, or you can change the colo
 
 If using a monochrome display, use the 'Mono' scheme for best results.
 
-<img width="720" height="600" alt="config-colors" src="https://github.com/user-attachments/assets/ca803e62-4f4c-44f5-846a-5707354bd1c7" />
+<img width="360" height="300" alt="config-colors" src="https://github.com/user-attachments/assets/ca803e62-4f4c-44f5-846a-5707354bd1c7" />
 
-<img width="720" height="600" alt="Screenshot: Color Schemes" src="https://github.com/user-attachments/assets/03caa612-1fa3-4587-bcd1-256dc0b17d35" />
+<img width="360" height="300" alt="Screenshot: Color Schemes" src="https://github.com/user-attachments/assets/03caa612-1fa3-4587-bcd1-256dc0b17d35" />
 
 
 ### Screensaver
@@ -153,7 +153,7 @@ You can select which screensaver to show, choose `None` to disable this function
 You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).<br/>
 Click `Preview` for an instant preview of the currently selected screensaver.
 
-<img width="720" height="600" alt="config-saver" src="https://github.com/user-attachments/assets/68b876aa-5cf4-45e2-8948-812a1bbae3d7" />
+<img width="360" height="300" alt="config-saver" src="https://github.com/user-attachments/assets/68b876aa-5cf4-45e2-8948-812a1bbae3d7" />
 
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
@@ -162,7 +162,7 @@ If the shortcut utility is not loaded, the screensaver will only start when the 
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
-<img width="720" height="600" alt="config-fonts" src="https://github.com/user-attachments/assets/0c4d728e-4054-43df-abbd-6914cb62f2ad" />
+<img width="360" height="300" alt="config-fonts" src="https://github.com/user-attachments/assets/0c4d728e-4054-43df-abbd-6914cb62f2ad" />
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
@@ -176,11 +176,11 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="720" height="600" alt="Screenshot: Add item to menu" src="https://github.com/user-attachments/assets/762c882c-e5b3-4dcf-9c8f-9a4ac13f281c" />
+<img width="360" height="300" alt="Screenshot: Add item to menu" src="https://github.com/user-attachments/assets/762c882c-e5b3-4dcf-9c8f-9a4ac13f281c" />
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="720" height="600" alt="Screenshot: Edit launcher" src="https://github.com/user-attachments/assets/3d3e5725-83a6-4df2-b8f8-57d792739f5d" />
+<img width="360" height="300" alt="Screenshot: Edit launcher" src="https://github.com/user-attachments/assets/3d3e5725-83a6-4df2-b8f8-57d792739f5d" />
 
 When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.<br/>
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
@@ -189,11 +189,11 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
 You will be able to enter parameters before running the program.
 
-<img width="720" height="600" alt="Screenshot: Run with parameters" src="https://github.com/user-attachments/assets/3cc1d875-f708-4db7-a9ff-993d334795f4" />
+<img width="360" height="300" alt="Screenshot: Run with parameters" src="https://github.com/user-attachments/assets/3cc1d875-f708-4db7-a9ff-993d334795f4" />
 
 You can also view command help for assistance in entering parameters by choosing `/?`.
 
-<img width="720" height="600" alt="Screenshot: Parameter help" src="https://github.com/user-attachments/assets/ecba02c8-33ce-42f9-b307-1ce94d9388d8" />
+<img width="360" height="300" alt="Screenshot: Parameter help" src="https://github.com/user-attachments/assets/ecba02c8-33ce-42f9-b307-1ce94d9388d8" />
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
@@ -226,11 +226,11 @@ The drive bar shows the available disk drives, and allows you to switch between 
 
 The path bar shows a preview of the command line that will be executed when `Run` is chosen.
 
-<img width="720" height="600" alt="Screenshot: Explore & Run" src="https://github.com/user-attachments/assets/f76fddd1-f183-49ff-80c9-0a15b8b28240" />
+<img width="360" height="300" alt="Screenshot: Explore & Run" src="https://github.com/user-attachments/assets/f76fddd1-f183-49ff-80c9-0a15b8b28240" />
 
 Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
 
-<img width="720" height="600" alt="Screenshot: Run with parameters" src="https://github.com/user-attachments/assets/48d860ce-83fb-4dd0-9c2b-a82f8a79d26b" />
+<img width="360" height="300" alt="Screenshot: Run with parameters" src="https://github.com/user-attachments/assets/48d860ce-83fb-4dd0-9c2b-a82f8a79d26b" />
 
 Choosing `/?` will show the command's help information (if available) and allow you to provide parameters.
 
@@ -244,11 +244,11 @@ The `Shutdown...` menu item is also fixed at the bottom of the menu, and when se
 
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="720" height="600" alt="Screenshot: Shutdown" src="https://github.com/user-attachments/assets/067a0daa-2b71-419e-baa5-4406fe889435" />
+<img width="360" height="300" alt="Screenshot: Shutdown" src="https://github.com/user-attachments/assets/067a0daa-2b71-419e-baa5-4406fe889435" />
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
 
-<img width="720" height="600" alt="Power off bitmap" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
+<img width="360" height="300" alt="Power off bitmap" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
 If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 color bitmap.
 
@@ -309,12 +309,12 @@ A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate mon
 
 You can print the calendar out, it will create a full page calendar with big enough space to write. 
 
-<img width="720" height="600" alt="Accessory - Calendar" src="https://github.com/user-attachments/assets/b7ce1a65-db5e-4a01-80cb-4b9b7dd31d79" />
+<img width="360" height="300" alt="Accessory - Calendar" src="https://github.com/user-attachments/assets/b7ce1a65-db5e-4a01-80cb-4b9b7dd31d79" />
 
 ### !CALC - Calculator
 A simple calculator, pretty self explanatory!
 
-<img width="720" height="600" alt="Accessory - Calculator" src="https://github.com/user-attachments/assets/e06a32ef-11cd-4c02-bbad-127743ca83d5" />
+<img width="360" height="300" alt="Accessory - Calculator" src="https://github.com/user-attachments/assets/e06a32ef-11cd-4c02-bbad-127743ca83d5" />
 
 ### !CFILE - Cardfile
 A stack of cards. Each card has a title and text, and you can navigate between them. 
@@ -324,7 +324,7 @@ You can also export all the cards (everything concatenated) into a text file.
 
 Entries are automatically saved, everything is persisted, and all cards will be visible when the program is re-opened.
 
-<img width="720" height="600" alt="Accessory - Cardfile" src="https://github.com/user-attachments/assets/8e2cc58a-cc04-4fb5-965c-516e824df831" />
+<img width="360" height="300" alt="Accessory - Cardfile" src="https://github.com/user-attachments/assets/8e2cc58a-cc04-4fb5-965c-516e824df831" />
 
 ### !NOTE - Note
 
@@ -336,7 +336,7 @@ The text contents are persisted when you close the Note, and will be there when 
 
 Choose `Clear` to erase the notepad.
 
-<img width="720" height="600" alt="Accessory - Note" src="https://github.com/user-attachments/assets/ec212315-5595-4a66-b98d-ec32dfd1bd48" />
+<img width="360" height="300" alt="Accessory - Note" src="https://github.com/user-attachments/assets/ec212315-5595-4a66-b98d-ec32dfd1bd48" />
 
 
 ### !DRAW - Pixel Draw
@@ -351,7 +351,7 @@ The grid can be toggled on/off.
 
 The drawing is persisted and will be there when the program is re-opened.
 
-<img width="720" height="600" alt="Accessory - Pixel Draw" src="https://github.com/user-attachments/assets/314f6c6c-763d-4a35-86b2-2c48e528843f" />
+<img width="360" height="300" alt="Accessory - Pixel Draw" src="https://github.com/user-attachments/assets/314f6c6c-763d-4a35-86b2-2c48e528843f" />
 
 Here's an actual export
 
@@ -364,7 +364,7 @@ View useful information about your system, including free memory and disk space.
 
 The system information report can be printed for reference.
 
-<img width="720" height="600" alt="Accessory - System Info" src="https://github.com/user-attachments/assets/04679e04-0d74-432f-be4c-1da311701ddd" />
+<img width="360" height="300" alt="Accessory - System Info" src="https://github.com/user-attachments/assets/04679e04-0d74-432f-be4c-1da311701ddd" />
 
 
 ## SHORTCUT - keyboard shortcut tool
@@ -391,7 +391,7 @@ Use `SHORTCUT /?` for more information.
 
 ## AUTOGEN - an automatic menu generator
 
-<img width="720" height="600" alt="autogen_001" src="https://github.com/user-attachments/assets/b8964c31-f9c4-40d3-87d7-a9dfb9458905" />
+<img width="360" height="300" alt="autogen_001" src="https://github.com/user-attachments/assets/b8964c31-f9c4-40d3-87d7-a9dfb9458905" />
 
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
 
