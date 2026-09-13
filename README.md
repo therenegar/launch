@@ -256,9 +256,8 @@ If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 colo
 ## Screensavers
 If there has been inactivity for the configured time (1 minute by default), the screen will blank and show a screensaver (by default the Clock).
 
-You can disable the screensaver completely (choose None) or choose from one of the other screensavers by running ! /CONFIG.
-
-You can also start the selected screensaver at any time by running ! /NOW.
+You can disable the screensaver completely (choose None) or choose from one of the other screensavers by running `! /CONFIG`.
+You can also start the selected screensaver at any time by running `! /NOW`.
 
 Pressing any key or moving the mouse will return the screen.
 
@@ -300,7 +299,8 @@ Launch! comes with 6 handy accessories that can be useful in a basic DOS environ
 
 If selected during the Install program, there will be an **Accessories** menu created for you in Launch! providing quick access.
 
-All accessories depend on Launch! (`!.EXE`), and will take on Launch! configuration settings such as color scheme and mouse cursor.
+All accessories depend on Launch! (`!.EXE`), and will take on Launch! configuration settings such as color scheme and mouse cursor.<br/>
+They've all been designed with a tiny memory footprint, and maximum compatibility in mind.
 
 Usable with either keyboard or mouse interaction.
 
