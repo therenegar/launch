@@ -310,14 +310,44 @@ static int copy_accessories(const char *archive,const char *install)
   return 1;
 }
 
+static int copy_disk_file(const char *source,const char *destination)
+{
+  FILE *in=fopen(source,"rb"),*out;size_t n;int ok=1;
+  if(!in)return 0;
+  out=fopen(destination,"wb");if(!out){fclose(in);return 0;}
+  while((n=fread(copy_buffer,1,sizeof(copy_buffer),in))!=0)
+    if(fwrite(copy_buffer,1,n,out)!=n){ok=0;break;}
+  if(ferror(in))ok=0;if(fclose(out)!=0)ok=0;
+  fclose(in);return ok;
+}
+
+static int accessories_first(const char *menu)
+{
+  static char temp[PATH_SIZE],line[256],check[256];FILE *in,*out;int root=0,found=0,ok=1;
+  sprintf(temp,"%s.$$$",menu);in=fopen(menu,"r");if(!in)return 0;
+  out=fopen(temp,"w");if(!out){fclose(in);return 0;}
+  while(fgets(line,sizeof(line),in)){
+    strcpy(check,line);strip_line(check);
+    if(!stricmp(check,"[Launcher]")){fputs(line,out);fputs("FOLDER=Accessories\n",out);root=found=1;continue;}
+    if(check[0]=='[')root=0;
+    if(root&&!stricmp(check,"FOLDER=Accessories"))continue;
+    if(fputs(line,out)==EOF){ok=0;break;}
+  }
+  if(ferror(in))ok=0;if(fclose(out)!=0)ok=0;fclose(in);
+  if(ok&&found)ok=copy_disk_file(temp,menu);
+  remove(temp);return ok&&found;
+}
+
 static int install_accessory_menu(const char *archive,const char *install)
 {
-  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;
+  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;int section;
   sprintf(menu,"%s\\LAUNCH.MNU",install);
   if(!exists(menu)){strcpy(sample,"LAUNCH.MNU");if(!extract_file(archive,sample,menu))return 0;}
-  if(contains_line(menu,"[Launcher\\Accessories]"))return 1;
+  section=contains_line(menu,"[Launcher\\Accessories]");
+  if(!accessories_first(menu))return 0;
+  if(section)return 1;
   f=fopen(menu,"a");if(!f)return 0;
-  fputs("\n[Launcher]\nFOLDER=Accessories\n\n[Launcher\\Accessories]\n",f);
+  fputs("\n[Launcher\\Accessories]\n",f);
   fputs("ITEM=Calendar|!CAL|1|0|0\n",f);
   fputs("ITEM=Calculator|!CALC|1|0|0\nITEM=Pixel Draw|!DRAW|1|0|0\n",f);
   fputs("ITEM=Note|!NOTE|1|0|0\nITEM=Cardfile|!CFILE|1|0|0\n",f);
@@ -359,6 +389,7 @@ int main(int argc,char **argv)
     if(!fgets(answer,sizeof(answer),stdin))return 1;
     use_dosbox=toupper(answer[0])=='Y';
   }
+  accessories=ask_yes("Do you wish to install accessories?",1);
   puts("\nExtracting files...");fflush(stdout);
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
   if(!exists(archive)){printf("Cannot find %s\n",archive);return 1;}
@@ -374,7 +405,6 @@ int main(int argc,char **argv)
   if(!extract_file(archive,"PWROFF.BMP",destination)){puts("Cannot extract PWROFF.BMP");return 1;}
   sprintf(destination,"%s\\FONT.DAT",install);
   if(!extract_file(archive,"FONT.DAT",destination)){puts("Cannot extract FONT.DAT");return 1;}
-  accessories=ask_yes("Do you wish to install accessories?",1);
   if(accessories&&!copy_accessories(archive,install))return 1;
   comspec=getenv("COMSPEC");
   autoexec[0]=(comspec && comspec[1]==':')?(char)toupper(comspec[0]):'C';
