@@ -317,7 +317,7 @@ A simple calculator, pretty self explanatory!
 <img width="360" height="300" alt="Accessory - Calculator" src="https://github.com/user-attachments/assets/e06a32ef-11cd-4c02-bbad-127743ca83d5" />
 
 ### !CFILE - Cardfile
-A stack of cards. Each card has a title and text, and you can navigate between them. 
+A stack of index cards. Each card has a title and text, and you can navigate between them. Clicking a card title brings that card to the front of the stack for editing.
 
 Add/Delete cards with the respective buttons.
 You can also export all the cards (everything concatenated) into a text file.
