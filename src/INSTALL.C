@@ -1,4 +1,4 @@
-/* Launch! 2.71 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 3.0 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +9,7 @@
 #include <process.h>
 
 #define PATH_SIZE 128
+#define DAT_MAGIC "L30DAT1\032"
 
 static unsigned char copy_buffer[4096];
 static void (interrupt far *old_int09)();
@@ -110,17 +111,30 @@ static int make_directories(char *path)
   return _access(work,0)==0;
 }
 
-static int copy_file(const char *source,const char *destination)
+static unsigned read_u16(FILE *f)
+{unsigned a=(unsigned)fgetc(f),b=(unsigned)fgetc(f);return a|(b<<8);}
+
+static unsigned long read_u32(FILE *f)
+{unsigned long a=(unsigned char)fgetc(f),b=(unsigned char)fgetc(f),c=(unsigned char)fgetc(f),d=(unsigned char)fgetc(f);return a|(b<<8)|(c<<16)|(d<<24);}
+
+static int extract_file(const char *archive,const char *wanted,const char *destination)
 {
-  FILE *in,*out;size_t n;int ok=1;
-  if(!stricmp(source,destination))return 1;
-  in=fopen(source,"rb");if(!in)return 0;
-  out=fopen(destination,"wb");if(!out){fclose(in);return 0;}
-  while((n=fread(copy_buffer,1,sizeof(copy_buffer),in))!=0)
-    if(fwrite(copy_buffer,1,n,out)!=n){ok=0;break;}
-  if(ferror(in))ok=0;
-  if(fclose(out)!=0)ok=0;
-  fclose(in);return ok;
+  FILE *in,*out;char magic[8],name[13];unsigned count,i;unsigned long offset,size;size_t n,want;int ok=1;
+  in=fopen(archive,"rb");if(!in)return 0;
+  if(fread(magic,1,8,in)!=8||memcmp(magic,DAT_MAGIC,8)){fclose(in);return 0;}
+  count=read_u16(in);
+  for(i=0;i<count;i++){
+    if(fread(name,1,13,in)!=13){fclose(in);return 0;}name[12]=0;
+    offset=read_u32(in);size=read_u32(in);
+    if(!stricmp(name,wanted)){
+      if(fseek(in,(long)offset,SEEK_SET)){fclose(in);return 0;}
+      out=fopen(destination,"wb");if(!out){fclose(in);return 0;}
+      while(size){want=size>sizeof(copy_buffer)?sizeof(copy_buffer):(size_t)size;n=fread(copy_buffer,1,want,in);if(n!=want||fwrite(copy_buffer,1,n,out)!=n){ok=0;break;}size-=n;}
+      if(fclose(out)!=0)ok=0;
+      fclose(in);return ok;
+    }
+  }
+  fclose(in);return 0;
 }
 
 static void strip_line(char *text)
@@ -282,17 +296,46 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
   return 1;
 }
 
+static int copy_accessories(const char *archive,const char *install)
+{
+  static const char *files[]={"!CAL.EXE","!CALC.EXE","!DRAW.EXE",
+    "!NOTE.EXE","!CFILE.EXE","!SYSINFO.EXE",0};
+  static char destination[PATH_SIZE];int i;
+  for(i=0;files[i];i++){
+    sprintf(destination,"%s\\%s",install,files[i]);
+    if(!extract_file(archive,files[i],destination)){printf("Cannot extract %s\n",files[i]);return 0;}
+  }
+  sprintf(destination,"%s\\DATA",install);if(!make_directories(destination))return 0;
+  sprintf(destination,"%s\\EXPORT",install);if(!make_directories(destination))return 0;
+  return 1;
+}
+
+static int install_accessory_menu(const char *archive,const char *install)
+{
+  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;
+  sprintf(menu,"%s\\LAUNCH.MNU",install);
+  if(!exists(menu)){strcpy(sample,"LAUNCH.MNU");if(!extract_file(archive,sample,menu))return 0;}
+  if(contains_line(menu,"[Launcher\\Accessories]"))return 1;
+  f=fopen(menu,"a");if(!f)return 0;
+  fputs("\n[Launcher]\nFOLDER=Accessories\n\n[Launcher\\Accessories]\n",f);
+  fputs("ITEM=Calendar|!CAL|1|0|0\n",f);
+  fputs("ITEM=Calculator|!CALC|1|0|0\nITEM=Pixel Draw|!DRAW|1|0|0\n",f);
+  fputs("ITEM=Note|!NOTE|1|0|0\nITEM=Cardfile|!CFILE|1|0|0\n",f);
+  fputs("ITEM=System Info|!SYSINFO|1|0|0\n",f);
+  return fclose(f)==0;
+}
+
 int main(int argc,char **argv)
 {
-  static char install[PATH_SIZE],source_dir[PATH_SIZE],source[PATH_SIZE];
+  static char install[PATH_SIZE],source_dir[PATH_SIZE],archive[PATH_SIZE];
   static char destination[PATH_SIZE],autoexec[16],answer[16],key_spec[64];
   char *comspec;
-  int n,dosbox_detected,use_dosbox,update_autoexec=0,upgrade=0;
+  int n,dosbox_detected,use_dosbox,update_autoexec=0,upgrade=0,accessories=0;
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 2.71 Installation");
-  puts("ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ\n");
+  puts("Launch! 3.0 Installation");
+  puts("------------------------\n");
   printf("Install to directory [C:\\LAUNCH]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
   strip_line(install);
@@ -316,21 +359,23 @@ int main(int argc,char **argv)
     if(!fgets(answer,sizeof(answer),stdin))return 1;
     use_dosbox=toupper(answer[0])=='Y';
   }
-  puts("\nCopying files...");fflush(stdout);
-  source_directory(argv[0],source_dir);
-  sprintf(source,"%s!.EXE",source_dir);sprintf(destination,"%s\\!.EXE",install);
-  if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
-  sprintf(source,"%s%s",source_dir,use_dosbox?"SHORTCDB.COM":"SHORTCUT.COM");
+  puts("\nExtracting files...");fflush(stdout);
+  source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
+  if(!exists(archive)){printf("Cannot find %s\n",archive);return 1;}
+  sprintf(destination,"%s\\!.EXE",install);
+  if(!extract_file(archive,"!.EXE",destination)){puts("Cannot extract !.EXE");return 1;}
   sprintf(destination,"%s\\SHORTCUT.COM",install);
-  if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
-  sprintf(source,"%sAUTOGEN.EXE",source_dir);sprintf(destination,"%s\\AUTOGEN.EXE",install);
-  if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
-  sprintf(source,"%sAUTOGEN.DAT",source_dir);sprintf(destination,"%s\\AUTOGEN.DAT",install);
-  if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
-  sprintf(source,"%sPWROFF.BMP",source_dir);sprintf(destination,"%s\\PWROFF.BMP",install);
-  if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
-  sprintf(source,"%sFONT.DAT",source_dir);sprintf(destination,"%s\\FONT.DAT",install);
-  if(!copy_file(source,destination)){printf("Cannot copy %s\n",source);return 1;}
+  if(!extract_file(archive,use_dosbox?"SHORTCDB.COM":"SHORTCUT.COM",destination)){puts("Cannot extract SHORTCUT.COM");return 1;}
+  sprintf(destination,"%s\\AUTOGEN.EXE",install);
+  if(!extract_file(archive,"AUTOGEN.EXE",destination)){puts("Cannot extract AUTOGEN.EXE");return 1;}
+  sprintf(destination,"%s\\AUTOGEN.DAT",install);
+  if(!extract_file(archive,"AUTOGEN.DAT",destination)){puts("Cannot extract AUTOGEN.DAT");return 1;}
+  sprintf(destination,"%s\\PWROFF.BMP",install);
+  if(!extract_file(archive,"PWROFF.BMP",destination)){puts("Cannot extract PWROFF.BMP");return 1;}
+  sprintf(destination,"%s\\FONT.DAT",install);
+  if(!extract_file(archive,"FONT.DAT",destination)){puts("Cannot extract FONT.DAT");return 1;}
+  accessories=ask_yes("Do you wish to install accessories?",1);
+  if(accessories&&!copy_accessories(archive,install))return 1;
   comspec=getenv("COMSPEC");
   autoexec[0]=(comspec && comspec[1]==':')?(char)toupper(comspec[0]):'C';
   strcpy(autoexec+1,":\\AUTOEXEC.BAT");
@@ -353,7 +398,7 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 2.71 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- SHORTCUT 3.0 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
   if(!upgrade){printf("\nScan the C drive now for recognized programs\n");
@@ -363,9 +408,13 @@ int main(int argc,char **argv)
     if(spawnl(P_WAIT,destination,"AUTOGEN.EXE",NULL)==-1)
       puts("AutoGen could not be started. Run AUTOGEN manually after installation.");
   }}
+  if(accessories){
+    if(!install_accessory_menu(archive,install)){puts("Accessories installed, but their menu could not be created.");return 1;}
+    puts("- Installed Launch! accessories and created the Accessories menu.");
+  }
   if(autoexec_changed)
     puts("\nInstall is complete. Reboot to activate the selected startup options.");
   else puts("\nInstall is complete.");
-  puts("Press Ù to exit.");
+  puts("Press Enter to exit.");
   getchar();return 0;
 }

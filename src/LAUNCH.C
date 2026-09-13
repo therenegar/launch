@@ -1,4 +1,4 @@
-/* Launch! 2.71 - modal command menu for DOS
+/* Launch! 3.0 - modal command menu for DOS
  * Microsoft C/C++ 7.0, medium model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -188,7 +188,7 @@ static unsigned char explore_drive_symbols[26];
 static int explore_drive_positions[26];
 
 static const char *sample_config[] = {
-  "; Launch! 2.71 initial menu definition\n",
+  "; Launch! 3.0 initial menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -1651,7 +1651,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 2.71 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 3.0 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1677,7 +1677,7 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 2.71 appearance settings\n",f)==EOF)ok=0;
+  if(fputs("; Launch! 3.0 appearance settings\n",f)==EOF)ok=0;
   if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\n"
@@ -2591,7 +2591,7 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
   for(i=1;i<65;i++)cell(x+i,y+16,196,C_BORDER);
   draw_button(x+5,y+17,"  Save  ",8,focus==20||hover==20);
   draw_button(x+16,y+17,"  Cancel  ",10,focus==21||hover==21);
-    textout(x+49,y+17,"Version 2.71",C_INPUT_LABEL,12);
+    textout(x+50,y+17,"Version 3.0",C_INPUT_LABEL,11);
 }
 
 static int config_hit(int x,int y,int tab,int mx,int my)
@@ -4473,7 +4473,7 @@ static void shortcut_idle_sync(void)
 
 static void show_help(void)
 {
-  puts("Launch! 2.71 - a lightweight command menu for DOS\n");
+  puts("Launch! 3.0 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /EXPLORE | /NOW | /USE=file.mnu | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");

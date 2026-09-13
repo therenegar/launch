@@ -5,7 +5,8 @@ A lightweight launcher for any DOS, with huge features to improve the usability 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
 
-Requires DOS 3.3, 80286, EGA or better. <br/>
+Requires DOS 3.3, 80286, EGA or better. 
+
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
@@ -20,6 +21,8 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
+- 6 handy and optional DOS accessories to go with Launch!
+    - Calculator, Calendar, Notepad, Draw, Cardfile, System Info
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Custom VGA display fonts to change the look of your whole DOS environment.
@@ -34,6 +37,7 @@ Extract the release zip file or mount the floppy image:
 
 - Run `INSTALL.EXE`
 - You'll be prompted for a directory to place Launch!
+- You can choose whether to install accessories
 - The necessary files will be copied and you will be prompted for all changes to `AUTOEXEC.BAT`
 - The keyboard shortcut can be chosen
 - Your drive can be scanned and an initial menu built.
@@ -318,7 +322,68 @@ The screensavers have been designed to use the EGA 16 color 640x350 screen mode,
 <img width="360" height="300" alt="Warp" src="https://github.com/user-attachments/assets/79a98013-a37a-4690-9eef-cbe7f30f10a5" />
 
 
+## Accessories
+
+Launch! comes with 6 handy accessories that can be useful in a basic DOS environment.
+
+If you installed during the Install program, there will be an Accessories menu created for you in Launch! providing quick access.
+
+All accessories depend on Launch! (`!.EXE`), and will take on Launch! configuration settings such as color scheme and mouse cursor.
+
+Usable with either keyboard or mouse interaction.
+
+
+### !CAL - Calendar
+
+A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate months, `Home` returns to the current month.
+
+You can print the calendar out, it will create a full page calendar with big enough space to write. 
+
+
+### !CALC - Calculator
+
+A simple calculator, pretty self explanatory!
+
+
+### !CFILE - Cardfile
+
+A stack of cards. Each card has a title and text, and you can navigate between them. 
+
+Add/Delete cards with the respective buttons.
+
+You can also export all the cards (everything concatenated) into a text file.
+
+
+### !NOTE - Note
+
+Simple notepad. You can click and type anywhere.
+
+Export the contents to a text file with `Export`. You can also send the contents to the printer with `Print`.
+
+The text contents are persisted when you close the Note, and will be there when the program is re-opened.
+
+Choose `Clear` to erase the notepad.
+
+
+### !DRAW - Pixel Draw
+
+You can create simple 28 x 12 pixel images, they can be exported as a large bitmap image.
+
+Click a palette color and then draw in the drawing area. The grid can be toggled on/off.
+
+Right clicking a cell erases it (back to black).
+
+
+### !SYSINFO - System Information
+
+View useful information about your system, including free memory and disk space.
+
+The system information report can be printed for reference.
+
+
+
 ## SHORTCUT - keyboard shortcut tool
+
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
 
 If you don't load the keyboard shortcut tool, you'll regain 500 bytes of memory - although `LOADHIGH` is used with `SHORTCUT.COM` to move this to upper memory anyway.

@@ -1,0 +1,24 @@
+/* Launch! Note accessory. */
+#include <stdio.h>
+#include <string.h>
+#include "ACCLIB.H"
+#define NW 62
+#define NL 100
+#define NV 14
+static char note[NW*NL];
+static void load_note(void){char p[ACC_PATH];FILE *f;memset(note,' ',sizeof(note));acc_path(p,"DATA","NOTE.DAT");f=fopen(p,"rb");if(f){fread(note,1,sizeof(note),f);fclose(f);}}
+static int write_note(const char *sub,const char *name,int plain){char p[ACC_PATH];FILE *f;int y,n,last=NL-1;acc_path(p,sub,name);f=fopen(p,plain?"w":"wb");if(!f)return 0;if(plain){while(last>0){n=NW;while(n&&note[last*NW+n-1]==' ')n--;if(n)break;last--;}for(y=0;y<=last;y++){n=NW;while(n&&note[y*NW+n-1]==' ')n--;fwrite(note+y*NW,1,n,f);fputs("\n",f);}}else fwrite(note,1,sizeof(note),f);fclose(f);return 1;}
+static int print_note(void){FILE *f;int y,n,last=NL-1;f=fopen("LPT1","wb");if(!f)return 0;while(last>0){n=NW;while(n&&note[last*NW+n-1]==' ')n--;if(n)break;last--;}for(y=0;y<=last;y++){n=NW;while(n&&note[y*NW+n-1]==' ')n--;fwrite(note+y*NW,1,n,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);return 1;}
+static int export_note(char *p){char name[20];FILE *f;int y,n,last=NL-1,num;for(num=1;num<10000;num++){sprintf(name,"NOTE%d.TXT",num);acc_path(p,"EXPORT",name);if(!acc_exists(p))break;}if(num==10000)return 0;f=fopen(p,"w");if(!f)return 0;while(last>0){n=NW;while(n&&note[last*NW+n-1]==' ')n--;if(n)break;last--;}for(y=0;y<=last;y++){n=NW;while(n&&note[y*NW+n-1]==' ')n--;fwrite(note+y*NW,1,n,f);fputc('\n',f);}fclose(f);return 1;}
+static void row_draw(int x,int y,int line,int top){if(line>=top&&line<top+NV)acc_text(x,y+line-top,note+line*NW,ACC_CONTROL,NW);}
+static void cursor_draw(int x,int y,int cx,int cy,int top){if(cy>=top&&cy<top+NV)acc_put(x+cx,y+cy-top,note[cy*NW+cx],ACC_SELECT);}
+static void view_draw(int x,int y,int cx,int cy,int top){int r;for(r=0;r<NV;r++)row_draw(x,y,top+r,top);cursor_draw(x,y,cx,cy,top);acc_scrollbar(x+NW+1,y,NV,top,NL,NV);}
+int main(int argc,char **argv)
+{char exported[ACC_PATH],message[ACC_PATH+24];int x,y,tx,ty,cx=0,cy=0,top=0,key=0,mx=0,my=0,focus=0,oldcy,insert=1,ch,base;unsigned mb=0;if(acc_help(argc,argv,"!NOTE","A persistent plain-text note editor with scrolling, export and printing."))return 0;if(!acc_begin(argv[0],"Note",0))return 1;x=(acc_cols-70)/2;y=(acc_rows-20)/2;tx=x+3;ty=y+2;load_note();acc_box(x,y,70,20,"Note");view_draw(tx,ty,cx,cy,top);
+ while(key!=27){acc_button(x+3,y+17,"  Clear  ",focus==1);acc_button(x+14,y+17,"  Export  ",focus==2);acc_button(x+27,y+17,"  Print  ",focus==3);acc_button(x+57,y+17,"  Close  ",focus==4);acc_wait(&key,&mx,&my,&mb);
+  if(mb&ACC_MOUSE_MOVED){if(my>=ty&&my<ty+NV&&mx>=tx&&mx<tx+NW)focus=0;else if(my==y+17&&mx>=x+3&&mx<x+12)focus=1;else if(my==y+17&&mx>=x+14&&mx<x+24)focus=2;else if(my==y+17&&mx>=x+27&&mx<x+36)focus=3;else if(my==y+17&&mx>=x+57&&mx<x+66)focus=4;key=0;continue;}
+  if((mb&1)&&mx==tx+NW+1&&my>=ty&&my<ty+NV){if(my==ty&&top>0)top--;else if(my==ty+NV-1&&top<NL-NV)top++;else if(my>ty&&my<ty+NV-1)top=(my-ty-1)*(NL-NV)/(NV-2);cy=top;if(cy>=NL)cy=NL-1;view_draw(tx,ty,cx,cy,top);key=0;continue;}if((mb&1)&&my>=ty&&my<ty+NV&&mx>=tx&&mx<tx+NW){focus=0;cx=mx-tx;cy=top+my-ty;view_draw(tx,ty,cx,cy,top);key=0;continue;}if((mb&1)&&my==y+17){if(mx>=x+3&&mx<x+12){focus=1;key=13;}else if(mx>=x+14&&mx<x+24){focus=2;key=13;}else if(mx>=x+27&&mx<x+36){focus=3;key=13;}else if(mx>=x+57&&mx<x+66){focus=4;key=13;}}
+  if(key==9){focus=(focus+1)%5;key=0;continue;}if(key==13&&focus){if(focus==1){memset(note,' ',sizeof(note));cx=cy=top=0;view_draw(tx,ty,cx,cy,top);}else if(focus==2){if(!export_note(exported))acc_notice("Export","Unable to export note.");else{sprintf(message,"Note exported to\n%s",exported);acc_notice("Export",message);}}else if(focus==3){if(!print_note())acc_notice("Print","Unable to print to LPT1");}else key=27;if(key!=27)key=0;continue;}if(focus)focus=0;
+  oldcy=cy;if(key==256+75&&cx>0)cx--;else if(key==256+77&&cx<NW-1)cx++;else if(key==256+72&&cy>0)cy--;else if(key==256+80&&cy<NL-1)cy++;else if(key==256+71)cx=0;else if(key==256+79){cx=NW-1;while(cx>0&&note[cy*NW+cx]==' ')cx--;if(note[cy*NW+cx]!=' '&&cx<NW-1)cx++;}else if(key==256+82)insert=!insert;else if(key==256+83){base=cy*NW;memmove(note+base+cx,note+base+cx+1,NW-cx-1);note[base+NW-1]=' ';}else if(key==8){if(cx>0)cx--;note[cy*NW+cx]=' ';}else if(key==13){if(cy<NL-1){cy++;cx=0;}}else if((key>=32&&key<=255)||(key>=513&&key<=767)){ch=key>=512?key-512:key;base=cy*NW;if(insert&&cx<NW-1)memmove(note+base+cx+1,note+base+cx,NW-cx-1);note[base+cx]=(char)ch;if(cx<NW-1)cx++;else if(cy<NL-1){cx=0;cy++;}}else if(key==27)break;else key=0;
+  if(cy<top)top=cy;if(cy>=top+NV)top=cy-NV+1;if(top<0)top=0;if(top>NL-NV)top=NL-NV;if(oldcy<top||oldcy>=top+NV||cy<top||cy>=top+NV)view_draw(tx,ty,cx,cy,top);else{row_draw(tx,ty,oldcy,top);if(cy!=oldcy)row_draw(tx,ty,cy,top);cursor_draw(tx,ty,cx,cy,top);acc_scrollbar(tx+NW+1,ty,NV,top,NL,NV);}key=0;
+ }write_note("DATA","NOTE.DAT",0);acc_end();return 0;}
