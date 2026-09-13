@@ -22,7 +22,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - 6 handy and optional DOS accessories to go with Launch!
-    - Calculator, Calendar, Notepad, Draw, Cardfile, System Info
+    - Calculator, Calendar, Note, Draw, Cardfile, System Info
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Custom VGA display fonts to change the look of your whole DOS environment.
