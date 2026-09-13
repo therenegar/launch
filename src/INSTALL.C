@@ -323,12 +323,12 @@ static int copy_disk_file(const char *source,const char *destination)
 
 static int accessories_first(const char *menu)
 {
-  static char temp[PATH_SIZE],line[256],check[256];FILE *in,*out;int root=0,found=0,ok=1;
-  sprintf(temp,"%s.$$$",menu);in=fopen(menu,"r");if(!in)return 0;
+  static char temp[PATH_SIZE],line[256],check[256];char *slash;FILE *in,*out;int root=0,found=0,ok=1;
+  strcpy(temp,menu);slash=strrchr(temp,'\\');if(slash)strcpy(slash+1,"LAUNCH.$$$");else strcpy(temp,"LAUNCH.$$$");in=fopen(menu,"r");if(!in)return 0;
   out=fopen(temp,"w");if(!out){fclose(in);return 0;}
   while(fgets(line,sizeof(line),in)){
     strcpy(check,line);strip_line(check);
-    if(!stricmp(check,"[Launcher]")){fputs(line,out);fputs("FOLDER=Accessories\n",out);root=found=1;continue;}
+    if(!stricmp(check,"[Launcher]")){fputs(line,out);root=1;if(!found){fputs("FOLDER=Accessories\n",out);found=1;}continue;}
     if(check[0]=='[')root=0;
     if(root&&!stricmp(check,"FOLDER=Accessories"))continue;
     if(fputs(line,out)==EOF){ok=0;break;}
