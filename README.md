@@ -365,8 +365,8 @@ Here's an actual export
 ### !SOL - Solitaire
 Play draw 3 Solitaire, in a painstakingly crafted text mode interpretation.
 `New` starts a new game at any time.
-
-Standard Solitaire rules apply. 
+ 
+Standard Solitaire rules apply. You can use the keyboard, but mouse makes it a lot easier. Double clicking a card will automatically move it a foundation pile if there's a valid move.
 
 <img width="360" height="300" alt="Launch! Solitaire" src="https://github.com/user-attachments/assets/3ee1a74a-7cff-4047-9e90-021fc48e0df2" />
 
