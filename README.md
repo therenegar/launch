@@ -20,8 +20,8 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
-- 7 handy and optional text-mode only accessories to go with Launch!
-    - Calculator, Calendar, Note, Draw, Cardfile, System Info and even Solitaire!!
+- 7 handy and optional text-mode only accessories and a game to go with Launch!
+    - Calculator, Calendar, Note, Draw, Cardfile, System Info, and Boxes game.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Custom VGA display fonts to change the look of your whole DOS environment.
@@ -300,7 +300,7 @@ The screensavers have been designed to use the EGA 16 color 640x350 screen mode,
 
 
 ## Accessories
-Launch! comes with 6 handy accessories that can be useful in a basic DOS environment.
+Launch! comes with 7 handy accessories (including a game) that can be useful in a basic DOS environment.
 
 If selected during the Install program, there will be an **Accessories** menu created for you in Launch! providing quick access.
 
@@ -308,6 +308,12 @@ All accessories depend on Launch! (`!.EXE`), and will take on Launch! configurat
 They've all been designed with a tiny memory footprint, and maximum compatibility in mind.
 
 Usable with either keyboard or mouse interaction.
+
+### !BOXES - Boxes
+A Sokoban style puzzle game with 100 different challenges.
+
+Use the arrow keys to move the worker and push boxes to cover all the targets - in as few moves as possible.
+
 
 ### !CAL - Calendar
 A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate months, `Home` returns to the current month.
@@ -360,15 +366,6 @@ Your drawing is persisted and will be there when the program is re-opened.
 Here's an actual export
 
 <img width="280" height="100" alt="Export" src="https://github.com/user-attachments/assets/4ef4d7cb-d7fd-42f0-b549-cfb2d95db58c" />
-
-
-### !SOL - Solitaire
-Play draw 3 Solitaire, in a painstakingly crafted text mode interpretation.
-`New` starts a new game at any time.
- 
-Standard Solitaire rules apply. You can use the keyboard, but mouse makes it a lot easier. Double clicking a card will automatically move it a foundation pile if there's a valid move.
-
-<img width="360" height="300" alt="Launch! Solitaire" src="https://github.com/user-attachments/assets/3ee1a74a-7cff-4047-9e90-021fc48e0df2" />
 
 
 ### !SYSINFO - System Information

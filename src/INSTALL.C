@@ -151,58 +151,10 @@ static int contains_line(const char *filename,const char *wanted)
   fclose(f);return 0;
 }
 
-/* Print through DOS first, then recolour only the cells that were printed.
-   This is deliberately different from changing the active console attribute:
-   DOS/BIOS remains in its normal white-on-black state, so CR/LF and scrolling
-   cannot inherit the coloured background.  Only the requested screen cells
-   are changed after normal console output has already completed. */
-static void colour_text(const char *s,int attr)
-{
-  union REGS r;
-  unsigned char mode,page;
-  unsigned cols,start_row,start_col;
-  unsigned row,col;
-  unsigned short far *video;
-  unsigned seg;
-  const char *p;
-
-  if(!_isatty(_fileno(stdout))){fputs(s,stdout);return;}
-
-  /* Record where ordinary DOS output will begin. */
-  fflush(stdout);
-  memset(&r,0,sizeof(r));
-  r.h.ah=0x0F;
-  int86(0x10,&r,&r);
-  mode=r.h.al;
-  cols=r.h.ah?r.h.ah:80;
-  page=r.h.bh;
-
-  r.h.ah=3;
-  r.h.bh=page;
-  int86(0x10,&r,&r);
-  start_row=r.h.dh;
-  start_col=r.h.dl;
-
-  /* Let DOS render and advance the cursor using its normal attribute. */
-  fputs(s,stdout);
-  fflush(stdout);
-
-  /* Recolour only those already-rendered cells.  None of this changes the
-     DOS/BIOS attribute used by subsequent output or screen scrolling. */
-  seg=(mode==7)?0xB000:0xB800;
-  video=(unsigned short far *)((unsigned long)seg<<16);
-  row=start_row;
-  col=start_col;
-  for(p=s;*p;p++){
-    if(*p=='\r'){col=0;continue;}
-    if(*p=='\n'){row++;continue;}
-    video[row*cols+col]=(video[row*cols+col]&0x00FF)|
-                        ((unsigned short)(unsigned char)attr<<8);
-    if(++col>=cols){col=0;row++;}
-  }
-}
+static void normal_cursor_attr(void){union REGS r;unsigned char ch;if(!_isatty(_fileno(stdout)))return;fflush(stdout);memset(&r,0,sizeof(r));r.h.ah=8;r.h.bh=0;int86(0x10,&r,&r);ch=r.h.al;r.h.ah=9;r.h.al=ch;r.h.bh=0;r.h.bl=0x07;r.x.cx=1;int86(0x10,&r,&r);}
+static void colour_text(const char *s,int attr){union REGS r;int row,col,cols;if(!_isatty(_fileno(stdout))){fputs(s,stdout);return;}fflush(stdout);memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);cols=r.h.ah?r.h.ah:80;r.h.ah=3;r.h.bh=0;int86(0x10,&r,&r);row=r.h.dh;col=r.h.dl;while(*s){r.h.ah=9;r.h.al=(unsigned char)*s++;r.h.bh=0;r.h.bl=(unsigned char)attr;r.x.cx=1;int86(0x10,&r,&r);if(++col>=cols){col=0;row++;}r.h.ah=2;r.h.bh=0;r.h.dh=(unsigned char)row;r.h.dl=(unsigned char)col;int86(0x10,&r,&r);}normal_cursor_attr();}
 static void question_icon(int indent)
-{int i;for(i=0;i<indent;i++)putchar(' ');putchar(' ');colour_text("?",0x1F);fputs("  ",stdout);}
+{int i;for(i=0;i<indent;i++)putchar(' ');colour_text(" ? ",0x1F);putchar(' ');}
 static void choice_default(int default_yes)
 {putchar('[');if(default_yes){colour_text("Y",10);fputs("/n",stdout);}else{fputs("y/",stdout);colour_text("N",10);}fputs("]: ",stdout);}
 
@@ -378,7 +330,7 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
 static int copy_accessories(const char *archive,const char *install)
 {
   static const char *files[]={"!CAL.EXE","!CALC.EXE","!DRAW.EXE",
-    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!SOL.EXE",0};
+    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!BOXES.EXE",0};
   static char destination[PATH_SIZE];int i;
   for(i=0;files[i];i++){
     sprintf(destination,"%s\\%s",install,files[i]);
@@ -411,6 +363,7 @@ static int accessories_first(const char *menu)
     if(check[0]=='[')root=0;
     if(root&&!stricmp(check,"FOLDER=Accessories"))continue;
     if(!stricmp(check,"ITEM=Cardfile|!CFILE|1|0|0")){fputs("ITEM=Stack|!STACK|1|0|0\n",out);continue;}
+    if(!stricmp(check,"ITEM=Solitaire|!SOL|1|0|0")){fputs("ITEM=Boxes|!BOXES|1|0|0\n",out);continue;}
     if(fputs(line,out)==EOF){ok=0;break;}
   }
   if(ferror(in))ok=0;if(fclose(out)!=0)ok=0;fclose(in);
@@ -420,19 +373,19 @@ static int accessories_first(const char *menu)
 
 static int install_accessory_menu(const char *archive,const char *install)
 {
-  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;int section,solitaire,stack;
+  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;int section,boxes,stack;
   sprintf(menu,"%s\\LAUNCH.MNU",install);
   if(!exists(menu)){strcpy(sample,"LAUNCH.MNU");if(!extract_file(archive,sample,menu))return 0;}
   if(!accessories_first(menu))return 0;
-  section=contains_line(menu,"[Launcher\\Accessories]");solitaire=contains_line(menu,"ITEM=Solitaire|!SOL|1|0|0");stack=contains_line(menu,"ITEM=Stack|!STACK|1|0|0");
-  if(section&&solitaire&&stack)return 1;
+  section=contains_line(menu,"[Launcher\\Accessories]");boxes=contains_line(menu,"ITEM=Boxes|!BOXES|1|0|0");stack=contains_line(menu,"ITEM=Stack|!STACK|1|0|0");
+  if(section&&boxes&&stack)return 1;
   f=fopen(menu,"a");if(!f)return 0;
   fputs("\n[Launcher\\Accessories]\n",f);
-  if(section){if(!stack)fputs("ITEM=Stack|!STACK|1|0|0\n",f);if(!solitaire)fputs("ITEM=Solitaire|!SOL|1|0|0\n",f);return fclose(f)==0;}
+  if(section){if(!stack)fputs("ITEM=Stack|!STACK|1|0|0\n",f);if(!boxes)fputs("ITEM=Boxes|!BOXES|1|0|0\n",f);return fclose(f)==0;}
   fputs("ITEM=Calendar|!CAL|1|0|0\n",f);
   fputs("ITEM=Calculator|!CALC|1|0|0\nITEM=Pixel Draw|!DRAW|1|0|0\n",f);
   fputs("ITEM=Note|!NOTE|1|0|0\nITEM=Stack|!STACK|1|0|0\n",f);
-  fputs("ITEM=System Info|!SYSINFO|1|0|0\nITEM=Solitaire|!SOL|1|0|0\n",f);
+  fputs("ITEM=System Info|!SYSINFO|1|0|0\nITEM=Boxes|!BOXES|1|0|0\n",f);
   return fclose(f)==0;
 }
 

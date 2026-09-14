@@ -7,7 +7,7 @@
 static const char *files[]={
   "!.EXE","SHORTCUT.COM","SHORTCDB.COM","AUTOGEN.EXE","AUTOGEN.DAT",
   "PWROFF.BMP","FONT.DAT","LAUNCH.MNU","!CAL.EXE","!CALC.EXE",
-  "!DRAW.EXE","!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!SOL.EXE",0
+  "!DRAW.EXE","!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!BOXES.EXE",0
 };
 
 static unsigned char buffer[4096];
