@@ -20,8 +20,8 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
-- 6 handy and optional text-mode only accessories to go with Launch!
-    - Calculator, Calendar, Note, Draw, Cardfile, System Info and Solitaire
+- 7 handy and optional text-mode only accessories to go with Launch!
+    - Calculator, Calendar, Note, Draw, Cardfile, System Info and even Solitaire!!
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Custom VGA display fonts to change the look of your whole DOS environment.
