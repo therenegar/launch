@@ -1,4 +1,4 @@
-/* Shared Launch! 3.1 accessory runtime.  Microsoft C/C++ 7.0, small model. */
+/* Shared Launch! 3.11 accessory runtime.  Microsoft C/C++ 7.0, small model. */
 #include <dos.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -132,7 +132,7 @@ int acc_mouse(int *x,int *y,int *buttons)
 int acc_key(void){unsigned w=_bios_keybrd(_KEYBRD_READ);int c=w&255,scan=(w>>8)&255;if(!scan&&c)return 512+c;if(!c)return 256+scan;return c;}
 void acc_wait(int *key,int *x,int *y,unsigned *buttons){union REGS r;int sx=(int)(mouse_raw_x/8),sy=(int)(mouse_raw_y/8),hover=-1,last_hover=-1,i,w;*key=0;*buttons=0;if(acc_mouse_present){r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;}for(;;){if(_bios_keybrd(_KEYBRD_READY)){*key=acc_key();break;}if(acc_mouse_present){r.x.ax=3;int86(0x33,&r,&r);mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;*x=r.x.cx/8;*y=r.x.dx/8;*buttons=(unsigned)(r.x.bx&~mouse_last_buttons);mouse_last_buttons=r.x.bx;if(*buttons)break;if(*x!=sx||*y!=sy){hover=-1;for(i=0;i<acc_button_count;i++){w=(int)strlen(acc_buttons[i].text);if(*y==acc_buttons[i].y&&*x>=acc_buttons[i].x&&*x<acc_buttons[i].x+w){hover=i;break;}}if(hover!=last_hover){for(i=0;i<acc_button_count;i++)acc_button_draw(acc_buttons[i].x,acc_buttons[i].y,acc_buttons[i].text,acc_buttons[i].selected||i==hover);last_hover=hover;}sx=*x;sy=*y;if(r.x.bx&3){*buttons=ACC_MOUSE_MOVED|(unsigned)(r.x.bx&3);break;}}}}if(acc_mouse_present&&mouse_visible){r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;}acc_button_count=0;if((*buttons&1)&&*x==close_x&&*y==close_y){*buttons=0;*key=27;}}
 unsigned long acc_ticks(void){return *(unsigned long far *)(((unsigned long)0x40<<16)|0x6C);}
-int acc_help(int argc,char **argv,const char *name,const char *description){if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){printf("%s - Launch! 3.1 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;}return 0;}
+int acc_help(int argc,char **argv,const char *name,const char *description){if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){printf("%s - Launch! 3.11 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;}return 0;}
 
 int acc_make_dir(const char *path){_mkdir(path);return _access(path,0)==0;}
 void acc_path(char *out,const char *sub,const char *name)

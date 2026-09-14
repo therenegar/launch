@@ -1,4 +1,4 @@
-/* Builds the uncompressed Launch! 3.1 INSTALL.DAT distribution archive. */
+/* Builds the uncompressed Launch! 3.11 INSTALL.DAT distribution archive. */
 #include <stdio.h>
 #include <string.h>
 

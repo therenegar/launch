@@ -1,5 +1,5 @@
-/* Launch! Boxes accessory: 100-puzzle Sokoban/box-pushing game.
-   Puzzle set: Microban levels 1-100 by David W. Skinner.
+/* Launch! Boxes accessory: 108-puzzle Sokoban/box-pushing game.
+   Puzzle set: selected Microban levels by David W. Skinner (1-101, 103, 104, 110, 116, 118-120).
    Tile artwork extracted from the user-supplied BOXES.FNT (8x16 glyphs).
    Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
@@ -10,7 +10,7 @@
 #define MAX_W 22
 #define MAX_H 14
 #define MAX_CELLS (MAX_W*MAX_H)
-#define LEVELS 100
+#define LEVELS 108
 #define DLG_W 68
 #define DLG_H 20
 
@@ -161,6 +161,14 @@ static const BOX_LEVEL level_data[LEVELS]={
   {16,10,269,"#####~~~~~~~~~~~#   ##~####~~~~~#  $ ### .#~~~~~# $   $  .#~~~~~## $#####.#~##### $  #~# .###  ##    #~# .#  @ ####  #~#       #~~####~##     ##~~~~~~~~#######~"}, /* 098: Microban 98 */
   {22,10,349,"~~~~~~~~~~~~~~~#####~~~~~~~~~~~~~~~~~#   #~~#######~~####### # #~~#     #~~#  #      #~~#  @  ####  #     #####  #    ....## ####  ##    ##### ## $$ $ $ #######~~~#           #~~~~~~~~~#  ##########~~~~~~~~~####~~~~~~~~~"}, /* 099: Microban 99 */
   {8,8,155,"#######~# @#  #~#.$   #~#. # $###.$#   ##. # $ ##  #   #########"}, /* 100: Microban 100 */
+  {13,13,79,"~~#####~~~~~~~~#   #~~~~~~~~# # #######~~#  *  #   #~~## ##   # #~~#     #*  #### # # # ####  *#$+   #~~# #   ## ##~~#   #  *  #~~####### # #~~~~~~~~#   #~~~~~~~~#####~~"}, /* 101: Microban 101 */
+  {8,8,35,"~~#####~~~# . ##### $  ## . $#@## #$ . ##  $ ##### . #~~~#####~~"}, /* 102: Microban 103 */
+  {9,9,79,"~~~~##########   ##    $  ##  $#$#@#### #   #~~# ... #~~###  ##~~~~#  #~~~~~####~"}, /* 103: Microban 104 */
+  {9,9,51,"~~####~~~~~#  #~~~~~# $#######. .  ## $ # $ ##  . .#######$ #~~~~~# @#~~~~~####~~"}, /* 104: Microban 110 */
+  {10,7,63,"~~~~~#####~~~###   #####.....## @$$$$$ ##     # #######   #~~~~~#####~"}, /* 105: Microban 116 */
+  {10,10,172,"~#####~~~~##   ##~~~#  $  ##~~# $ $  ##~###$# . ##~~# # .  #~## ##.  #~# @  . ##~#   #  #~~########~"}, /* 106: Microban 118 */
+  {9,10,131,"~~######~~~#    ##~## ##  #~# $$ # #~# @$ # #~#    # ##### #  ##  ... ###     ##~#######~~"}, /* 107: Microban 119 */
+  {11,11,183,"~~~~~~####~#######  #~# $      ### $#####  ##  @#  #  ### ##..   ##  # ..##### $  ###~~~# $###~~~~~#  #~~~~~~~####~~~~~~~"}, /* 108: Microban 120 */
 };
 
 static unsigned char tile[MAX_CELLS],box_at[MAX_CELLS];
@@ -353,7 +361,7 @@ static void draw_counts(int x,int y)
 static void draw_status(int x,int y)
 {
   char s[32];
-  sprintf(s,"Puzzle %03d of 100",current_level+1);
+  sprintf(s,"Puzzle %03d of %d",current_level+1,LEVELS);
   acc_text(x+3,y+2,s,ACC_HEADING,20);
   draw_counts(x,y);
 }
@@ -364,7 +372,7 @@ int main(int argc,char **argv)
   int tx,ty,won_moves,won_best;
   unsigned mb=0;
   char msg[96];
-  if(acc_help(argc,argv,"!BOXES","A 100-puzzle box-pushing game using custom text-mode tile glyphs."))return 0;
+  if(acc_help(argc,argv,"!BOXES","A 108-puzzle box-pushing game using custom text-mode tile glyphs."))return 0;
   if(!acc_begin(argv[0],"Boxes",0))return 1;
   boxes_font(1);
   x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;

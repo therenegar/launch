@@ -1,4 +1,4 @@
-/* Launch! 3.1 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 3.11 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -201,8 +201,19 @@ static void colour_text(const char *s,int attr)
     if(++col>=cols){col=0;row++;}
   }
 }
-static void question_icon(int indent)
-{int i;for(i=0;i<indent;i++)putchar(' ');putchar(' ');colour_text("?",0x1F);fputs("  ",stdout);}
+static void status_icon(int indent,int colour,int symbol)
+{
+  char block[2],mark[2];int i;
+  block[0]=(char)219;block[1]=0;mark[0]=(char)symbol;mark[1]=0;
+  for(i=0;i<indent;i++)putchar(' ');
+  colour_text(block,colour);
+  colour_text(mark,(colour<<4)|15);
+  colour_text(block,colour);
+  putchar(' ');
+}
+static void question_icon(int indent){status_icon(indent,1,'?');}
+static void error_icon(int indent){status_icon(indent,4,'!');}
+static void success_icon(int indent){status_icon(indent,2,3);}
 static void choice_default(int default_yes)
 {putchar('[');if(default_yes){colour_text("Y",10);fputs("/n",stdout);}else{fputs("y/",stdout);colour_text("N",10);}fputs("]: ",stdout);}
 
@@ -237,7 +248,7 @@ static int cpu_at_least_286(void){unsigned before,after;
 #endif
 }
 static const char *display_adapter(int *suitable){union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);if(r.h.al==0x1A){*suitable=1;return"VGA or compatible";}memset(&r,0,sizeof(r));r.h.ah=0x12;r.h.bl=0x10;int86(0x10,&r,&r);if(r.h.bl!=0x10){*suitable=1;return"EGA or compatible";}*suitable=0;return"CGA/MDA compatible";}
-static int hardware_warning(void){char answer[16];colour_text(" ! ",0x4F);fputs(" This system's hardware doesn't meet minimum recommended requirements. Proceed ",stdout);choice_default(0);if(!fgets(answer,sizeof(answer),stdin))return 0;return toupper(answer[0])=='Y';}
+static int hardware_warning(void){char answer[16];error_icon(0);fputs("This system's hardware doesn't meet minimum recommended requirements. Proceed ",stdout);choice_default(0);if(!fgets(answer,sizeof(answer),stdin))return 0;return toupper(answer[0])=='Y';}
 
 static unsigned char far *bios_byte(unsigned offset)
 {
@@ -382,7 +393,7 @@ static int copy_accessories(const char *archive,const char *install)
   static char destination[PATH_SIZE];int i;
   for(i=0;files[i];i++){
     sprintf(destination,"%s\\%s",install,files[i]);
-    if(!extract_file(archive,files[i],destination)){printf("Cannot extract %s\n",files[i]);return 0;}
+    if(!extract_file(archive,files[i],destination)){error_icon(0);printf("Cannot extract %s\n",files[i]);return 0;}
   }
   sprintf(destination,"%s\\DATA",install);if(!make_directories(destination))return 0;
   sprintf(destination,"%s\\EXPORT",install);if(!make_directories(destination))return 0;
@@ -446,7 +457,7 @@ int main(int argc,char **argv)
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 3.1 Installation");
+  puts("Launch! 3.11 Installation");
   puts("------------------------\n");
   cpu_ok=cpu_at_least_286();printf("Processor: %s\n",cpu_ok?"80286 or later":"8086/8088");printf("Display:   %s\n\n",display_adapter(&display_ok));if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;puts("");
   question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");
@@ -455,10 +466,10 @@ int main(int argc,char **argv)
   if(!*install)strcpy(install,"C:\\LAUNCH");
   n=(int)strlen(install);
   if(n<3 || n>PATH_SIZE-20 || install[1]!=':' || strchr(install,';') || strchr(install,'"')){
-    puts("Invalid DOS installation path.");return 1;
+    error_icon(0);puts("Invalid DOS installation path.");return 1;
   }
   while(n>3 && (install[n-1]=='\\' || install[n-1]=='/'))install[--n]=0;
-  if(!make_directories(install)){printf("Cannot create or access %s\n",install);return 1;}
+  if(!make_directories(install)){error_icon(0);printf("Cannot create or access %s\n",install);return 1;}
   sprintf(destination,"%s\\LAUNCH.MNU",install);upgrade=exists(destination);
   if(!upgrade){sprintf(destination,"%s\\LAUNCH.CFG",install);upgrade=exists(destination);}
   if(upgrade)puts("\nExisting Launch! installation detected.\nPerforming upgrade only, existing menu and configuration will be retained.");
@@ -468,26 +479,26 @@ int main(int argc,char **argv)
   puts("");accessories=ask_yes("Do you wish to install accessories?",1,0);
   puts("\nExtracting files...");fflush(stdout);
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
-  if(!exists(archive)){printf("Cannot find %s\n",archive);return 1;}
+  if(!exists(archive)){error_icon(0);printf("Cannot find %s\n",archive);return 1;}
   sprintf(destination,"%s\\!.EXE",install);
-  if(!extract_file(archive,"!.EXE",destination)){puts("Cannot extract !.EXE");return 1;}
+  if(!extract_file(archive,"!.EXE",destination)){error_icon(0);puts("Cannot extract !.EXE");return 1;}
   sprintf(destination,"%s\\SHORTCUT.COM",install);
-  if(!extract_file(archive,use_dosbox?"SHORTCDB.COM":"SHORTCUT.COM",destination)){puts("Cannot extract SHORTCUT.COM");return 1;}
+  if(!extract_file(archive,use_dosbox?"SHORTCDB.COM":"SHORTCUT.COM",destination)){error_icon(0);puts("Cannot extract SHORTCUT.COM");return 1;}
   sprintf(destination,"%s\\AUTOGEN.EXE",install);
-  if(!extract_file(archive,"AUTOGEN.EXE",destination)){puts("Cannot extract AUTOGEN.EXE");return 1;}
+  if(!extract_file(archive,"AUTOGEN.EXE",destination)){error_icon(0);puts("Cannot extract AUTOGEN.EXE");return 1;}
   sprintf(destination,"%s\\AUTOGEN.DAT",install);
-  if(!extract_file(archive,"AUTOGEN.DAT",destination)){puts("Cannot extract AUTOGEN.DAT");return 1;}
+  if(!extract_file(archive,"AUTOGEN.DAT",destination)){error_icon(0);puts("Cannot extract AUTOGEN.DAT");return 1;}
   sprintf(destination,"%s\\PWROFF.BMP",install);
-  if(!extract_file(archive,"PWROFF.BMP",destination)){puts("Cannot extract PWROFF.BMP");return 1;}
+  if(!extract_file(archive,"PWROFF.BMP",destination)){error_icon(0);puts("Cannot extract PWROFF.BMP");return 1;}
   sprintf(destination,"%s\\FONT.DAT",install);
-  if(!extract_file(archive,"FONT.DAT",destination)){puts("Cannot extract FONT.DAT");return 1;}
+  if(!extract_file(archive,"FONT.DAT",destination)){error_icon(0);puts("Cannot extract FONT.DAT");return 1;}
   if(accessories&&!copy_accessories(archive,install))return 1;
   comspec=getenv("COMSPEC");
   autoexec[0]=(comspec && comspec[1]==':')?(char)toupper(comspec[0]):'C';
   strcpy(autoexec+1,":\\AUTOEXEC.BAT");
   key_spec[0]=0;
   printf("\n");
-  update_autoexec=!upgrade&&ask_yes("Do you want to update your AUTOEXEC.BAT file?",1,5);
+  update_autoexec=!upgrade&&ask_yes("Do you want to update your AUTOEXEC.BAT file?",1,0);
   if(update_autoexec){
     puts("");add_path=ask_yes("Add Launch! to PATH?",1,5);
     puts("");add_shortcut=ask_yes("Enable keyboard shortcut?",1,5);
@@ -498,28 +509,30 @@ int main(int argc,char **argv)
     puts("");show_menu=ask_yes("Show menu after startup?",0,5);
     if(add_path || add_shortcut || show_menu){
       if(!append_autoexec(autoexec,install,add_path,add_shortcut,key_spec,show_menu)){
-        printf("Files copied, but %s could not be updated.\n",autoexec);return 1;
+        error_icon(0);printf("Files copied, but %s could not be updated.\n",autoexec);return 1;
       }
       autoexec_changed=1;
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 3.1 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- SHORTCUT 3.11 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
   if(!upgrade){printf("\n");question_icon(0);printf("Scan the C drive now for recognized programs\n    and build an initial Launch! menu? ");choice_default(0);
   if(fgets(answer,sizeof(answer),stdin)&&toupper(answer[0])=='Y'){
     sprintf(destination,"%s\\AUTOGEN.EXE",install);
-    if(spawnl(P_WAIT,destination,"AUTOGEN.EXE",NULL)==-1)
-      puts("AutoGen could not be started. Run AUTOGEN manually after installation.");
+    if(spawnl(P_WAIT,destination,"AUTOGEN.EXE",NULL)==-1){
+      error_icon(0);puts("AutoGen could not be started. Run AUTOGEN manually after installation.");
+    }
   }}
   if(accessories){
-    if(!install_accessory_menu(archive,install)){puts("Accessories installed, but their menu could not be created.");return 1;}
-    puts("- Installed Launch! accessories and created the Accessories menu.");
+    if(!install_accessory_menu(archive,install)){error_icon(0);puts("Accessories installed, but their menu could not be created.");return 1;}
+    puts("\n- Installed Launch! accessories and created the Accessories menu.");
   }
-  if(autoexec_changed)
-    puts("\nInstall is complete. Reboot to activate the selected startup options.");
-  else puts("\nInstall is complete.");
+  puts("");
+  success_icon(0);
+  if(autoexec_changed)puts("Install is complete. Reboot to activate the selected startup options.");
+  else puts("Install is complete.");
   puts("Press Enter to exit.");
   getchar();return 0;
 }
