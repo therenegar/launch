@@ -9,7 +9,7 @@
 #define SOL_BOARD_FG 10
 #define SOL_BACK_BG 7
 #define SOL_BACK_FG 1
-#define SOL_CARD_BG 15
+#define SOL_CARD_BG 7
 #define SOL_CARD_DIM_BG 7
 typedef struct{unsigned char rank,suit,face;} CARD;
 static CARD card[CARDS];

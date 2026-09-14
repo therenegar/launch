@@ -4,7 +4,6 @@
 
 [Launcher]
 FOLDER=DOS Commands
-SEPARATOR=
 
 [Launcher\DOS Commands]
 ITEM=Check Disk|CHKDSK|1|0|0

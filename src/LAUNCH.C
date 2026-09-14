@@ -195,7 +195,6 @@ static const char *sample_config[] = {
   "\n",
   "[Launcher]\n",
   "FOLDER=DOS Commands\n",
-  "SEPARATOR=\n",
   "\n",
   "[Launcher\\DOS Commands]\n",
   "ITEM=Check Disk|CHKDSK|1|0|0\n",
