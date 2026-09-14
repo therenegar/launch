@@ -21,8 +21,8 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
-- 6 handy and optional DOS accessories to go with Launch!
-    - Calculator, Calendar, Note, Draw, Cardfile, System Info
+- 6 handy and optional text-mode only accessories to go with Launch!
+    - Calculator, Calendar, Note, Draw, Cardfile, System Info and Solitaire
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Custom VGA display fonts to change the look of your whole DOS environment.
@@ -138,7 +138,7 @@ You can choose where the menu is positioned, what options are displayed, the tim
 
 ### Colors
 
-There are 8 pre-defined color schemes to choose from, or you can change the colors for any interface element to your liking.
+There are 9 pre-defined color schemes to choose from, or you can change the colors for any interface element to your liking.
 
 If using a monochrome display, use the 'Mono' scheme for best results.
 
@@ -349,13 +349,23 @@ Click a palette color and then draw in the drawing area. You can hold down the m
 The right mouse button erases.<br/>
 The grid can be toggled on/off.
 
-The drawing is persisted and will be there when the program is re-opened.
+`Show` will render your drawing in large scale graphics mode fullscreen.
+
+Your drawing is persisted and will be there when the program is re-opened.
 
 <img width="360" height="300" alt="Accessory - Pixel Draw" src="https://github.com/user-attachments/assets/314f6c6c-763d-4a35-86b2-2c48e528843f" />
 
 Here's an actual export
 
 <img width="280" height="100" alt="Export" src="https://github.com/user-attachments/assets/4ef4d7cb-d7fd-42f0-b549-cfb2d95db58c" />
+
+
+### !SOL - Solitaire
+
+Play draw 3 Solitaire, in a painstakingly crafted text mode interpretation.
+`New` starts a new game at any time.
+
+Standard Solitaire rules apply. 
 
 
 ### !SYSINFO - System Information

@@ -1,4 +1,4 @@
-/* Launch! 3.0 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 3.1 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -151,14 +151,44 @@ static int contains_line(const char *filename,const char *wanted)
   fclose(f);return 0;
 }
 
-static int ask_yes(const char *prompt,int default_yes)
+static void colour_text(const char *s,int attr){union REGS r;int row,col,cols;if(!_isatty(_fileno(stdout))){fputs(s,stdout);return;}fflush(stdout);memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);cols=r.h.ah?r.h.ah:80;r.h.ah=3;r.h.bh=0;int86(0x10,&r,&r);row=r.h.dh;col=r.h.dl;while(*s){r.h.ah=9;r.h.al=(unsigned char)*s++;r.h.bh=0;r.h.bl=(unsigned char)attr;r.x.cx=1;int86(0x10,&r,&r);if(++col>=cols){col=0;row++;}r.h.ah=2;r.h.bh=0;r.h.dh=(unsigned char)row;r.h.dl=(unsigned char)col;int86(0x10,&r,&r);}}
+static void question_icon(int indent)
+{int i;for(i=0;i<indent;i++)putchar(' ');colour_text(" ? ",0x1F);putchar(' ');}
+static void choice_default(int default_yes)
+{putchar('[');if(default_yes){colour_text("Y",10);fputs("/n",stdout);}else{fputs("y/",stdout);colour_text("N",10);}fputs("]: ",stdout);}
+
+static int ask_yes(const char *prompt,int default_yes,int indent)
 {
   char answer[16];
-  printf("%s [%s]: ",prompt,default_yes?"Y/n":"y/N");
+  question_icon(indent);printf("%s ",prompt);choice_default(default_yes);
   if(!fgets(answer,sizeof(answer),stdin))return default_yes;
   if(answer[0]=='\r' || answer[0]=='\n' || !answer[0])return default_yes;
   return toupper(answer[0])=='Y';
 }
+
+static int cpu_at_least_286(void){unsigned before,after;
+#ifndef __GNUC__
+ _asm {
+  pushf
+  pop ax
+  mov before,ax
+  and ax,0fffh
+  push ax
+  popf
+  pushf
+  pop ax
+  mov after,ax
+  mov ax,before
+  push ax
+  popf
+ }
+ return (after&0xF000)!=0xF000;
+#else
+ before=after=0;return 1;
+#endif
+}
+static const char *display_adapter(int *suitable){union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);if(r.h.al==0x1A){*suitable=1;return"VGA or compatible";}memset(&r,0,sizeof(r));r.h.ah=0x12;r.h.bl=0x10;int86(0x10,&r,&r);if(r.h.bl!=0x10){*suitable=1;return"EGA or compatible";}*suitable=0;return"CGA/MDA compatible";}
+static int hardware_warning(void){char answer[16];colour_text(" ! ",0x4F);fputs(" This system's hardware doesn't meet minimum recommended requirements. Proceed ",stdout);choice_default(0);if(!fgets(answer,sizeof(answer),stdin))return 0;return toupper(answer[0])=='Y';}
 
 static unsigned char far *bios_byte(unsigned offset)
 {
@@ -217,12 +247,12 @@ static void append_key_display(char *text,const char *name)
 
 static void show_keys(unsigned char shift,unsigned scan)
 {
-  static char text[80],label[16];text[0]=0;
+  static char text[80],label[16],padded[59];text[0]=0;
   if(shift&4)append_key_display(text,"CTRL");
   if(shift&8)append_key_display(text,"ALT");
   if(shift&3)append_key_display(text,"SHIFT");
   if(scan){key_label(scan,label);append_key_display(text,label);}
-  printf("\rDetected: %-58s",text);fflush(stdout);
+  printf("\rDetected: ");sprintf(padded,"%-58.58s",text);colour_text(padded,10);fflush(stdout);
 }
 
 static int capture_shortcut(char *spec)
@@ -299,7 +329,7 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
 static int copy_accessories(const char *archive,const char *install)
 {
   static const char *files[]={"!CAL.EXE","!CALC.EXE","!DRAW.EXE",
-    "!NOTE.EXE","!CFILE.EXE","!SYSINFO.EXE",0};
+    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!SOL.EXE",0};
   static char destination[PATH_SIZE];int i;
   for(i=0;files[i];i++){
     sprintf(destination,"%s\\%s",install,files[i]);
@@ -331,6 +361,7 @@ static int accessories_first(const char *menu)
     if(!stricmp(check,"[Launcher]")){fputs(line,out);root=1;if(!found){fputs("FOLDER=Accessories\n",out);found=1;}continue;}
     if(check[0]=='[')root=0;
     if(root&&!stricmp(check,"FOLDER=Accessories"))continue;
+    if(!stricmp(check,"ITEM=Cardfile|!CFILE|1|0|0")){fputs("ITEM=Stack|!STACK|1|0|0\n",out);continue;}
     if(fputs(line,out)==EOF){ok=0;break;}
   }
   if(ferror(in))ok=0;if(fclose(out)!=0)ok=0;fclose(in);
@@ -340,18 +371,19 @@ static int accessories_first(const char *menu)
 
 static int install_accessory_menu(const char *archive,const char *install)
 {
-  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;int section;
+  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;int section,solitaire,stack;
   sprintf(menu,"%s\\LAUNCH.MNU",install);
   if(!exists(menu)){strcpy(sample,"LAUNCH.MNU");if(!extract_file(archive,sample,menu))return 0;}
-  section=contains_line(menu,"[Launcher\\Accessories]");
   if(!accessories_first(menu))return 0;
-  if(section)return 1;
+  section=contains_line(menu,"[Launcher\\Accessories]");solitaire=contains_line(menu,"ITEM=Solitaire|!SOL|1|0|0");stack=contains_line(menu,"ITEM=Stack|!STACK|1|0|0");
+  if(section&&solitaire&&stack)return 1;
   f=fopen(menu,"a");if(!f)return 0;
   fputs("\n[Launcher\\Accessories]\n",f);
+  if(section){if(!stack)fputs("ITEM=Stack|!STACK|1|0|0\n",f);if(!solitaire)fputs("ITEM=Solitaire|!SOL|1|0|0\n",f);return fclose(f)==0;}
   fputs("ITEM=Calendar|!CAL|1|0|0\n",f);
   fputs("ITEM=Calculator|!CALC|1|0|0\nITEM=Pixel Draw|!DRAW|1|0|0\n",f);
-  fputs("ITEM=Note|!NOTE|1|0|0\nITEM=Cardfile|!CFILE|1|0|0\n",f);
-  fputs("ITEM=System Info|!SYSINFO|1|0|0\n",f);
+  fputs("ITEM=Note|!NOTE|1|0|0\nITEM=Stack|!STACK|1|0|0\n",f);
+  fputs("ITEM=System Info|!SYSINFO|1|0|0\nITEM=Solitaire|!SOL|1|0|0\n",f);
   return fclose(f)==0;
 }
 
@@ -360,13 +392,14 @@ int main(int argc,char **argv)
   static char install[PATH_SIZE],source_dir[PATH_SIZE],archive[PATH_SIZE];
   static char destination[PATH_SIZE],autoexec[16],answer[16],key_spec[64];
   char *comspec;
-  int n,dosbox_detected,use_dosbox,update_autoexec=0,upgrade=0,accessories=0;
+  int n,dosbox_detected,use_dosbox,update_autoexec=0,upgrade=0,accessories=0,cpu_ok,display_ok;
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 3.0 Installation");
+  puts("Launch! 3.1 Installation");
   puts("------------------------\n");
-  printf("Install to directory [C:\\LAUNCH]: ");
+  cpu_ok=cpu_at_least_286();printf("Processor: %s\n",cpu_ok?"80286 or later":"8086/8088");printf("Display:   %s\n\n",display_adapter(&display_ok));if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;puts("");
+  question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
   strip_line(install);
   if(!*install)strcpy(install,"C:\\LAUNCH");
@@ -380,16 +413,9 @@ int main(int argc,char **argv)
   if(!upgrade){sprintf(destination,"%s\\LAUNCH.CFG",install);upgrade=exists(destination);}
   if(upgrade)puts("\nExisting Launch! installation detected.\nPerforming upgrade only, existing menu and configuration will be retained.");
   dosbox_detected=running_in_dosbox();
-  if(dosbox_detected){
-    printf("\nIt looks like you're running in DOSBox, is that correct? [Y/n]: ");
-    if(!fgets(answer,sizeof(answer),stdin))return 1;
-    use_dosbox=!answer[0]||answer[0]=='\r'||answer[0]=='\n'||toupper(answer[0])=='Y';
-  }else{
-    printf("\nAre you installing in DOSBox? [y/N]: ");
-    if(!fgets(answer,sizeof(answer),stdin))return 1;
-    use_dosbox=toupper(answer[0])=='Y';
-  }
-  accessories=ask_yes("Do you wish to install accessories?",1);
+  if(dosbox_detected){puts("");use_dosbox=ask_yes("It looks like you're running in DOSBox, is that correct?",1,0);}
+  else{puts("");use_dosbox=ask_yes("Are you installing in DOSBox?",0,0);}
+  puts("");accessories=ask_yes("Do you wish to install accessories?",1,0);
   puts("\nExtracting files...");fflush(stdout);
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
   if(!exists(archive)){printf("Cannot find %s\n",archive);return 1;}
@@ -411,15 +437,15 @@ int main(int argc,char **argv)
   strcpy(autoexec+1,":\\AUTOEXEC.BAT");
   key_spec[0]=0;
   printf("\n");
-  update_autoexec=!upgrade&&ask_yes("Do you want to update your AUTOEXEC.BAT file?",1);
+  update_autoexec=!upgrade&&ask_yes("Do you want to update your AUTOEXEC.BAT file?",1,5);
   if(update_autoexec){
-    add_path=ask_yes("Add Launch! to PATH?",1);
-    add_shortcut=ask_yes("Enable keyboard shortcut?",1);
+    puts("");add_path=ask_yes("Add Launch! to PATH?",1,5);
+    puts("");add_shortcut=ask_yes("Enable keyboard shortcut?",1,5);
     if(add_shortcut){
-      puts("\nThe keyboard shortcut is set to CTRL+ALT+.");
-      if(ask_yes("Change the shortcut key/s?",0))capture_shortcut(key_spec);
+      printf("\n     The keyboard shortcut is set to ");colour_text("CTRL+ALT+.",10);puts("");
+      puts("");if(ask_yes("Change the shortcut key/s?",0,5))capture_shortcut(key_spec);
     }
-    show_menu=ask_yes("Show menu after startup?",0);
+    puts("");show_menu=ask_yes("Show menu after startup?",0,5);
     if(add_path || add_shortcut || show_menu){
       if(!append_autoexec(autoexec,install,add_path,add_shortcut,key_spec,show_menu)){
         printf("Files copied, but %s could not be updated.\n",autoexec);return 1;
@@ -428,11 +454,10 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 3.0 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- SHORTCUT 3.1 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
-  if(!upgrade){printf("\nScan the C drive now for recognized programs\n");
-  printf("and build an initial Launch! menu? [y/N]: ");
+  if(!upgrade){printf("\n");question_icon(0);printf("Scan the C drive now for recognized programs\n    and build an initial Launch! menu? ");choice_default(0);
   if(fgets(answer,sizeof(answer),stdin)&&toupper(answer[0])=='Y'){
     sprintf(destination,"%s\\AUTOGEN.EXE",install);
     if(spawnl(P_WAIT,destination,"AUTOGEN.EXE",NULL)==-1)

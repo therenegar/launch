@@ -8,7 +8,7 @@
 #define ACC_ATTR(bg,fg) (((bg)<<4)|(fg))
 
 typedef struct {
-  unsigned char background,border,main_title,titles,folders,launchers;
+  unsigned char background,border,titlebar_fg,titlebar_bg,main_title,titles,folders,launchers;
   unsigned char selected_fg,selected_bg,controls_fg,controls_bg,labels;
   unsigned char menu_top,show_explore,show_power,show_time;
   unsigned char screensaver,saver_color,saver_delay,hour_12;
@@ -30,6 +30,7 @@ extern char acc_directory[ACC_PATH];
 
 int acc_begin(const char *argv0,const char *title,int graphics);
 void acc_end(void);
+void acc_restore_screen(void);
 void acc_clear(int attr);
 void acc_put(int x,int y,int ch,int attr);
 void acc_text(int x,int y,const char *text,int attr,int width);
@@ -38,6 +39,7 @@ void acc_box(int x,int y,int width,int height,const char *title);
 void acc_button(int x,int y,const char *text,int selected);
 void acc_press_button(int x,int y,const char *text);
 void acc_scrollbar(int x,int top,int height,int position,int total,int page);
+void acc_shadow(int x,int y,int width,int height);
 void acc_glyph_read(int code,unsigned char *glyph);
 void acc_glyph_write(int code,const unsigned char *glyph);
 int acc_key(void);

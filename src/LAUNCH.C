@@ -1,4 +1,4 @@
-/* Launch! 3.0 - modal command menu for DOS
+/* Launch! 3.1 - modal command menu for DOS
  * Microsoft C/C++ 7.0, medium model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -31,15 +31,15 @@
                                       (unsigned short)(off)))
 
 typedef struct {
-  unsigned char background,border,main_title,titles,folders,launchers;
+  unsigned char background,border,titlebar_fg,titlebar_bg,main_title,titles,folders,launchers;
   unsigned char selected_fg,selected_bg,controls_fg,controls_bg,labels;
   unsigned char menu_top,show_explore,show_power,show_time;
   unsigned char screensaver,saver_color,saver_delay,hour_12;
   unsigned char font_id,font_persist,mouse_cursor,prompt_inactivity;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1,0,0};
-static APPEARANCE appearance={1,11,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1,0,0};
+static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1,0,0};
+static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1,0,0};
 
 static void (interrupt far *setkey_old_int09)();
 static volatile unsigned char setkey_scan,setkey_e0,setkey_mods;
@@ -128,7 +128,7 @@ static int node_count;
 static int screen_cols, screen_rows;
 static unsigned short far *video;
 static unsigned short far *saved;
-static unsigned char cursor_start,cursor_end;
+static unsigned char cursor_start,cursor_end,cursor_x,cursor_y;
 static int run_node;
 static char run_command[MAX_CMD];
 static char config_file[MAX_CMD];
@@ -159,7 +159,8 @@ static int mouse_present;
 static int mouse_visible;
 static int mouse_glyph_saved;
 static unsigned char mouse_old_glyph[32];
-static int screensaver_ran;
+static int mouse_target_saved;
+static unsigned char mouse_old_target[32];
 static int dialog_close_x=-1,dialog_close_y=-1;
 static unsigned mouse_last_buttons;
 static unsigned mouse_raw_x,mouse_raw_y;
@@ -188,7 +189,7 @@ static unsigned char explore_drive_symbols[26];
 static int explore_drive_positions[26];
 
 static const char *sample_config[] = {
-  "; Launch! 3.0 initial menu definition\n",
+  "; Launch! 3.1 initial menu definition\n",
   "; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n",
   "; SEPARATOR= adds a movable horizontal separator\n",
   "\n",
@@ -239,19 +240,10 @@ static void restore_screen(void)
   for (i=0; i<n; ++i) video[i] = saved[i];
 }
 
-static void clear_text_screen(void)
-{
-  union REGS r;
-  memset(&r,0,sizeof(r));r.h.ah=6;r.h.al=0;r.h.bh=7;
-  r.x.cx=0;r.h.dh=(unsigned char)(screen_rows-1);
-  r.h.dl=(unsigned char)(screen_cols-1);int86(0x10,&r,&r);
-  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=0;r.x.dx=0;int86(0x10,&r,&r);
-}
-
 static void close_menu(void)
 {
   mouse_stop();mouse_pointer_restore();
-  if(screensaver_ran)clear_text_screen();else restore_screen();
+  restore_screen();
   cursor_restore();
   _ffree(saved);saved=0;
 }
@@ -293,7 +285,7 @@ static void cursor_hide(void)
 {
   union REGS r;
   r.h.ah=3; r.h.bh=0; int86(0x10,&r,&r);
-  cursor_start=r.h.ch; cursor_end=r.h.cl;
+  cursor_start=r.h.ch; cursor_end=r.h.cl;cursor_x=r.h.dl;cursor_y=r.h.dh;
   r.h.ah=1; r.h.ch=0x20; r.h.cl=0; int86(0x10,&r,&r);
 }
 
@@ -302,29 +294,31 @@ static void cursor_restore(void)
   union REGS r;
   r.h.ah=1; r.h.ch=cursor_start; r.h.cl=cursor_end;
   int86(0x10,&r,&r);
+  r.h.ah=2;r.h.bh=0;r.h.dh=cursor_y;r.h.dl=cursor_x;int86(0x10,&r,&r);
 }
 
-static void box(int x,int y,int w,int h,const char *title,int title_attr)
+static void box(int x,int y,int w,int h,const char *title,int title_attr,int title_bg,int title_border)
 {
-  int i,j,len;
+  int i,j,len,top_border=ATTR(title_bg,title_border),top_title=ATTR(title_bg,title_attr&15);
   for (j=0;j<h;j++) for (i=0;i<w;i++) cell(x+i,y+j,' ',C_MENU_BACKGROUND);
-  cell(x,y,218,C_BORDER); cell(x+w-1,y,191,C_BORDER);
+  for(i=0;i<w;i++)cell(x+i,y,' ',ATTR(title_bg,title_bg));
+  cell(x,y,213,top_border); cell(x+w-1,y,184,top_border);
   cell(x,y+h-1,192,C_BORDER); cell(x+w-1,y+h-1,217,C_BORDER);
-  for(i=1;i<w-1;i++){cell(x+i,y,196,C_BORDER);cell(x+i,y+h-1,196,C_BORDER);}
+  for(i=1;i<w-1;i++){cell(x+i,y,205,top_border);cell(x+i,y+h-1,196,C_BORDER);}
   for(j=1;j<h-1;j++){cell(x,y+j,179,C_BORDER);cell(x+w-1,y+j,179,C_BORDER);}
   if(title && *title){
     len=strlen(title); if(len>w-6) len=w-6;
-    cell(x+2,y,180,C_BORDER); textout(x+3,y,title,title_attr,len);
-    cell(x+3+len,y,195,C_BORDER);
+    cell(x+2,y,181,top_border); textout(x+3,y,title,top_title,len);
+    cell(x+3+len,y,198,top_border);
   }
 }
 
 static void dialog_box(int x,int y,int w,int h,const char *title)
 {
   int i; unsigned short v;
-  box(x,y,w,h,title,C_TITLE);
-  cell(x+w-5,y,180,C_BORDER);cell(x+w-4,y,'X',C_ROOT_TITLE);
-  cell(x+w-3,y,195,C_BORDER);dialog_close_x=x+w-4;dialog_close_y=y;
+  box(x,y,w,h,title,C_TITLE,appearance.titlebar_bg,appearance.titlebar_fg);
+  cell(x+w-5,y,181,ATTR(appearance.titlebar_bg,appearance.titlebar_fg));cell(x+w-4,y,'X',ATTR(appearance.titlebar_bg,appearance.main_title));
+  cell(x+w-3,y,198,ATTR(appearance.titlebar_bg,appearance.titlebar_fg));dialog_close_x=x+w-4;dialog_close_y=y;
   for(i=1;i<=h;i++){
     v=video[(y+i)*screen_cols+x+w];
     cell(x+w,y+i,v&255,C_FAUX_SHADOW);
@@ -335,10 +329,11 @@ static void dialog_box(int x,int y,int w,int h,const char *title)
   }
 }
 
-static void menu_box(int x,int y,int w,int h,const char *title,int title_attr)
+static void menu_box(int x,int y,int w,int h,const char *title,int title_attr,int root)
 {
   int i; unsigned short v;
-  box(x,y,w,h,title,title_attr);
+  box(x,y,w,h,title,title_attr,root?appearance.titlebar_bg:appearance.background,
+      root?appearance.titlebar_fg:appearance.border);
   for(i=1;i<=h && x+w<screen_cols;i++) if(y+i<screen_rows){
     v=video[(y+i)*screen_cols+x+w];cell(x+w,y+i,v&255,C_FAUX_SHADOW);
   }
@@ -430,6 +425,8 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   unsigned char *field=0;int limit=15;
   if(!stricmp(key,"BACKGROUND")){field=&a->background;limit=7;}
   else if(!stricmp(key,"BORDER"))field=&a->border;
+  else if(!stricmp(key,"TITLEBAR_FG"))field=&a->titlebar_fg;
+  else if(!stricmp(key,"TITLEBAR_BG")){field=&a->titlebar_bg;limit=7;}
   else if(!stricmp(key,"MAIN_TITLE"))field=&a->main_title;
   else if(!stricmp(key,"TITLES"))field=&a->titles;
   else if(!stricmp(key,"FOLDERS"))field=&a->folders;
@@ -459,7 +456,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
 
 static int load_appearance(void)
 {
-  FILE *f;static char line[80];char *p,*q,*end;long value;APPEARANCE loaded;
+  FILE *f;static char line[80];char *p,*q,*end;long value;APPEARANCE loaded;int title_fg_set=0,title_bg_set=0;
   appearance=default_appearance;
   f=fopen(appearance_file,"rt");if(!f)return 1;
   loaded=default_appearance;
@@ -469,9 +466,11 @@ static int load_appearance(void)
     *q++=0;q=trim(q);p=trim(p);
     value=strtol(q,&end,10);end=trim(end);
     if(!*q || *end || !appearance_value(&loaded,p,(int)value)){fclose(f);return 0;}
+    if(!stricmp(p,"TITLEBAR_FG"))title_fg_set=1;
+    if(!stricmp(p,"TITLEBAR_BG"))title_bg_set=1;
   }
   if(ferror(f)){fclose(f);return 0;}
-  fclose(f);appearance=loaded;return 1;
+  fclose(f);if(!title_fg_set)loaded.titlebar_fg=loaded.border;if(!title_bg_set)loaded.titlebar_bg=loaded.controls_bg;appearance=loaded;return 1;
 }
 
 static int find_folder(const char *title,int parent)
@@ -960,24 +959,43 @@ static void mouse_glyph_write(const unsigned char *glyph)
   font_plane_close(&old);
 }
 
+static void mouse_target_write(const unsigned char *glyph)
+{
+  FONT_REGS old;unsigned char far *font;int i;
+  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,8*32);
+  for(i=0;i<32;i++)font[i]=glyph[i];
+  font_plane_close(&old);
+}
+
 static void mouse_pointer_install(void)
 {
   static const unsigned char arrow16[16]={
     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x10,
     0x18,0x1C,0x1E,0x1F,0x1E,0x12,0x03,0x01
   };
+  static const unsigned char target16[16]={
+    0x00,0x00,0x00,0x18,0x18,0x18,0x3C,0xE7,
+    0xE7,0x3C,0x18,0x18,0x18,0x00,0x00,0x00
+  };
   FONT_REGS old;unsigned char far *font;
   unsigned char arrow[32];unsigned char far *height_ptr;
   union REGS r;int i,height,source;
   if(appearance.mouse_cursor){
-    if(mouse_glyph_saved)mouse_pointer_restore();
+    if(mouse_glyph_saved||mouse_target_saved)mouse_pointer_restore();
     memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;
     if(appearance.mouse_cursor==1){
       /* Retain the underlying glyph and invert its foreground/background. */
       r.x.cx=0xFFFF;r.x.dx=0x7700;
     } else {
       /* Target retains the underlying attribute but substitutes glyph 8. */
-      r.x.cx=0xFF00;r.x.dx=0x7708;
+      if(!mouse_target_saved){
+        font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,8*32);
+        for(i=0;i<32;i++)mouse_old_target[i]=font[i];
+        font_plane_close(&old);mouse_target_saved=1;
+      }
+      memset(arrow,0,sizeof(arrow));for(i=0;i<16;i++)arrow[i]=target16[i];
+      mouse_target_write(arrow);
+      r.x.cx=0xF000;r.x.dx=0x0F08;
     }
     int86(0x33,&r,&r);return;
   }
@@ -999,11 +1017,13 @@ static void mouse_pointer_install(void)
 
 static void mouse_pointer_restore(void)
 {
-  union REGS r;if(!mouse_glyph_saved)return;
-  mouse_glyph_write(mouse_old_glyph);
+  union REGS r;if(!mouse_glyph_saved&&!mouse_target_saved)return;
+  if(mouse_glyph_saved)mouse_glyph_write(mouse_old_glyph);
+  if(mouse_target_saved)mouse_target_write(mouse_old_target);
   memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;
   r.x.cx=0xFFFF;r.x.dx=0x7700;int86(0x33,&r,&r);
   mouse_glyph_saved=0;
+  mouse_target_saved=0;
 }
 
 static void mouse_show(void)
@@ -1517,7 +1537,6 @@ static void run_screensaver(void)
   union REGS r;int mx=0,my=0,old_mode,old_rows=screen_rows;
   unsigned start_x,start_y;
   if(!appearance.screensaver)return;
-  screensaver_ran=1;
   mouse_stop();
   memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);old_mode=r.h.al;
   set_ega_saver_mode(appearance.screensaver==1);
@@ -1539,6 +1558,7 @@ static void run_screensaver(void)
   else if(appearance.screensaver==13)starry_saver_loop(start_x,start_y);
   else warp_saver_loop(start_x,start_y);
   memset(&r,0,sizeof(r));r.h.al=(unsigned char)old_mode;int86(0x10,&r,&r);
+  memset(&r,0,sizeof(r));r.x.ax=0x1003;r.x.bx=0;int86(0x10,&r,&r);
   if(old_rows>25){memset(&r,0,sizeof(r));r.x.ax=0x1112;r.h.bl=0;int86(0x10,&r,&r);}
   video_init();
   memset(&r,0,sizeof(r));r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);
@@ -1651,7 +1671,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 3.0 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 3.1 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt (0/1)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -1677,15 +1697,15 @@ static int save_appearance(void)
   FILE *f;int ok=1;
   remove(appearance_temp_file);
   f=fopen(appearance_temp_file,"wt");if(!f)return 0;
-  if(fputs("; Launch! 3.0 appearance settings\n",f)==EOF)ok=0;
-  if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
+  if(fputs("; Launch! 3.1 appearance settings\n",f)==EOF)ok=0;
+  if(ok && fprintf(f,"BACKGROUND=%u\nBORDER=%u\nTITLEBAR_FG=%u\nTITLEBAR_BG=%u\nMAIN_TITLE=%u\nTITLES=%u\n"
       "FOLDERS=%u\nLAUNCHERS=%u\nSELECTED_FG=%u\nSELECTED_BG=%u\n"
       "CONTROLS_FG=%u\nCONTROLS_BG=%u\nLABELS=%u\nMENU_TOP=%u\n"
       "SCREENSAVER=%u\nSAVER_COLOR=%u\nSAVER_DELAY=%u\nHOUR_12=%u\n"
       "SHOW_EXPLORE=%u\n"
       "SHOW_POWER=%u\nSHOW_TIME=%u\nFONT_ID=%u\nFONT_PERSIST=%u\n"
       "MOUSE_CURSOR=%u\n",
-      appearance.background,appearance.border,appearance.main_title,appearance.titles,
+      appearance.background,appearance.border,appearance.titlebar_fg,appearance.titlebar_bg,appearance.main_title,appearance.titles,
       appearance.folders,appearance.launchers,appearance.selected_fg,appearance.selected_bg,
       appearance.controls_fg,appearance.controls_bg,appearance.labels,
       appearance.menu_top,appearance.screensaver,appearance.saver_color,
@@ -2358,26 +2378,28 @@ static const char *colour_names[16]={
 
 typedef struct {
   const char *name;
-  unsigned char colour[11];
+  unsigned char colour[13];
 } COLOUR_SCHEME;
 
-static const COLOUR_SCHEME colour_schemes[8]={
-  {"Standard", {1,11,12,14,15,10,15,3,0,7,7}},
-  {"Hot Dog",  {4,0,14,14,7,15,14,0,4,7,12}},
-  {"Mono",     {7,8,0,0,8,0,15,0,7,0,0}},
-  {"Pretty",   {5,12,14,13,7,12,5,3,5,7,15}},
-  {"Pro Style",{7,15,9,0,8,0,11,3,9,1,8}},
-  {"Stealth",  {0,9,14,14,7,15,12,0,9,0,15}},
-  {"Swiss",    {7,8,4,4,8,0,15,0,7,4,8}},
-  {"Tranquil", {3,11,10,10,8,0,10,0,15,2,15}}
+#define COLOUR_SCHEME_COUNT 9
+static const COLOUR_SCHEME colour_schemes[COLOUR_SCHEME_COUNT]={
+  {"Standard", {1,11,15,7,12,14,15,10,15,3,0,7,7}},
+  {"Hot Dog",  {4,0,14,7,14,14,7,15,14,0,4,7,12}},
+  {"Mono",     {7,8,8,7,0,0,8,0,15,0,7,0,0}},
+  {"Pretty",   {5,12,12,4,14,12,7,12,5,3,5,7,15}},
+  {"Pro Style",{7,15,7,1,15,9,8,0,11,3,9,1,8}},
+  {"Ranch",    {7,6,12,6,14,15,6,4,15,4,7,6,8}},
+  {"Stealth",  {0,9,9,0,14,14,7,15,12,0,9,0,15}},
+  {"Swiss",    {7,8,0,7,4,15,4,0,15,0,7,4,8}},
+  {"Tranquil", {3,11,10,2,10,0,8,0,10,0,15,2,15}}
 };
 
 static int colour_scheme_index(void)
 {
   const unsigned char *current=&appearance.background;int i,j;
-  for(i=0;i<8;i++){
-    for(j=0;j<11;j++)if(current[j]!=colour_schemes[i].colour[j])break;
-    if(j==11)return i;
+  for(i=0;i<COLOUR_SCHEME_COUNT;i++){
+    for(j=0;j<13;j++)if(current[j]!=colour_schemes[i].colour[j])break;
+    if(j==13)return i;
   }
   return -1;
 }
@@ -2385,7 +2407,7 @@ static int colour_scheme_index(void)
 static void apply_colour_scheme(int index)
 {
   unsigned char *current=&appearance.background;int i;
-  for(i=0;i<11;i++)current[i]=colour_schemes[index].colour[i];
+  for(i=0;i<13;i++)current[i]=colour_schemes[index].colour[i];
 }
 
 static const char *screensaver_names[15]={
@@ -2451,7 +2473,7 @@ static int config_count(int tab)
 {
   if(tab==0)return 2;
   if(tab==1)return 6;
-  if(tab==2)return 12;
+  if(tab==2)return 14;
   if(tab==3)return appearance.screensaver==1?4:3;
   return font_is_vga()?2:0;
 }
@@ -2461,13 +2483,13 @@ static unsigned char *config_field(int tab,int item,int *limit)
   *limit=15;
   if(tab==2)switch(item){
     case 1:*limit=7;return &appearance.background;
-    case 2:return &appearance.border;case 3:return &appearance.main_title;
-    case 4:return &appearance.titles;case 5:return &appearance.folders;
-    case 6:return &appearance.launchers;case 7:return &appearance.selected_fg;
-    case 8:*limit=7;return &appearance.selected_bg;
-    case 9:return &appearance.controls_fg;
-    case 10:*limit=7;return &appearance.controls_bg;
-    case 11:return &appearance.labels;
+    case 2:return &appearance.border;case 3:return &appearance.titlebar_fg;
+    case 4:*limit=7;return &appearance.titlebar_bg;
+    case 5:return &appearance.main_title;case 6:return &appearance.titles;
+    case 7:return &appearance.folders;case 8:return &appearance.launchers;
+    case 9:return &appearance.selected_fg;case 10:*limit=7;return &appearance.selected_bg;
+    case 11:return &appearance.controls_fg;case 12:*limit=7;return &appearance.controls_bg;
+    case 13:return &appearance.labels;
   }
   if(tab==1){
     if(item==0){*limit=1;return &appearance.menu_top;}
@@ -2498,8 +2520,8 @@ static void change_config_value(int tab,int item,int direction)
   unsigned char *field;int limit,value;
   if(tab==2 && item==0){
     value=colour_scheme_index();
-    if(value<0)value=direction>0?0:7;
-    else {value+=direction;if(value<0)value=7;if(value>7)value=0;}
+    if(value<0)value=direction>0?0:COLOUR_SCHEME_COUNT-1;
+    else {value+=direction;if(value<0)value=COLOUR_SCHEME_COUNT-1;if(value>=COLOUR_SCHEME_COUNT)value=0;}
     apply_colour_scheme(value);return;
   }
   if(tab==3 && item==0){
@@ -2513,7 +2535,7 @@ static void change_config_value(int tab,int item,int direction)
   }
   value=(int)*field+direction;if(value<0)value=limit;if(value>limit)value=0;
   *field=(unsigned char)value;
-  if(tab==4 && item==0){font_preview(appearance.font_id);mouse_pointer_install();}
+  if(tab==4 && item==0){mouse_pointer_restore();font_preview(appearance.font_id);mouse_pointer_install();}
   if(tab==1 && item==5)mouse_pointer_install();
 }
 
@@ -2536,24 +2558,26 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
       textout(x+5,y+14,"Shortcut combination changed. Restart to take effect.",
               C_INPUT_LABEL,54);
   } else if(tab==2){
-    static const char *labels[9]={"Panels","Border","Main Title","Titles","Folders","Launchers","Selected items","Controls","Labels"};
+    static const char *labels[10]={"Panels","Border","Titlebar","Main Title","Titles","Folders","Launchers","Selected items","Controls","Labels"};
     int scheme=colour_scheme_index();
     textout(x+5,y+4,"Color scheme",C_INPUT_LABEL,18);
     cycle_control(x+25,y+4,scheme<0?"Custom":colour_schemes[scheme].name,f==0||h==0);
-    textout(x+25,y+6,"Foreground",C_INPUT_LABEL,15);
-    textout(x+45,y+6,"Background",C_INPUT_LABEL,15);
-    for(i=0;i<9;i++)textout(x+5,y+7+i,labels[i],C_INPUT_LABEL,18);
-    cycle_control(x+45,y+7,colour_names[appearance.background],f==1||h==1);
-    cycle_control(x+25,y+8,colour_names[appearance.border],f==2||h==2);
-    cycle_control(x+25,y+9,colour_names[appearance.main_title],f==3||h==3);
-    cycle_control(x+25,y+10,colour_names[appearance.titles],f==4||h==4);
-    cycle_control(x+25,y+11,colour_names[appearance.folders],f==5||h==5);
-    cycle_control(x+25,y+12,colour_names[appearance.launchers],f==6||h==6);
-    cycle_control(x+25,y+13,colour_names[appearance.selected_fg],f==7||h==7);
-    cycle_control(x+45,y+13,colour_names[appearance.selected_bg],f==8||h==8);
-    cycle_control(x+25,y+14,colour_names[appearance.controls_fg],f==9||h==9);
-    cycle_control(x+45,y+14,colour_names[appearance.controls_bg],f==10||h==10);
-    cycle_control(x+25,y+15,colour_names[appearance.labels],f==11||h==11);
+    textout(x+25,y+5,"Foreground",C_INPUT_LABEL,15);
+    textout(x+45,y+5,"Background",C_INPUT_LABEL,15);
+    for(i=0;i<10;i++)textout(x+5,y+6+i,labels[i],C_INPUT_LABEL,18);
+    cycle_control(x+45,y+6,colour_names[appearance.background],f==1||h==1);
+    cycle_control(x+25,y+7,colour_names[appearance.border],f==2||h==2);
+    cycle_control(x+25,y+8,colour_names[appearance.titlebar_fg],f==3||h==3);
+    cycle_control(x+45,y+8,colour_names[appearance.titlebar_bg],f==4||h==4);
+    cycle_control(x+25,y+9,colour_names[appearance.main_title],f==5||h==5);
+    cycle_control(x+25,y+10,colour_names[appearance.titles],f==6||h==6);
+    cycle_control(x+25,y+11,colour_names[appearance.folders],f==7||h==7);
+    cycle_control(x+25,y+12,colour_names[appearance.launchers],f==8||h==8);
+    cycle_control(x+25,y+13,colour_names[appearance.selected_fg],f==9||h==9);
+    cycle_control(x+45,y+13,colour_names[appearance.selected_bg],f==10||h==10);
+    cycle_control(x+25,y+14,colour_names[appearance.controls_fg],f==11||h==11);
+    cycle_control(x+45,y+14,colour_names[appearance.controls_bg],f==12||h==12);
+    cycle_control(x+25,y+15,colour_names[appearance.labels],f==13||h==13);
   } else if(tab==1){
     textout(x+5,y+4,"Menu position",C_INPUT_LABEL,18);
     cycle_control(x+25,y+4,appearance.menu_top?"Top":"Bottom",f==0||h==0);
@@ -2591,7 +2615,7 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
   for(i=1;i<65;i++)cell(x+i,y+16,196,C_BORDER);
   draw_button(x+5,y+17,"  Save  ",8,focus==20||hover==20);
   draw_button(x+16,y+17,"  Cancel  ",10,focus==21||hover==21);
-    textout(x+50,y+17,"Version 3.0",C_INPUT_LABEL,11);
+    textout(x+50,y+17,"Version 3.1",C_INPUT_LABEL,11);
 }
 
 static int config_hit(int x,int y,int tab,int mx,int my)
@@ -2604,13 +2628,14 @@ static int config_hit(int x,int y,int tab,int mx,int my)
        mx<(config_shortcut_active?x+55:x+57))return CONFIG_CONTROL_BASE;
     if(my==y+11&&mx>=x+31&&mx<x+41)return CONFIG_CONTROL_BASE+1;
   } else if(tab==2){
-    static const int rows[9]={4,8,9,10,11,12,13,14,15};
-    static const int items[9]={0,2,3,4,5,6,7,9,11};
+    static const int rows[11]={4,7,8,9,10,11,12,13,14,15,8};
+    static const int items[11]={0,2,3,5,6,7,8,9,11,13,4};
     if(mx>=x+25&&mx<x+40)
-      for(i=0;i<9;i++)if(my==y+rows[i])return CONFIG_CONTROL_BASE+items[i];
-    if(mx>=x+45&&mx<x+60&&my==y+7)return CONFIG_CONTROL_BASE+1;
-    if(mx>=x+45&&mx<x+60&&my==y+13)return CONFIG_CONTROL_BASE+8;
-    if(mx>=x+45&&mx<x+60&&my==y+14)return CONFIG_CONTROL_BASE+10;
+      for(i=0;i<11;i++)if(my==y+rows[i])return CONFIG_CONTROL_BASE+items[i];
+    if(mx>=x+45&&mx<x+60&&my==y+6)return CONFIG_CONTROL_BASE+1;
+    if(mx>=x+45&&mx<x+60&&my==y+8)return CONFIG_CONTROL_BASE+4;
+    if(mx>=x+45&&mx<x+60&&my==y+13)return CONFIG_CONTROL_BASE+10;
+    if(mx>=x+45&&mx<x+60&&my==y+14)return CONFIG_CONTROL_BASE+12;
   } else if(tab==1){
     static const int rows[6]={4,6,8,10,12,14};
     for(i=0;i<6;i++)if(my==y+rows[i]&&mx>=x+25&&mx<x+63)
@@ -2661,19 +2686,19 @@ static int configure_appearance(void)
         } else if(tab==3&&((appearance.screensaver==1&&item==3) ||
                            (appearance.screensaver!=1&&item==2))){
           press_button(x+25,appearance.screensaver==1?y+10:y+8,"  Preview   ",11);
-          run_screensaver();screensaver_ran=0;
+          run_screensaver();
         } else change_config_value(tab,item,1);
         redraw=2;continue;
       }
       if(hit==20){
         press_button(x+5,y+17,"  Save  ",8);
-        if(font_commit(appearance.font_id)&&save_appearance()){close_menu();return 1;}
+        mouse_pointer_restore();if(font_commit(appearance.font_id)&&save_appearance()){close_menu();return 1;}mouse_pointer_install();
         notice_box("Write Error","Could not save the configuration.");redraw=2;continue;
       }
-      if(hit==21){press_button(x+16,y+17,"  Cancel  ",10);appearance=original;font_restore();close_menu();return 0;}
+      if(hit==21){press_button(x+16,y+17,"  Cancel  ",10);mouse_pointer_restore();appearance=original;font_restore();close_menu();return 0;}
       continue;
     }
-    if(k==27){appearance=original;font_restore();close_menu();return 0;}
+    if(k==27){mouse_pointer_restore();appearance=original;font_restore();close_menu();return 0;}
     count=config_count(tab);
     if(k==9||k==0x5000){
       if(focus<CONFIG_TAB_COUNT-1)focus++;
@@ -2726,7 +2751,7 @@ static int configure_appearance(void)
         }
       } else if(tab==3&&((appearance.screensaver==1&&item==3) ||
                          (appearance.screensaver!=1&&item==2))){
-        if(k==13||k==' '){run_screensaver();screensaver_ran=0;redraw=2;}
+        if(k==13||k==' '){run_screensaver();redraw=2;}
       } else if(k==0x4B00){change_config_value(tab,item,-1);redraw=2;}
       else if(k==0x4D00||k==' '){change_config_value(tab,item,1);redraw=2;}
       else if(k==13){focus=(item+1<count)?focus+1:20;redraw=1;}
@@ -2734,9 +2759,9 @@ static int configure_appearance(void)
     }
     if(k==0x4B00||k==0x4D00){focus=focus==20?21:20;redraw=1;}
     else if(k==13&&focus==20){
-      if(font_commit(appearance.font_id)&&save_appearance()){close_menu();return 1;}
+      mouse_pointer_restore();if(font_commit(appearance.font_id)&&save_appearance()){close_menu();return 1;}mouse_pointer_install();
       notice_box("Write Error","Could not save the configuration.");redraw=2;
-    } else if(k==13){appearance=original;font_restore();close_menu();return 0;}
+    } else if(k==13){mouse_pointer_restore();appearance=original;font_restore();close_menu();return 0;}
   }
 }
 
@@ -3608,6 +3633,18 @@ static int menu_entry_attribute(int node,int selected)
   return nodes[node].folder?C_FOLDER:C_ITEM;
 }
 
+static int menu_item_offset(int depth,int node,int index)
+{
+  if(depth)return 1+index;
+  return 2+index+(node<0?1:0);
+}
+
+static int menu_position_at(int depth,int *list,int n,int panel_y,int mouse_y)
+{
+  int i;for(i=0;i<n;i++)if(mouse_y==panel_y+menu_item_offset(depth,list[i],i))return i;
+  return -1;
+}
+
 static void change_menu_selection(int depth,int *list,int n,int *selection,
                                   int direction,int panel_y)
 {
@@ -3616,9 +3653,9 @@ static void change_menu_selection(int depth,int *list,int n,int *selection,
   next=(old+n+direction)%n;if(next==old)return;
   if(x+MENU_WIDTH>screen_cols)x=screen_cols-MENU_WIDTH;
   wait_vertical_retrace();
-  row_attribute(x+1,panel_y+1+old,18,menu_entry_attribute(list[old],0));
+  row_attribute(x+1,panel_y+menu_item_offset(depth,list[old],old),18,menu_entry_attribute(list[old],0));
   *selection=next;
-  row_attribute(x+1,panel_y+1+next,18,menu_entry_attribute(list[next],1));
+  row_attribute(x+1,panel_y+menu_item_offset(depth,list[next],next),18,menu_entry_attribute(list[next],1));
 }
 
 static void set_menu_selection(int depth,int *list,int *selection,
@@ -3628,9 +3665,9 @@ static void set_menu_selection(int depth,int *list,int *selection,
   if(next==old)return;
   if(x+MENU_WIDTH>screen_cols)x=screen_cols-MENU_WIDTH;
   wait_vertical_retrace();
-  row_attribute(x+1,panel_y+1+old,18,menu_entry_attribute(list[old],0));
+  row_attribute(x+1,panel_y+menu_item_offset(depth,list[old],old),18,menu_entry_attribute(list[old],0));
   *selection=next;
-  row_attribute(x+1,panel_y+1+next,18,menu_entry_attribute(list[next],1));
+  row_attribute(x+1,panel_y+menu_item_offset(depth,list[next],next),18,menu_entry_attribute(list[next],1));
 }
 
 static int menu_open_folder(const char *name,int *parent,int *sel)
@@ -3654,7 +3691,7 @@ static int menu_open_folder(const char *name,int *parent,int *sel)
 static int menu(const char *open_to)
 {
   static int parent[MAX_DEPTH],sel[MAX_DEPTH],list[MAX_CHILD];
-  static int panel_y[MAX_DEPTH],panel_h[MAX_DEPTH],panel_n[MAX_DEPTH];
+  static int panel_y[MAX_DEPTH],panel_h[MAX_DEPTH];
   static int draw_list[MAX_CHILD],hitlist[MAX_CHILD];
   union REGS clock_regs;
   int depth=0,n,k,i,h,x,y,node,redraw=2,mx=0,my=0,hit,pos;
@@ -3671,35 +3708,42 @@ static int menu(const char *open_to)
       if(redraw==2) restore_screen();
       for(i=0;i<=depth;i++){
         int tn,j;
-        tn=menu_children(parent[i],draw_list); h=(tn?tn+2:3)+(i==0?1:0);
+        tn=menu_children(parent[i],draw_list);h=tn?tn+2:3;
+        if(i==0){h+=2;if(appearance.show_explore||appearance.show_power)h++;}
         if(h>screen_rows) h=screen_rows;
         if(i==0) y=appearance.menu_top?0:screen_rows-h;
         else {
-          y=panel_y[i-1]+1+sel[i-1];
+          int pn=menu_children(parent[i-1],hitlist);
+          y=panel_y[i-1]+menu_item_offset(i-1,pn?hitlist[sel[i-1]]:0,sel[i-1])-1;
           if(y+h>screen_rows) y=screen_rows-h;
           if(y<0) y=0;
         }
-        panel_y[i]=y;panel_h[i]=h;panel_n[i]=tn;
+        panel_y[i]=y;panel_h[i]=h;
         x=i*MENU_WIDTH;
         if(x+MENU_WIDTH>screen_cols) x=screen_cols-MENU_WIDTH;
-        menu_box(x,y,MENU_WIDTH,h,(i==0)?"Launch!":nodes[parent[i]].title,
-                 (i==0)?C_ROOT_TITLE:C_TITLE);
+        menu_box(x,y,MENU_WIDTH,h,(i==0)?"Launch!":0,
+                 (i==0)?C_ROOT_TITLE:C_TITLE,i==0);
         for(j=0;j<tn && j<h-2;j++){
+          int item_y;
           node=draw_list[j];
+          item_y=y+menu_item_offset(i,node,j);
+          if(i==0&&node<0&&(j==0||draw_list[j-1]>=0)){
+            int sx;for(sx=1;sx<MENU_WIDTH-1;sx++)cell(x+sx,item_y-1,196,C_BORDER);
+          }
           if(node==BUILTIN_EXPLORE){
-	    textout(x+1,y+1+j,"Explore & Run",(j==sel[i])?C_SELECTED:C_ITEM,18);
+	    textout(x+1,item_y,"Explore & Run",(j==sel[i])?C_SELECTED:C_ITEM,18);
           } else if(node==BUILTIN_POWER){
-	    textout(x+1,y+1+j,"Shutdown...",(j==sel[i])?C_SELECTED:C_ITEM,18);
+	    textout(x+1,item_y,"Shutdown...",(j==sel[i])?C_SELECTED:C_ITEM,18);
           } else if(nodes[node].separator){
             int a=(j==sel[i])?ATTR(appearance.selected_bg,appearance.border):C_BORDER;
-            int sx;for(sx=0;sx<18;sx++)cell(x+1+sx,y+1+j,196,a);
+            int sx;for(sx=0;sx<18;sx++)cell(x+1+sx,item_y,196,a);
           } else if(nodes[node].folder){
-            textout(x+1,y+1+j,nodes[node].title,(j==sel[i])?C_SELECTED:C_FOLDER,16);
-            cell(x+17,y+1+j,' ',(j==sel[i])?C_SELECTED:C_FOLDER);
-            cell(x+18,y+1+j,16,(j==sel[i])?C_SELECTED:C_FOLDER);
-          } else textout(x+1,y+1+j,nodes[node].title,(j==sel[i])?C_SELECTED:C_ITEM,18);
+            textout(x+1,item_y,nodes[node].title,(j==sel[i])?C_SELECTED:C_FOLDER,16);
+            cell(x+17,item_y,' ',(j==sel[i])?C_SELECTED:C_FOLDER);
+            cell(x+18,item_y,16,(j==sel[i])?C_SELECTED:C_FOLDER);
+          } else textout(x+1,item_y,nodes[node].title,(j==sel[i])?C_SELECTED:C_ITEM,18);
         }
-        if(!tn)textout(x+1,y+1,"Empty",C_EMPTY,18);
+        if(!tn)textout(x+1,y+(i==0?2:1),"Empty",C_EMPTY,18);
       }
       if(appearance.show_time)last_second=draw_clock(panel_y[0]+panel_h[0]-1,255);
       else last_second=255;
@@ -3716,8 +3760,10 @@ static int menu(const char *open_to)
         for(i=depth;i>=0;i--){
           x=i*MENU_WIDTH;if(x+MENU_WIDTH>screen_cols)x=screen_cols-MENU_WIDTH;
           if(mx>=x && mx<x+MENU_WIDTH && my>panel_y[i] &&
-             my<=panel_y[i]+panel_n[i]){
-            hit=i;pos=my-panel_y[i]-1;break;
+             my<panel_y[i]+panel_h[i]){
+            int hn=menu_children(parent[i],hitlist);
+            pos=menu_position_at(i,hitlist,hn,panel_y[i],my);
+            if(pos>=0){hit=i;break;}
           }
         }
         if(hit>=0 && pos>=0){
@@ -3756,7 +3802,8 @@ static int menu(const char *open_to)
       for(i=depth;i>=0;i--){
         x=i*MENU_WIDTH;if(x+MENU_WIDTH>screen_cols)x=screen_cols-MENU_WIDTH;
         if(mx>=x && mx<x+MENU_WIDTH && my>=panel_y[i] && my<panel_y[i]+panel_h[i]){
-          hit=i;if(my>panel_y[i] && my<=panel_y[i]+panel_n[i])pos=my-panel_y[i]-1;break;
+          int hn=menu_children(parent[i],hitlist);
+          hit=i;pos=menu_position_at(i,hitlist,hn,panel_y[i],my);break;
         }
       }
       if((mb&2) && hit==0 && my==panel_y[0] && mx>=3 && mx<10){
@@ -4473,7 +4520,7 @@ static void shortcut_idle_sync(void)
 
 static void show_help(void)
 {
-  puts("Launch! 3.0 - a lightweight command menu for DOS\n");
+  puts("Launch! 3.1 - a lightweight command menu for DOS\n");
   puts("Usage: ! [/CONFIG | /EXPLORE | /NOW | /USE=file.mnu | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");

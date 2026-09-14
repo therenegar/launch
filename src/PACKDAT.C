@@ -1,4 +1,4 @@
-/* Builds the uncompressed Launch! 3.0 INSTALL.DAT distribution archive. */
+/* Builds the uncompressed Launch! 3.1 INSTALL.DAT distribution archive. */
 #include <stdio.h>
 #include <string.h>
 
@@ -7,7 +7,7 @@
 static const char *files[]={
   "!.EXE","SHORTCUT.COM","SHORTCDB.COM","AUTOGEN.EXE","AUTOGEN.DAT",
   "PWROFF.BMP","FONT.DAT","LAUNCH.MNU","!CAL.EXE","!CALC.EXE",
-  "!DRAW.EXE","!NOTE.EXE","!CFILE.EXE","!SYSINFO.EXE",0
+  "!DRAW.EXE","!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!SOL.EXE",0
 };
 
 static unsigned char buffer[4096];

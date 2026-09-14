@@ -3,7 +3,7 @@
 .section .text
 .global _start
 
-/* SHORTCUT.COM 3.0 - tiny prompt-aware Launch! hotkey TSR.
+/* SHORTCUT.COM 3.1 - tiny prompt-aware Launch! hotkey TSR.
  * Build on a modern GNU binutils host:
  *   as --32 SHORTCUT.ASM -o SHORTCUT.O
  *   ld -m elf_i386 -Ttext 0x100 --oformat binary --entry=_start \
@@ -454,7 +454,7 @@ int2f_handler:
     cmp ax,0xd5b0
     jne 6f
     mov bx,0x5343                     /* "SC" installation signature */
-    mov cx,0x0300                     /* version 3.0 */
+    mov cx,0x0301                     /* version 3.1 */
     push cs
     pop es
     iret
@@ -1565,12 +1565,12 @@ msg_unload_unsafe:
     .ascii "Unload that TSR first, or reboot.\r\n$"
 msg_help:
 .ifdef DOSBOX_BUILD
-    .ascii "SHORTCDB 3.0 - DOSBox-X hotkey for Launch!\r\n\r\n"
+    .ascii "SHORTCDB 3.1 - DOSBox-X hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCDB [/KEY=keys]\r\n"
     .ascii "       SHORTCDB /UNLOAD\r\n"
     .ascii "       SHORTCDB /?\r\n\r\n"
 .else
-    .ascii "SHORTCUT 3.0 - prompt-aware hotkey for Launch!\r\n\r\n"
+    .ascii "SHORTCUT 3.1 - prompt-aware hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCUT [/KEY=keys]\r\n"
     .ascii "       SHORTCUT /UNLOAD\r\n"
     .ascii "       SHORTCUT /?\r\n\r\n"
