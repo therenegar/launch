@@ -27,8 +27,8 @@ FEATURES
 - Automatic menu generator with comprehensive DOS program database.
 - Program parameter help screen to make it easy supplying parameters.
 - Built-in executable explorer to quickly browse and run programs anywhere.
-- 6 handy and optional text-mode only accessories:
-  * Calculator, Calendar, Note, Draw, Cardfile, System Info and Solitaire
+- 7 handy and optional text-mode only accessories and a game!
+  * Calculator, Calendar, Note, Draw, Cardfile, System Info and Boxes (Sokoban)
 - Built-in Power Off/Reboot control with retro Windows 95 style experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night,
   bouncing DOS logo, warp field, 3D pipes, paintball, and more!
@@ -248,8 +248,9 @@ to text file, and direct printer routing capabilities.
 right click erases. Toggleable alignment grid. Drawings can be exported 
 directly to a standard BMP file cropped to your drawing dimensions.
 
-!SOL (Solitaire)
-A complete text-mode recreation of classic Draw-3 Solitaire.
+!BOXES (Boxes)
+A simple Sokoban style puzzle game with over 100 different challenges.
+Use the arrow keys to move the worker and push boxes over the targets.
 
 !SYSINFO (System Information)
 Displays comprehensive statistics on free hardware memory, disk spaces, 
