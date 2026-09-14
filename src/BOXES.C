@@ -360,7 +360,7 @@ static void draw_status(int x,int y)
 
 int main(int argc,char **argv)
 {
-  int x,y,bx,by,key=0,mx=0,my=0,dirty=1,full=1;
+  int x,y,bx,by,key=0,mx=0,my=0,dirty=1,full=1,focus=0;
   int tx,ty,won_moves,won_best;
   unsigned mb=0;
   char msg[96];
@@ -379,10 +379,10 @@ int main(int argc,char **argv)
       acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);
       draw_status(x,y);
       render_board(bx,by);
-      acc_button(x+3,y+17," Retry ",0);
-      acc_button(x+13,y+17," < Prev ",0);
-      acc_button(x+23,y+17," Next > ",0);
-      acc_button(x+DLG_W-11,y+17," Close ",0);
+      acc_button(x+3,y+17," Retry ",focus==1);
+      acc_button(x+13,y+17," < Prev ",focus==2);
+      acc_button(x+23,y+17," Next > ",focus==3);
+      acc_button(x+DLG_W-11,y+17," Close ",focus==4);
       full=0;dirty=0;
     }else if(dirty){
       render_changed(bx,by);
@@ -393,22 +393,35 @@ int main(int argc,char **argv)
 
     if((mb&1)&&!(mb&ACC_MOUSE_MOVED)){
       if(my==y+17){
-        if(mx>=x+3&&mx<x+10){load_level(current_level);full=1;key=0;}
-        else if(mx>=x+13&&mx<x+21){change_level(-1);full=1;key=0;}
-        else if(mx>=x+23&&mx<x+31){change_level(1);full=1;key=0;}
-        else if(mx>=x+DLG_W-11&&mx<x+DLG_W-4)key=27;
+        if(mx>=x+3&&mx<x+10){focus=1;load_level(current_level);full=1;key=0;}
+        else if(mx>=x+13&&mx<x+21){focus=2;change_level(-1);full=1;key=0;}
+        else if(mx>=x+23&&mx<x+31){focus=3;change_level(1);full=1;key=0;}
+        else if(mx>=x+DLG_W-11&&mx<x+DLG_W-4){focus=4;key=27;}
       }else if(mx>=bx&&mx<bx+board_w*2&&my>=by&&my<by+board_h){
-        tx=(mx-bx)/2;ty=my-by;
+        focus=0;tx=(mx-bx)/2;ty=my-by;
         if(walk_to(tx,ty))dirty=1;
         key=0;
       }
-    }else if(key==256+72){dirty=move_player(0,-1);key=0;}
-    else if(key==256+80){dirty=move_player(0,1);key=0;}
-    else if(key==256+75){dirty=move_player(-1,0);key=0;}
-    else if(key==256+77){dirty=move_player(1,0);key=0;}
-    else if(key=='r'||key=='R'){load_level(current_level);full=1;key=0;}
-    else if(key==256+73){change_level(-1);full=1;key=0;}
-    else if(key==256+81){change_level(1);full=1;key=0;}
+    }else if(key==9){
+      focus=(focus+1)%5;
+      acc_button(x+3,y+17," Retry ",focus==1);
+      acc_button(x+13,y+17," < Prev ",focus==2);
+      acc_button(x+23,y+17," Next > ",focus==3);
+      acc_button(x+DLG_W-11,y+17," Close ",focus==4);
+      key=0;
+    }else if((key==13||key==' ')&&focus){
+      if(focus==1){load_level(current_level);full=1;}
+      else if(focus==2){change_level(-1);full=1;}
+      else if(focus==3){change_level(1);full=1;}
+      else if(focus==4)key=27;
+      if(key!=27)key=0;
+    }else if(key==256+72&&focus==0){dirty=move_player(0,-1);key=0;}
+    else if(key==256+80&&focus==0){dirty=move_player(0,1);key=0;}
+    else if(key==256+75&&focus==0){dirty=move_player(-1,0);key=0;}
+    else if(key==256+77&&focus==0){dirty=move_player(1,0);key=0;}
+    else if(key=='r'||key=='R'){focus=0;load_level(current_level);full=1;key=0;}
+    else if(key==256+73){focus=0;change_level(-1);full=1;key=0;}
+    else if(key==256+81){focus=0;change_level(1);full=1;key=0;}
     else if(key!=27)key=0;
 
     if((dirty||full)&&solved()){
@@ -420,6 +433,7 @@ int main(int argc,char **argv)
       else current_level=0;
       save_level();
       load_level(current_level);
+      focus=0;
       full=1;
     }
   }

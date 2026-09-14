@@ -151,10 +151,58 @@ static int contains_line(const char *filename,const char *wanted)
   fclose(f);return 0;
 }
 
-static void normal_cursor_attr(void){union REGS r;unsigned char ch;if(!_isatty(_fileno(stdout)))return;fflush(stdout);memset(&r,0,sizeof(r));r.h.ah=8;r.h.bh=0;int86(0x10,&r,&r);ch=r.h.al;r.h.ah=9;r.h.al=ch;r.h.bh=0;r.h.bl=0x07;r.x.cx=1;int86(0x10,&r,&r);}
-static void colour_text(const char *s,int attr){union REGS r;int row,col,cols;if(!_isatty(_fileno(stdout))){fputs(s,stdout);return;}fflush(stdout);memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);cols=r.h.ah?r.h.ah:80;r.h.ah=3;r.h.bh=0;int86(0x10,&r,&r);row=r.h.dh;col=r.h.dl;while(*s){r.h.ah=9;r.h.al=(unsigned char)*s++;r.h.bh=0;r.h.bl=(unsigned char)attr;r.x.cx=1;int86(0x10,&r,&r);if(++col>=cols){col=0;row++;}r.h.ah=2;r.h.bh=0;r.h.dh=(unsigned char)row;r.h.dl=(unsigned char)col;int86(0x10,&r,&r);}normal_cursor_attr();}
+/* Print through DOS first, then recolour only the cells that were printed.
+   This is deliberately different from changing the active console attribute:
+   DOS/BIOS remains in its normal white-on-black state, so CR/LF and scrolling
+   cannot inherit the coloured background.  Only the requested screen cells
+   are changed after normal console output has already completed. */
+static void colour_text(const char *s,int attr)
+{
+  union REGS r;
+  unsigned char mode,page;
+  unsigned cols,start_row,start_col;
+  unsigned row,col;
+  unsigned short far *video;
+  unsigned seg;
+  const char *p;
+
+  if(!_isatty(_fileno(stdout))){fputs(s,stdout);return;}
+
+  /* Record where ordinary DOS output will begin. */
+  fflush(stdout);
+  memset(&r,0,sizeof(r));
+  r.h.ah=0x0F;
+  int86(0x10,&r,&r);
+  mode=r.h.al;
+  cols=r.h.ah?r.h.ah:80;
+  page=r.h.bh;
+
+  r.h.ah=3;
+  r.h.bh=page;
+  int86(0x10,&r,&r);
+  start_row=r.h.dh;
+  start_col=r.h.dl;
+
+  /* Let DOS render and advance the cursor using its normal attribute. */
+  fputs(s,stdout);
+  fflush(stdout);
+
+  /* Recolour only those already-rendered cells.  None of this changes the
+     DOS/BIOS attribute used by subsequent output or screen scrolling. */
+  seg=(mode==7)?0xB000:0xB800;
+  video=(unsigned short far *)((unsigned long)seg<<16);
+  row=start_row;
+  col=start_col;
+  for(p=s;*p;p++){
+    if(*p=='\r'){col=0;continue;}
+    if(*p=='\n'){row++;continue;}
+    video[row*cols+col]=(video[row*cols+col]&0x00FF)|
+                        ((unsigned short)(unsigned char)attr<<8);
+    if(++col>=cols){col=0;row++;}
+  }
+}
 static void question_icon(int indent)
-{int i;for(i=0;i<indent;i++)putchar(' ');colour_text(" ? ",0x1F);putchar(' ');}
+{int i;for(i=0;i<indent;i++)putchar(' ');putchar(' ');colour_text("?",0x1F);fputs("  ",stdout);}
 static void choice_default(int default_yes)
 {putchar('[');if(default_yes){colour_text("Y",10);fputs("/n",stdout);}else{fputs("y/",stdout);colour_text("N",10);}fputs("]: ",stdout);}
 
