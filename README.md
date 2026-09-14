@@ -314,6 +314,7 @@ A Sokoban style puzzle game with 100 different challenges.
 
 Use the arrow keys to move the worker and push boxes to cover all the targets - in as few moves as possible.
 
+<img width="360" height="300" alt="Launch! Boxes" src="https://github.com/user-attachments/assets/9e26095e-9967-4d0d-8fa2-faafe94a32dd" />
 
 ### !CAL - Calendar
 A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate months, `Home` returns to the current month.
