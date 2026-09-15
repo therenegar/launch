@@ -104,12 +104,15 @@ Menu management
 
 If a suitable mouse driver has been loaded (`MOUSE.COM`, `MOUSE.SYS`, `CTMOUSE.EXE`, etc.) you will be able to use a mouse with Launch!
 
-<img width="70" height="70" alt="Screenshot: Cursor" src="https://github.com/user-attachments/assets/c0fb9398-7623-408e-bc30-d3d7a6beb940" />
+<img width="70" height="70" alt="Cursor - Pointer" src="https://github.com/user-attachments/assets/c0fb9398-7623-408e-bc30-d3d7a6beb940" />
+<img width="70" height="70" alt="Cursor - Block" src="https://github.com/user-attachments/assets/d622aaf7-3642-4a00-b58b-678baaa6f1ae" />
+<img width="70" height="70" alt="Cursor - Arrow" src="https://github.com/user-attachments/assets/fb4a7df3-fe9a-4131-8bf7-6441e65d6ee3" />
 
-The arrow shaped cursor will be visible when Launch! is run.<br/>
+The cursor (arrow style) will be visible when Launch! is run.<br/>
 
 - Left click opens a folder or runs a launcher; left click outside all visible menu panels closes Launch!.
-- Right click an item opens its Edit dialog. 
+- Right click an item opens its Edit dialog.
+- Double clicking opens files and directories in Explore & Run.
 
 
 ## Configuration
