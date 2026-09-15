@@ -27,8 +27,9 @@ FEATURES
 - Automatic menu generator with comprehensive DOS program database.
 - Program parameter help screen to make it easy supplying parameters.
 - Built-in executable explorer to quickly browse and run programs anywhere.
-- 7 handy and optional text-mode only accessories and a game!
-  * Calculator, Calendar, Note, Draw, Cardfile, System Info and Boxes (Sokoban)
+- 8 handy and optional text-mode only accessories and a game!
+  * Calculator, Calendar, Note, Pixel Draw, Card Stack, System Info, To-Dos,
+    and a game Boxes.
 - Built-in Power Off/Reboot control with retro Windows 95 style experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night,
   bouncing DOS logo, warp field, 3D pipes, paintball, and more!
@@ -235,7 +236,7 @@ returns to the current month. Features a full-page printing option.
 !CALC (Calculator)
 Simple standard text-mode mathematical calculator.
 
-!CFILE (Cardfile)
+!STACK (Card Stack)
 A stack of virtual index cards. Each contains a title and notes. Click a 
 card title to bring it forward. Automatically saves and exports to text.
 
@@ -251,6 +252,10 @@ directly to a standard BMP file cropped to your drawing dimensions.
 !BOXES (Boxes)
 A simple Sokoban style puzzle game with over 100 different challenges.
 Use the arrow keys to move the worker and push boxes over the targets.
+
+!TODOS (To-Dos)
+A to-do list with tasks organised into groups. Tasks can have a due date,
+extended description, and tags.
 
 !SYSINFO (System Information)
 Displays comprehensive statistics on free hardware memory, disk spaces, 

@@ -1,4 +1,4 @@
-/* Shared Launch! 3.11 accessory runtime.  Microsoft C/C++ 7.0, small model. */
+/* Shared Launch! 3.2 accessory runtime.  Microsoft C/C++ 7.0, small model. */
 #include <dos.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +22,7 @@ static unsigned mouse_raw_x=0,mouse_raw_y=0;
 static unsigned char mouse_old_glyph[32];static int mouse_glyph_saved=0;
 static unsigned char mouse_old_target[32];static int mouse_target_saved=0;
 #define ACC_MAX_BUTTONS 16
-typedef struct {int x,y,selected;const char *text;} ACC_BUTTON_REC;
+typedef struct {int x,y,selected,width;const char *text;} ACC_BUTTON_REC;
 static ACC_BUTTON_REC acc_buttons[ACC_MAX_BUTTONS];
 static int acc_button_count=0;
 static unsigned short notice_screen[81*10];
@@ -33,17 +33,148 @@ static unsigned char indexed_read(unsigned port,unsigned char index){outp(port,i
 static void indexed_write(unsigned port,unsigned char index,unsigned char value){outp(port,index);outp(port+1,value);}
 static void font_plane_open(FONT_REGS *old){old->seq2=indexed_read(0x3C4,2);old->seq4=indexed_read(0x3C4,4);old->gc4=indexed_read(0x3CE,4);old->gc5=indexed_read(0x3CE,5);old->gc6=indexed_read(0x3CE,6);indexed_write(0x3C4,2,4);indexed_write(0x3C4,4,7);indexed_write(0x3CE,4,2);indexed_write(0x3CE,5,0);indexed_write(0x3CE,6,0);}
 static void font_plane_close(const FONT_REGS *old){indexed_write(0x3C4,2,old->seq2);indexed_write(0x3C4,4,old->seq4);indexed_write(0x3CE,4,old->gc4);indexed_write(0x3CE,5,old->gc5);indexed_write(0x3CE,6,old->gc6);}
-static void mouse_glyph_write(const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
-void acc_glyph_read(int code,unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)glyph[i]=font[i];font_plane_close(&old);}
-void acc_glyph_write(int code,const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
+int acc_font_height(void){unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);int v=*h;return(v>=8&&v<=32)?v:16;}
+static void ega14_glyph_write(int code,const unsigned char far *glyph)
+{
+ unsigned fseg=FP_SEG(glyph),foff=FP_OFF(glyph);
+ _asm {
+  push bp
+  push es
+  mov ax,1100h
+  mov bh,14
+  mov bl,0
+  mov cx,1
+  mov dx,code
+  mov ax,fseg
+  mov es,ax
+  mov bp,foff
+  mov ax,1100h
+  int 10h
+  pop es
+  pop bp
+ }
+}
+static void ega14_rom_read(int code,unsigned char *glyph)
+{
+ unsigned fseg,foff;unsigned char far *p;int i;
+ _asm {
+  push bp
+  push es
+  mov ax,1130h
+  mov bh,2
+  int 10h
+  mov ax,es
+  mov fseg,ax
+  mov foff,bp
+  pop es
+  pop bp
+ }
+ p=(unsigned char far *)MAKE_FP(fseg,foff);p+=(unsigned)code*14U;for(i=0;i<14;i++)glyph[i]=p[i];for(;i<32;i++)glyph[i]=0;
+}
+static void mouse_glyph_write(const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;if(acc_font_height()==14){ega14_glyph_write(127,(const unsigned char far *)glyph);return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
+void acc_glyph_read(int code,unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;if(acc_font_height()==14){ega14_rom_read(code,glyph);return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)glyph[i]=font[i];font_plane_close(&old);}
+void acc_glyph_write(int code,const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;if(acc_font_height()==14){ega14_glyph_write(code,(const unsigned char far *)glyph);return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
+static const unsigned char launchui_codes[39]={16,17,30,31,169,170,174,175,182,183,184,185,186,187,188,189,190,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,220,244,245};
+static const unsigned char launchui_glyphs[39][32]={
+{0,0,0,0,48,56,60,62,60,56,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,6,14,30,62,30,14,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,0,8,28,62,127,127,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,0,0,127,127,62,28,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,63,63,48,48,48,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,0,0,0,0,0,6,6,6,6,126,126,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{1,1,1,1,1,25,57,121,57,25,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{64,64,64,64,64,76,78,79,78,76,64,64,64,64,64,64,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,16,32,0,56,0,32,16,0,0,0,254,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,0,0,0,16,24,28,30,31,30,22,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,0,0,24,36,66,129,231,36,36,36,36,60,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{146,0,128,0,128,0,128,0,128,0,128,0,128,0,128,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{146,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,254,2,2,130,130,242,242,130,130,2,2,254,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,254,2,2,2,2,242,242,2,2,2,2,254,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,192,48,8,4,4,6,6,12,28,56,240,192,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,192,48,8,196,100,226,226,228,196,8,48,192,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,0,0,0,0,28,30,15,7,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,6,14,28,56,112,224,224,192,128,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,60,30,15,7,3,3,7,15,30,60,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,120,240,224,192,128,128,192,224,240,120,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,224,112,56,28,14,28,56,112,225,193,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,0,0,0,0,0,0,0,252,252,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,1,0,1,0,1,1,1,7,35,33,32,63,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,0,0,0,0,0,192,136,8,8,248,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,3,4,9,8,11,8,127,64,64,64,127,127,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,192,64,64,64,64,64,248,8,232,8,248,248,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,127,64,64,65,65,79,79,65,65,64,64,127,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,127,64,64,64,64,79,79,64,64,64,64,127,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,3,35,19,3,115,3,19,35,3,3,0,127,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,255,0,255,0,255,0,255,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,3,12,16,32,32,64,64,32,32,16,15,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,3,12,16,35,38,69,69,39,35,16,12,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,1,6,104,62,60,16,16,0,0,0,12,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,255,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,224,24,4,0,0,8,8,60,124,22,96,128,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{240,240,240,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+{0,0,0,0,0,0,0,240,240,240,240,240,240,240,240,240,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+};
+static const unsigned char launchui_glyphs14[39][32]={
+  {0x00,0x00,0x00,0x30,0x38,0x3C,0x3E,0x3C,0x38,0x30,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x06,0x0E,0x1E,0x3E,0x1E,0x0E,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x08,0x1C,0x3E,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x00,0x7F,0x7F,0x3E,0x1C,0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x3F,0x3F,0x30,0x30,0x30,0x30,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x06,0x06,0x06,0x06,0x7E,0x7E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x01,0x01,0x01,0x01,0x19,0x39,0x79,0x39,0x19,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x40,0x40,0x40,0x40,0x4C,0x4E,0x4F,0x4E,0x4C,0x40,0x40,0x40,0x40,0x40,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x10,0x20,0x00,0x38,0x00,0x20,0x10,0x00,0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x00,0x10,0x18,0x1C,0x1E,0x1F,0x1E,0x16,0x03,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x18,0x24,0x42,0x81,0xE7,0x24,0x24,0x24,0x24,0x3C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x49,0x80,0x00,0x80,0x00,0x80,0x00,0x80,0x00,0x80,0x00,0x80,0x00,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x49,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0xFE,0x02,0x02,0x82,0x82,0xF2,0xF2,0x82,0x82,0x02,0x02,0xFE,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0xFE,0x02,0x02,0x02,0x02,0xF2,0xF2,0x02,0x02,0x02,0x02,0xFE,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0xC0,0x30,0x08,0x04,0x04,0x06,0x06,0x0C,0x1C,0x38,0xF0,0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0xC0,0x30,0x08,0xC4,0x64,0xE2,0xE2,0xE4,0xC4,0x08,0x30,0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1C,0x1E,0x0F,0x07,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x06,0x0E,0x1C,0x38,0x70,0xE0,0xE0,0xC0,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x3C,0x1E,0x0F,0x07,0x03,0x03,0x07,0x0F,0x1E,0x3C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x78,0xF0,0xE0,0xC0,0x80,0x80,0xC0,0xE0,0xF0,0x78,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0xE0,0x70,0x38,0x1C,0x0E,0x1C,0x38,0x70,0xE1,0xC1,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFC,0xFC,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x01,0x00,0x01,0x00,0x01,0x01,0x01,0x07,0x23,0x21,0x20,0x3F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xC0,0x88,0x08,0x08,0xF8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x03,0x04,0x09,0x08,0x0B,0x08,0x7F,0x40,0x40,0x40,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0xC0,0x40,0x40,0x40,0x40,0x40,0xF8,0x08,0xE8,0x08,0xF8,0xF8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x7F,0x40,0x40,0x41,0x41,0x4F,0x4F,0x41,0x41,0x40,0x40,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x7F,0x40,0x40,0x40,0x40,0x4F,0x4F,0x40,0x40,0x40,0x40,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x03,0x23,0x13,0x03,0x73,0x03,0x13,0x23,0x03,0x03,0x00,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0xFF,0x00,0xFF,0x00,0xFF,0x00,0xFF,0x00,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x03,0x0C,0x10,0x20,0x20,0x40,0x40,0x20,0x20,0x10,0x0F,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x03,0x0C,0x10,0x23,0x26,0x45,0x45,0x27,0x23,0x10,0x0C,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x01,0x06,0x68,0x3E,0x3C,0x10,0x10,0x00,0x00,0x00,0x0C,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0xFF,0x00,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0xE0,0x18,0x04,0x00,0x00,0x08,0x08,0x3C,0x7C,0x16,0x60,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0xFF,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0xF0,0xF0,0xF0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
+};
+static int launchui_ega14(void)
+{unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);return *h==14;}
+static unsigned char launchui_old[39][32];
+static int launchui_installed=0;
+static void launchui_font(int install)
+{
+  int i;if(saved_mode==7)return;
+  if(install){if(launchui_installed)return;for(i=0;i<(int)sizeof(launchui_codes);i++){acc_glyph_read(launchui_codes[i],launchui_old[i]);acc_glyph_write(launchui_codes[i],launchui_ega14()?launchui_glyphs14[i]:launchui_glyphs[i]);}launchui_installed=1;}
+  else if(launchui_installed){for(i=0;i<(int)sizeof(launchui_codes);i++)acc_glyph_write(launchui_codes[i],launchui_old[i]);launchui_installed=0;}
+}
 static void mouse_pointer_restore(void){union REGS r;if(!mouse_glyph_saved&&!mouse_target_saved)return;if(mouse_glyph_saved)mouse_glyph_write(mouse_old_glyph);if(mouse_target_saved)acc_glyph_write(8,mouse_old_target);memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;r.x.cx=0xFFFF;r.x.dx=0x7700;int86(0x33,&r,&r);mouse_glyph_saved=0;mouse_target_saved=0;}
 static void mouse_pointer_install(void)
 {
   static const unsigned char arrow16[16]={0,0,0,0,0,0,0,0x10,0x18,0x1C,0x1E,0x1F,0x1E,0x12,3,1};
   static const unsigned char target16[32]={0,0,0,0x18,0x18,0x18,0x3C,0xE7,0xE7,0x3C,0x18,0x18,0x18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   FONT_REGS old;unsigned char far *font,height_far;unsigned char arrow[32];union REGS r;int i,height,source;
-  if(acc_appearance.mouse_cursor){if(acc_appearance.mouse_cursor==2){acc_glyph_read(8,mouse_old_target);mouse_target_saved=1;acc_glyph_write(8,target16);}memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;if(acc_appearance.mouse_cursor==1){r.x.cx=0xFFFF;r.x.dx=0x7700;}else{r.x.cx=0xF000;r.x.dx=0x0F08;}int86(0x33,&r,&r);return;}
-  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)mouse_old_glyph[i]=font[i];font_plane_close(&old);mouse_glyph_saved=1;
+  if(acc_appearance.mouse_cursor){memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;if(acc_appearance.mouse_cursor==1){r.x.cx=0xFFFF;r.x.dx=0x7700;}else{r.x.cx=0xF000;r.x.dx=0x0FB8;}int86(0x33,&r,&r);return;}
+  if(acc_font_height()==14)ega14_rom_read(127,mouse_old_glyph);else{font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)mouse_old_glyph[i]=font[i];font_plane_close(&old);}mouse_glyph_saved=1;
   memset(arrow,0,sizeof(arrow));height_far=*(unsigned char far *)MAKE_FP(0x40,0x85);height=height_far;if(height<8||height>32)height=16;
   for(i=0;i<height;i++){source=i*16/height;if(source>15)source=15;arrow[i]=arrow16[source];}mouse_glyph_write(arrow);
   memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;r.x.cx=0xF000;r.x.dx=0x0F7F;int86(0x33,&r,&r);
@@ -106,21 +237,52 @@ void acc_clear(int attr){acc_fill(0,0,acc_cols,acc_rows,' ',attr);}
 
 void acc_box(int x,int y,int w,int h,const char *title)
 {
-  int i,len,launch_len=7,title_len=0;unsigned short v;int top_border=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.titlebar_fg);int launch_attr=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.main_title);int heading_attr=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.titles);int close_attr=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.main_title);acc_fill(x,y,w,h,' ',ACC_BG);acc_fill(x,y,w,1,' ',ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.titlebar_bg));
-  acc_put(x,y,213,top_border);acc_put(x+w-1,y,184,top_border);
-  acc_put(x,y+h-1,192,ACC_BORDER);acc_put(x+w-1,y+h-1,217,ACC_BORDER);
-  for(i=1;i<w-1;i++){acc_put(x+i,y,205,top_border);acc_put(x+i,y+h-1,196,ACC_BORDER);}
-  for(i=1;i<h-1;i++){acc_put(x,y+i,179,ACC_BORDER);acc_put(x+w-1,y+i,179,ACC_BORDER);}
-  if(title&&*title){len=w-18;if(len<0)len=0;title_len=(int)strlen(title);if(title_len>len)title_len=len;acc_put(x+2,y,181,top_border);acc_text(x+3,y,"Launch!",launch_attr,launch_len);acc_put(x+10,y,' ',heading_attr);if(title_len)acc_text(x+11,y,title,heading_attr,title_len);acc_put(x+11+title_len,y,198,top_border);}
-  acc_put(x+w-5,y,181,top_border);acc_put(x+w-4,y,'X',close_attr);acc_put(x+w-3,y,198,top_border);close_x=x+w-4;close_y=y;
+  int i,len,title_len=0;unsigned short v;int top_border=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.titlebar_fg);int heading_attr=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.titles);int close_attr=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.main_title);acc_fill(x,y,w,h,' ',ACC_BG);
+  for(i=0;i<w;i++)acc_put(x+i,y,211,top_border);
+  acc_put(x,y+h-1,192,ACC_BORDER);acc_put(x+w-1,y+h-1,217,ACC_BORDER);for(i=1;i<w-1;i++)acc_put(x+i,y+h-1,196,ACC_BORDER);for(i=1;i<h-1;i++){acc_put(x,y+i,179,ACC_BORDER);acc_put(x+w-1,y+i,179,ACC_BORDER);}
+  if(title&&*title){
+    int launch_len=7,avail=w-12;
+    if(avail<0)avail=0;
+    title_len=(int)strlen(title);
+    if(title_len>avail-launch_len)title_len=avail-launch_len;
+    if(title_len<0)title_len=0;
+    acc_put(x+2,y,' ',heading_attr);
+    acc_text(x+3,y,"Launch!",ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.main_title),7);
+    if(title_len){acc_put(x+10,y,' ',heading_attr);acc_text(x+11,y,title,heading_attr,title_len);}
+    acc_put(x+11+title_len,y,' ',heading_attr);
+  }
+  acc_put(x+w-5,y,200,close_attr);acc_put(x+w-4,y,201,close_attr);close_x=x+w-5;close_y=y;
   if(x+w<acc_cols)for(i=1;i<=h;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+i)*acc_cols+x+w)*2);acc_put(x+w,y+i,v&255,0x08);}
   if(y+h<acc_rows)for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+h)*acc_cols+x+i)*2);acc_put(x+i,y+h,v&255,0x08);}
 }
+static int acc_button_icon(const char *text,int *a,int *b)
+{
+  /* Preview is deliberately a text button.  Test it before Prev: the
+     word "Preview" itself begins with "Prev". */
+  if(strstr(text,"Preview"))return 0;
+  if(strstr(text,"Prev")){*a=17;*b=-1;return 1;}if(strstr(text,"Next")){*a=16;*b=-1;return 1;}
+  if(strstr(text,"Save")||strstr(text,"Yes")||strstr(text," OK ")){*a=198;*b=199;return 1;}
+  if(strstr(text,"Cancel")||strstr(text,"No")||strstr(text,"Close")){*a=200;*b=201;return 1;}
+  if(strstr(text,"Run")&&!strstr(text,"Preview")){*a=202;*b=203;return 1;}if(strstr(text,"Export")){*a=204;*b=205;return 1;}if(strstr(text,"Print")){*a=206;*b=207;return 1;}
+  if(strstr(text,"Add")||strstr(text,"New")){*a=208;*b=187;return 1;}if(strstr(text,"Edit")){*a=210;*b=182;return 1;}if(strstr(text,"Delete")||strstr(text,"Remove")){*a=209;*b=188;return 1;}if(strstr(text,"Retry")||strstr(text,"Refresh")){*a=214;*b=216;return 1;}return 0;
+}
 static void acc_button_draw(int x,int y,const char *text,int selected)
-{int i,w=(int)strlen(text);unsigned short v;for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+i)*2);acc_put(x+i,y+1,223,((v>>8)&0xF0));}v=*(unsigned short far *)MAKE_FP(0xB800,(y*acc_cols+x+w)*2);acc_put(x+w,y,220,((v>>8)&0xF0));acc_text(x,y,text,ACC_CONTROL,w);if(selected){acc_put(x,y,16,ACC_CONTROL);acc_put(x+w-1,y,17,ACC_CONTROL);}}
+{int i,oldw=(int)strlen(text),w=oldw,a=0,b=0,icon=acc_button_icon(text,&a,&b),left;unsigned short v;if(icon)w=(b<0)?5:6;/* Clear only the rendered button and its shadow.  Clearing strlen(text) here erased dialog borders when an icon replaced a longer label. */for(i=0;i<=w;i++){acc_put(x+i,y,' ',ACC_BG);acc_put(x+i,y+1,' ',ACC_BG);}for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+i)*2);acc_put(x+i,y+1,220,((v>>8)&0xF0));}v=*(unsigned short far *)MAKE_FP(0xB800,(y*acc_cols+x+w)*2);acc_put(x+w,y,245,((v>>8)&0xF0));v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+w)*2);acc_put(x+w,y+1,244,((v>>8)&0xF0));acc_fill(x,y,w,1,' ',ACC_CONTROL);if(icon){left=x+(b<0?2:(w-2)/2);acc_put(left,y,a,ACC_CONTROL);if(b>=0)acc_put(left+1,y,b,ACC_CONTROL);}else acc_text(x,y,text,ACC_CONTROL,w);if(selected){acc_put(x,y,169,ACC_CONTROL);acc_put(x+w-1,y,170,ACC_CONTROL);}}
 void acc_button(int x,int y,const char *text,int selected)
-{acc_button_draw(x,y,text,selected);if(acc_button_count<ACC_MAX_BUTTONS){acc_buttons[acc_button_count].x=x;acc_buttons[acc_button_count].y=y;acc_buttons[acc_button_count].text=text;acc_buttons[acc_button_count].selected=selected;acc_button_count++;}}
-void acc_press_button(int x,int y,const char *text){union REGS r;int i,w=(int)strlen(text),mx,my;acc_put(x+w,y,' ',ACC_BG);for(i=1;i<=w;i++)acc_put(x+i,y+1,' ',ACC_BG);acc_text(x,y,text,ACC_CONTROL,w);if(acc_mouse_present){r.x.ax=1;int86(0x33,&r,&r);do{r.x.ax=3;int86(0x33,&r,&r);mx=r.x.cx/8;my=r.x.dx/8;(void)mx;(void)my;}while(r.x.bx&1);r.x.ax=2;int86(0x33,&r,&r);}}
+{int a,b;acc_button_draw(x,y,text,selected);if(acc_button_count<ACC_MAX_BUTTONS){acc_buttons[acc_button_count].x=x;acc_buttons[acc_button_count].y=y;acc_buttons[acc_button_count].text=text;acc_buttons[acc_button_count].selected=selected;acc_buttons[acc_button_count].width=acc_button_icon(text,&a,&b)?((b<0)?5:6):(int)strlen(text);acc_button_count++;}}
+void acc_press_button(int x,int y,const char *text)
+{
+  union REGS r;int i,w=(int)strlen(text),mx,my,a=0,b=0,icon=acc_button_icon(text,&a,&b),left;
+  if(icon)w=(b<0)?5:6;
+  /* Pressed state has no drop shadow.  Keep the focus end glyphs so the
+     button remains visibly selected while the mouse button is held. */
+  for(i=0;i<=w;i++){acc_put(x+i,y,' ',ACC_BG);acc_put(x+i,y+1,' ',ACC_BG);}
+  acc_fill(x,y,w,1,' ',ACC_CONTROL);
+  if(icon){left=x+(b<0?2:(w-2)/2);acc_put(left,y,a,ACC_CONTROL);if(b>=0)acc_put(left+1,y,b,ACC_CONTROL);}
+  else acc_text(x,y,text,ACC_CONTROL,w);
+  acc_put(x,y,169,ACC_CONTROL);acc_put(x+w-1,y,170,ACC_CONTROL);
+  if(acc_mouse_present){r.x.ax=1;int86(0x33,&r,&r);do{r.x.ax=3;int86(0x33,&r,&r);mx=r.x.cx/8;my=r.x.dx/8;(void)mx;(void)my;}while(r.x.bx&1);r.x.ax=2;int86(0x33,&r,&r);}
+}
 void acc_scrollbar(int x,int top,int height,int position,int total,int page){int i,track=height-2,thumb=top+1;if(total>page&&track>1)thumb=top+1+position*(track-1)/(total-page);acc_put(x,top,30,ACC_CONTROL);for(i=1;i<height-1;i++)acc_put(x,top+i,i+top==thumb?219:176,ACC_CONTROL);acc_put(x,top+height-1,31,ACC_CONTROL);}
 void acc_shadow(int x,int y,int w,int h){int i,j;unsigned short v;for(j=1;j<h;j++){v=*(unsigned short far *)MAKE_FP(saved_video_segment,((y+j)*acc_cols+x+w)*2);acc_put(x+w,y+j,219,(v>>8)&0xF0);}for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(saved_video_segment,((y+h)*acc_cols+x+i)*2);acc_put(x+i,y+h,223,(v>>8)&0xF0);}}
 
@@ -130,9 +292,10 @@ int acc_mouse(int *x,int *y,int *buttons)
   r.x.ax=3;int86(0x33,&r,&r);*x=r.x.cx/8;*y=r.x.dx/8;*buttons=r.x.bx;return 1;
 }
 int acc_key(void){unsigned w=_bios_keybrd(_KEYBRD_READ);int c=w&255,scan=(w>>8)&255;if(!scan&&c)return 512+c;if(!c)return 256+scan;return c;}
-void acc_wait(int *key,int *x,int *y,unsigned *buttons){union REGS r;int sx=(int)(mouse_raw_x/8),sy=(int)(mouse_raw_y/8),hover=-1,last_hover=-1,i,w;*key=0;*buttons=0;if(acc_mouse_present){r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;}for(;;){if(_bios_keybrd(_KEYBRD_READY)){*key=acc_key();break;}if(acc_mouse_present){r.x.ax=3;int86(0x33,&r,&r);mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;*x=r.x.cx/8;*y=r.x.dx/8;*buttons=(unsigned)(r.x.bx&~mouse_last_buttons);mouse_last_buttons=r.x.bx;if(*buttons)break;if(*x!=sx||*y!=sy){hover=-1;for(i=0;i<acc_button_count;i++){w=(int)strlen(acc_buttons[i].text);if(*y==acc_buttons[i].y&&*x>=acc_buttons[i].x&&*x<acc_buttons[i].x+w){hover=i;break;}}if(hover!=last_hover){for(i=0;i<acc_button_count;i++)acc_button_draw(acc_buttons[i].x,acc_buttons[i].y,acc_buttons[i].text,acc_buttons[i].selected||i==hover);last_hover=hover;}sx=*x;sy=*y;if(r.x.bx&3){*buttons=ACC_MOUSE_MOVED|(unsigned)(r.x.bx&3);break;}}}}if(acc_mouse_present&&mouse_visible){r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;}acc_button_count=0;if((*buttons&1)&&*x==close_x&&*y==close_y){*buttons=0;*key=27;}}
+int acc_key_ready(void){return _bios_keybrd(_KEYBRD_READY)!=0;}
+void acc_wait(int *key,int *x,int *y,unsigned *buttons){union REGS r;int sx=(int)(mouse_raw_x/8),sy=(int)(mouse_raw_y/8),hover=-1,last_hover=-1,i,w;*key=0;*buttons=0;if(acc_mouse_present){r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;}for(;;){if(_bios_keybrd(_KEYBRD_READY)){*key=acc_key();break;}if(acc_mouse_present){r.x.ax=3;int86(0x33,&r,&r);mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;*x=r.x.cx/8;*y=r.x.dx/8;*buttons=(unsigned)(r.x.bx&~mouse_last_buttons);mouse_last_buttons=r.x.bx;if(*buttons){if(*buttons&1){for(i=0;i<acc_button_count;i++){w=acc_buttons[i].width;if(*y==acc_buttons[i].y&&*x>=acc_buttons[i].x&&*x<acc_buttons[i].x+w){acc_press_button(acc_buttons[i].x,acc_buttons[i].y,acc_buttons[i].text);break;}}}break;}if(*x!=sx||*y!=sy){hover=-1;for(i=0;i<acc_button_count;i++){w=acc_buttons[i].width;if(*y==acc_buttons[i].y&&*x>=acc_buttons[i].x&&*x<acc_buttons[i].x+w){hover=i;break;}}if(hover!=last_hover){for(i=0;i<acc_button_count;i++)acc_button_draw(acc_buttons[i].x,acc_buttons[i].y,acc_buttons[i].text,acc_buttons[i].selected||i==hover);last_hover=hover;}sx=*x;sy=*y;if(r.x.bx&3){*buttons=ACC_MOUSE_MOVED|(unsigned)(r.x.bx&3);break;}}}}if(acc_mouse_present&&mouse_visible){r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;}acc_button_count=0;if((*buttons&1)&&*y==close_y&&(*x==close_x||*x==close_x+1)){*buttons=0;*key=27;}}
 unsigned long acc_ticks(void){return *(unsigned long far *)(((unsigned long)0x40<<16)|0x6C);}
-int acc_help(int argc,char **argv,const char *name,const char *description){if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){printf("%s - Launch! 3.11 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;}return 0;}
+int acc_help(int argc,char **argv,const char *name,const char *description){if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){printf("%s - Launch! 3.2 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;}return 0;}
 
 int acc_make_dir(const char *path){_mkdir(path);return _access(path,0)==0;}
 void acc_path(char *out,const char *sub,const char *name)
@@ -163,6 +326,7 @@ int acc_begin(const char *argv0,const char *title,int graphics)
   r.h.ah=3;r.h.bh=0;int86(0x10,&r,&r);saved_cursor_start=r.h.ch;saved_cursor_end=r.h.cl;
   saved_cursor_y=r.h.dh;saved_cursor_x=r.h.dl;
   r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);
+  launchui_font(1);
   r.x.ax=0;int86(0x33,&r,&r);acc_mouse_present=r.x.ax!=0;
   if(acc_mouse_present){r.x.ax=4;r.x.cx=1;r.x.dx=1;int86(0x33,&r,&r);mouse_pointer_install();r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;r.x.ax=3;int86(0x33,&r,&r);mouse_last_buttons=r.x.bx;mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;}
   return 1;
@@ -174,12 +338,12 @@ void acc_restore_screen(void)
   /* A video mode set restores VGA/EGA attribute bit 7 to blink.  Launch! uses
      it as the bright-background bit, so explicitly select intensity again. */
   memset(&r,0,sizeof(r));r.x.ax=0x1003;r.x.bx=0;int86(0x10,&r,&r);
-  for(i=0;i<acc_cols*acc_rows;i++)*(unsigned short far *)(((unsigned long)saved_video_segment<<16)|(i*2))=saved_screen[i];r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);if(acc_mouse_present){r.x.ax=0;int86(0x33,&r,&r);mouse_pointer_install();}
+  launchui_installed=0;launchui_font(1);for(i=0;i<acc_cols*acc_rows;i++)*(unsigned short far *)(((unsigned long)saved_video_segment<<16)|(i*2))=saved_screen[i];r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);if(acc_mouse_present){r.x.ax=0;int86(0x33,&r,&r);mouse_pointer_install();}
 }
 
 void acc_end(void)
 {
-  union REGS r;int i;if(acc_mouse_present){r.x.ax=2;int86(0x33,&r,&r);mouse_pointer_restore();}
+  union REGS r;int i;launchui_font(0);if(acc_mouse_present){r.x.ax=2;int86(0x33,&r,&r);mouse_pointer_restore();}
   if(saved_mode==3||saved_mode==2||saved_mode==7)
     for(i=0;i<acc_cols*acc_rows;i++)*(unsigned short far *)(((unsigned long)saved_video_segment<<16)|(i*2))=saved_screen[i];
   memset(&r,0,sizeof(r));r.h.ah=1;r.h.ch=(unsigned char)saved_cursor_start;r.h.cl=(unsigned char)saved_cursor_end;int86(0x10,&r,&r);

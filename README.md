@@ -2,6 +2,8 @@
 
 A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt - and make it more convenient and friendly.
 
+The design goal was to push the absolute limits of what a text-mode only DOS program can achieve in terms of user interface design and usability.
+
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
 
@@ -12,6 +14,7 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/a4f92c9e-6643-45c4-b822-6b1c0ddd9c59" />
 
+
 ## Features
 - Displays a hierarchical folder based menu, modally over the top of the existing console contents.
 - Supports trigger by a customizable keyboard shortcut.
@@ -20,8 +23,9 @@ Compatible with third-party command interpreters such as 4DOS/NDOS.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
-- 7 handy and optional text-mode only accessories and a game to go with Launch!
-    - Calculator, Calendar, Note, Draw, Cardfile, System Info, and Boxes game.
+- 7 handy and optional text-mode only accessories and 2 games to go with Launch!
+    - Calculator, Calendar, Note, Pixel Draw, Card Stack, To-Dos, System Info
+    - Boxes and Solitaire games
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Custom VGA display fonts to change the look of your whole DOS environment.
@@ -369,12 +373,23 @@ Here's an actual export
 <img width="280" height="100" alt="Export" src="https://github.com/user-attachments/assets/4ef4d7cb-d7fd-42f0-b549-cfb2d95db58c" />
 
 
+### !SOL - Solitaire
+Play draw three Solitaire completely in text mode!
+
+
+
 ### !SYSINFO - System Information
 View useful information about your system, including free memory and disk space.
 
 The system information report can be printed for reference.
 
 <img width="360" height="300" alt="Launch! System Information" src="https://github.com/user-attachments/assets/cfde40c0-d6ba-4875-a5de-fab5ae6b2882" />
+
+
+### !TODOS - To-dos
+A simple and flexible To-Do list supporting. Tasks support due dates, extended description, and tags.
+
+Tasks can be grouped, sorted and filtered by tags.
 
 
 ## SHORTCUT - keyboard shortcut tool

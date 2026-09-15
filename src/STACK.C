@@ -1,4 +1,4 @@
-/* Launch! Stack accessory. */
+/* Launch! Card Stack accessory. */
 #include <stdio.h>
 #include <string.h>
 #include "ACCLIB.H"
@@ -104,7 +104,7 @@ static void card_box(int x,int y,int index,int active,int title_focus,int text_f
   for(i=1;i<h-1;i++){acc_put(x,y+i,179,ACC_CONTROL);acc_put(x+w-1,y+i,179,ACC_CONTROL);}
   acc_text(x+2,y+1,cards[index].title,active&&title_focus?ACC_SELECT:(active?ACC_HEADING:ACC_CONTROL),CT);
   sprintf(number,"%d",index+1);acc_text(x+w-2-(int)strlen(number),y+1,number,nattr,(int)strlen(number));
-  for(i=2;i<w-2;i++)acc_put(x+i,y+2,205,ACC_ATTR(acc_appearance.controls_bg,12));
+  for(i=2;i<w-2;i++)acc_put(x+i,y+2,215,ACC_ATTR(acc_appearance.controls_bg,12));
   if(active){
     for(r=0;r<VISIBLE_LINES;r++){line=top+r;acc_text(x+2,y+3+r,cards[index].text+line*CW,ACC_CONTROL,CW);}
     acc_scrollbar(x+w-2,y+3,VISIBLE_LINES,top,TEXT_LINES,VISIBLE_LINES);
@@ -132,19 +132,19 @@ int main(int argc,char **argv)
   int x,y,px,cx=0,cy=0,top=0,tp=0,key=0,mx=0,my=0,focus=1,i,dirty=1,insert=1,ch;
   int oldcy,oldtop,base;
   unsigned mb=0;
-  if(acc_help(argc,argv,"!STACK","A persistent stack of editable titled text cards."))return 0;
-  if(!acc_begin(argv[0],"Stack",0))return 1;
-  load_cards();x=(acc_cols-68)/2+3;px=x+1;y=(acc_rows-22)/2+6;acc_box(x-3,y-6,68,22,"Stack");
+  if(acc_help(argc,argv,"!STACK","A persistent card stack of editable titled text cards."))return 0;
+  if(!acc_begin(argv[0],"Card Stack",0))return 1;
+  load_cards();x=(acc_cols-68)/2+3;px=x+1;y=(acc_rows-22)/2+6;acc_box(x-3,y-6,68,22,"Card Stack");
 
   while(key!=27){
     if(dirty){cards_draw(px,y,focus,cx,cy,top);dirty=0;}
-    acc_button(x,y+13,"  <  ",focus==2);
+    acc_button(x,y+13," Prev ",focus==2);
     sprintf(counter,"%d",current+1);i=(int)strlen(counter);
     acc_text(x+7,y+13,"",ACC_LABEL,5);acc_text(x+7,y+13,counter,ACC_HEADING,i);
     sprintf(counter,"/%d",count);acc_text(x+7+i,y+13,counter,ACC_LABEL,(int)strlen(counter));
-    acc_button(x+12,y+13,"  >  ",focus==3);acc_button(x+18,y+13,"  Add  ",focus==4);
-    acc_button(x+26,y+13,"  Delete  ",focus==5);acc_button(x+37,y+13,"  Export  ",focus==6);
-    acc_button(x+52,y+13,"  Close  ",focus==7);
+    acc_button(x+14,y+13," Next ",focus==3);acc_button(x+21,y+13,"  Add  ",focus==4);
+    acc_button(x+29,y+13,"  Delete  ",focus==5);acc_button(x+37,y+13,"  Export  ",focus==6);
+    acc_button(x+55,y+13,"  Close  ",focus==7);
     acc_wait(&key,&mx,&my,&mb);
 
     if((mb&1)&&count>=2&&my==y-1&&mx>=px+4&&mx<px+26){select_card(lower_card(1));cx=cy=top=0;dirty=1;key=0;continue;}
@@ -158,7 +158,7 @@ int main(int argc,char **argv)
       focus=1;dirty=1;key=0;continue;
     }
     if((mb&1)&&my>=y+3&&my<y+3+VISIBLE_LINES&&mx>=px+2&&mx<px+2+CW){focus=1;cx=mx-(px+2);cy=top+my-(y+3);dirty=1;key=0;continue;}
-    if((mb&1)&&my==y+13){if(mx<x+6)focus=2;else if(mx>=x+12&&mx<x+18)focus=3;else if(mx>=x+18&&mx<x+26)focus=4;else if(mx>=x+26&&mx<x+37)focus=5;else if(mx>=x+37&&mx<x+48)focus=6;else if(mx>=x+52)focus=7;key=13;}
+    if((mb&1)&&my==y+13){if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+14&&mx<x+19)focus=3;else if(mx>=x+21&&mx<x+27)focus=4;else if(mx>=x+29&&mx<x+35)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+55&&mx<x+61)focus=7;key=13;}
 
     if(key==27)break;
     if(key==9){focus=(focus+1)%8;dirty=1;key=0;continue;}
@@ -167,7 +167,7 @@ int main(int argc,char **argv)
       else if(focus==3){select_card(lower_card(1));cx=cy=top=0;}
       else if(focus==4&&count<CARDS){cards[count].used=1;sprintf(cards[count].title,"Card %d",count+1);memset(cards[count].text,' ',sizeof(cards[count].text));count++;select_card(count-1);cx=cy=top=0;}
       else if(focus==5&&count>1){for(i=current;i<count-1;i++)cards[i]=cards[i+1];count--;if(current>=count)current=count-1;cx=cy=top=0;}
-      else if(focus==6){if(!export_cards(exported))acc_notice("Export","Unable to export stack.");else{sprintf(message,"Stack exported to\n%s",exported);acc_notice("Export",message);}}
+      else if(focus==6){if(!export_cards(exported))acc_notice("Export","Unable to export stack.");else{sprintf(message,"Card Stack exported to\n%s",exported);acc_notice("Export",message);}}
       else if(focus==7)key=27;
       dirty=1;if(key!=27)key=0;continue;
     }

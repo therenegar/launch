@@ -1,4 +1,4 @@
-/* Launch! 3.11 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 3.2 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -389,7 +389,8 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
 static int copy_accessories(const char *archive,const char *install)
 {
   static const char *files[]={"!CAL.EXE","!CALC.EXE","!DRAW.EXE",
-    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!BOXES.EXE",0};
+    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!BOXES.EXE",
+    "!SOL.EXE","!TODOS.EXE",0};
   static char destination[PATH_SIZE];int i;
   for(i=0;files[i];i++){
     sprintf(destination,"%s\\%s",install,files[i]);
@@ -421,8 +422,7 @@ static int accessories_first(const char *menu)
     if(!stricmp(check,"[Launcher]")){fputs(line,out);root=1;if(!found){fputs("FOLDER=Accessories\n",out);found=1;}continue;}
     if(check[0]=='[')root=0;
     if(root&&!stricmp(check,"FOLDER=Accessories"))continue;
-    if(!stricmp(check,"ITEM=Cardfile|!CFILE|1|0|0")){fputs("ITEM=Stack|!STACK|1|0|0\n",out);continue;}
-    if(!stricmp(check,"ITEM=Solitaire|!SOL|1|0|0")){fputs("ITEM=Boxes|!BOXES|1|0|0\n",out);continue;}
+    if(!stricmp(check,"ITEM=Cardfile|!CFILE|1|0|0")||!stricmp(check,"ITEM=Stack|!STACK|1|0|0")){fputs("ITEM=Card Stack|!STACK|1|0|0\n",out);continue;}
     if(fputs(line,out)==EOF){ok=0;break;}
   }
   if(ferror(in))ok=0;if(fclose(out)!=0)ok=0;fclose(in);
@@ -432,19 +432,32 @@ static int accessories_first(const char *menu)
 
 static int install_accessory_menu(const char *archive,const char *install)
 {
-  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;int section,boxes,stack;
+  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;
+  int section,boxes,solitaire,stack,todos;
   sprintf(menu,"%s\\LAUNCH.MNU",install);
   if(!exists(menu)){strcpy(sample,"LAUNCH.MNU");if(!extract_file(archive,sample,menu))return 0;}
   if(!accessories_first(menu))return 0;
-  section=contains_line(menu,"[Launcher\\Accessories]");boxes=contains_line(menu,"ITEM=Boxes|!BOXES|1|0|0");stack=contains_line(menu,"ITEM=Stack|!STACK|1|0|0");
-  if(section&&boxes&&stack)return 1;
+  section=contains_line(menu,"[Launcher\\Accessories]");
+  boxes=contains_line(menu,"ITEM=Boxes|!BOXES|1|0|0");
+  solitaire=contains_line(menu,"ITEM=Solitaire|!SOL|1|0|0");
+  stack=contains_line(menu,"ITEM=Card Stack|!STACK|1|0|0");
+  todos=contains_line(menu,"ITEM=To-Dos|!TODOS|1|0|0");
+  if(section&&boxes&&solitaire&&stack&&todos)return 1;
   f=fopen(menu,"a");if(!f)return 0;
   fputs("\n[Launcher\\Accessories]\n",f);
-  if(section){if(!stack)fputs("ITEM=Stack|!STACK|1|0|0\n",f);if(!boxes)fputs("ITEM=Boxes|!BOXES|1|0|0\n",f);return fclose(f)==0;}
+  if(section){
+    if(!stack)fputs("ITEM=Card Stack|!STACK|1|0|0\n",f);
+    if(!todos)fputs("ITEM=To-Dos|!TODOS|1|0|0\n",f);
+    if(!boxes)fputs("ITEM=Boxes|!BOXES|1|0|0\n",f);
+    if(!solitaire)fputs("ITEM=Solitaire|!SOL|1|0|0\n",f);
+    return fclose(f)==0;
+  }
   fputs("ITEM=Calendar|!CAL|1|0|0\n",f);
   fputs("ITEM=Calculator|!CALC|1|0|0\nITEM=Pixel Draw|!DRAW|1|0|0\n",f);
-  fputs("ITEM=Note|!NOTE|1|0|0\nITEM=Stack|!STACK|1|0|0\n",f);
-  fputs("ITEM=System Info|!SYSINFO|1|0|0\nITEM=Boxes|!BOXES|1|0|0\n",f);
+  fputs("ITEM=Note|!NOTE|1|0|0\nITEM=Card Stack|!STACK|1|0|0\n",f);
+  fputs("ITEM=To-Dos|!TODOS|1|0|0\nITEM=System Info|!SYSINFO|1|0|0\n",f);
+  fputs("ITEM=Boxes|!BOXES|1|0|0\n",f);
+  fputs("ITEM=Solitaire|!SOL|1|0|0\n",f);
   return fclose(f)==0;
 }
 
@@ -457,9 +470,9 @@ int main(int argc,char **argv)
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 3.11 Installation");
+  puts("Launch! 3.2 Installation");
   puts("------------------------\n");
-  cpu_ok=cpu_at_least_286();printf("Processor: %s\n",cpu_ok?"80286 or later":"8086/8088");printf("Display:   %s\n\n",display_adapter(&display_ok));if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;puts("");
+  cpu_ok=cpu_at_least_286();display_adapter(&display_ok);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
   question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
   strip_line(install);
@@ -515,7 +528,7 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 3.11 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- SHORTCUT 3.2 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
   if(!upgrade){printf("\n");question_icon(0);printf("Scan the C drive now for recognized programs\n    and build an initial Launch! menu? ");choice_default(0);
