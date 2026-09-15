@@ -1,8 +1,7 @@
 # Launch!
 
-A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt - and make it more convenient and friendly.
-
-The design goal was to push the absolute limits of what a text-mode only DOS program can achieve in terms of user interface design and usability.
+A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt.
+Includes accessories, games, screensavers, fonts, and color schemes.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
@@ -37,7 +36,7 @@ EGA resolution
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
 - Extremely minimal memory footprint. All resident components can be disabled to have zero memory impact if desired. 
-
+- Design goal was to push the absolute limits of what a text-mode only DOS program can achieve in terms of user interface design and usability.
 
 ## Install it
 
