@@ -13,6 +13,11 @@ Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual mach
 Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/69c43c48-ca99-42b1-9a00-f3c753d16a97" />
+<br/>VGA resolution
+
+<img width="640" height="350" alt="EGA Mode" src="https://github.com/user-attachments/assets/87822f4d-c018-4bfe-87de-f6b8e70074d1" />
+<br/>EGA resolution
+
 
 ## Features
 - Displays a hierarchical folder based menu, modally over the top of the existing console contents.
