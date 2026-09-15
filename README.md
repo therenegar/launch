@@ -359,7 +359,7 @@ Choose `Clear` to erase the notepad.
 
 ### !DRAW - Pixel Draw
 You can create simple pixel images, they can be exported as a bitmap.<br/>
-The canvas is 96x96 pixels, the viewable area is 28x12 and can be scrolled.<br/>
+The canvas is 96x96 pixels, the viewable area is 30x12 and can be scrolled.<br/>
 Exported bitmaps will be cropped to the visible contents. So if you draw a 32x32 icon, you'll get a 32x32 export.
 
 Click a palette color and then draw in the drawing area. You can hold down the mouse button to draw, or click individual pixels. <br/>
