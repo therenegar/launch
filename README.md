@@ -1,7 +1,6 @@
 # Launch!
 
 A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt.
-Includes accessories, games, screensavers, fonts, prompt styles and color schemes.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
