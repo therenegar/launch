@@ -23,7 +23,6 @@ EGA resolution
 - Launches commands using the existing command interpreter and shell.
 - Easy visual menu editing.
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
-- Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 7 handy and optional text-mode only accessories and 3 games to go with Launch!
@@ -33,7 +32,7 @@ EGA resolution
 - Various Command Prompt styles to choose from to uplift your C:\
 - Custom VGA display fonts to change the look of your whole DOS environment.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
-- No libraries or dependencies including ANSI.
+- No libraries or dependencies including ANSI. Custom UI toolkit written in C. Fast and simple.
 - Extremely minimal memory footprint. All resident components can be disabled to have zero memory impact if desired. 
 - Design goal was to push the absolute limits of what a text-mode only DOS program can achieve in terms of user interface design and usability.
 
