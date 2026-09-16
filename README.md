@@ -38,7 +38,7 @@ EGA resolution
 - Extremely minimal memory footprint. All resident components can be disabled to have zero memory impact if desired. 
 - Design goal was to push the absolute limits of what a text-mode only DOS program can achieve in terms of user interface design and usability.
 
-## Install it
+## INSTALL.EXE - Installation
 
 Extract the release zip file or mount the floppy image:
 
@@ -55,7 +55,7 @@ Extract the release zip file or mount the floppy image:
 > **If you already have Launch! installed**, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
 
 
-## Usage
+## !.EXE - The Launch! Menu
 
 At the **command prompt**, display your menu by pressing the keyboard shortcut which by default is set to:
 ```
@@ -317,26 +317,26 @@ They've all been designed with a tiny memory footprint, and maximum compatibilit
 
 Usable with either keyboard or mouse interaction.
 
-### !BOXES - Boxes
+### !BOXES.EXE - Boxes
 A Sokoban style puzzle game with 100 different challenges.
 
 Use the arrow keys to move the worker and push boxes to cover all the targets - in as few moves as possible.
 
 <img width="360" height="300" alt="Boxes" src="https://github.com/user-attachments/assets/d65609bf-55ba-4a8c-a069-1074b3b82fcc" />
 
-### !CAL - Calendar
+### !CAL.EXE - Calendar
 A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate months, `Home` returns to the current month.
 
 You can print the calendar out, it will create a full page calendar with big enough space to write. 
 
 <img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/c1b96955-4518-46c3-8d54-cf03d16fe700" />
 
-### !CALC - Calculator
+### !CALC.EXE - Calculator
 A simple calculator, pretty self explanatory!
 
 <img width="360" height="300" alt="Calculator" src="https://github.com/user-attachments/assets/ebea20e1-7df3-4805-9125-fb08f61dc969" />
 
-### !STACK - Card Stack
+### !STACK.EXE - Card Stack
 A stack of index cards. Each card has a title and text, and you can navigate between them. Clicking a card title brings that card to the front of the stack for editing.
 
 Add/Delete cards with the respective buttons.
@@ -346,7 +346,7 @@ Entries are automatically saved, everything is persisted, and all cards will be 
 
 <img width="360" height="300" alt="Card Stack" src="https://github.com/user-attachments/assets/fa9a9b38-5988-46d8-9088-a6301f858bda" />
 
-### !NOTE - Note
+### !NOTE.EXE - Note
 Simple notepad. You can click and type anywhere.
 
 Export the contents to a text file with `Export`. You can also send the contents to the printer with `Print`.
@@ -357,7 +357,7 @@ Choose `Clear` to erase the notepad.
 
 <img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/6203eb01-9d2e-43ab-b92e-06d88e4bbfce" />
 
-### !DRAW - Pixel Draw
+### !DRAW.EXE - Pixel Draw
 You can create simple pixel images, they can be exported as a bitmap.<br/>
 The canvas is 96x96 pixels, the viewable area is 30x12 and can be scrolled.<br/>
 Exported bitmaps will be cropped to the visible contents. So if you draw a 32x32 icon, you'll get a 32x32 export.
@@ -372,26 +372,26 @@ Your drawing is persisted and will be there when the program is re-opened.
 
 <img width="360" height="300" alt="Pixel Draw" src="https://github.com/user-attachments/assets/de2bb1d8-47be-4c4a-8ee5-70f347218474" />
 
-### !SOL - Solitaire
+### !SOL.EXE - Solitaire
 Play draw three Solitaire completely in text mode!
 
 <img width="360" height="300" alt="Solitaire" src="https://github.com/user-attachments/assets/6982d014-f5b4-4517-9156-b7f06c17e6b4" />
 
-### !SYSINFO - System Information
+### !SYSINFO.EXE - System Information
 View useful information about your system, including free memory and disk space.
 
 The system information report can be printed for reference.
 
 <img width="360" height="300" alt="System Information" src="https://github.com/user-attachments/assets/cdf114d7-919d-4553-a688-4168e97bf499" />
 
-### !TODOS - To-dos
+### !TODOS.EXE - To-dos
 A simple and flexible To-Do list supporting. Tasks support due dates, extended description, and tags.
 
 Tasks can be grouped, sorted and filtered by tags.
 
 <img width="360" height="300" alt="To-Dos" src="https://github.com/user-attachments/assets/ee6436ae-27a1-4304-ad10-5eb0df550d5d" />
 
-## SHORTCUT - keyboard shortcut tool
+## SHORTCUT.COM - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
 
 If you don't load the keyboard shortcut tool, you'll regain 500 bytes of memory - although `LOADHIGH` is used with `SHORTCUT.COM` to move this to upper memory anyway.
@@ -412,7 +412,7 @@ The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.<br/>
 Use `SHORTCUT /?` for more information.
 
 
-## AUTOGEN - an automatic menu generator
+## AUTOGEN.EXE - an automatic menu generator
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
 
 <img width="360" height="300" alt="AUTOGEN" src="https://github.com/user-attachments/assets/8edbc6cb-a31b-4149-9c6f-6e4d39809a0c" />
