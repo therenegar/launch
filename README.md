@@ -7,8 +7,7 @@ A lightweight command launcher for any DOS, with huge features to improve the us
 
 Requires DOS 3.3, 80286, EGA or better. 
 
-Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.<br/>
-Compatible with third-party command interpreters such as 4DOS/NDOS.
+Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/4dc48fa1-84bf-458b-a101-a45755b83714" />
 
@@ -78,7 +77,7 @@ Launch! locates and saves `LAUNCH.MNU` beside `!.EXE,` regardless of the current
 
 
 ### Parameters
-The Launch! executable `!` has some useful parameters:
+The Launch! executable `!.EXE` has some useful parameters:
 
 - `/?` - show Launch! help
 - `/CONFIG` - show the configuration dialog
@@ -317,7 +316,7 @@ The screensavers have been designed to use the EGA 16 color 640x350 screen mode,
 
 
 ## Accessories
-Launch! comes with 7 handy accessories (including a game) that can be useful in a basic DOS environment.
+Launch! comes with 7 handy accessories, and 3 addictive games that can be useful in a basic DOS environment.
 
 If selected during the Install program, there will be an **Accessories** menu created for you in Launch! providing quick access.
 
