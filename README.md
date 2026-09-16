@@ -391,13 +391,15 @@ Your drawing is persisted and will be there when the program is re-opened.
 ### !POP.EXE - Pop
 An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
 
-10 levels with different difficulty levels.
+10 levels with different difficulty levels. Click groups of bubbles to select, and then click again (or Enter) to pop them away!
 
 <img width="720" height="600" alt="!POP" src="https://github.com/user-attachments/assets/74606ef4-c426-451a-bb4a-49daf5fb1121" />
 
 
 ### !SOL.EXE - Solitaire
 Play draw three Solitaire completely in text mode!
+
+Click a card (it will show as selected), then click the destination. You can double click a card to move it the correct foundation pile if a valid move.
 
 <img width="720" height="600" alt="!SOL" src="https://github.com/user-attachments/assets/1b834b00-4414-4ff8-b722-7a7ba64243cd" />
 
@@ -411,9 +413,9 @@ The system information report can be printed for reference.
 
 
 ### !TODOS.EXE - To-dos
-A simple and flexible To-Do list supporting. Tasks support due dates, extended description, and tags.
+A simple and flexible To-Do list supporting grouping, due dates (with natural language like "tomorrow", "next Friday", extended description, and tags.
 
-Tasks can be grouped, sorted and filtered by tags.
+Tasks can be sorted and tags can be used to filter the list.
 
 <img width="720" height="600" alt="!TODOS" src="https://github.com/user-attachments/assets/cdcc35c9-f2be-4d10-9aa8-dd17890a49c3" />
 
