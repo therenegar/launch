@@ -1,7 +1,7 @@
 # Launch!
 
 A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt.
-Includes accessories, games, screensavers, fonts, and color schemes.
+Includes accessories, games, screensavers, fonts, prompt styles and color schemes.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
@@ -27,11 +27,12 @@ EGA resolution
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
+- Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 7 handy and optional text-mode only accessories and 3 games to go with Launch!
     - Calculator, Calendar, Note, Pixel Draw, Card Stack, To-Dos, System Info
     - Boxes, Pop and Solitaire games
-- Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
+- Various Command Prompt styles to choose from to uplift your C:\
 - Custom VGA display fonts to change the look of your whole DOS environment.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI.
@@ -123,7 +124,7 @@ The cursor (pointer style by default) will be visible when Launch! is run.<br/>
 ## Configuration
 
 Run `! /CONFIG` to configure Launch! appearance and preferences. You can also right-click on the main "Launch!" menu title.<br/>
-Options are split across 5 tabs.
+Options are split across 6 tabs.
 Cancel will return the previous configuration.
 
 Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
