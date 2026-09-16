@@ -315,13 +315,14 @@ The screensavers have been designed to use the EGA 16 color 640x350 screen mode,
 <img width="360" height="300" alt="StarryNite" src="https://github.com/user-attachments/assets/f8db1076-934a-44ec-828d-24a633c52f6a" />
 <img width="360" height="300" alt="Warp" src="https://github.com/user-attachments/assets/79a98013-a37a-4690-9eef-cbe7f30f10a5" />
 
+----
 
 ## Accessories
 Launch! comes with 7 handy accessories, and 3 addictive games that can be useful in a basic DOS environment.
 
 If selected during the Install program, there will be an **Accessories** menu created for you in Launch! providing quick access.
 
-All accessories depend on Launch! (`!.EXE`), and will take on Launch! configuration settings such as color scheme and mouse cursor.<br/>
+All accessories depend on Launch! (`!.EXE`) - for shared UI toolkit, and will take on Launch! configuration settings such as color scheme and mouse cursor - so the `.EXE`s can't be distributed without `!.EXE`.<br/>
 They've all been designed with a tiny memory footprint, and maximum compatibility in mind.
 
 Usable with either keyboard or mouse interaction.
@@ -348,29 +349,6 @@ A simple calculator, pretty self explanatory!
 <img width="720" height="600" alt="!CALC" src="https://github.com/user-attachments/assets/a344e20c-3610-4ecf-9dac-40b5118b4fa5" />
 
 
-### !STACK.EXE - Card Stack
-A stack of index cards. Each card has a title and text, and you can navigate between them. Clicking a card title brings that card to the front of the stack for editing.
-
-Add/Delete cards with the respective buttons.
-You can also export all the cards (everything concatenated) into a text file.
-
-Entries are automatically saved, everything is persisted, and all cards will be visible when the program is re-opened.
-
-<img width="720" height="600" alt="!STACK" src="https://github.com/user-attachments/assets/30508d7a-0419-4ca8-8b59-89eee283e9af" />
-
-
-### !NOTE.EXE - Note
-Simple notepad. You can click and type anywhere.
-
-Export the contents to a text file with `Export`. You can also send the contents to the printer with `Print`.
-
-The text contents are persisted when you close the Note, and will be there when the program is re-opened.
-
-Choose `Clear` to erase the notepad.
-
-<img width="720" height="600" alt="!NOTE" src="https://github.com/user-attachments/assets/1c7ff8a9-cefe-4101-8f71-7437d7b48ce5" />
-
-
 ### !DRAW.EXE - Pixel Draw
 You can create simple pixel images, they can be exported as a bitmap.<br/>
 The canvas is 96x96 pixels, the viewable area is 30x12 and can be scrolled.<br/>
@@ -387,6 +365,18 @@ Your drawing is persisted and will be there when the program is re-opened.
 <img width="720" height="600" alt="!DRAW" src="https://github.com/user-attachments/assets/7dca140e-9f65-4a6b-9b9d-0d232e7a6f0b" />
 
 
+### !NOTE.EXE - Note
+Simple notepad. You can click and type anywhere.
+
+Export the contents to a text file with `Export`. You can also send the contents to the printer with `Print`.
+
+The text contents are persisted when you close the Note, and will be there when the program is re-opened.
+
+Choose `Clear` to erase the notepad.
+
+<img width="720" height="600" alt="!NOTE" src="https://github.com/user-attachments/assets/1c7ff8a9-cefe-4101-8f71-7437d7b48ce5" />
+
+
 ### !POP.EXE - Pop
 An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
 
@@ -401,6 +391,17 @@ Play draw three Solitaire completely in text mode!
 Click a card (it will show as selected), then click the destination. You can double click a card to move it the correct foundation pile if a valid move.
 
 <img width="720" height="600" alt="!SOL" src="https://github.com/user-attachments/assets/1b834b00-4414-4ff8-b722-7a7ba64243cd" />
+
+
+### !STACK.EXE - Card Stack
+A stack of index cards. Each card has a title and text, and you can navigate between them. Clicking a card title brings that card to the front of the stack for editing.
+
+Add/Delete cards with the respective buttons.
+You can also export all the cards (everything concatenated) into a text file.
+
+Entries are automatically saved, everything is persisted, and all cards will be visible when the program is re-opened.
+
+<img width="720" height="600" alt="!STACK" src="https://github.com/user-attachments/assets/30508d7a-0419-4ca8-8b59-89eee283e9af" />
 
 
 ### !SYSINFO.EXE - System Information
@@ -420,6 +421,7 @@ Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your l
 
 <img width="720" height="600" alt="!TODOS" src="https://github.com/user-attachments/assets/cdcc35c9-f2be-4d10-9aa8-dd17890a49c3" />
 
+----
 
 ## SHORTCUT.COM - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
