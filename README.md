@@ -199,15 +199,15 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="360" height="300" alt="Add" src="https://github.com/user-attachments/assets/e5e66d68-de2a-478c-b49a-bfa3e1993015" />
+<img width="720" height="600" alt="Add" src="https://github.com/user-attachments/assets/98c8f68c-d420-4a06-8565-7b2e578f438a" />
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="360" height="300" alt="Edit" src="https://github.com/user-attachments/assets/f65cf002-2b04-4ebf-9d28-0a8a944d08de" />
+<img width="720" height="600" alt="Edit" src="https://github.com/user-attachments/assets/1024538c-9b6a-425a-8dab-9824b7939510" />
 
 `CTRL+D` will delete the selected item.
 
-<img width="360" height="300" alt="Delete" src="https://github.com/user-attachments/assets/60627204-8ede-4771-8eed-23736b837eab" />
+<img width="720" height="600" alt="Delete" src="https://github.com/user-attachments/assets/dbc4679c-9ced-4707-b95c-6b67d9676545" />
 
 Move selected items up and down with `CTRL+↑/↓`.
 
