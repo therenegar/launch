@@ -388,13 +388,13 @@ An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
 ### !SOL.EXE - Solitaire
 Play draw three Solitaire completely in text mode!
 
-Click a card (it will show as selected), then click the destination. You can double click a card to move it the correct foundation pile if a valid move.
+Click a card (it will show as selected), then click the destination (valid destinations are indicated). You can double click a card to move it to the correct foundation pile (if a valid move).
 
 <img width="720" height="600" alt="!SOL" src="https://github.com/user-attachments/assets/1b834b00-4414-4ff8-b722-7a7ba64243cd" />
 
 
 ### !STACK.EXE - Card Stack
-A stack of index cards. Each card has a title and text, and you can navigate between them. Clicking a card title brings that card to the front of the stack for editing.
+A stack of index cards. Each card has a title and text, and you can navigate between them. Clicking a card title brings that card to the front of the stack for viewing/editing.
 
 Add/Delete cards with the respective buttons.
 You can also export all the cards (everything concatenated) into a text file.
