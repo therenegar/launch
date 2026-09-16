@@ -161,9 +161,11 @@ If the shortcut utility is not loaded, the screensaver will only start when the 
 
 You can easily change the appearance of the DOS command prompt, choosing from 10 different prompt styles.
 
-You can add your own prompt definitions in `PROMPTS.CFG` and they will appear in the selector here.
+You can also add your own prompt definitions in `PROMPTS.CFG` and they will appear in the selector here.
 
 Choosing `SET` applies the selected prompt style immediately, and also updates any existing `PROMPT` statement in `AUTOEXEC.BAT` so this style is set at startup.
+
+Styles that using ANSI escape sequences will not show in the selector if an ANSI driver is not detected.
 
 <img width="720" height="600" alt="Config - Prompt" src="https://github.com/user-attachments/assets/71932153-bf06-422f-a648-a13d09c5c28c" />
 
@@ -413,6 +415,8 @@ The system information report can be printed for reference.
 A simple and flexible To-Do list supporting grouping, due dates (with natural language like "tomorrow", "next Friday", extended description, and tags.
 
 Tasks can be sorted and tags can be used to filter the list.
+
+Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your locale settings as/if set by `COUNTRY.SYS` in your `CONFIG.SYS`.
 
 <img width="720" height="600" alt="!TODOS" src="https://github.com/user-attachments/assets/cdcc35c9-f2be-4d10-9aa8-dd17890a49c3" />
 
