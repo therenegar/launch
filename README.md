@@ -27,9 +27,9 @@ EGA resolution
 - Automatic menu generator with comprehensive DOS program database to automatically identify programs.
 - Program parameter help screen to make it easy supplying parameters to any menu item.
 - Built in executable explorer to quickly browse and run programs anywhere.
-- 7 handy and optional text-mode only accessories and 2 games to go with Launch!
+- 7 handy and optional text-mode only accessories and 3 games to go with Launch!
     - Calculator, Calendar, Note, Pixel Draw, Card Stack, To-Dos, System Info
-    - Boxes and Solitaire games
+    - Boxes, Pop and Solitaire games
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Custom VGA display fonts to change the look of your whole DOS environment.
@@ -129,15 +129,6 @@ Cancel will return the previous configuration.
 Settings are saved to `LAUNCH.CFG`, a plain text file you can also edit yourself.<br/>
 If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults. 
 
-### Shortcut
-
-You can view the current status of the shortcut utility, current key combination, and set a new combination.<br/>
-If the shortcut is active, you can unload it - removing all traces of the TSR from memory.<br/>
-If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
-Note that changing the key combination also requires a reboot to apply.
-
-<img width="360" height="300" alt="Config - Shortcut" src="https://github.com/user-attachments/assets/86a993ca-24d6-4a4b-9691-35fdc07f17e2" />
-
 ### Menu
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
@@ -165,6 +156,16 @@ Click `Preview` for an instant preview of the currently selected screensaver.
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
 
+
+### Prompt
+
+You can easily change the appearance of the DOS command prompt, choosing from 10 different prompt styles.
+
+You can add your own prompt definitions in `PROMPTS.CFG` and they will appear in the selector here.
+
+Choosing `SET` applies the selected prompt style immediately, and also updates any existing `PROMPT` statement in `AUTOEXEC.BAT` so this style is set at startup.
+
+
 ###  Font
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
@@ -175,6 +176,15 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 
 > Note this feature is not available with an EGA display adapter.
 
+
+### Shortcut
+
+You can view the current status of the shortcut utility, current key combination, and set a new combination.<br/>
+If the shortcut is active, you can unload it - removing all traces of the TSR from memory.<br/>
+If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
+Note that changing the key combination also requires a reboot to apply.
+
+<img width="360" height="300" alt="Config - Shortcut" src="https://github.com/user-attachments/assets/86a993ca-24d6-4a4b-9691-35fdc07f17e2" />
 
 ## Live menu management
 Use the keyboard shortcuts to visually edit the menu while it is open. Changes are written immediately to `LAUNCH.MNU`. 
@@ -371,6 +381,14 @@ The grid can be toggled on/off.
 Your drawing is persisted and will be there when the program is re-opened.
 
 <img width="360" height="300" alt="Pixel Draw" src="https://github.com/user-attachments/assets/de2bb1d8-47be-4c4a-8ee5-70f347218474" />
+
+
+### !POP.EXE - Pop
+An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
+
+10 levels with different difficulty levels.
+
+
 
 ### !SOL.EXE - Solitaire
 Play draw three Solitaire completely in text mode!

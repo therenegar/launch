@@ -1,4 +1,4 @@
-/* Launch! 3.2 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 3.3 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -390,7 +390,7 @@ static int copy_accessories(const char *archive,const char *install)
 {
   static const char *files[]={"!CAL.EXE","!CALC.EXE","!DRAW.EXE",
     "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!BOXES.EXE",
-    "!SOL.EXE","!TODOS.EXE",0};
+    "!SOL.EXE","!TODOS.EXE","!POP.EXE",0};
   static char destination[PATH_SIZE];int i;
   for(i=0;files[i];i++){
     sprintf(destination,"%s\\%s",install,files[i]);
@@ -433,7 +433,7 @@ static int accessories_first(const char *menu)
 static int install_accessory_menu(const char *archive,const char *install)
 {
   static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;
-  int section,boxes,solitaire,stack,todos;
+  int section,boxes,solitaire,stack,todos,pop;
   sprintf(menu,"%s\\LAUNCH.MNU",install);
   if(!exists(menu)){strcpy(sample,"LAUNCH.MNU");if(!extract_file(archive,sample,menu))return 0;}
   if(!accessories_first(menu))return 0;
@@ -442,7 +442,8 @@ static int install_accessory_menu(const char *archive,const char *install)
   solitaire=contains_line(menu,"ITEM=Solitaire|!SOL|1|0|0");
   stack=contains_line(menu,"ITEM=Card Stack|!STACK|1|0|0");
   todos=contains_line(menu,"ITEM=To-Dos|!TODOS|1|0|0");
-  if(section&&boxes&&solitaire&&stack&&todos)return 1;
+  pop=contains_line(menu,"ITEM=Pop|!POP|1|0|0");
+  if(section&&boxes&&solitaire&&stack&&todos&&pop)return 1;
   f=fopen(menu,"a");if(!f)return 0;
   fputs("\n[Launcher\\Accessories]\n",f);
   if(section){
@@ -450,6 +451,7 @@ static int install_accessory_menu(const char *archive,const char *install)
     if(!todos)fputs("ITEM=To-Dos|!TODOS|1|0|0\n",f);
     if(!boxes)fputs("ITEM=Boxes|!BOXES|1|0|0\n",f);
     if(!solitaire)fputs("ITEM=Solitaire|!SOL|1|0|0\n",f);
+    if(!pop)fputs("ITEM=Pop|!POP|1|0|0\n",f);
     return fclose(f)==0;
   }
   fputs("ITEM=Calendar|!CAL|1|0|0\n",f);
@@ -458,6 +460,7 @@ static int install_accessory_menu(const char *archive,const char *install)
   fputs("ITEM=To-Dos|!TODOS|1|0|0\nITEM=System Info|!SYSINFO|1|0|0\n",f);
   fputs("ITEM=Boxes|!BOXES|1|0|0\n",f);
   fputs("ITEM=Solitaire|!SOL|1|0|0\n",f);
+  fputs("ITEM=Pop|!POP|1|0|0\n",f);
   return fclose(f)==0;
 }
 
@@ -470,7 +473,7 @@ int main(int argc,char **argv)
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 3.2 Installation");
+  puts("Launch! 3.3 Installation");
   puts("------------------------\n");
   cpu_ok=cpu_at_least_286();display_adapter(&display_ok);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
   question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");
@@ -528,7 +531,7 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 3.2 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- SHORTCUT 3.3 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
   if(!upgrade){printf("\n");question_icon(0);printf("Scan the C drive now for recognized programs\n    and build an initial Launch! menu? ");choice_default(0);

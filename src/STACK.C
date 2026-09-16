@@ -104,7 +104,7 @@ static void card_box(int x,int y,int index,int active,int title_focus,int text_f
   for(i=1;i<h-1;i++){acc_put(x,y+i,179,ACC_CONTROL);acc_put(x+w-1,y+i,179,ACC_CONTROL);}
   acc_text(x+2,y+1,cards[index].title,active&&title_focus?ACC_SELECT:(active?ACC_HEADING:ACC_CONTROL),CT);
   sprintf(number,"%d",index+1);acc_text(x+w-2-(int)strlen(number),y+1,number,nattr,(int)strlen(number));
-  for(i=2;i<w-2;i++)acc_put(x+i,y+2,215,ACC_ATTR(acc_appearance.controls_bg,12));
+  for(i=2;i<w-2;i++)acc_put(x+i,y+2,205,ACC_ATTR(acc_appearance.controls_bg,12));
   if(active){
     for(r=0;r<VISIBLE_LINES;r++){line=top+r;acc_text(x+2,y+3+r,cards[index].text+line*CW,ACC_CONTROL,CW);}
     acc_scrollbar(x+w-2,y+3,VISIBLE_LINES,top,TEXT_LINES,VISIBLE_LINES);
@@ -161,7 +161,7 @@ int main(int argc,char **argv)
     if((mb&1)&&my==y+13){if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+14&&mx<x+19)focus=3;else if(mx>=x+21&&mx<x+27)focus=4;else if(mx>=x+29&&mx<x+35)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+55&&mx<x+61)focus=7;key=13;}
 
     if(key==27)break;
-    if(key==9){focus=(focus+1)%8;dirty=1;key=0;continue;}
+    if(key==9||key==271){focus=(key==271)?(focus+7)%8:(focus+1)%8;dirty=1;key=0;continue;}
     if(key==13&&focus>=2){
       if(focus==2){select_card(higher_card());cx=cy=top=0;}
       else if(focus==3){select_card(lower_card(1));cx=cy=top=0;}

@@ -19,8 +19,10 @@
 #define TILE_WALL 2
 #define TILE_GOAL 3
 
-#define GLYPH_WALL_L 208
-#define GLYPH_WALL_R 187
+#define GLYPH_WALL_L 199
+#define GLYPH_WALL_R 200
+#define GLYPH_CLOSE_L 208
+#define GLYPH_CLOSE_R 187
 #define GLYPH_BOX_L 210
 #define GLYPH_BOX_R 182
 #define GLYPH_GOAL_L 209
@@ -63,7 +65,7 @@ static const unsigned char boxes_glyph14[8][32]={
   {0xF0,0x08,0x24,0x24,0x84,0x08,0xF0,0xFE,0xFF,0xF8,0xF8,0x3C,0x3C,0x3C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
 };
 
-static unsigned char old_glyph[8][32];
+static unsigned char old_glyph[10][32];
 
 typedef struct {
   unsigned char w,h;
@@ -191,11 +193,22 @@ static int at(int x,int y){return y*board_w+x;}
 static void boxes_font(int install)
 {
   int i;
-  for(i=0;i<8;i++){
-    if(install)acc_glyph_read(glyph_code[i],old_glyph[i]);
-    if(install){
-      acc_glyph_write(glyph_code[i],(acc_font_height()==14)?boxes_glyph14[i]:boxes_glyph[i]);
-    }else acc_glyph_write(glyph_code[i],old_glyph[i]);
+  if(install){
+    /* 199/200 are VGA line-graphics positions: both brick halves receive the
+       ninth-column extension, so adjacent wall cells join without a gap.
+       Preserve the normal Close artwork in two icon positions unused by Boxes. */
+    for(i=0;i<8;i++)acc_glyph_read(glyph_code[i],old_glyph[i]);
+    acc_glyph_read(GLYPH_CLOSE_L,old_glyph[8]);
+    acc_glyph_read(GLYPH_CLOSE_R,old_glyph[9]);
+    acc_glyph_write(GLYPH_CLOSE_L,old_glyph[1]); /* original glyph 200 */
+    {unsigned char close_right[32];acc_glyph_read(201,close_right);acc_glyph_write(GLYPH_CLOSE_R,close_right);}
+    for(i=0;i<8;i++)acc_glyph_write(glyph_code[i],(acc_font_height()==14)?boxes_glyph14[i]:boxes_glyph[i]);
+    acc_set_close_glyphs(GLYPH_CLOSE_L,GLYPH_CLOSE_R);
+  }else{
+    acc_set_close_glyphs(200,201);
+    for(i=0;i<8;i++)acc_glyph_write(glyph_code[i],old_glyph[i]);
+    acc_glyph_write(GLYPH_CLOSE_L,old_glyph[8]);
+    acc_glyph_write(GLYPH_CLOSE_R,old_glyph[9]);
   }
 }
 

@@ -78,12 +78,29 @@ static int weekday_name(const char *s)
 
 static int country_date_order(char *sep)
 {
-  unsigned char info[34];union REGS r;struct SREGS sr;int order=1;
-  memset(info,0,sizeof(info));memset(&r,0,sizeof(r));segread(&sr);r.h.ah=0x38;r.h.al=0;r.x.dx=FP_OFF(info);sr.ds=FP_SEG(info);
-  intdosx(&r,&r,&sr);
-  if(!r.x.cflag){order=(int)(info[0]|((unsigned)info[1]<<8));if(info[11])*sep=(char)info[11];else *sep='/';}
-  else *sep='/';
-  if(order<0||order>2)order=1;return order;
+  /* INT 21h/AH=38h returns the country-information block in DS:DX.
+     TODOS.C uses the medium memory model, so ordinary data pointers are
+     near pointers in DGROUP and DOS must receive the existing DS plus the
+     near offset.  The previous intdosx()/FP_SEG(info) implementation could
+     supply the wrong segment and silently fall back to US ordering. */
+  unsigned char info[34];
+  union REGS r;
+  int order=1;
+
+  memset(info,0,sizeof(info));
+  memset(&r,0,sizeof(r));
+  r.h.ah=0x38;
+  r.h.al=0;
+  r.x.dx=(unsigned)info;
+  intdos(&r,&r);
+
+  if(!r.x.cflag){
+    order=(int)(info[0]|((unsigned)info[1]<<8));
+    *sep=info[11]?(char)info[11]:'/';
+  } else *sep='/';
+
+  if(order<0||order>2)order=1;
+  return order;
 }
 
 static int parse_date_text(const char *src,char out[DATE_LEN+1])
@@ -121,9 +138,9 @@ static int parse_date_text(const char *src,char out[DATE_LEN+1])
 static void display_date(const char *iso,char out[11])
 {
   int y,m,d,order;char sep='/';if(sscanf(iso,"%d-%d-%d",&y,&m,&d)!=3){strncpy(out,iso,10);out[10]=0;return;}order=country_date_order(&sep);
-  if(order==0)sprintf(out,"%02d%c%02d%c%02d",m,sep,d,sep,y%100);
-  else if(order==2)sprintf(out,"%02d%c%02d%c%02d",y%100,sep,m,sep,d);
-  else sprintf(out,"%02d%c%02d%c%02d",d,sep,m,sep,y%100);
+  if(order==0)sprintf(out,"%02d%c%02d%c%04d",m,sep,d,sep,y);
+  else if(order==2)sprintf(out,"%04d%c%02d%c%02d",y,sep,m,sep,d);
+  else sprintf(out,"%02d%c%02d%c%04d",d,sep,m,sep,y);
 }
 
 static void defaults(void)
@@ -189,73 +206,89 @@ static void note_area(int x,int y,const char *value,int active,int cursor)
   }
 }
 
+static void date_example(char *out)
+{
+  int order;char sep='/';order=country_date_order(&sep);
+  if(order==0)sprintf(out,"e.g. 12%c30%c2026, Tomorrow, Monday, Next Fri",sep,sep);
+  else if(order==2)sprintf(out,"e.g. 2026%c12%c30, Tomorrow, Monday, Next Fri",sep,sep);
+  else sprintf(out,"e.g. 30%c12%c2026, Tomorrow, Monday, Next Fri",sep,sep);
+}
+
 static void draw_priority(int x,int y,int active,unsigned char priority)
 {
   char text[8];int attr=active?ACC_SELECT:ACC_ATTR(acc_appearance.controls_bg,0);
-  if(priority)sprintf(text,"%c %d %c",(char)174,(int)priority,(char)175);else sprintf(text,"%c - %c",(char)174,(char)175);
-  acc_fill(x,y,7,1,' ',attr);acc_text(x,y,text,attr,(int)strlen(text));
+  if(priority)sprintf(text,"  %d   %c",(int)priority,(char)175);else sprintf(text,"  -   %c",(char)175);
+  acc_fill(x,y,7,1,' ',attr);acc_text(x,y,text,attr,7);
+}
+static void draw_priority_preview(int x,int y,unsigned char priority)
+{
+  int fg=acc_appearance.controls_bg;
+  if(priority==1)fg=12;else if(priority==2)fg=11;else if(priority==3)fg=1;
+  acc_put(x,y,GLYPH_U_L,ACC_ATTR(acc_appearance.background,fg));
+  acc_put(x+1,y,GLYPH_U_R,ACC_ATTR(acc_appearance.background,fg));
 }
 
 static void redraw_task_field(int x,int y,int field,const TODO_ITEM *tmp,const char *datebuf,int pos)
 {
-  if(field==0)form_field(x+3,y+3,13,"Title",tmp->title,40,1,pos);
-  else if(field==1)form_field(x+3,y+5,13,"Due date",datebuf,24,1,pos);
-  else if(field==2)form_field(x+3,y+7,13,"Tag",tmp->tag,18,1,pos);
-  else if(field==3)draw_priority(x+16,y+9,1,tmp->priority);
-  else if(field==4)note_area(x+16,y+11,tmp->note,1,pos);
+  if(field==0)form_field(x+3,y+4,13,"Title",tmp->title,40,1,pos);
+  else if(field==1)form_field(x+3,y+6,13,"Due date",datebuf,24,1,pos);
+  else if(field==2)form_field(x+3,y+9,13,"Tag",tmp->tag,18,1,pos);
+  else if(field==3){draw_priority(x+16,y+11,1,tmp->priority);draw_priority_preview(x+24,y+11,tmp->priority);}
+  else if(field==4)note_area(x+16,y+13,tmp->note,1,pos);
   else if(field==5)acc_button(x+3,y+16,"  OK  ",1);
   else if(field==6)acc_button(x+11,y+16," Cancel ",1);
 }
 
 static void redraw_task_field_off(int x,int y,int field,const TODO_ITEM *tmp,const char *datebuf,int pos)
 {
-  if(field==0)form_field(x+3,y+3,13,"Title",tmp->title,40,0,pos);
-  else if(field==1)form_field(x+3,y+5,13,"Due date",datebuf,24,0,pos);
-  else if(field==2)form_field(x+3,y+7,13,"Tag",tmp->tag,18,0,pos);
-  else if(field==3)draw_priority(x+16,y+9,0,tmp->priority);
-  else if(field==4)note_area(x+16,y+11,tmp->note,0,pos);
-  else if(field==5)acc_button(x+3,y+16,"  OK  ",0);
-  else if(field==6)acc_button(x+11,y+16," Cancel ",0);
+  if(field==0)form_field(x+3,y+4,13,"Title",tmp->title,40,0,pos);
+  else if(field==1)form_field(x+3,y+6,13,"Due date",datebuf,24,0,pos);
+  else if(field==2)form_field(x+3,y+9,13,"Tag",tmp->tag,18,0,pos);
+  else if(field==3){draw_priority(x+16,y+11,0,tmp->priority);draw_priority_preview(x+24,y+11,tmp->priority);}
+  else if(field==4)note_area(x+16,y+13,tmp->note,0,pos);
+  else if(field==5)acc_button(x+3,y+17,"  OK  ",0);
+  else if(field==6)acc_button(x+11,y+17," Cancel ",0);
 }
 
-static void draw_task_form(int x,int y,int w,int h,const TODO_ITEM *tmp,const char *datebuf,int field,int pos)
+static void draw_task_form(int x,int y,int w,int h,const TODO_ITEM *tmp,const char *datebuf,int field,int pos,const char *group)
 {
-  acc_box(x,y,w,h,"Task");
-  form_field(x+3,y+3,13,"Title",tmp->title,40,field==0,pos);
-  form_field(x+3,y+5,13,"Due date",datebuf,24,field==1,pos);
-  form_field(x+3,y+7,13,"Tag",tmp->tag,18,field==2,pos);
-  acc_text(x+3,y+9,"Priority",ACC_LABEL,13);draw_priority(x+16,y+9,field==3,tmp->priority);
-  acc_text(x+3,y+11,"Description",ACC_LABEL,13);note_area(x+16,y+11,tmp->note,field==4,pos);
-  acc_button(x+3,y+h-3,"  OK  ",field==5);acc_button(x+11,y+h-3," Cancel ",field==6);
+  char hint[64],grp[64];acc_box(x,y,w,h,"Task");
+  sprintf(grp,"in group: %s",(group&&*group)?group:"(none)");acc_text(x+3,y+2,grp,ACC_HEADING,56);
+  form_field(x+3,y+4,13,"Title",tmp->title,40,field==0,pos);
+  form_field(x+3,y+6,13,"Due date",datebuf,24,field==1,pos);date_example(hint);acc_text(x+16,y+7,hint,ACC_TEXT,43);
+  form_field(x+3,y+9,13,"Tag",tmp->tag,18,field==2,pos);
+  acc_text(x+3,y+11,"Priority",ACC_LABEL,13);draw_priority(x+16,y+11,field==3,tmp->priority);draw_priority_preview(x+24,y+11,tmp->priority);
+  acc_text(x+3,y+13,"Description",ACC_LABEL,13);note_area(x+16,y+13,tmp->note,field==4,pos);
+  acc_button(x+3,y+17,"  OK  ",field==5);acc_button(x+11,y+17," Cancel ",field==6);
 }
 
-static int edit_task(TODO_ITEM *t)
+static int edit_task(TODO_ITEM *t,const char *group)
 {
-  TODO_ITEM tmp=*t;int w=62,h=19,x=(acc_cols-w)/2,y=(acc_rows-h)/2,key=0,mx=0,my=0,field=0,oldfield,pos=0,len;unsigned mb=0;char parsed[DATE_LEN+1],datebuf[DATE_INPUT_LEN+1];
+  TODO_ITEM tmp=*t;int w=62,h=20,x=(acc_cols-w)/2,y=(acc_rows-h)/2,key=0,mx=0,my=0,field=0,oldfield,pos=0,len;unsigned mb=0;char parsed[DATE_LEN+1],datebuf[DATE_INPUT_LEN+1];
   if(tmp.due[0])display_date(tmp.due,datebuf);else datebuf[0]=0;
-  draw_task_form(x,y,w,h,&tmp,datebuf,field,pos);
+  draw_task_form(x,y,w,h,&tmp,datebuf,field,pos,group);
   while(key!=27){
     acc_wait(&key,&mx,&my,&mb);
     if(key==27)return 0;
     oldfield=field;
     if((mb&1)){
-      if(my==y+3&&mx>=x+16&&mx<x+56){field=0;pos=(int)strlen(tmp.title);}
-      else if(my==y+5&&mx>=x+16&&mx<x+40){field=1;pos=(int)strlen(datebuf);}
-      else if(my==y+7&&mx>=x+16&&mx<x+34){field=2;pos=(int)strlen(tmp.tag);}
-      else if(my==y+9&&mx>=x+16&&mx<x+23){field=3;if(mx<x+19){if(tmp.priority==0)tmp.priority=3;else tmp.priority--;}else{tmp.priority=(unsigned char)((tmp.priority+1)%4);}redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;}
-      else if(my>=y+11&&my<=y+13&&mx>=x+16&&mx<x+56){field=4;pos=(int)strlen(tmp.note);}
+      if(my==y+4&&mx>=x+16&&mx<x+56){field=0;pos=(int)strlen(tmp.title);}
+      else if(my==y+6&&mx>=x+16&&mx<x+40){field=1;pos=(int)strlen(datebuf);}
+      else if(my==y+9&&mx>=x+16&&mx<x+34){field=2;pos=(int)strlen(tmp.tag);}
+      else if(my==y+11&&mx>=x+16&&mx<x+23){field=3;if(mx<x+19){if(tmp.priority==0)tmp.priority=3;else tmp.priority--;}else{tmp.priority=(unsigned char)((tmp.priority+1)%4);}redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;}
+      else if(my>=y+13&&my<=y+15&&mx>=x+16&&mx<x+56){field=4;pos=(int)strlen(tmp.note);}
       else if(my==y+h-3&&mx>=x+3&&mx<x+9){field=5;key=13;}
       else if(my==y+h-3&&mx>=x+11&&mx<x+17){field=6;key=13;}
       if(field!=oldfield){redraw_task_field_off(x,y,oldfield,&tmp,datebuf,pos);redraw_task_field(x,y,field,&tmp,datebuf,pos);}
       if(key!=13){key=0;continue;}
     }
-    if(key==9){redraw_task_field_off(x,y,field,&tmp,datebuf,pos);field=(field+1)%7;pos=0;if(field==0)pos=(int)strlen(tmp.title);else if(field==1)pos=(int)strlen(datebuf);else if(field==2)pos=(int)strlen(tmp.tag);else if(field==4)pos=(int)strlen(tmp.note);redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;}
+    if(key==9||key==271){redraw_task_field_off(x,y,field,&tmp,datebuf,pos);field=(key==271)?(field+6)%7:(field+1)%7;pos=0;if(field==0)pos=(int)strlen(tmp.title);else if(field==1)pos=(int)strlen(datebuf);else if(field==2)pos=(int)strlen(tmp.tag);else if(field==4)pos=(int)strlen(tmp.note);redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;}
     if(field==3&&(key==256+75||key==256+77||key==' '||key==13)){
       if(key==256+75){if(tmp.priority==0)tmp.priority=3;else tmp.priority--;}else tmp.priority=(unsigned char)((tmp.priority+1)%4);redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;
     }
     if(field==4&&key==13){len=(int)strlen(tmp.note);if(len<NOTE_LEN){memmove(tmp.note+pos+1,tmp.note+pos,len-pos+1);tmp.note[pos++]='\n';redraw_task_field(x,y,field,&tmp,datebuf,pos);}key=0;continue;}
     if(key==13){
-      if(field==5){if(datebuf[0]&&!parse_date_text(datebuf,parsed)){acc_notice("Date","Date not understood. Try tomorrow, next Wednesday, 15 Sep or 15/09.");draw_task_form(x,y,w,h,&tmp,datebuf,field,pos);key=0;continue;}if(datebuf[0])strcpy(tmp.due,parsed);else tmp.due[0]=0;*t=tmp;return 1;}
+      if(field==5){if(datebuf[0]&&!parse_date_text(datebuf,parsed)){acc_notice("Date","Date not understood. Try tomorrow, next Wednesday, 15 Sep or 15/09.");draw_task_form(x,y,w,h,&tmp,datebuf,field,pos,group);key=0;continue;}if(datebuf[0])strcpy(tmp.due,parsed);else tmp.due[0]=0;*t=tmp;return 1;}
       if(field==6)return 0;redraw_task_field_off(x,y,field,&tmp,datebuf,pos);field++;if(field>6)field=0;pos=0;if(field==0)pos=(int)strlen(tmp.title);else if(field==1)pos=(int)strlen(datebuf);else if(field==2)pos=(int)strlen(tmp.tag);else if(field==4)pos=(int)strlen(tmp.note);redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;
     }
     if(field==0&&field_key(tmp.title,TITLE_LEN,key,&pos)){redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;}
@@ -277,7 +310,7 @@ static int edit_heading(TODO_ITEM *t)
     if(key==27)return 0;
     if((mb&1)&&my==y+3&&mx>=x+13&&mx<x+53){field=0;pos=(int)strlen(title);dirty=1;key=0;continue;}
     if((mb&1)&&my==y+h-3){if(mx>=x+3&&mx<x+9){field=1;key=13;}else if(mx>=x+11&&mx<x+17){field=2;key=13;}}
-    if(key==9){field=(field+1)%3;dirty=1;key=0;continue;}
+    if(key==9||key==271){field=(key==271)?(field+2)%3:(field+1)%3;dirty=1;key=0;continue;}
     if(key==13){if(field==1){strcpy(t->title,title);return 1;}if(field==2)return 0;field=1;dirty=1;key=0;continue;}
     if(field==0&&field_key(title,TITLE_LEN,key,&pos)){dirty=1;key=0;continue;}
     key=0;
@@ -310,16 +343,11 @@ static int due_compare(const char *a,const char *b,int descending)
   c=stricmp(a,b);return descending?-c:c;
 }
 
-static int priority_rank(int p)
-{
-  if(p==1)return 0;if(p==2)return 1;if(p==3)return 2;return 3;
-}
-
 static int task_compare(int ia,int ib,int sort_mode)
 {
   int c;
   if(sort_mode==1||sort_mode==2){c=due_compare(items[ia].due,items[ib].due,sort_mode==1);if(c)return c;}
-  else if(sort_mode==3){c=priority_rank(items[ia].priority)-priority_rank(items[ib].priority);if(c)return c;}
+  else if(sort_mode==3||sort_mode==4){c=stricmp(items[ia].title,items[ib].title);if(c)return sort_mode==3?-c:c;}
   return ia-ib;
 }
 
@@ -328,13 +356,13 @@ static int build_visible(int *map,const char *filter,int hide_done,int sort_mode
   int i,j,k,n=0,gstart,gend,tmp;
   for(i=0;i<item_count;i++)if(visible(i,filter,hide_done))map[n++]=i;
   if(sort_mode==0)return n;
-  /* Keep groups in their normal order. Sort only the visible tasks inside each group. */
   i=0;
+  /* Ungrouped tasks form the first logical group. */
+  gstart=0;while(i<n&&items[map[i]].type!=0)i++;gend=i;
+  for(j=gstart;j<gend-1;j++)for(k=j+1;k<gend;k++)if(task_compare(map[j],map[k],sort_mode)>0){tmp=map[j];map[j]=map[k];map[k]=tmp;}
   while(i<n){
-    if(items[map[i]].type==0){gstart=i+1;gend=gstart;while(gend<n&&items[map[gend]].type!=0)gend++;}
-    else {gstart=i;gend=i;while(gend<n&&items[map[gend]].type!=0)gend++;}
+    i++;gstart=i;while(i<n&&items[map[i]].type!=0)i++;gend=i;
     for(j=gstart;j<gend-1;j++)for(k=j+1;k<gend;k++)if(task_compare(map[j],map[k],sort_mode)>0){tmp=map[j];map[j]=map[k];map[k]=tmp;}
-    i=gend;if(i<n&&items[map[i]].type==0)continue;
   }
   return n;
 }
@@ -357,7 +385,7 @@ static int task_text_attr(const TODO_ITEM *t,int selected)
 static int checkbox_attr(const TODO_ITEM *t,int selected)
 {
   int fg=0;
-  if(selected)return ACC_SELECT;
+  (void)selected;
   if(t->done)fg=8;
   else if(t->priority==1)fg=12;
   else if(t->priority==2)fg=11;
@@ -367,7 +395,7 @@ static int checkbox_attr(const TODO_ITEM *t,int selected)
 
 static void draw_note_lines(int x,int y,const char *note,int width,int selected)
 {
-  char line[80];int n=(int)strlen(note),p=0,row=0,k,j,attr=selected?ACC_SELECT:ACC_ATTR(acc_appearance.controls_bg,0);
+  char line[80];int n=(int)strlen(note),p=0,row=0,k,attr=selected?ACC_SELECT:ACC_ATTR(acc_appearance.controls_bg,0);
   while(row<2){
     k=0;while(p<n&&k<width&&note[p]!='\n')line[k++]=note[p++];
     if(p<n&&note[p]=='\n')p++;
@@ -391,7 +419,7 @@ static void draw_list(int x,int y,int w,int sel,int top,int expanded,const char 
     idx=map[r];yy=y+used;selected=(r==sel&&focus==0);
     if(items[idx].type==0){
       row_map[used]=r;hattr=selected?ACC_SELECT:ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles);
-      acc_fill(x,yy,w,1,' ',hattr);acc_put(x,yy,items[idx].done?'+':'-',hattr);acc_text(x+2,yy,items[idx].title,hattr,w-2);used++;
+      acc_fill(x,yy,w,1,' ',hattr);acc_put(x,yy,items[idx].done?16:31,hattr);acc_text(x+2,yy,items[idx].title,hattr,w-2);used++;
     } else {
       row_map[used]=r;tattr=task_text_attr(&items[idx],selected);cattr=checkbox_attr(&items[idx],selected);
       acc_fill(x,yy,w,1,' ',tattr);
@@ -472,6 +500,13 @@ static void delete_selected(int idx)
   item_count-=count;
 }
 
+static int task_group_index(int idx)
+{int i;if(idx<0||idx>=item_count)return -1;if(items[idx].type==0)return idx;for(i=idx-1;i>=0;i--)if(items[i].type==0)return i;return -1;}
+static const char *task_group_name(int idx)
+{int g=task_group_index(idx);return g>=0?items[g].title:"(none)";}
+static int insert_task_after(int pos,const TODO_ITEM *t)
+{int i;if(item_count>=MAX_ITEMS)return -1;if(pos<0)pos=0;if(pos>item_count)pos=item_count;for(i=item_count;i>pos;i--)items[i]=items[i-1];items[pos]=*t;item_count++;return pos;}
+
 int main(int argc,char **argv)
 {
   int w=74,h=22,x,y,lx,ly,key=0,mx=0,my=0,focus=0,sel=0,top=0,expanded=0,map[MAX_ITEMS],n,idx,i,dirty=1,nt,tag_sel=0,newidx,sort_mode=0,hide_done=0;unsigned mb=0;
@@ -483,8 +518,8 @@ int main(int argc,char **argv)
   while(key!=27){
     n=build_visible(map,filter,hide_done,sort_mode);if(n==0)sel=0;else if(sel>=n)sel=n-1;if(sel<top)top=sel;if(sel>=top+VIEW_ROWS)top=sel-VIEW_ROWS+1;if(top<0)top=0;
     if(dirty){draw_list(lx,ly,w-7,sel,top,expanded,filter,focus,hide_done,sort_mode);dirty=0;}
-    hide_label[0]=' ';hide_label[1]='H';hide_label[2]='i';hide_label[3]='d';hide_label[4]='e';hide_label[5]=' ';hide_label[6]=(char)GLYPH_C_L;hide_label[7]=(char)GLYPH_C_R;hide_label[8]=' ';hide_label[9]=0;
-    acc_button(x+3,y+h-3," Add ",focus==2);acc_button(x+11,y+h-3," Group ",focus==3);acc_button(x+20,y+h-3," Edit ",focus==4);acc_button(x+28,y+h-3," Delete ",focus==5);acc_button(x+36,y+h-3," Sort ",focus==6);acc_button(x+44,y+h-3,hide_label,focus==7);acc_button(x+w-10,y+h-3," Close ",focus==8);
+    hide_label[0]=' ';hide_label[1]=' ';hide_label[2]=(char)GLYPH_C_L;hide_label[3]=(char)GLYPH_C_R;hide_label[4]=' ';hide_label[5]=' ';hide_label[6]=0;
+    acc_button(x+3,y+h-3," Add ",focus==2);acc_button(x+11,y+h-3," Group ",focus==3);acc_button(x+20,y+h-3," Edit ",focus==4);acc_button(x+28,y+h-3," Delete ",focus==5);acc_button(x+36,y+h-3," Sort ",focus==6);acc_text(x+43,y+h-3,(sort_mode==1)?"Date\031":(sort_mode==2)?"Date\030":(sort_mode==3)?"Alph\031":(sort_mode==4)?"Alph\030":"None",ACC_LABEL,6);acc_button(x+51,y+h-3,hide_label,focus==7);acc_button(x+w-10,y+h-3," Close ",focus==8);
     acc_wait(&key,&mx,&my,&mb);
     if((mb&1)&&my>=ly&&my<ly+VIEW_ROWS&&mx>=lx&&mx<lx+w-7){
       static int last_click_idx=-1;static unsigned long last_click_tick=0;unsigned long now;int row=my-ly;
@@ -493,18 +528,18 @@ int main(int argc,char **argv)
         if(row_detail[row]){dirty=1;key=0;continue;}
         if(items[idx].type){
           if(mx>=lx+2&&mx<=lx+3){items[idx].done=!items[idx].done;expanded=0;last_click_idx=-1;}
-          else if(mx>=lx+5){if(last_click_idx==idx&&(unsigned long)(now-last_click_tick)<=9UL){edit_task(&items[idx]);acc_box(x,y,w,h,"To-Dos");last_click_idx=-1;}else{expanded=!expanded;last_click_idx=idx;last_click_tick=now;}}
+          else if(mx>=lx+5){if(last_click_idx==idx&&(unsigned long)(now-last_click_tick)<=9UL){edit_task(&items[idx],task_group_name(idx));acc_box(x,y,w,h,"To-Dos");last_click_idx=-1;}else{expanded=!expanded;last_click_idx=idx;last_click_tick=now;}}
         } else {items[idx].done=!items[idx].done;expanded=0;last_click_idx=-1;}
         dirty=1;
       }key=0;continue;
     }
     if((mb&1)&&my==ly+VIEW_ROWS){nt=collect_tags(tags);if(mx>=lx+6&&mx<lx+9){filter[0]=0;tag_sel=0;}else{int p=9;for(i=0;i<nt;i++){p++;if(mx>=lx+p&&mx<lx+p+(int)strlen(tags[i])){strcpy(filter,tags[i]);tag_sel=i+1;break;}p+=(int)strlen(tags[i]);}}sel=top=0;focus=1;expanded=0;dirty=1;key=0;continue;}
-    if((mb&1)&&my==y+h-3){if(mx>=x+3&&mx<x+9)focus=2;else if(mx>=x+11&&mx<x+18)focus=3;else if(mx>=x+20&&mx<x+26)focus=4;else if(mx>=x+28&&mx<x+34)focus=5;else if(mx>=x+36&&mx<x+42)focus=6;else if(mx>=x+44&&mx<x+53)focus=7;else if(mx>=x+w-10&&mx<x+w-4)focus=8;key=13;}
-    if(key==9){focus=(focus+1)%9;dirty=1;key=0;continue;}
+    if((mb&1)&&my==y+h-3){if(mx>=x+3&&mx<x+9)focus=2;else if(mx>=x+11&&mx<x+18)focus=3;else if(mx>=x+20&&mx<x+26)focus=4;else if(mx>=x+28&&mx<x+34)focus=5;else if(mx>=x+36&&mx<x+42)focus=6;else if(mx>=x+51&&mx<x+57)focus=7;else if(mx>=x+w-10&&mx<x+w-4)focus=8;key=13;}
+    if(key==9||key==271){focus=(key==271)?(focus+8)%9:(focus+1)%9;dirty=1;key=0;continue;}
 
     /* Global keyboard shortcuts. */
     if(key=='a'||key=='A'){
-      if(item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=1;t.priority=0;if(edit_task(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;top=sel>VIEW_ROWS-1?sel-VIEW_ROWS+1:0;}acc_box(x,y,w,h,"To-Dos");dirty=1;}
+      if(item_count<MAX_ITEMS){int g=(n>0)?task_group_index(map[sel]):-1,at=(g>=0)?group_end(g)+1:0;memset(&t,0,sizeof(t));t.used=1;t.type=1;t.priority=0;if(edit_task(&t,g>=0?items[g].title:"(none)")){newidx=insert_task_after(at,&t);filter[0]=0;sort_mode=0;sel=visible_pos_for_index(newidx,filter,hide_done,sort_mode);top=sel>VIEW_ROWS-1?sel-VIEW_ROWS+1:0;}acc_box(x,y,w,h,"To-Dos");dirty=1;}
       key=0;continue;
     }
     if(key=='g'||key=='G'){
@@ -512,12 +547,12 @@ int main(int argc,char **argv)
       key=0;continue;
     }
     if((key=='e'||key=='E')&&n>0){
-      idx=map[sel];if(items[idx].type)edit_task(&items[idx]);else edit_heading(&items[idx]);acc_box(x,y,w,h,"To-Dos");dirty=1;key=0;continue;
+      idx=map[sel];if(items[idx].type)edit_task(&items[idx],task_group_name(idx));else edit_heading(&items[idx]);acc_box(x,y,w,h,"To-Dos");dirty=1;key=0;continue;
     }
     if((key=='d'||key=='D')&&n>0){
       idx=map[sel];delete_selected(idx);if(sel>0)sel--;expanded=0;dirty=1;key=0;continue;
     }
-    if(key=='s'||key=='S'){sort_mode=(sort_mode+1)%4;sel=top=0;expanded=0;dirty=1;key=0;continue;}
+    if(key=='s'||key=='S'){sort_mode=(sort_mode+1)%5;sel=top=0;expanded=0;dirty=1;key=0;continue;}
     if(key=='h'||key=='H'){hide_done=!hide_done;sel=top=0;expanded=0;dirty=1;key=0;continue;}
 
     if(focus==0&&n>0){
@@ -534,11 +569,11 @@ int main(int argc,char **argv)
     }
     if(focus==1){nt=collect_tags(tags);if(key==256+75&&tag_sel>0)tag_sel--;else if(key==256+77&&tag_sel<nt)tag_sel++;else if(key==13){if(tag_sel==0)filter[0]=0;else strcpy(filter,tags[tag_sel-1]);sel=top=0;expanded=0;}dirty=1;key=0;continue;}
     if(key==13&&focus>=2){
-      if(focus==2&&item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=1;t.priority=0;if(edit_task(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;top=sel>VIEW_ROWS-1?sel-VIEW_ROWS+1:0;}acc_box(x,y,w,h,"To-Dos");}
+      if(focus==2&&item_count<MAX_ITEMS){int g=(n>0)?task_group_index(map[sel]):-1,at=(g>=0)?group_end(g)+1:0;memset(&t,0,sizeof(t));t.used=1;t.type=1;t.priority=0;if(edit_task(&t,g>=0?items[g].title:"(none)")){newidx=insert_task_after(at,&t);filter[0]=0;sort_mode=0;sel=visible_pos_for_index(newidx,filter,hide_done,sort_mode);top=sel>VIEW_ROWS-1?sel-VIEW_ROWS+1:0;}acc_box(x,y,w,h,"To-Dos");}
       else if(focus==3&&item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=0;strcpy(t.title,"New group");if(edit_heading(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;}acc_box(x,y,w,h,"To-Dos");}
-      else if(focus==4&&n>0){idx=map[sel];if(items[idx].type)edit_task(&items[idx]);else edit_heading(&items[idx]);acc_box(x,y,w,h,"To-Dos");}
+      else if(focus==4&&n>0){idx=map[sel];if(items[idx].type)edit_task(&items[idx],task_group_name(idx));else edit_heading(&items[idx]);acc_box(x,y,w,h,"To-Dos");}
       else if(focus==5&&n>0){idx=map[sel];delete_selected(idx);if(sel>0)sel--;expanded=0;}
-      else if(focus==6){sort_mode=(sort_mode+1)%4;sel=top=0;expanded=0;}
+      else if(focus==6){sort_mode=(sort_mode+1)%5;sel=top=0;expanded=0;}
       else if(focus==7){hide_done=!hide_done;sel=top=0;expanded=0;}
       else if(focus==8)key=27;
       dirty=1;if(key!=27)key=0;continue;

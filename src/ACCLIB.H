@@ -36,6 +36,7 @@ void acc_put(int x,int y,int ch,int attr);
 void acc_text(int x,int y,const char *text,int attr,int width);
 void acc_fill(int x,int y,int width,int height,int ch,int attr);
 void acc_box(int x,int y,int width,int height,const char *title);
+void acc_set_close_glyphs(int left,int right);
 void acc_button(int x,int y,const char *text,int selected);
 void acc_press_button(int x,int y,const char *text);
 void acc_scrollbar(int x,int top,int height,int position,int total,int page);
