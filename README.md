@@ -47,13 +47,13 @@ EGA resolution
 ## The Launch! Menu
 
 * `!.EXE` - [The Launch! Menu](https://github.com/therenegar/launch/wiki/!.EXE)
-    * [Configuration](https://github.com/therenegar/launch/wiki/!.EXE#screensavers)
-    * [Shutdown](https://github.com/therenegar/launch/wiki/!.EXE#screensavers)
+    * [Configuration](https://github.com/therenegar/launch/wiki/!.EXE#configuration)
+    * [Shutdown](https://github.com/therenegar/launch/wiki/!.EXE#shutdown)
     * [Screensavers](https://github.com/therenegar/launch/wiki/!.EXE#screensavers)
-    * [Color Schemes](https://github.com/therenegar/launch/wiki/!.EXE#screensavers)
-    * [Changing fonts](https://github.com/therenegar/launch/wiki/!.EXE#screensavers)
-    * [Custom Command Prompts](https://github.com/therenegar/launch/wiki/!.EXE#screensavers)
-    * [Explore & Run](https://github.com/therenegar/launch/wiki/!.EXE#screensavers)
+    * [Color Schemes](https://github.com/therenegar/launch/wiki/!.EXE#colors)
+    * [Changing fonts](https://github.com/therenegar/launch/wiki/!.EXE#fonts)
+    * [Custom Command Prompts](https://github.com/therenegar/launch/wiki/!.EXE#prompt)
+    * [Explore & Run](https://github.com/therenegar/launch/wiki/!.EXE#explore--run)
     * Open File
 
 ## Accessories
