@@ -1,5 +1,4 @@
-<img width="6771" height="613" alt="logo" src="https://github.com/user-attachments/assets/6c642f70-e2b9-4969-ae96-9bbe2be8e9ab" />
-
+<img width="720" height="65" alt="Launch!" src="https://github.com/user-attachments/assets/6c642f70-e2b9-4969-ae96-9bbe2be8e9ab" />
 
 ----
 
