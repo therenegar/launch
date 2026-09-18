@@ -1,4 +1,4 @@
-/* AutoGen 3.3 - automatic Launch! menu generator for DOS.
+/* AutoGen 3.5 - automatic Launch! menu generator for DOS.
  * Microsoft C/C++ 7.0, small model.
  */
 #include <stdio.h>
@@ -365,49 +365,87 @@ static int contains_text(const char *text,const char *wanted)
   return strstr(copy,wanted)!=NULL;
 }
 
+static int dr_dos_version_id(void)
+{
+  unsigned result=0,found=0;
+#ifndef __GNUC__
+  _asm {
+    mov ax,4452h
+    stc
+    int 21h
+    jc autogen_dr_done
+    mov result,ax
+    mov found,1
+  autogen_dr_done:
+  }
+#else
+  (void)result;
+#endif
+  return found?(int)(result&0x00FFU):-1;
+}
+
 static void add_dos_utilities(void)
 {
   union REGS inregs,outregs;char category[17],*os,*comspec,*ver;
-  int major,minor,is_dr=0,is_free=0,is_pc=0;
-  memset(&inregs,0,sizeof(inregs));inregs.h.ah=0x30;inregs.h.al=1;
-  intdos(&inregs,&outregs);major=outregs.h.al;minor=outregs.h.ah;
-  is_pc=(outregs.h.bh==0);
-  if(major>=5){
+  int major,minor,is_dr=0,is_free=0,is_pc=0,dr_id,oem;
+  memset(&inregs,0,sizeof(inregs));inregs.h.ah=0x30;inregs.h.al=0;
+  intdos(&inregs,&outregs);major=outregs.h.al;minor=outregs.h.ah;oem=outregs.h.bh;
+  os=getenv("OS");comspec=getenv("COMSPEC");
+  is_free=(oem==0xFD)||contains_text(os,"FREEDOS")||contains_text(comspec,"FREECOM")||getenv("FREEDOS")!=NULL;
+  dr_id=dr_dos_version_id();is_dr=(dr_id>=0||oem==0xEE||oem==0xEF);is_pc=(oem==0);
+  if(!is_dr&&major>=5){
     memset(&inregs,0,sizeof(inregs));inregs.x.ax=0x3306;intdos(&inregs,&outregs);
     if(outregs.h.bl>=5&&outregs.h.bl<100){major=outregs.h.bl;minor=outregs.h.bh;}
   }
-  os=getenv("OS");comspec=getenv("COMSPEC");
-  is_free=contains_text(os,"FREEDOS")||contains_text(comspec,"FREECOM")||getenv("FREEDOS")!=NULL;
-  memset(&inregs,0,sizeof(inregs));inregs.x.ax=0x4452;intdos(&inregs,&outregs);
-  if(!outregs.x.cflag)is_dr=1;
+  if(is_dr&&dr_id>=0){
+    if(dr_id==0x65){major=5;minor=0;}
+    else if(dr_id>=0x66&&dr_id<=0x71){major=6;minor=0;}
+    else if(dr_id>=0x72){major=7;minor=0;}
+    else {major=3;minor=0;}
+  }
   ver=getenv("VER");
   if(is_free)strcpy(category,"FreeDOS");
   else if(is_dr&&ver&&*ver){strncpy(category,ver,16);category[16]=0;}
   else if(is_dr)sprintf(category,"DR DOS %d.%d",major,minor);
   else if(is_pc)sprintf(category,"PC DOS %d.%d",major,minor);
   else sprintf(category,"MS-DOS %d.%d",major,minor);
-  add_dos_item("Check Disk",category,"CHKDSK",1);
-  add_dos_item("Format Disk",category,"FORMAT",0);
-  add_dos_item("Partition Disk",category,"FDISK",1);
-  add_dos_item("Sys Install",category,"SYS",0);
-  if(major>=4||is_free)add_dos_item("Memory Info",category,"MEM",1);
-  if(major>=5||is_free){
-    add_dos_item(is_pc?"E Editor":"Text Editor",category,is_pc?"E":"EDIT",1);
-    add_dos_item("Help",category,"HELP",1);
-  }
-  if(major>=6||is_free){
-    add_dos_item("Defragment Disk",category,"DEFRAG",1);
-    add_dos_item("Undelete Files",category,"UNDELETE",1);
-  }
-  if((major>6||(major==6&&minor>=20))||is_free||is_pc)
-    add_dos_item("Scan Disk",category,"SCANDISK",1);
+
+  add_available_dos_item("Check Disk",category,"CHKDSK",1);
+  add_available_dos_item("Format Disk",category,"FORMAT",0);
+  add_available_dos_item("Partition Disk",category,"FDISK",1);
+  add_available_dos_item("Sys Install",category,"SYS",0);
+  if(major>=4||is_free)add_available_dos_item("Memory Info",category,"MEM",1);
   add_available_dos_item("File Attributes",category,"ATTRIB",0);
-  if(major>=6||is_free)add_available_dos_item("Delete Tree",category,"DELTREE",0);
-  add_available_dos_item("Find File",category,"FIND",0);
-  if(major>3||(major==3&&minor>=20)||is_free)
-    add_available_dos_item("XCopy",category,"XCOPY",0);
-  if(major>=4||is_free)add_available_dos_item("DOS Shell",category,"DOSSHELL",1);
+  add_available_dos_item("Find Text",category,"FIND",0);
   add_available_dos_item("Sort Input",category,"SORT",0);
+  if(major>3||(major==3&&minor>=20)||is_free)add_available_dos_item("XCopy",category,"XCOPY",0);
+  add_available_dos_item("Delete Tree",category,"DELTREE",0);
+  add_available_dos_item("Undelete Files",category,"UNDELETE",1);
+  add_available_dos_item("Scan Disk",category,"SCANDISK",1);
+
+  if(is_dr){
+    add_available_dos_item("DR DOS Editor",category,"EDITOR",1);
+    if(major==5||major==6)add_available_dos_item("ViewMAX",category,"VIEWMAX",1);
+    if(major>=6)add_available_dos_item("TaskMAX",category,"TASKMAX",1);
+    add_available_dos_item("Disk Optimizer",category,"DISKOPT",1);
+    add_available_dos_item("DOSBook Help",category,"DOSBOOK",1);
+  } else {
+    add_available_dos_item("Defragment Disk",category,"DEFRAG",1);
+    if(is_pc){
+      add_available_dos_item("E Editor",category,"E",1);
+      if(major>=7)add_available_dos_item("PC DOS Viewer",category,"VIEW",1);
+      add_available_dos_item("DOS Shell",category,"DOSSHELL",1);
+      add_available_dos_item("Help",category,"HELP",1);
+    } else if(is_free){
+      add_available_dos_item("FreeDOS Edit",category,"EDIT",1);
+      add_available_dos_item("FDIMPLES Packages",category,"FDIMPLES",1);
+      add_available_dos_item("Help",category,"HELP",1);
+    } else {
+      add_available_dos_item("MS-DOS Editor",category,"EDIT",1);
+      add_available_dos_item("DOS Shell",category,"DOSSHELL",1);
+      add_available_dos_item("Help",category,"HELP",1);
+    }
+  }
 }
 
 static int found_compare(const void *aa,const void *bb)
@@ -441,7 +479,7 @@ static int write_menu(void)
   qsort(found,found_count,sizeof(found[0]),found_compare);
   for(i=0;i<found_count;i++)category_index(cats,&cat_count,found[i].category);
   f=fopen(temp_file,"w");if(!f)return 0;
-  fputs("; Launch! 3.3 menu generated by AutoGen\n\n[Launcher]\n",f);
+  fputs("; Launch! 3.5 menu generated by AutoGen\n\n[Launcher]\n",f);
   for(i=0;i<cat_count;i++)fprintf(f,"FOLDER=%s\n",cats[i]);
   for(i=0;i<cat_count;i++){
     start=-1;count=0;
@@ -490,7 +528,7 @@ static int parse_drives(int argc,char **argv,char *drives)
 int main(int argc,char **argv)
 {
   char drives[26],answer[16];int parsed;
-  puts("AutoGen 3.3 - Launch! Program Scanner\n");
+  puts("AutoGen 3.5 - Launch! Program Scanner\n");
   parsed=parse_drives(argc,argv,drives);if(parsed==0)return 0;if(parsed<0){error_icon();puts("Invalid option. Use AUTOGEN /?");return 1;}
   program_directory(argv[0],base_dir);
   if(strlen(base_dir)>PATH_SIZE-13){error_icon();puts("AutoGen's installation path is too long.");return 1;}

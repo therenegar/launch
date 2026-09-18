@@ -3,80 +3,172 @@
 #include <stdlib.h>
 #include <string.h>
 #include <conio.h>
+#include <dos.h>
 #include "ACCLIB.H"
 
 #define BW 58
-#define BH 14
+#define BH 13
 #define MAX_SNAKE 256
-#define LEVELS 6
+#define LEVELS 10
 #define FRUITS 8
+
+/* 3.5 canonical Snake glyphs (logical IDs in LAUNCHUI). */
+#define SG_FRUIT       75
+#define SG_HEAD_UP     76
+#define SG_HEAD_DOWN   77
+#define SG_HEAD_LEFT   78 /* VGA 9th-column extension */
+#define SG_HEAD_RIGHT  79
+#define SG_BODY_VERT   80
+#define SG_BODY_HORIZ  81 /* VGA 9th-column extension */
+#define SG_CORNER_SW   82 /* VGA 9th-column extension */
+#define SG_CORNER_SE   83
+#define SG_CORNER_NW   84 /* VGA 9th-column extension */
+#define SG_CORNER_NE   85
+
+/* Runtime positions. 202-205 are extension-capable and unused by Snake's
+   text-only toolbar; the other Snake glyphs deliberately use non-extension
+   positions. Bricks reuse the shared game wall pair. */
+#define SC_FRUIT       128
+#define SC_HEAD_UP     129
+#define SC_HEAD_DOWN   130
+#define SC_HEAD_LEFT   202
+#define SC_HEAD_RIGHT  131
+#define SC_BODY_VERT   132
+#define SC_BODY_HORIZ  203
+#define SC_CORNER_SW   204
+#define SC_CORNER_SE   133
+#define SC_CORNER_NW   205
+#define SC_CORNER_NE   134
+#define SC_WALL_L      193
+#define SC_WALL_R      195
+#define SC_LOWER_HALF  221
 
 typedef struct { unsigned char x,y; } POINT;
 static POINT snake[MAX_SNAKE];
-static int slen,dir,nextdir,score,lives,level,fruit_left,timebar,running;
+static int slen,dir,nextdir,score,lives,level,fruit_left,timebar,running,target_units;
 static unsigned char board[BH][BW],fruit[BH][BW];
+static unsigned char snake_old_glyph[14][32];
 
-static const char *patterns[LEVELS][BH]={
- {"                                                          ","                                                          ","              #                            #              ","              #                            #              ","              #                            #              ","              #                            #              ","              #                            #              ","              #                            #              ","              #                            #              ","              #                            #              ","              #                            #              ","                                                          ","                                                          ","                                                          "},
- {"                                                          ","      ##########                         ##########       ","                                                          ","                                                          ","                    ##################                    ","                                                          ","                                                          ","                                                          ","                    ##################                    ","                                                          ","                                                          ","      ##########                         ##########       ","                                                          ","                                                          "},
- {"                                                          ","        #        #        #        #        #             ","        #        #        #        #        #             ","        #        #        #        #        #             ","                 #                 #                      ","                                                          ","  #################                 #################     ","                                                          ","                       #                 #                ","              #        #        #        #        #       ","              #        #        #        #        #       ","              #        #        #        #        #       ","                                                          ","                                                          "},
- {"                                                          ","     ###########                            ###########   ","     #         #                            #         #   ","     #         #                            #         #   ","     #         ##############################         #   ","     #                                              #     ","     ##################          ####################     ","                      #          #                        ","     ##################          ####################     ","     #                                              #     ","     #         ##############################         #   ","     #         #                            #         #   ","     ###########                            ###########   ","                                                          "},
- {"                                                          ","       #      #      #      #      #      #               ","                                                          ","  #####   #####   #####   #####   #####   #####           ","                                                          ","       #      #      #      #      #      #               ","                                                          ","  #####   #####   #####   #####   #####   #####           ","                                                          ","       #      #      #      #      #      #               ","                                                          ","  #####   #####   #####   #####   #####   #####           ","                                                          ","                                                          "},
- {"                                                          ","   ####################################################   ","   #                                                  #   ","   #  #########  #########  #########  #########      #   ","   #  #       #  #       #  #       #  #       #      #   ","   #  #       #  #       #  #       #  #       #      #   ","   #      #####       #####       #####       #####    #  ","   #                                                  #   ","   #  #####       #####       #####       #####        #  ","   #      #       #       #       #       #            #  ","   #      #########       #########       #########     # ","   #                                                  #   ","   ####################################################   ","                                                          "}
-};
-
-static void board_load(void){int y,x;for(y=0;y<BH;y++)for(x=0;x<BW;x++)board[y][x]=(patterns[level][y][x]=='#');}
+/* Board geometry follows the ten classic QBasic NIBBLES.BAS level designs,
+   adapted from its 80x50 logical arena to Launch!'s 58x13 text-cell field. */
+static void wall_v(int x,int y1,int y2){int y;if(x<0||x>=BW)return;if(y1<0)y1=0;if(y2>=BH)y2=BH-1;for(y=y1;y<=y2;y++)board[y][x]=1;}
+static void wall_h(int y,int x1,int x2){int x;if(y<0||y>=BH)return;if(x1<0)x1=0;if(x2>=BW)x2=BW-1;for(x=x1;x<=x2;x++)board[y][x]=1;}
+static void board_load(void)
+{
+ int i;memset(board,0,sizeof(board));
+ switch(level){
+ case 0: break; /* Nibbles level 1: open arena */
+ case 1: wall_h(6,14,43); break;
+ case 2: wall_v(14,2,10);wall_v(43,2,10);break;
+ case 3: wall_v(14,1,7);wall_v(43,6,12);wall_h(9,1,28);wall_h(3,29,56);break;
+ case 4: wall_v(15,3,9);wall_v(42,3,9);wall_h(2,16,41);wall_h(10,16,41);break;
+ case 5: for(i=7;i<=50;i+=7){wall_v(i,1,5);wall_v(i,8,12);}break;
+ case 6: for(i=1;i<12;i+=2)board[i][29]=1;break;
+ case 7: for(i=7;i<=50;i+=7){if(((i/7)&1)==0){wall_v(i,1,10);}else{wall_v(i,3,12);}}break;
+ case 8: for(i=2;i<12;i++){int x=4+i*3;if(x<BW-1)board[i][x]=1;if(x+20<BW-1)board[i][x+20]=1;}break;
+ default: for(i=1;i<12;i+=2){board[i][7]=1;board[i+1][14]=1;board[i][21]=1;board[i+1][28]=1;board[i][35]=1;board[i+1][42]=1;board[i][49]=1;}break;
+ }
+}
 static int snake_at(int x,int y){int i;for(i=0;i<slen;i++)if((int)snake[i].x==x&&(int)snake[i].y==y)return 1;return 0;}
 static void put_fruit(void){int x,y,tries=0;do{x=1+rand()%(BW-2);y=1+rand()%(BH-2);tries++;}while(tries<500&&(board[y][x]||snake_at(x,y)||fruit[y][x]));if(tries<500)fruit[y][x]=1;}
-static void reset_round(void){int i;memset(fruit,0,sizeof(fruit));board_load();slen=6;for(i=0;i<slen;i++){snake[i].x=(unsigned char)(8-i);snake[i].y=(unsigned char)(BH/2);}dir=nextdir=1;fruit_left=FRUITS;timebar=100;running=0;for(i=0;i<FRUITS;i++)put_fruit();}
-static int wall_char(int x,int y)
+static void reset_round(void){int i,x,y,sx=8,sy=BH/2,ok;memset(fruit,0,sizeof(fruit));board_load();slen=6;ok=1;for(i=0;i<slen;i++)if(board[sy][sx-i])ok=0;if(!ok){for(y=1;y<BH-1&&!ok;y++)for(x=6;x<BW-1&&!ok;x++){ok=1;for(i=0;i<slen;i++)if(board[y][x-i]){ok=0;break;}if(ok){sx=x;sy=y;}}}for(i=0;i<slen;i++){snake[i].x=(unsigned char)(sx-i);snake[i].y=(unsigned char)sy;}dir=nextdir=1;target_units=5;fruit_left=FRUITS;timebar=100;running=0;for(i=0;i<FRUITS;i++)put_fruit();}
+static void snake_font(int install)
 {
-  int u=y>0&&board[y-1][x],d=y<BH-1&&board[y+1][x],l=x>0&&board[y][x-1],r=x<BW-1&&board[y][x+1];
-  if(l&&r&&u&&d)return 197;if(l&&r&&d)return 194;if(l&&r&&u)return 193;
-  if(u&&d&&r)return 195;if(u&&d&&l)return 180;if(r&&d)return 218;if(l&&d)return 191;
-  if(r&&u)return 192;if(l&&u)return 217;if(l||r)return 196;if(u||d)return 179;return 254;
+  static const unsigned char code[13]={SC_FRUIT,SC_HEAD_UP,SC_HEAD_DOWN,SC_HEAD_LEFT,
+    SC_HEAD_RIGHT,SC_BODY_VERT,SC_BODY_HORIZ,SC_CORNER_SW,SC_CORNER_SE,
+    SC_CORNER_NW,SC_CORNER_NE,SC_WALL_L,SC_WALL_R};
+  static const unsigned char logical[13]={SG_FRUIT,SG_HEAD_UP,SG_HEAD_DOWN,SG_HEAD_LEFT,
+    SG_HEAD_RIGHT,SG_BODY_VERT,SG_BODY_HORIZ,SG_CORNER_SW,SG_CORNER_SE,
+    SG_CORNER_NW,SG_CORNER_NE,42,43};
+  int i,h;unsigned char g[32];
+  if(install){
+    for(i=0;i<13;i++){acc_glyph_read(code[i],snake_old_glyph[i]);acc_glyph_library(logical[i],code[i]);}
+    /* ACCLIB uses CP437 220 for its button shadow, so provide a private real
+       lower-half block for the thicker Snake barriers. */
+    acc_glyph_read(SC_LOWER_HALF,snake_old_glyph[13]);memset(g,0,sizeof(g));
+    h=acc_font_height();for(i=h/2;i<h;i++)g[i]=0xFF;acc_glyph_write(SC_LOWER_HALF,g);
+  }else{
+    for(i=0;i<13;i++)acc_glyph_write(code[i],snake_old_glyph[i]);
+    acc_glyph_write(SC_LOWER_HALF,snake_old_glyph[13]);
+  }
 }
+
 static int body_char(int i)
 {
-  int px,nx,py,ny,h,v;if(i==0)return 2;if(i==slen-1)return 250;
-  px=(int)snake[i-1].x-(int)snake[i].x;py=(int)snake[i-1].y-(int)snake[i].y;
-  nx=(int)snake[i+1].x-(int)snake[i].x;ny=(int)snake[i+1].y-(int)snake[i].y;
-  h=(px!=0)||(nx!=0);v=(py!=0)||(ny!=0);if(!h)return 186;if(!v)return 205;
-  if((px>0||nx>0)&&(py>0||ny>0))return 218;
-  if((px<0||nx<0)&&(py>0||ny>0))return 191;
-  if((px>0||nx>0)&&(py<0||ny<0))return 192;
-  return 217;
+  int n,s,e,w;
+  if(i==0){if(dir==0)return SC_HEAD_UP;if(dir==1)return SC_HEAD_RIGHT;if(dir==2)return SC_HEAD_DOWN;return SC_HEAD_LEFT;}
+  if(i==slen-1){
+    /* Square-ended tail: use the straight body glyph matching its neighbour. */
+    return snake[i-1].x==snake[i].x?SC_BODY_VERT:SC_BODY_HORIZ;
+  }
+  n=(snake[i-1].y<snake[i].y)||(snake[i+1].y<snake[i].y);
+  s=(snake[i-1].y>snake[i].y)||(snake[i+1].y>snake[i].y);
+  e=(snake[i-1].x>snake[i].x)||(snake[i+1].x>snake[i].x);
+  w=(snake[i-1].x<snake[i].x)||(snake[i+1].x<snake[i].x);
+  if(n&&s)return SC_BODY_VERT;if(e&&w)return SC_BODY_HORIZ;
+  if(s&&w)return SC_CORNER_NE;if(s&&e)return SC_CORNER_NW;
+  if(n&&w)return SC_CORNER_SE;return SC_CORNER_SW;
+}
+static int barrier_char(int x,int y)
+{
+  int u=y>0&&board[y-1][x],d=y<BH-1&&board[y+1][x];
+  int l=x>0&&board[y][x-1],r=x<BW-1&&board[y][x+1];
+  /* Full blocks make verticals, corners and junctions substantial. Pure
+     horizontal runs use a half block, avoiding the old thin line-art look. */
+  if((l||r)&&!(u||d))return SC_LOWER_HALF;
+  return 219;
+}
+static void draw_under_cell(int ox,int oy,int x,int y)
+{
+  int attr=ACC_ATTR(0,7),ch=' ';
+  if(board[y][x]){ch=barrier_char(x,y);attr=ACC_ATTR(0,9);}
+  else if(fruit[y][x]){ch=SC_FRUIT;attr=ACC_ATTR(0,12);}
+  acc_put(ox+x,oy+y,ch,attr);
 }
 static void draw_cell(int ox,int oy,int x,int y)
 {
   int i,attr=ACC_ATTR(0,10),ch=' ';
-  if(board[y][x]){ch=wall_char(x,y);attr=ACC_ATTR(0,9);}else if(fruit[y][x]){ch=3;attr=ACC_ATTR(0,12);}
-  for(i=slen-1;i>=0;i--)if((int)snake[i].x==x&&(int)snake[i].y==y){ch=body_char(i);attr=ACC_ATTR(0,i?14:15);break;}
+  if(board[y][x]){ch=barrier_char(x,y);attr=ACC_ATTR(0,9);}
+  else if(fruit[y][x]){ch=SC_FRUIT;attr=ACC_ATTR(0,12);}
+  for(i=slen-1;i>=0;i--)if((int)snake[i].x==x&&(int)snake[i].y==y){ch=body_char(i);attr=ACC_ATTR(0,14);break;}
   acc_put(ox+x,oy+y,ch,attr);
 }
-
-static void draw_board(int ox,int oy){int x,y;acc_fill(ox-1,oy-1,BW+2,BH+2,' ',ACC_BG);acc_put(ox-1,oy-1,218,ACC_BORDER);acc_put(ox+BW,oy-1,191,ACC_BORDER);acc_put(ox-1,oy+BH,192,ACC_BORDER);acc_put(ox+BW,oy+BH,217,ACC_BORDER);for(x=0;x<BW;x++){acc_put(ox+x,oy-1,196,ACC_BORDER);acc_put(ox+x,oy+BH,196,ACC_BORDER);}for(y=0;y<BH;y++){acc_put(ox-1,oy+y,179,ACC_BORDER);acc_put(ox+BW,oy+y,179,ACC_BORDER);for(x=0;x<BW;x++)draw_cell(ox,oy,x,y);}}
-static void status_draw(int x,int y){char s[32];int n=(timebar*28)/100;acc_text(x,y,"Time",ACC_LABEL,4);acc_fill(x+5,y,28,1,176,ACC_ATTR(acc_appearance.background,8));if(n>0)acc_fill(x+5,y,n,1,219,ACC_ATTR(acc_appearance.background,10));sprintf(s,"Lives %d",lives);acc_text(x+36,y,s,ACC_HEADING,8);sprintf(s,"Score %06d",score);acc_text(x+47,y,s,ACC_HEADING,12);sprintf(s,"Board %d/%d",level+1,LEVELS);acc_text(x,y+1,s,ACC_LABEL,12);sprintf(s,"Fruit %d",fruit_left);acc_text(x+48,y+1,s,ACC_LABEL,10);}
-static void life_lost(void){lives--;if(lives<=0){acc_notice("Snake","Game over");score=0;lives=3;level=0;}reset_round();}
-static int step_snake(int ox,int oy){int dx=0,dy=0,nx,ny,i,grow=0;POINT oldtail=snake[slen-1];if(nextdir+dir!=3)dir=nextdir;if(dir==0)dy=-1;else if(dir==1)dx=1;else if(dir==2)dy=1;else dx=-1;nx=snake[0].x+dx;ny=snake[0].y+dy;if(nx<0||ny<0||nx>=BW||ny>=BH||board[ny][nx]||snake_at(nx,ny)){life_lost();draw_board(ox,oy);return 0;}if(fruit[ny][nx]){fruit[ny][nx]=0;fruit_left--;score+=10;grow=1;}if(grow&&slen<MAX_SNAKE)slen++;for(i=slen-1;i>0;i--)snake[i]=snake[i-1];snake[0].x=(unsigned char)nx;snake[0].y=(unsigned char)ny;draw_cell(ox,oy,oldtail.x,oldtail.y);for(i=slen-1;i>=0&&i>slen-4;i--)draw_cell(ox,oy,snake[i].x,snake[i].y);draw_cell(ox,oy,nx,ny);if(fruit_left<=0){score+=timebar;level=(level+1)%LEVELS;acc_notice("Snake","Board complete!");reset_round();draw_board(ox,oy);}return 1;}
+static void brick_pair(int x,int y)
+{int a=ACC_ATTR(7,8);acc_put(x,y,SC_WALL_L,a);acc_put(x+1,y,SC_WALL_R,a);}
+static void draw_board(int ox,int oy)
+{
+  int x,y;
+  acc_fill(ox,oy,BW,BH,' ',ACC_ATTR(0,7));
+  /* Same two-cell brick surround used by !POP. */
+  brick_pair(ox-2,oy-1);brick_pair(ox+BW,oy-1);
+  for(x=0;x<BW;x+=2){brick_pair(ox+x,oy-1);brick_pair(ox+x,oy+BH);}
+  for(y=0;y<BH;y++){brick_pair(ox-2,oy+y);brick_pair(ox+BW,oy+y);}
+  brick_pair(ox-2,oy+BH);brick_pair(ox+BW,oy+BH);
+  for(y=0;y<BH;y++)for(x=0;x<BW;x++)draw_cell(ox,oy,x,y);
+}
+static void status_draw(int x,int y){char s[32];int i,n=(timebar*22)/100;acc_text(x,y,"Time",ACC_LABEL,4);acc_fill(x+5,y,22,1,176,ACC_ATTR(acc_appearance.background,8));if(n>0)acc_fill(x+5,y,n,1,219,ACC_ATTR(acc_appearance.background,10));acc_fill(x+33,y,8,1,' ',ACC_BG);for(i=0;i<lives&&i<5;i++)acc_put(x+33+i,y,3,ACC_TITLE);sprintf(s,"Score %06d",score);acc_text(x+47,y,s,ACC_HEADING,12);}
+static void snake_notice(const char *title,const char *msg){acc_notice(title,msg);}
+static void life_lost(void){lives--;if(lives<=0){snake_notice("Snake","Game over");score=0;lives=3;level=0;}reset_round();}
+static int edge_units(POINT a,POINT b){return a.y==b.y?1:2;}
+static int step_snake(int ox,int oy){int dx=0,dy=0,nx,ny,i,total,grow=0,oldlen=slen;POINT oldsnake[MAX_SNAKE];for(i=0;i<oldlen;i++)oldsnake[i]=snake[i];if(nextdir!=((dir+2)&3))dir=nextdir;if(dir==0)dy=-1;else if(dir==1)dx=1;else if(dir==2)dy=1;else dx=-1;nx=snake[0].x+dx;ny=snake[0].y+dy;if(nx<0||ny<0||nx>=BW||ny>=BH||board[ny][nx]||snake_at(nx,ny)){life_lost();draw_board(ox,oy);return 0;}if(fruit[ny][nx]){fruit[ny][nx]=0;fruit_left--;score+=10;timebar+=20;if(timebar>100)timebar=100;grow=1;target_units+=2;}if(slen<MAX_SNAKE){for(i=slen;i>0;i--)snake[i]=snake[i-1];slen++;}else for(i=slen-1;i>0;i--)snake[i]=snake[i-1];snake[0].x=(unsigned char)nx;snake[0].y=(unsigned char)ny;total=0;for(i=0;i<slen-1;i++){int u=edge_units(snake[i],snake[i+1]);if(total+u>target_units){slen=i+1;break;}total+=u;}for(i=0;i<oldlen;i++)draw_under_cell(ox,oy,oldsnake[i].x,oldsnake[i].y);for(i=0;i<slen;i++)draw_cell(ox,oy,snake[i].x,snake[i].y);if(fruit_left<=0){score+=timebar;level=(level+1)%LEVELS;snake_notice("Snake","Board complete!");reset_round();draw_board(ox,oy);}return 1;}
 
 static void snake_buttons(int x,int y,int w,int h,int focus)
 {
-  acc_button(x+4,y+h-3," Restart ",focus==1);
-  acc_button(x+16,y+h-3," Pattern ",focus==2);
-  acc_button(x+w-11,y+h-3," Close ",focus==3);
+  acc_button(x+3,y+h-3," Refresh ",focus==1);
+  acc_button(x+10,y+h-3," Next ",focus==2);
+  acc_button(x+w-10,y+h-3," Close ",focus==3);
 }
 
 int main(int argc,char **argv)
 {
-  int w=70,h=23,x,y,ox,oy,key=0,mx=0,my=0,focus=0,last_focus=-1,lastb=0;unsigned long last_tick,t;int tick_div=0;
+  int w=70,h=22,x,y,ox,oy,key=0,mx=0,my=0,focus=0,last_focus=-1,lastb=0;unsigned long last_tick,t;int tick_div=0,grow_ticks=0;
   if(acc_help(argc,argv,"!SNAKE","A text-mode fruit-eating snake game inspired by Rattler Race."))return 0;
-  if(!acc_begin(argv[0],"Snake",0))return 1;srand((unsigned)acc_ticks());x=(acc_cols-w)/2;y=(acc_rows-h)/2;ox=x+6;oy=y+5;score=0;lives=3;level=0;reset_round();acc_box(x,y,w,h,"Snake");draw_board(ox,oy);status_draw(x+4,y+2);last_tick=acc_ticks();
+  if(!acc_begin(argv[0],"Snake",0))return 1;snake_font(1);if(acc_mouse_present){union REGS mr;memset(&mr,0,sizeof(mr));mr.x.ax=1;int86(0x33,&mr,&mr);}srand((unsigned)acc_ticks());x=(acc_cols-w)/2;y=(acc_rows-h)/2;ox=x+6;oy=y+4;score=0;lives=3;level=0;reset_round();acc_box(x,y,w,h,"Snake");draw_board(ox,oy);status_draw(x+4,y+2);last_tick=acc_ticks();
   while(key!=27){
     if(focus!=last_focus){snake_buttons(x,y,w,h,focus);last_focus=focus;}
-    if(kbhit()){key=acc_key();if(key==9){focus=(focus+1)%4;key=0;}else if(key==256+72){nextdir=0;running=1;focus=0;key=0;}else if(key==256+77){nextdir=1;running=1;focus=0;key=0;}else if(key==256+80){nextdir=2;running=1;focus=0;key=0;}else if(key==256+75){nextdir=3;running=1;focus=0;key=0;}else if((key==13||key==' ')&&focus){if(focus==1){reset_round();draw_board(ox,oy);}else if(focus==2){level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(focus==3)key=27;if(key!=27)key=0;}}
-    if(acc_mouse_present){int b=0;acc_mouse(&mx,&my,&b);if((b&1)&&!lastb){if(my==y+h-3){if(mx>=x+4&&mx<x+13){focus=1;reset_round();draw_board(ox,oy);}else if(mx>=x+16&&mx<x+25){focus=2;level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(mx>=x+w-11){key=27;}}}lastb=b&1;}
-    t=acc_ticks();if(t!=last_tick){last_tick=t;tick_div++;if(running&&tick_div>=3){tick_div=0;if(timebar>0)timebar--;if(timebar==0){timebar=100;memset(fruit,0,sizeof(fruit));fruit_left=FRUITS;{int i;for(i=0;i<FRUITS;i++)put_fruit();}draw_board(ox,oy);}step_snake(ox,oy);status_draw(x+4,y+2);}}
+    if(kbhit()){key=acc_key();if(key==9){focus=(focus+1)%4;key=0;}else if(key==256+72||key==0x4800){nextdir=0;running=1;focus=0;key=0;}else if(key==256+77||key==0x4D00){nextdir=1;running=1;focus=0;key=0;}else if(key==256+80||key==0x5000){nextdir=2;running=1;focus=0;key=0;}else if(key==256+75||key==0x4B00){nextdir=3;running=1;focus=0;key=0;}else if((key==13||key==' ')&&focus){if(focus==1){reset_round();draw_board(ox,oy);}else if(focus==2){level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(focus==3)key=27;if(key!=27)key=0;}}
+    if(acc_mouse_present){int b=0;acc_mouse(&mx,&my,&b);if((b&1)&&!lastb){if(my==y+h-3){if(mx>=x+4&&mx<x+14){focus=1;reset_round();draw_board(ox,oy);}else if(mx>=x+12&&mx<x+18){focus=2;level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(mx>=x+w-11){key=27;}}}lastb=b&1;}
+    t=acc_ticks();if(t!=last_tick){last_tick=t;tick_div++;if(running){grow_ticks++;if(grow_ticks>=36){grow_ticks=0;if(target_units<MAX_SNAKE-2)target_units++;}}if(running&&tick_div>=((dir==0||dir==2)?6:3)){tick_div=0;if(timebar>0)timebar--;if(timebar==0){timebar=100;memset(fruit,0,sizeof(fruit));fruit_left=FRUITS;{int i;for(i=0;i<FRUITS;i++)put_fruit();}draw_board(ox,oy);}step_snake(ox,oy);status_draw(x+4,y+2);}}
   }
-  acc_end();return 0;
+  acc_end_screen();snake_font(0);acc_end();return 0;
 }

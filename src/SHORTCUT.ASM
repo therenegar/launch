@@ -3,7 +3,7 @@
 .section .text
 .global _start
 
-/* SHORTCUT.COM 3.2 - tiny prompt-aware Launch! hotkey TSR.
+/* SHORTCUT.COM 3.5 - tiny prompt-aware Launch! hotkey TSR.
  * Build on a modern GNU binutils host:
  *   as --32 SHORTCUT.ASM -o SHORTCUT.O
  *   ld -m elf_i386 -Ttext 0x100 --oformat binary --entry=_start \
@@ -39,6 +39,7 @@ launch_macro:   .space 132,0           /* Esc + ! command/path + Enter */
 queue_pos:      .word 0
 queue_len:      .word 0
 macro_queue:    .space 384,0
+verify_buf:     .space 16,0
 
 int09_handler:
     push ax
@@ -423,6 +424,9 @@ int28_have_pending:
     mov cx,8
     jmp int28_copy_macro
 int28_hotkey_macro:
+    /* !.EXE was authenticated beside SHORTCUT at installation time.
+     * Do not re-open it here: the resident macro intentionally contains only
+     * "!", leaving executable resolution to the command processor/PATH. */
     mov si,offset launch_macro
     mov cx,word ptr cs:[hotkey_len]
 int28_copy_macro:
@@ -440,6 +444,7 @@ int28_copy_macro:
     mov ax,word ptr es:[0x6e]
     mov word ptr cs:[idle_last+2],ax
     call fill_keyboard_buffer
+    jmp int28_done
 int28_done:
     pop es
     pop ds
@@ -454,7 +459,7 @@ int2f_handler:
     cmp ax,0xd5b0
     jne 6f
     mov bx,0x5343                     /* "SC" installation signature */
-    mov cx,0x030b                     /* version 3.2 */
+    mov cx,0x030b                     /* resident API version 03.0Bh */
     push cs
     pop es
     iret
@@ -514,6 +519,86 @@ int2f_handler:
     iret
 10: jmp far ptr cs:[old2f]
 
+/* Verify the authentication trailer appended to the genuine !.EXE build.
+ * Called only from DOS-safe transient/INT 28h contexts, never from IRQ 09h.
+ * CF clear = genuine trailer present; CF set = missing/unreadable/mismatch. */
+verify_launch_file:
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+    push di
+    push ds
+    push es
+    push cs
+    pop ds
+    mov si,word ptr cs:[hotkey_len]
+    cmp si,3
+    jb verify_bad
+    dec si
+    mov di,offset launch_macro
+    add di,si
+    mov al,byte ptr [di]
+    mov byte ptr [di],0
+    mov dx,offset launch_macro+1
+    mov ax,0x3d00
+    int 0x21
+    jc verify_restore_bad
+    mov bx,ax
+    mov ax,0x4202
+    mov cx,0xffff
+    mov dx,0xfff0                    /* seek -16 from EOF */
+    int 0x21
+    jc verify_close_bad
+    mov ah,0x3f
+    mov cx,16
+    mov dx,offset verify_buf
+    int 0x21
+    jc verify_close_bad
+    cmp ax,16
+    jne verify_close_bad
+    mov si,offset verify_buf
+    mov di,offset auth_signature
+    mov cx,16
+verify_compare:
+    mov ah,byte ptr [si]
+    cmp ah,byte ptr [di]
+    jne verify_close_bad
+    inc si
+    inc di
+    loop verify_compare
+    mov ah,0x3e
+    int 0x21
+verify_good_restore:
+    /* Recompute final macro byte; DI was consumed by signature compare. */
+    mov di,offset launch_macro
+    add di,word ptr cs:[hotkey_len]
+    dec di
+    mov byte ptr [di],0x0d
+    clc
+    jmp verify_done
+verify_close_bad:
+    mov ah,0x3e
+    int 0x21
+verify_restore_bad:
+    mov di,offset launch_macro
+    add di,word ptr cs:[hotkey_len]
+    dec di
+    mov byte ptr [di],0x0d
+verify_bad:
+    stc
+verify_done:
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+
 resident_end:
 
 /* ------------------------- transient installer ------------------------ */
@@ -534,8 +619,19 @@ installer:
     cmp bx,0x5343
     je already_installed
 
+    /* Build and authenticate the sibling !.EXE first.  Once authenticated,
+     * retain only the original one-character "!" resident macro.  Launch!'s
+     * installer places its directory on PATH; command resolution belongs to
+     * the user's command processor rather than this TSR. */
     call build_launch_path
     jc path_error
+    call verify_launch_file
+    jc invalid_launch
+    /* The sibling image has now been authenticated.  Preserve Launch!'s
+     * original interaction design: the resident hotkey injects only "!".
+     * INSTALL places the Launch! directory on PATH, and typing the full path
+     * here is measurably slower on period DOS hardware. */
+    call build_short_path
 
     mov ax,word ptr cs:[0x16]         /* parent command processor PSP */
     mov word ptr [shell_psp],ax
@@ -608,6 +704,9 @@ syntax_error:
 path_error:
     mov dx,offset msg_path
     jmp print_exit_error
+invalid_launch:
+    mov dx,offset msg_invalid_launch
+    jmp print_exit_error
 show_help:
     mov dx,offset msg_help
 print_exit:
@@ -659,8 +758,8 @@ build_launch_path:
     jmp 11b
 13: or bp,bp
     jz build_path_bad
-    call sibling_on_path
-    jnc build_short_path
+    /* Construct the full sibling !.EXE path transiently so the installer can
+     * authenticate that exact file.  It is replaced by "!" before residency. */
     mov di,bp
     mov si,offset launch_name
     mov cx,5
@@ -1508,6 +1607,7 @@ word_f11:       .asciz "F11"
 word_f12:       .asciz "F12"
 word_unload:    .asciz "UNLOAD"
 launch_name:    .ascii "!.EXE"
+auth_signature: .ascii "LAUNCH!35-AUTHv1"
 launch_short_name: .ascii "!"
 resident_seg:   .word 0
 
@@ -1544,6 +1644,12 @@ msg_path:
 .else
     .ascii "SHORTCUT: cannot determine its executable directory.\r\n$"
 .endif
+msg_invalid_launch:
+.ifdef DOSBOX_BUILD
+    .ascii "SHORTCDB: sibling !.EXE is not a genuine Launch! 3.5 build.\r\n$"
+.else
+    .ascii "SHORTCUT: sibling !.EXE is not a genuine Launch! 3.5 build.\r\n$"
+.endif
 msg_unloaded:
 .ifdef DOSBOX_BUILD
     .ascii "SHORTCDB unloaded.\r\n$"
@@ -1565,12 +1671,12 @@ msg_unload_unsafe:
     .ascii "Unload that TSR first, or reboot.\r\n$"
 msg_help:
 .ifdef DOSBOX_BUILD
-    .ascii "SHORTCDB 3.2 - DOSBox-X hotkey for Launch!\r\n\r\n"
+    .ascii "SHORTCDB 3.5 - DOSBox-X hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCDB [/KEY=keys]\r\n"
     .ascii "       SHORTCDB /UNLOAD\r\n"
     .ascii "       SHORTCDB /?\r\n\r\n"
 .else
-    .ascii "SHORTCUT 3.2 - prompt-aware hotkey for Launch!\r\n\r\n"
+    .ascii "SHORTCUT 3.5 - prompt-aware hotkey for Launch!\r\n\r\n"
     .ascii "Usage: SHORTCUT [/KEY=keys]\r\n"
     .ascii "       SHORTCUT /UNLOAD\r\n"
     .ascii "       SHORTCUT /?\r\n\r\n"
@@ -1584,13 +1690,13 @@ msg_help:
 .ifdef DOSBOX_BUILD
     .ascii "  SHORTCDB /KEY=CTRL+ALT+L\r\n"
     .ascii "  SHORTCDB /KEY=1D+38+34\r\n\r\n"
-    .ascii "If SHORTCDB's directory is on PATH, the hotkey types !.\r\n"
+    .ascii "The hotkey types ! and relies on the Launch! directory being on PATH.\r\n"
 .else
     .ascii "  SHORTCUT /KEY=CTRL+ALT+L\r\n"
     .ascii "  SHORTCUT /KEY=1D+38+34\r\n\r\n"
-    .ascii "If SHORTCUT's directory is on PATH, the hotkey types !.\r\n"
+    .ascii "The hotkey types ! and relies on the Launch! directory being on PATH.\r\n"
 .endif
-    .ascii "Otherwise it falls back to the full sibling !.EXE path.\r\n"
+
     .ascii "Install at the DOS/4DOS prompt or from AUTOEXEC.BAT.\r\n"
 .ifdef DOSBOX_BUILD
     .ascii "Use LOADHIGH SHORTCDB to place the resident portion in a UMB.\r\n$"

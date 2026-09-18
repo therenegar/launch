@@ -1,4 +1,4 @@
-/* Launch! 3.3 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 3.5 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -388,9 +388,9 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
 
 static int copy_accessories(const char *archive,const char *install)
 {
-  static const char *files[]={"!CAL.EXE","!CALC.EXE","!DRAW.EXE",
-    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!BOXES.EXE",
-    "!SOL.EXE","!TODOS.EXE","!POP.EXE",0};
+  static const char *files[]={"!CAL.EXE","CAL.ICS","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE",
+    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!TODOS.EXE",
+    "!BOXES.EXE","!FCELL.EXE","!POP.EXE","!SNAKE.EXE","!SOL.EXE",0};
   static char destination[PATH_SIZE];int i;
   for(i=0;files[i];i++){
     sprintf(destination,"%s\\%s",install,files[i]);
@@ -401,79 +401,16 @@ static int copy_accessories(const char *archive,const char *install)
   return 1;
 }
 
-static int copy_disk_file(const char *source,const char *destination)
-{
-  FILE *in=fopen(source,"rb"),*out;size_t n;int ok=1;
-  if(!in)return 0;
-  out=fopen(destination,"wb");if(!out){fclose(in);return 0;}
-  while((n=fread(copy_buffer,1,sizeof(copy_buffer),in))!=0)
-    if(fwrite(copy_buffer,1,n,out)!=n){ok=0;break;}
-  if(ferror(in))ok=0;if(fclose(out)!=0)ok=0;
-  fclose(in);return ok;
-}
-
-static int accessories_first(const char *menu)
-{
-  static char temp[PATH_SIZE],line[256],check[256];char *slash;FILE *in,*out;int root=0,found=0,ok=1;
-  strcpy(temp,menu);slash=strrchr(temp,'\\');if(slash)strcpy(slash+1,"LAUNCH.$$$");else strcpy(temp,"LAUNCH.$$$");in=fopen(menu,"r");if(!in)return 0;
-  out=fopen(temp,"w");if(!out){fclose(in);return 0;}
-  while(fgets(line,sizeof(line),in)){
-    strcpy(check,line);strip_line(check);
-    if(!stricmp(check,"[Launcher]")){fputs(line,out);root=1;if(!found){fputs("FOLDER=Accessories\n",out);found=1;}continue;}
-    if(check[0]=='[')root=0;
-    if(root&&!stricmp(check,"FOLDER=Accessories"))continue;
-    if(!stricmp(check,"ITEM=Cardfile|!CFILE|1|0|0")||!stricmp(check,"ITEM=Stack|!STACK|1|0|0")){fputs("ITEM=Card Stack|!STACK|1|0|0\n",out);continue;}
-    if(fputs(line,out)==EOF){ok=0;break;}
-  }
-  if(ferror(in))ok=0;if(fclose(out)!=0)ok=0;fclose(in);
-  if(ok&&found)ok=copy_disk_file(temp,menu);
-  remove(temp);return ok&&found;
-}
-
-static int install_accessory_menu(const char *archive,const char *install)
-{
-  static char menu[PATH_SIZE],sample[PATH_SIZE];FILE *f;
-  int section,boxes,solitaire,stack,todos,pop;
-  sprintf(menu,"%s\\LAUNCH.MNU",install);
-  if(!exists(menu)){strcpy(sample,"LAUNCH.MNU");if(!extract_file(archive,sample,menu))return 0;}
-  if(!accessories_first(menu))return 0;
-  section=contains_line(menu,"[Launcher\\Accessories]");
-  boxes=contains_line(menu,"ITEM=Boxes|!BOXES|1|0|0");
-  solitaire=contains_line(menu,"ITEM=Solitaire|!SOL|1|0|0");
-  stack=contains_line(menu,"ITEM=Card Stack|!STACK|1|0|0");
-  todos=contains_line(menu,"ITEM=To-Dos|!TODOS|1|0|0");
-  pop=contains_line(menu,"ITEM=Pop|!POP|1|0|0");
-  if(section&&boxes&&solitaire&&stack&&todos&&pop)return 1;
-  f=fopen(menu,"a");if(!f)return 0;
-  fputs("\n[Launcher\\Accessories]\n",f);
-  if(section){
-    if(!stack)fputs("ITEM=Card Stack|!STACK|1|0|0\n",f);
-    if(!todos)fputs("ITEM=To-Dos|!TODOS|1|0|0\n",f);
-    if(!boxes)fputs("ITEM=Boxes|!BOXES|1|0|0\n",f);
-    if(!solitaire)fputs("ITEM=Solitaire|!SOL|1|0|0\n",f);
-    if(!pop)fputs("ITEM=Pop|!POP|1|0|0\n",f);
-    return fclose(f)==0;
-  }
-  fputs("ITEM=Calendar|!CAL|1|0|0\n",f);
-  fputs("ITEM=Calculator|!CALC|1|0|0\nITEM=Pixel Draw|!DRAW|1|0|0\n",f);
-  fputs("ITEM=Note|!NOTE|1|0|0\nITEM=Card Stack|!STACK|1|0|0\n",f);
-  fputs("ITEM=To-Dos|!TODOS|1|0|0\nITEM=System Info|!SYSINFO|1|0|0\n",f);
-  fputs("ITEM=Boxes|!BOXES|1|0|0\n",f);
-  fputs("ITEM=Solitaire|!SOL|1|0|0\n",f);
-  fputs("ITEM=Pop|!POP|1|0|0\n",f);
-  return fclose(f)==0;
-}
-
 int main(int argc,char **argv)
 {
   static char install[PATH_SIZE],source_dir[PATH_SIZE],archive[PATH_SIZE];
-  static char destination[PATH_SIZE],autoexec[16],answer[16],key_spec[64];
+  static char destination[PATH_SIZE],launch_exe[PATH_SIZE],autoexec[16],key_spec[64];
   char *comspec;
-  int n,dosbox_detected,use_dosbox,update_autoexec=0,upgrade=0,accessories=0,cpu_ok,display_ok;
+  int n,dosbox_detected,use_dosbox,update_autoexec=0,upgrade=0,accessories=0,cpu_ok,display_ok,menu_result;
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 3.3 Installation");
+  puts("Launch! 3.5 Installation");
   puts("------------------------\n");
   cpu_ok=cpu_at_least_286();display_adapter(&display_ok);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
   question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");
@@ -488,15 +425,15 @@ int main(int argc,char **argv)
   if(!make_directories(install)){error_icon(0);printf("Cannot create or access %s\n",install);return 1;}
   sprintf(destination,"%s\\LAUNCH.MNU",install);upgrade=exists(destination);
   if(!upgrade){sprintf(destination,"%s\\LAUNCH.CFG",install);upgrade=exists(destination);}
-  if(upgrade)puts("\nExisting Launch! installation detected.\nPerforming upgrade only, existing menu and configuration will be retained.");
+  if(upgrade)puts("\nExisting Launch! installation detected.\nExisting menu/configuration will be retained; missing standard menu entries will be added.");
   dosbox_detected=running_in_dosbox();
   if(dosbox_detected){puts("");use_dosbox=ask_yes("It looks like you're running in DOSBox, is that correct?",1,0);}
   else{puts("");use_dosbox=ask_yes("Are you installing in DOSBox?",0,0);}
-  puts("");accessories=ask_yes("Do you wish to install accessories?",1,0);
+  puts("");accessories=ask_yes("Install games and accessories?",1,0);
   puts("\nExtracting files...");fflush(stdout);
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
   if(!exists(archive)){error_icon(0);printf("Cannot find %s\n",archive);return 1;}
-  sprintf(destination,"%s\\!.EXE",install);
+  sprintf(launch_exe,"%s\\!.EXE",install);strcpy(destination,launch_exe);
   if(!extract_file(archive,"!.EXE",destination)){error_icon(0);puts("Cannot extract !.EXE");return 1;}
   sprintf(destination,"%s\\SHORTCUT.COM",install);
   if(!extract_file(archive,use_dosbox?"SHORTCDB.COM":"SHORTCUT.COM",destination)){error_icon(0);puts("Cannot extract SHORTCUT.COM");return 1;}
@@ -509,6 +446,8 @@ int main(int argc,char **argv)
   sprintf(destination,"%s\\FONT.DAT",install);
   if(!extract_file(archive,"FONT.DAT",destination)){error_icon(0);puts("Cannot extract FONT.DAT");return 1;}
   if(accessories&&!copy_accessories(archive,install))return 1;
+  menu_result=spawnl(P_WAIT,launch_exe,"!.EXE","/INITMENU",NULL);
+  if(menu_result!=0){error_icon(0);puts("Files were copied, but the standard Launch! menu could not be created or updated.");return 1;}
   comspec=getenv("COMSPEC");
   autoexec[0]=(comspec && comspec[1]==':')?(char)toupper(comspec[0]):'C';
   strcpy(autoexec+1,":\\AUTOEXEC.BAT");
@@ -531,20 +470,11 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 3.3 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- SHORTCUT 3.5 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
-  if(!upgrade){printf("\n");question_icon(0);printf("Scan the C drive now for recognized programs\n    and build an initial Launch! menu? ");choice_default(0);
-  if(fgets(answer,sizeof(answer),stdin)&&toupper(answer[0])=='Y'){
-    sprintf(destination,"%s\\AUTOGEN.EXE",install);
-    if(spawnl(P_WAIT,destination,"AUTOGEN.EXE",NULL)==-1){
-      error_icon(0);puts("AutoGen could not be started. Run AUTOGEN manually after installation.");
-    }
-  }}
-  if(accessories){
-    if(!install_accessory_menu(archive,install)){error_icon(0);puts("Accessories installed, but their menu could not be created.");return 1;}
-    puts("\n- Installed Launch! accessories and created the Accessories menu.");
-  }
+  puts("- Created or updated the standard menu entries for this DOS installation.");
+  if(accessories)puts("- Installed Launch! games and accessories.");
   puts("");
   success_icon(0);
   if(autoexec_changed)puts("Install is complete. Reboot to activate the selected startup options.");

@@ -10,19 +10,17 @@
 #define BH 10
 #define DLG_W 52
 #define DLG_H 21
-#define MAX_START_TICKS 1092L   /* level 1: about 60 seconds */
+#define MAX_START_TICKS 2184L   /* level 1: about 120 seconds */
 #define TICKS_PER_SEC 18L
 #define BAR_W 40
-#define GLYPH_L 203
-#define GLYPH_R 190
-#define WALL_L 199
-#define WALL_R 200
-#define CLOSE_L 208
-#define CLOSE_R 187
+#define GLYPH_L 202 /* VGA 9th-column extension required */
+#define GLYPH_R 183
+#define WALL_L 193
+#define WALL_R 195
 
 static unsigned char board[BH][BW];
 static unsigned char mark[BH][BW];
-static unsigned char old_glyph[6][32];
+static unsigned char old_glyph[4][32];
 static int selx=-1,sely=-1,sel_count=0;
 static long score=0,high_score=0,time_left=MAX_START_TICKS,start_ticks=MAX_START_TICKS;
 static int level=1;
@@ -56,23 +54,14 @@ static int bubble_fg(int v)
 
 static void pop_font(int install)
 {
-  int i;const unsigned char (*g)[32]=(acc_font_height()==14)?pop14:pop16;
-  const unsigned char (*wg)[32]=(acc_font_height()==14)?wall14:wall16;
   if(install){
     acc_glyph_read(GLYPH_L,old_glyph[0]);acc_glyph_read(GLYPH_R,old_glyph[1]);
     acc_glyph_read(WALL_L,old_glyph[2]);acc_glyph_read(WALL_R,old_glyph[3]);
-    acc_glyph_read(CLOSE_L,old_glyph[4]);acc_glyph_read(CLOSE_R,old_glyph[5]);
-    /* Keep the normal Close icon available while 199/200 carry the brick pair. */
-    acc_glyph_write(CLOSE_L,old_glyph[3]); /* original glyph 200 */
-    {unsigned char close_right[32];acc_glyph_read(201,close_right);acc_glyph_write(CLOSE_R,close_right);}
-    for(i=0;i<2;i++)acc_glyph_write(i?GLYPH_R:GLYPH_L,g[i]);
-    for(i=0;i<2;i++)acc_glyph_write(i?WALL_R:WALL_L,wg[i]);
-    acc_set_close_glyphs(CLOSE_L,CLOSE_R);
+    acc_glyph_library(46,GLYPH_L);acc_glyph_library(47,GLYPH_R);
+    acc_glyph_library(42,WALL_L);acc_glyph_library(43,WALL_R);
   } else {
-    acc_set_close_glyphs(200,201);
     acc_glyph_write(GLYPH_L,old_glyph[0]);acc_glyph_write(GLYPH_R,old_glyph[1]);
     acc_glyph_write(WALL_L,old_glyph[2]);acc_glyph_write(WALL_R,old_glyph[3]);
-    acc_glyph_write(CLOSE_L,old_glyph[4]);acc_glyph_write(CLOSE_R,old_glyph[5]);
   }
 }
 
@@ -98,7 +87,13 @@ static int any_moves(void)
 
 static int remaining(void){int x,y,n=0;for(y=0;y<BH;y++)for(x=0;x<BW;x++)if(board[y][x])n++;return n;}
 
-static long level_ticks(void){return (long)(60-((level-1)*57)/9)*TICKS_PER_SEC;}
+static long level_ticks(void)
+{
+  /* Deliberately steep difficulty curve: early levels teach the game,
+     while levels 8-10 demand increasingly fast recognition. */
+  static const unsigned char secs[10]={120,90,65,45,30,20,14,10,5,3};
+  return (long)secs[level-1]*TICKS_PER_SEC;
+}
 static void new_game(void)
 {
   int x,y;unsigned seed=(unsigned)acc_ticks()+(unsigned)(level*977);srand(seed);
@@ -167,11 +162,12 @@ static void select_at(int x,int y)
 
 static void mouse_show(int show){union REGS r;if(!acc_mouse_present)return;memset(&r,0,sizeof(r));r.x.ax=show?1:2;int86(0x33,&r,&r);}
 
+static void pop_ui_glyphs(int ui){(void)ui;}
 static void pop_result_notice(int is_error,long final_score)
 {
-  int w=is_error?44:40,h=10,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,bx=x+3;unsigned mb=0;char n[24];
+  int w=is_error?44:40,h=11,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,bx;unsigned mb=0;char n[24];
   if(final_score>high_score)high_score=final_score;
-  acc_box(x,y,w,h,"Pop");
+  acc_subbox(x,y,w,h,"Pop",1);bx=x+(w-6)/2;
   if(is_error){acc_put(x+3,y+2,219,ACC_ATTR(acc_appearance.background,4));acc_put(x+4,y+2,173,ACC_ATTR(4,15));acc_put(x+5,y+2,219,ACC_ATTR(acc_appearance.background,4));acc_text(x+7,y+2,"Time's up!",ACC_LABEL,20);}
   else acc_text(x+3,y+2,"Nothing left to pop!",ACC_LABEL,28);
   acc_text(x+3,y+4,"Your score:",ACC_LABEL,12);sprintf(n,"%ld",final_score);acc_text(x+15,y+4,n,ACC_HEADING,w-18);
@@ -189,19 +185,19 @@ int main(int argc,char **argv)
   pop_font(1);x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;bx=x+6;by=y+6;acc_box(x,y,DLG_W,DLG_H,"Pop");new_game();mouse_show(1);
   while(key!=27){
     now=acc_ticks();elapsed=now-last_tick;if(elapsed){last_tick=now;if(time_left>(long)elapsed)time_left-=(long)elapsed;else time_left=0;draw_status(x,y);}
-    if(full){acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);draw_status(x,y);draw_board(bx,by);draw_level(x,y);acc_button(x+3,y+18,"  Retry  ",focus==1);acc_button(x+11,y+18,"  Prev  ",focus==2);acc_button(x+18,y+18,"  Next  ",focus==3);acc_button(x+DLG_W-9,y+18,"  Close  ",focus==4);full=0;}
+    if(full){acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);draw_status(x,y);draw_board(bx,by);draw_level(x,y);acc_button(x+3,y+18,"  Retry  ",focus==1);acc_button(x+11,y+18,"  Prev  ",focus==2);acc_button(x+18,y+18,"  Next  ",focus==3);acc_button(x+DLG_W-10,y+18,"  Close  ",focus==4);full=0;}
     if(time_left<=0||!any_moves()){
-      mouse_show(0);if(time_left<=0){pop_result_notice(1,score);new_game();}else{if(remaining()==0){score+=1000;score+=(long)((time_left>0?time_left:0)/TICKS_PER_SEC)*10L;}pop_result_notice(0,score);if(level<10)level++;new_game();}full=1;mouse_show(1);continue;
+      mouse_show(0);if(time_left<=0){pop_ui_glyphs(1);pop_result_notice(1,score);pop_ui_glyphs(0);new_game();}else{if(remaining()==0){score+=1000;score+=(long)((time_left>0?time_left:0)/TICKS_PER_SEC)*10L;}pop_ui_glyphs(1);pop_result_notice(0,score);pop_ui_glyphs(0);if(level<10)level++;new_game();}full=1;mouse_show(1);continue;
     }
     if(acc_key_ready())key=acc_key();else key=0;
     if(acc_mouse_present){acc_mouse(&mx,&my,&buttons);if((buttons&1)&&!(last_buttons&1)){
         if(my==y+18&&mx>=x+3&&mx<x+9){acc_press_button(x+3,y+18,"  Retry  ");new_game();full=1;}
         else if(my==y+18&&mx>=x+11&&mx<x+16){acc_press_button(x+11,y+18,"  Prev  ");if(--level<1)level=10;new_game();full=1;}
         else if(my==y+18&&mx>=x+18&&mx<x+23){acc_press_button(x+18,y+18,"  Next  ");if(++level>10)level=1;new_game();full=1;}
-        else if(my==y+18&&mx>=x+DLG_W-9&&mx<x+DLG_W-3){acc_press_button(x+DLG_W-9,y+18,"  Close  ");key=27;}
+        else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4){acc_press_button(x+DLG_W-10,y+18,"  Close  ");key=27;}
         else if(mx>=bx&&mx<bx+BW*2&&my>=by&&my<by+BH){tx=(mx-bx)/2;ty=my-by;if(sel_count>=2&&mark[ty][tx]){pop_selected(bx,by);draw_board(bx,by);draw_status(x,y);}else{select_at(tx,ty);draw_board(bx,by);}focus=0;}
       }last_buttons=buttons;
-      hover=-1;if(my==y+18&&mx>=x+3&&mx<x+9)hover=1;else if(my==y+18&&mx>=x+11&&mx<x+16)hover=2;else if(my==y+18&&mx>=x+18&&mx<x+23)hover=3;else if(my==y+18&&mx>=x+DLG_W-9&&mx<x+DLG_W-3)hover=4;if(hover!=oldhover){acc_button(x+3,y+18,"  Retry  ",focus==1||hover==1);acc_button(x+11,y+18,"  Prev  ",focus==2||hover==2);acc_button(x+18,y+18,"  Next  ",focus==3||hover==3);acc_button(x+DLG_W-9,y+18,"  Close  ",focus==4||hover==4);oldhover=hover;}
+      hover=-1;if(my==y+18&&mx>=x+3&&mx<x+9)hover=1;else if(my==y+18&&mx>=x+11&&mx<x+16)hover=2;else if(my==y+18&&mx>=x+18&&mx<x+23)hover=3;else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4)hover=4;if(hover!=oldhover){acc_button(x+3,y+18,"  Retry  ",focus==1||hover==1);acc_button(x+11,y+18,"  Prev  ",focus==2||hover==2);acc_button(x+18,y+18,"  Next  ",focus==3||hover==3);acc_button(x+DLG_W-10,y+18,"  Close  ",focus==4||hover==4);oldhover=hover;}
     }
     if(key==9||key==271){if(key==271){focus--;if(focus<0)focus=4;}else{focus++;if(focus>4)focus=0;}full=1;}
     else if((key==13||key==' ')&&focus==1){new_game();full=1;}
@@ -212,5 +208,5 @@ int main(int argc,char **argv)
     else if(focus==0&&(key==13||key==' ')){if(sel_count>=2&&mark[cursor_y][cursor_x]){pop_selected(bx,by);draw_board(bx,by);draw_status(x,y);}else{select_at(cursor_x,cursor_y);draw_board(bx,by);}}
     
   }
-  mouse_show(0);pop_font(0);acc_end();return 0;
+  mouse_show(0);acc_end_screen();pop_font(0);acc_end();return 0;
 }

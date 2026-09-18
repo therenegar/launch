@@ -1,4 +1,4 @@
-/* Shared Launch! 3.3 accessory runtime.  Microsoft C/C++ 7.0, small model. */
+/* Shared Launch! 3.5 accessory runtime.  Microsoft C/C++ 7.0, small model. */
 #include <dos.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,8 +9,19 @@
 #include <direct.h>
 #include <io.h>
 #include "ACCLIB.H"
+#ifndef ACCLIB_MIN_GLYPHS
+#include "GLYPHDAT.H"
+#else
+/* !STACK has a large near-data card store.  Pulling the complete Launch!
+   logical glyph library into its small-model DGROUP would push data+stack
+   beyond 64K.  ACCLIB itself only needs logical glyph 56 (toolbar divider),
+   so the STACK build carries just that glyph. */
+#define LAUNCH_GLYPH_COUNT 56
+static const unsigned char stack_divider16[32]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xDB,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+static const unsigned char stack_divider14[32]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+#endif
 
-ACC_APPEARANCE acc_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,10,0,1,1,1,0,0};
+ACC_APPEARANCE acc_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,1,10,0,1,1,1,0,0};
 int acc_cols=80,acc_rows=25,acc_mouse_present=0;
 char acc_directory[ACC_PATH];
 static unsigned short saved_screen[80*50];
@@ -18,6 +29,7 @@ static int saved_mode,saved_page,saved_cursor_start,saved_cursor_end;
 static int saved_cursor_x,saved_cursor_y;
 static unsigned saved_video_segment=0xB800;
 static int close_x=-1,close_y=-1,mouse_visible=0,mouse_last_buttons=0;
+static int toolbar_box_x=-1,toolbar_box_y=-1,toolbar_box_w=0,toolbar_box_h=0;
 static int close_glyph_l=200,close_glyph_r=201;
 static unsigned mouse_raw_x=0,mouse_raw_y=0;
 static unsigned char mouse_old_glyph[32];static int mouse_glyph_saved=0;
@@ -75,7 +87,15 @@ static void ega14_rom_read(int code,unsigned char *glyph)
 static void mouse_glyph_write(const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;if(acc_font_height()==14){ega14_glyph_write(127,(const unsigned char far *)glyph);return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
 void acc_glyph_read(int code,unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;if(acc_font_height()==14){ega14_rom_read(code,glyph);return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)glyph[i]=font[i];font_plane_close(&old);}
 void acc_glyph_write(int code,const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;if(acc_font_height()==14){ega14_glyph_write(code,(const unsigned char far *)glyph);return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
+void acc_glyph_library(int logical_id,int code){
+#ifndef ACCLIB_MIN_GLYPHS
+ if(logical_id<1||logical_id>LAUNCH_GLYPH_COUNT)return;acc_glyph_write(code,acc_font_height()==14?launch_glyph14[logical_id-1]:launch_glyph16[logical_id-1]);
+#else
+ if(logical_id!=56)return;acc_glyph_write(code,acc_font_height()==14?stack_divider14:stack_divider16);
+#endif
+}
 static const unsigned char launchui_codes[41]={16,17,30,31,169,170,173,174,175,181,182,183,184,185,186,187,188,189,190,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,220,244,245};
+int acc_glyph_is_custom(int code){int i;if(code==127||code==255||code==8)return 1;for(i=0;i<(int)sizeof(launchui_codes);i++)if((unsigned)code==(unsigned)launchui_codes[i])return 1;return 0;}
 static const unsigned char launchui_glyphs[41][32]={
   {0x00,0x00,0x00,0x00,0x30,0x38,0x3C,0x3E,0x3C,0x38,0x30,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
   {0x00,0x00,0x00,0x00,0x06,0x0E,0x1E,0x3E,0x1E,0x0E,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
@@ -165,12 +185,14 @@ static const unsigned char launchui_glyphs14[41][32]={
 static int launchui_ega14(void)
 {unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);return *h==14;}
 static unsigned char launchui_old[41][32];
+static unsigned char divider_old[32];
 static int launchui_installed=0;
+static int acc_screen_restored=0;
 static void launchui_font(int install)
 {
   int i;if(saved_mode==7)return;
-  if(install){if(launchui_installed)return;for(i=0;i<(int)sizeof(launchui_codes);i++){acc_glyph_read(launchui_codes[i],launchui_old[i]);acc_glyph_write(launchui_codes[i],launchui_ega14()?launchui_glyphs14[i]:launchui_glyphs[i]);}launchui_installed=1;}
-  else if(launchui_installed){for(i=0;i<(int)sizeof(launchui_codes);i++)acc_glyph_write(launchui_codes[i],launchui_old[i]);launchui_installed=0;}
+  if(install){if(launchui_installed)return;for(i=0;i<(int)sizeof(launchui_codes);i++){acc_glyph_read(launchui_codes[i],launchui_old[i]);acc_glyph_write(launchui_codes[i],launchui_ega14()?launchui_glyphs14[i]:launchui_glyphs[i]);}acc_glyph_read(255,divider_old);acc_glyph_library(56,255);launchui_installed=1;}
+  else if(launchui_installed){acc_glyph_write(255,divider_old);for(i=0;i<(int)sizeof(launchui_codes);i++)acc_glyph_write(launchui_codes[i],launchui_old[i]);launchui_installed=0;}
 }
 static void mouse_pointer_restore(void){union REGS r;if(!mouse_glyph_saved&&!mouse_target_saved)return;if(mouse_glyph_saved)mouse_glyph_write(mouse_old_glyph);if(mouse_target_saved)acc_glyph_write(8,mouse_old_target);memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;r.x.cx=0xFFFF;r.x.dx=0x7700;int86(0x33,&r,&r);mouse_glyph_saved=0;mouse_target_saved=0;}
 static void mouse_pointer_install(void)
@@ -231,9 +253,16 @@ static void acc_load_config(void)
 
 void acc_put(int x,int y,int ch,int attr)
 {
-  union REGS r;if(x<0||x>=acc_cols||y<0||y>=acc_rows)return;
-  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=0;r.h.dh=(unsigned char)y;r.h.dl=(unsigned char)x;int86(0x10,&r,&r);
-  r.h.ah=9;r.h.al=(unsigned char)ch;r.h.bh=0;r.h.bl=(unsigned char)attr;r.x.cx=1;int86(0x10,&r,&r);
+  unsigned short far *cell;unsigned short value;
+  if(x<0||x>=acc_cols||y<0||y>=acc_rows)return;
+  /* Accessories redraw many logically unchanged cells while dispatching input.
+     Writing those cells through INT 10h made fast DOSBox/VM displays visibly
+     flash.  Write text memory directly and, critically, do nothing when the
+     requested cell is already correct.  This preserves the incremental UI on
+     real hardware while eliminating redundant redraw traffic globally. */
+  cell=(unsigned short far *)MAKE_FP(saved_video_segment,((y*acc_cols+x)*2));
+  value=(unsigned short)(((unsigned short)(attr&255)<<8)|(unsigned char)ch);
+  if(*cell!=value)*cell=value;
 }
 void acc_text(int x,int y,const char *s,int attr,int width)
 {int i,ended=0;for(i=0;i<width;i++){if(!s||(!ended&&!s[i]))ended=1;acc_put(x+i,y,ended?' ':s[i],attr);}}
@@ -260,6 +289,25 @@ void acc_box(int x,int y,int w,int h,const char *title)
     acc_put(x+11+title_len,y,' ',heading_attr);
   }
   acc_put(x+w-5,y,close_glyph_l,close_attr);acc_put(x+w-4,y,close_glyph_r,close_attr);close_x=x+w-5;close_y=y;
+  if(h>=7){toolbar_box_x=x;toolbar_box_y=y;toolbar_box_w=w;toolbar_box_h=h;acc_put(x,y+h-4,179,ACC_BORDER);for(i=1;i<w-1;i++)acc_put(x+i,y+h-4,255,ACC_BORDER);acc_put(x+w-1,y+h-4,179,ACC_BORDER);}
+  if(x+w<acc_cols)for(i=1;i<=h;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+i)*acc_cols+x+w)*2);acc_put(x+w,y+i,v&255,0x08);}
+  if(y+h<acc_rows)for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+h)*acc_cols+x+i)*2);acc_put(x+i,y+h,v&255,0x08);}
+}
+void acc_subbox(int x,int y,int w,int h,const char *title,int toolbar)
+{
+  int i,title_len=0;unsigned short v;
+  int ta=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.titlebar_fg);
+  int ha=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.titles);
+  int ca=ACC_ATTR(acc_appearance.titlebar_bg,acc_appearance.main_title);
+  acc_fill(x,y,w,h,' ',ACC_BG);
+  for(i=0;i<w;i++)acc_put(x+i,y,211,ta);
+  acc_put(x,y+h-1,192,ACC_BORDER);acc_put(x+w-1,y+h-1,217,ACC_BORDER);
+  for(i=1;i<w-1;i++)acc_put(x+i,y+h-1,196,ACC_BORDER);
+  for(i=1;i<h-1;i++){acc_put(x,y+i,179,ACC_BORDER);acc_put(x+w-1,y+i,179,ACC_BORDER);}
+  if(title&&*title){title_len=(int)strlen(title);if(title_len>w-8)title_len=w-8;if(title_len<0)title_len=0;acc_put(x+2,y,' ',ha);acc_text(x+3,y,title,ha,title_len);acc_put(x+3+title_len,y,' ',ha);}
+  acc_put(x+w-5,y,close_glyph_l,ca);acc_put(x+w-4,y,close_glyph_r,ca);close_x=x+w-5;close_y=y;
+  toolbar_box_x=x;toolbar_box_y=y;toolbar_box_w=w;toolbar_box_h=toolbar?h:0;
+  if(toolbar&&h>=7){acc_put(x,y+h-4,179,ACC_BORDER);for(i=1;i<w-1;i++)acc_put(x+i,y+h-4,255,ACC_BORDER);acc_put(x+w-1,y+h-4,179,ACC_BORDER);}
   if(x+w<acc_cols)for(i=1;i<=h;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+i)*acc_cols+x+w)*2);acc_put(x+w,y+i,v&255,0x08);}
   if(y+h<acc_rows)for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+h)*acc_cols+x+i)*2);acc_put(x+i,y+h,v&255,0x08);}
 }
@@ -274,10 +322,11 @@ static int acc_button_icon(const char *text,int *a,int *b)
   if(strstr(text,"Run")&&!strstr(text,"Preview")){*a=202;*b=203;return 2;}if(strstr(text,"Export")){*a=204;*b=181;return 1;}if(strstr(text,"Print")){*a=206;*b=207;return 1;}
   if(strstr(text,"Add")||strstr(text,"New")){*a=208;*b=187;return 1;}if(strstr(text,"Edit")){*a=210;*b=182;return 1;}if(strstr(text,"Delete")||strstr(text,"Remove")){*a=209;*b=188;return 1;}if(strstr(text,"Retry")||strstr(text,"Refresh")){*a=214;*b=216;return 1;}return 0;
 }
-static void acc_button_draw(int x,int y,const char *text,int selected)
-{int i,oldw=(int)strlen(text),w=oldw,a=0,b=0,icon=acc_button_icon(text,&a,&b),left;unsigned short v;if(icon==2)w=9;else if(icon)w=(b<0)?5:6;/* Clear only the rendered button and its shadow.  Clearing strlen(text) here erased dialog borders when an icon replaced a longer label. */for(i=0;i<=w;i++){acc_put(x+i,y,' ',ACC_BG);acc_put(x+i,y+1,' ',ACC_BG);}for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+i)*2);acc_put(x+i,y+1,220,((v>>8)&0xF0));}v=*(unsigned short far *)MAKE_FP(0xB800,(y*acc_cols+x+w)*2);acc_put(x+w,y,245,((v>>8)&0xF0));v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+w)*2);acc_put(x+w,y+1,244,((v>>8)&0xF0));acc_fill(x,y,w,1,' ',ACC_CONTROL);if(icon==2){left=x+2;acc_put(left,y,a,ACC_CONTROL);acc_put(left+1,y,b,ACC_CONTROL);acc_text(left+2,y,"Run",ACC_CONTROL,3);}else if(icon){left=x+(b<0?2:(w-2)/2);acc_put(left,y,a,ACC_CONTROL);if(b>=0)acc_put(left+1,y,b,ACC_CONTROL);}else acc_text(x,y,text,ACC_CONTROL,w);if(selected){int fa=ACC_ATTR(acc_appearance.controls_bg,(acc_appearance.controls_fg&7)|8);acc_put(x,y,169,fa);acc_put(x+w-1,y,170,fa);}}
+static void acc_button_draw_state(int x,int y,const char *text,int selected,int enabled)
+{int i,oldw=(int)strlen(text),w=oldw,a=0,b=0,icon=acc_button_icon(text,&a,&b),left;unsigned short v;/* Application panels are commonly redrawn after acc_box(), which used to paint over the toolbar divider.  Redraw it immediately before any toolbar button so it is the final layer. */if(toolbar_box_h>=7 && y==toolbar_box_y+toolbar_box_h-3){acc_put(toolbar_box_x,toolbar_box_y+toolbar_box_h-4,179,ACC_BORDER);for(i=1;i<toolbar_box_w-1;i++)acc_put(toolbar_box_x+i,toolbar_box_y+toolbar_box_h-4,255,ACC_BORDER);acc_put(toolbar_box_x+toolbar_box_w-1,toolbar_box_y+toolbar_box_h-4,179,ACC_BORDER);}if(icon==2)w=9;else if(icon)w=(b<0)?5:6;/* Clear only the rendered button and its shadow.  Clearing strlen(text) here erased dialog borders when an icon replaced a longer label. */for(i=0;i<=w;i++){acc_put(x+i,y,' ',ACC_BG);acc_put(x+i,y+1,' ',ACC_BG);}for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+i)*2);acc_put(x+i,y+1,220,((v>>8)&0xF0));}v=*(unsigned short far *)MAKE_FP(0xB800,(y*acc_cols+x+w)*2);acc_put(x+w,y,245,((v>>8)&0xF0));v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+w)*2);acc_put(x+w,y+1,244,((v>>8)&0xF0));{int ba=enabled?ACC_CONTROL:ACC_ATTR(acc_appearance.controls_bg,(acc_appearance.controls_fg&7)|8);acc_fill(x,y,w,1,' ',ba);if(icon==2){left=x+2;acc_put(left,y,a,ba);acc_put(left+1,y,b,ba);acc_text(left+2,y,"Run",ba,3);}else if(icon){left=x+(b<0?2:(w-2)/2);acc_put(left,y,a,ba);if(b>=0)acc_put(left+1,y,b,ba);}else acc_text(x,y,text,ba,w);}if(selected&&enabled){int fa=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.controls_fg);acc_put(x,y,169,fa);acc_put(x+w-1,y,170,fa);}}
 void acc_button(int x,int y,const char *text,int selected)
-{int a,b;acc_button_draw(x,y,text,selected);if(acc_button_count<ACC_MAX_BUTTONS){acc_buttons[acc_button_count].x=x;acc_buttons[acc_button_count].y=y;acc_buttons[acc_button_count].text=text;acc_buttons[acc_button_count].selected=selected;acc_buttons[acc_button_count].width=((acc_button_icon(text,&a,&b)==2)?9:(acc_button_icon(text,&a,&b)?((b<0)?5:6):(int)strlen(text)));acc_button_count++;}}
+{int a,b;acc_button_draw_state(x,y,text,selected,1);if(acc_button_count<ACC_MAX_BUTTONS){acc_buttons[acc_button_count].x=x;acc_buttons[acc_button_count].y=y;acc_buttons[acc_button_count].text=text;acc_buttons[acc_button_count].selected=selected;acc_buttons[acc_button_count].width=((acc_button_icon(text,&a,&b)==2)?9:(acc_button_icon(text,&a,&b)?((b<0)?5:6):(int)strlen(text)));acc_button_count++;}}
+void acc_button_disabled(int x,int y,const char *text){acc_button_draw_state(x,y,text,0,0);}
 void acc_press_button(int x,int y,const char *text)
 {
   union REGS r;int i,w=(int)strlen(text),mx,my,a=0,b=0,icon=acc_button_icon(text,&a,&b),left;
@@ -289,7 +338,7 @@ void acc_press_button(int x,int y,const char *text)
   if(icon==2){left=x+2;acc_put(left,y,a,ACC_CONTROL);acc_put(left+1,y,b,ACC_CONTROL);acc_text(left+2,y,"Run",ACC_CONTROL,3);}
   else if(icon){left=x+(b<0?2:(w-2)/2);acc_put(left,y,a,ACC_CONTROL);if(b>=0)acc_put(left+1,y,b,ACC_CONTROL);}
   else acc_text(x,y,text,ACC_CONTROL,w);
-  {int fa=ACC_ATTR(acc_appearance.controls_bg,(acc_appearance.controls_fg&7)|8);acc_put(x,y,169,fa);acc_put(x+w-1,y,170,fa);}
+  {int fa=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.controls_fg);acc_put(x,y,169,fa);acc_put(x+w-1,y,170,fa);}
   /* acc_wait() owns mouse visibility.  Do not issue nested INT 33h
      Show/Hide calls here: doing so unbalances the driver's visibility
      counter when a toolbar button is clicked and can leave the pointer
@@ -297,7 +346,7 @@ void acc_press_button(int x,int y,const char *text)
      while acc_wait() is dispatching the button press. */
   if(acc_mouse_present){do{r.x.ax=3;int86(0x33,&r,&r);mx=r.x.cx/8;my=r.x.dx/8;(void)mx;(void)my;}while(r.x.bx&1);}
 }
-void acc_scrollbar(int x,int top,int height,int position,int total,int page){int i,track=height-2,thumb=top+1;if(total>page&&track>1)thumb=top+1+position*(track-1)/(total-page);acc_put(x,top,30,ACC_CONTROL);for(i=1;i<height-1;i++)acc_put(x,top+i,i+top==thumb?219:176,ACC_CONTROL);acc_put(x,top+height-1,31,ACC_CONTROL);}
+void acc_scrollbar(int x,int top,int height,int position,int total,int page){int i,track=height-2,thumb=top+1;if(total>page&&track>1)thumb=top+1+position*(track-1)/(total-page);acc_put(x,top,30,ACC_CONTROL);for(i=1;i<height-1;i++)acc_put(x,top+i,i+top==thumb?219:177,ACC_CONTROL);acc_put(x,top+height-1,31,ACC_CONTROL);}
 void acc_shadow(int x,int y,int w,int h){int i,j;unsigned short v;for(j=1;j<h;j++){v=*(unsigned short far *)MAKE_FP(saved_video_segment,((y+j)*acc_cols+x+w)*2);acc_put(x+w,y+j,219,(v>>8)&0xF0);}for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(saved_video_segment,((y+h)*acc_cols+x+i)*2);acc_put(x+i,y+h,223,(v>>8)&0xF0);}}
 
 int acc_mouse(int *x,int *y,int *buttons)
@@ -322,8 +371,8 @@ void acc_wait(int *key,int *x,int *y,unsigned *buttons)
  if(acc_mouse_present&&mouse_visible){r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;}acc_button_count=0;if((*buttons&1)&&*y==close_y&&(*x==close_x||*x==close_x+1)){*buttons=0;*key=27;}
 }
 
-unsigned long acc_ticks(void){return *(unsigned long far *)(((unsigned long)0x40<<16)|0x6C);}
-int acc_help(int argc,char **argv,const char *name,const char *description){if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){printf("%s - Launch! 3.3 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;}return 0;}
+unsigned long acc_ticks(void){return *(volatile unsigned long far *)(((unsigned long)0x40<<16)|0x6C);}
+int acc_help(int argc,char **argv,const char *name,const char *description){if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){printf("%s - Launch! 3.5 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;}return 0;}
 
 int acc_make_dir(const char *path){_mkdir(path);return _access(path,0)==0;}
 void acc_path(char *out,const char *sub,const char *name)
@@ -351,15 +400,27 @@ static int acc_message_type(const char *title,const char *message)
 
 void acc_notice(const char *title,const char *message)
 {
-  const char *nl=strchr(message,'\n');int len1=nl?(int)(nl-message):(int)strlen(message),len2=nl?(int)strlen(nl+1):0,w=(len1>len2?len1:len2)+10,h=nl?8:7,x,y,k=0,mx=0,my=0,i,j,bx,old_close_x=close_x,old_close_y=close_y;unsigned mb=0;if(w<54)w=54;if(w>acc_cols-4)w=acc_cols-4;x=(acc_cols-w)/2;y=(acc_rows-h)/2;for(j=0;j<=h;j++)for(i=0;i<=w;i++)notice_screen[j*(w+1)+i]=*(unsigned short far *)MAKE_FP(saved_video_segment,((y+j)*acc_cols+x+i)*2);acc_box(x,y,w,h,title);
-  acc_message_icon(x+3,y+2,acc_message_type(title,message));acc_text(x+7,y+2,message,ACC_LABEL,len1);if(nl)acc_text(x+7,y+3,nl+1,ACC_LABEL,len2);
+  const char *p1=message,*p2=0,*p3=0,*n1=strchr(message,'\n'),*n2=0;
+  int l1,l2=0,l3=0,lines=1,maxlen,w,h,x,y,k=0,mx=0,my=0,i,j,bx;
+  int old_close_x=close_x,old_close_y=close_y,old_tbx=toolbar_box_x,old_tby=toolbar_box_y,old_tbw=toolbar_box_w,old_tbh=toolbar_box_h;unsigned mb=0;
+  if(n1){lines=2;p2=n1+1;n2=strchr(p2,'\n');if(n2){lines=3;p3=n2+1;}}
+  l1=n1?(int)(n1-p1):(int)strlen(p1);
+  if(p2)l2=n2?(int)(n2-p2):(int)strlen(p2);
+  if(p3)l3=(int)strlen(p3);
+  maxlen=l1;if(l2>maxlen)maxlen=l2;if(l3>maxlen)maxlen=l3;
+  w=maxlen+10;h=6+lines;if(w<54)w=54;if(w>acc_cols-4)w=acc_cols-4;
+  x=(acc_cols-w)/2;y=(acc_rows-h)/2;
+  for(j=0;j<=h;j++)for(i=0;i<=w;i++)notice_screen[j*(w+1)+i]=*(unsigned short far *)MAKE_FP(saved_video_segment,((y+j)*acc_cols+x+i)*2);
+  acc_subbox(x,y,w,h,title,1);acc_message_icon(x+3,y+2,acc_message_type(title,message));
+  acc_text(x+7,y+2,p1,ACC_LABEL,l1);if(p2)acc_text(x+7,y+3,p2,ACC_LABEL,l2);if(p3)acc_text(x+7,y+4,p3,ACC_LABEL,l3);
   bx=x+(w-6)/2;while(!k){acc_button(bx,y+h-3,"  OK  ",1);acc_wait(&k,&mx,&my,&mb);if((mb&1)&&my==y+h-3&&mx>=bx&&mx<bx+6)k=13;}
-  for(j=0;j<=h;j++)for(i=0;i<=w;i++)*(unsigned short far *)MAKE_FP(saved_video_segment,((y+j)*acc_cols+x+i)*2)=notice_screen[j*(w+1)+i];close_x=old_close_x;close_y=old_close_y;
+  for(j=0;j<=h;j++)for(i=0;i<=w;i++)*(unsigned short far *)MAKE_FP(saved_video_segment,((y+j)*acc_cols+x+i)*2)=notice_screen[j*(w+1)+i];close_x=old_close_x;close_y=old_close_y;toolbar_box_x=old_tbx;toolbar_box_y=old_tby;toolbar_box_w=old_tbw;toolbar_box_h=old_tbh;
 }
 
 int acc_begin(const char *argv0,const char *title,int graphics)
 {
   union REGS r;char launch[ACC_PATH];int i;
+  acc_screen_restored=0;
   (void)title;(void)graphics;acc_source_dir(argv0);sprintf(launch,"%s!.EXE",acc_directory);
   if(!acc_exists(launch)){puts("This accessory requires Launch!");return 0;}
   acc_load_config();memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);
@@ -386,11 +447,27 @@ void acc_restore_screen(void)
   launchui_installed=0;launchui_font(1);for(i=0;i<acc_cols*acc_rows;i++)*(unsigned short far *)(((unsigned long)saved_video_segment<<16)|(i*2))=saved_screen[i];r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);if(acc_mouse_present){r.x.ax=0;int86(0x33,&r,&r);mouse_pointer_install();}
 }
 
-void acc_end(void)
+void acc_end_screen(void)
 {
-  union REGS r;int i;launchui_font(0);if(acc_mouse_present){r.x.ax=2;int86(0x33,&r,&r);mouse_pointer_restore();}
+  union REGS r;int i;
+  if(acc_screen_restored)return;
+  /* Keep every Launch!/accessory glyph installed until the accessory UI has
+     disappeared.  Restoring font slots first exposes the raw CP437 codes for
+     a frame, which is the visible "naked UI" flash on exit. */
+  if(acc_mouse_present){memset(&r,0,sizeof(r));r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;}
   if(saved_mode==3||saved_mode==2||saved_mode==7)
     for(i=0;i<acc_cols*acc_rows;i++)*(unsigned short far *)(((unsigned long)saved_video_segment<<16)|(i*2))=saved_screen[i];
+  acc_screen_restored=1;
+}
+
+void acc_end(void)
+{
+  union REGS r;
+  /* Screen first, font second: never expose Launch! character codes with the
+     original font while the dialog is still visible. */
+  acc_end_screen();
+  launchui_font(0);
+  if(acc_mouse_present)mouse_pointer_restore();
   memset(&r,0,sizeof(r));r.h.ah=1;r.h.ch=(unsigned char)saved_cursor_start;r.h.cl=(unsigned char)saved_cursor_end;int86(0x10,&r,&r);
   r.h.ah=2;r.h.bh=(unsigned char)saved_page;r.h.dh=(unsigned char)saved_cursor_y;r.h.dl=(unsigned char)saved_cursor_x;int86(0x10,&r,&r);
 }

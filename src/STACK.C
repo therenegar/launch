@@ -93,21 +93,31 @@ static int export_cards(char *p)
   fclose(f);return 1;
 }
 
-static void card_box(int x,int y,int index,int active,int title_focus,int text_focus,int cx,int cy,int top)
+static void card_box(int x,int y,int index,int active,int title_focus,int title_edit,int text_focus,int cx,int cy,int top)
 {
   char number[8];int i,r,line,w=56,h=12;
-  int nattr=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles);
+  int dimfg=(acc_appearance.controls_fg&7)|8;
+  int borderattr=active?ACC_CONTROL:ACC_ATTR(acc_appearance.controls_bg,dimfg);
+  int titleattr,nattr;
+  if(!active)titleattr=ACC_ATTR(acc_appearance.controls_bg,dimfg);
+  else if(title_edit)titleattr=ACC_SELECT;
+  else if(title_focus)titleattr=ACC_ATTR(acc_appearance.background,acc_appearance.titles);
+  else titleattr=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title);
+  nattr=active?ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles):ACC_ATTR(acc_appearance.controls_bg,dimfg);
   acc_fill(x,y,w,h,' ',ACC_CONTROL);
-  acc_put(x,y,218,ACC_CONTROL);acc_put(x+w-1,y,191,ACC_CONTROL);
-  acc_put(x,y+h-1,192,ACC_CONTROL);acc_put(x+w-1,y+h-1,217,ACC_CONTROL);
-  for(i=1;i<w-1;i++){acc_put(x+i,y,196,ACC_CONTROL);acc_put(x+i,y+h-1,196,ACC_CONTROL);}
-  for(i=1;i<h-1;i++){acc_put(x,y+i,179,ACC_CONTROL);acc_put(x+w-1,y+i,179,ACC_CONTROL);}
-  acc_text(x+2,y+1,cards[index].title,active&&title_focus?ACC_SELECT:(active?ACC_HEADING:ACC_CONTROL),CT);
+  acc_put(x,y,218,borderattr);acc_put(x+w-1,y,191,borderattr);
+  acc_put(x,y+h-1,192,borderattr);acc_put(x+w-1,y+h-1,217,borderattr);
+  for(i=1;i<w-1;i++){acc_put(x+i,y,196,borderattr);acc_put(x+i,y+h-1,196,borderattr);}
+  for(i=1;i<h-1;i++){acc_put(x,y+i,179,borderattr);acc_put(x+w-1,y+i,179,borderattr);}
+  acc_text(x+2,y+1,cards[index].title,titleattr,CT);
   sprintf(number,"%d",index+1);acc_text(x+w-2-(int)strlen(number),y+1,number,nattr,(int)strlen(number));
   for(i=2;i<w-2;i++)acc_put(x+i,y+2,205,ACC_ATTR(acc_appearance.controls_bg,12));
   if(active){
     for(r=0;r<VISIBLE_LINES;r++){line=top+r;acc_text(x+2,y+3+r,cards[index].text+line*CW,ACC_CONTROL,CW);}
-    acc_scrollbar(x+w-2,y+3,VISIBLE_LINES,top,TEXT_LINES,VISIBLE_LINES);
+    /* Compact scroll treatment: only show navigation arrows when that
+       direction can actually scroll.  No persistent track. */
+    acc_put(x+w-2,y+3,top>0?30:' ',ACC_CONTROL);
+    acc_put(x+w-2,y+3+VISIBLE_LINES-1,top<TEXT_LINES-VISIBLE_LINES?31:' ',ACC_CONTROL);
     if(text_focus && cy>=top && cy<top+VISIBLE_LINES)
       acc_put(x+2+cx,y+3+cy-top,cards[index].text[cy*CW+cx],ACC_SELECT);
   }
@@ -117,19 +127,18 @@ static void select_card(int target){if(target>=0&&target<count)current=target;}
 static int lower_card(int offset){int n;if(!count)return 0;n=(current-offset)%count;if(n<0)n+=count;return n;}
 static int higher_card(void){return count?(current+1)%count:0;}
 
-static void cards_draw(int x,int y,int focus,int cx,int cy,int top)
+static void cards_draw(int x,int y,int focus,int title_edit,int cx,int cy,int top)
 {
   acc_fill(x,y-4,60,17,' ',ACC_BG);
-  if(count>=3)card_box(x+4,y-4,lower_card(2),0,0,0,0,0,0);
-  if(count>=2)card_box(x+2,y-2,lower_card(1),0,0,0,0,0,0);
-  card_box(x,y,current,1,focus==0,focus==1,cx,cy,top);
-  acc_shadow(x,y,56,12);
+  if(count>=3)card_box(x+4,y-4,lower_card(2),0,0,0,0,0,0,0);
+  if(count>=2)card_box(x+2,y-2,lower_card(1),0,0,0,0,0,0,0);
+  card_box(x,y,current,1,focus==0,title_edit,focus==1,cx,cy,top);
 }
 
 int main(int argc,char **argv)
 {
   char counter[12],exported[ACC_PATH],message[ACC_PATH+32];
-  int x,y,px,cx=0,cy=0,top=0,tp=0,key=0,mx=0,my=0,focus=1,i,dirty=1,insert=1,ch;
+  int x,y,px,cx=0,cy=0,top=0,tp=0,key=0,mx=0,my=0,focus=1,title_edit=0,i,dirty=1,insert=1,ch;
   int oldcy,oldtop,base;
   unsigned mb=0;
   if(acc_help(argc,argv,"!STACK","A persistent card stack of editable titled text cards."))return 0;
@@ -137,31 +146,46 @@ int main(int argc,char **argv)
   load_cards();x=(acc_cols-68)/2+3;px=x+1;y=(acc_rows-22)/2+6;acc_box(x-3,y-6,68,22,"Card Stack");
 
   while(key!=27){
-    if(dirty){cards_draw(px,y,focus,cx,cy,top);dirty=0;}
-    acc_button(x,y+13," Prev ",focus==2);
+    if(dirty){cards_draw(px,y,focus,title_edit,cx,cy,top);dirty=0;}
+    if(count>1)acc_button(x,y+13," Prev ",focus==2);else acc_button_disabled(x,y+13," Prev ");
     sprintf(counter,"%d",current+1);i=(int)strlen(counter);
     acc_text(x+7,y+13,"",ACC_LABEL,5);acc_text(x+7,y+13,counter,ACC_HEADING,i);
     sprintf(counter,"/%d",count);acc_text(x+7+i,y+13,counter,ACC_LABEL,(int)strlen(counter));
-    acc_button(x+14,y+13," Next ",focus==3);acc_button(x+21,y+13,"  Add  ",focus==4);
+    if(count>1)acc_button(x+14,y+13," Next ",focus==3);else acc_button_disabled(x+14,y+13," Next ");acc_button(x+21,y+13,"  Add  ",focus==4);
     acc_button(x+29,y+13,"  Delete  ",focus==5);acc_button(x+37,y+13,"  Export  ",focus==6);
     acc_button(x+55,y+13,"  Close  ",focus==7);
     acc_wait(&key,&mx,&my,&mb);
 
-    if((mb&1)&&count>=2&&my==y-1&&mx>=px+4&&mx<px+26){select_card(lower_card(1));cx=cy=top=0;dirty=1;key=0;continue;}
-    if((mb&1)&&count>=3&&my==y-3&&mx>=px+6&&mx<px+28){select_card(lower_card(2));cx=cy=top=0;dirty=1;key=0;continue;}
-    if((mb&1)&&my==y+1&&mx>=px+2&&mx<px+24){int len=(int)strlen(cards[current].title);focus=0;tp=mx-(px+2);if(tp>len)tp=len;dirty=1;key=0;continue;}
+    if((mb&1)&&count>=2&&my==y-1&&mx>=px+4&&mx<px+26){select_card(lower_card(1));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
+    if((mb&1)&&count>=3&&my==y-3&&mx>=px+6&&mx<px+28){select_card(lower_card(2));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
+    if((mb&1)&&my==y+1&&mx>=px+2&&mx<px+24){
+      int len=(int)strlen(cards[current].title);
+      if(focus==0){title_edit=1;tp=mx-(px+2);if(tp>len)tp=len;}
+      else {focus=0;title_edit=0;tp=mx-(px+2);if(tp>len)tp=len;}
+      dirty=1;key=0;continue;
+    }
+    if((mb&1)&&focus==0){title_edit=0;focus=1;dirty=1;}
     if((mb&1)&&mx==px+54&&my>=y+3&&my<y+3+VISIBLE_LINES){
       if(my==y+3&&top>0)top--;
       else if(my==y+3+VISIBLE_LINES-1&&top<TEXT_LINES-VISIBLE_LINES)top++;
-      else if(my>y+3&&my<y+3+VISIBLE_LINES-1)top=(my-(y+3)-1)*(TEXT_LINES-VISIBLE_LINES)/(VISIBLE_LINES-2);
+      else { key=0; continue; }
       if(cy<top)cy=top;if(cy>=top+VISIBLE_LINES)cy=top+VISIBLE_LINES-1;
-      focus=1;dirty=1;key=0;continue;
+      focus=1;title_edit=0;dirty=1;key=0;continue;
     }
-    if((mb&1)&&my>=y+3&&my<y+3+VISIBLE_LINES&&mx>=px+2&&mx<px+2+CW){focus=1;cx=mx-(px+2);cy=top+my-(y+3);dirty=1;key=0;continue;}
-    if((mb&1)&&my==y+13){if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+14&&mx<x+19)focus=3;else if(mx>=x+21&&mx<x+27)focus=4;else if(mx>=x+29&&mx<x+35)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+55&&mx<x+61)focus=7;key=13;}
+    if((mb&1)&&my>=y+3&&my<y+3+VISIBLE_LINES&&mx>=px+2&&mx<px+2+CW){focus=1;title_edit=0;cx=mx-(px+2);cy=top+my-(y+3);dirty=1;key=0;continue;}
+    if((mb&1)&&my==y+13){title_edit=0;if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+14&&mx<x+19)focus=3;else if(mx>=x+21&&mx<x+27)focus=4;else if(mx>=x+29&&mx<x+35)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+55&&mx<x+61)focus=7;key=13;}
 
     if(key==27)break;
-    if(key==9||key==271){focus=(key==271)?(focus+7)%8:(focus+1)%8;dirty=1;key=0;continue;}
+    if(key==9||key==271){
+      int dir=(key==271)?-1:1;
+      title_edit=0;
+      do { focus=(focus+dir+8)%8; } while(count<=1&&(focus==2||focus==3));
+      dirty=1;key=0;continue;
+    }
+    if(key==13&&focus==0){
+      if(title_edit)title_edit=0;else {title_edit=1;tp=(int)strlen(cards[current].title);}
+      dirty=1;key=0;continue;
+    }
     if(key==13&&focus>=2){
       if(focus==2){select_card(higher_card());cx=cy=top=0;}
       else if(focus==3){select_card(lower_card(1));cx=cy=top=0;}
@@ -172,13 +196,15 @@ int main(int argc,char **argv)
       dirty=1;if(key!=27)key=0;continue;
     }
 
-    if(focus==0){
+    if(focus==0&&title_edit){
       int len=(int)strlen(cards[current].title);
       if(key==256+75&&tp>0)tp--;else if(key==256+77&&tp<len)tp++;else if(key==256+71)tp=0;else if(key==256+79)tp=len;else if(key==256+82)insert=!insert;
       else if(key==256+83&&tp<len)memmove(cards[current].title+tp,cards[current].title+tp+1,len-tp);
       else if(key==8&&tp>0){memmove(cards[current].title+tp-1,cards[current].title+tp,len-tp+1);tp--;}
       else if((key>=32&&key<=255)||(key>=513&&key<=767)){ch=key>=512?key-512:key;if(insert&&len<CT){memmove(cards[current].title+tp+1,cards[current].title+tp,len-tp+1);cards[current].title[tp++]=(char)ch;}else if(!insert){if(tp<len)cards[current].title[tp++]=(char)ch;else if(len<CT){cards[current].title[tp++]=(char)ch;cards[current].title[tp]=0;}}}
       acc_text(px+2,y+1,cards[current].title,ACC_SELECT,CT);key=0;
+    } else if(focus==0){
+      if(key!=27)key=0;
     } else if(focus==1){
       oldcy=cy;oldtop=top;base=cy*CW;
       if(key==256+75&&cx>0)cx--;
@@ -199,7 +225,8 @@ int main(int argc,char **argv)
       else {
         acc_text(px+2,y+3+oldcy-top,cards[current].text+oldcy*CW,ACC_CONTROL,CW);
         if(cy!=oldcy)acc_text(px+2,y+3+cy-top,cards[current].text+cy*CW,ACC_CONTROL,CW);
-        acc_scrollbar(px+54,y+3,VISIBLE_LINES,top,TEXT_LINES,VISIBLE_LINES);
+        acc_put(px+54,y+3,top>0?30:' ',ACC_CONTROL);
+        acc_put(px+54,y+3+VISIBLE_LINES-1,top<TEXT_LINES-VISIBLE_LINES?31:' ',ACC_CONTROL);
         acc_put(px+2+cx,y+3+cy-top,cards[current].text[cy*CW+cx],ACC_SELECT);
       }
       key=0;
