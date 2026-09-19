@@ -357,7 +357,9 @@ You can also start the selected screensaver at any time by running `! /NOW`.
 
 Pressing any key or moving the mouse will return the screen.
 
-The screensavers have been designed to use the EGA 16 color 640x350 screen mode, using absolutely minimal resources (procedurally generated graphics, no bitmaps), run smoothly on a 286, and look great on a CRT! They are all re-engineered and coded from scratch, but based loosely on well known screensavers from AfterDark, Microsoft Windows, Amiga and XScreenSaver.
+The screensavers have been designed to use the EGA 16 color 640x350 screen mode, using absolutely minimal resources (procedurally generated graphics, no bitmaps), run smoothly on a 286, and look great on a CRT! 
+
+They are all re-engineered and coded from scratch, but based loosely on well known screensavers from AfterDark, Microsoft Windows, Amiga and XScreenSaver.
 The clock is based on a 1979 Vacuum Fluorescent Display alarm clock on my bedside.
 
 - **Clock** The clock will display in 12 or 24-hour mode depending on your menu time setting, and you can change its color in ! /CONFIG
@@ -401,6 +403,8 @@ All programs depend on Launch! (`!.EXE`) - for shared UI toolkit, and will take 
 They've all been designed with a tiny memory footprint, and maximum compatibility in mind.
 
 Usable with either keyboard or mouse interaction.
+
+Any data files for each program are stored in the 'data' sub-directory of Launch!. Exports will be placed in the 'export' sub-directory.
 
 ### !CAL.EXE - Calendar
 A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate months, `Home` returns to the current month.
