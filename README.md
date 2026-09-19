@@ -272,14 +272,15 @@ You can move selected items up and down with `CTRL+↑/↓`.
 
 <img width="720" height="600" alt="Menu - Edit" src="https://github.com/user-attachments/assets/10d524cf-9024-4eac-a3c8-d38a0a585255" />
 
+If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
+You will be able to enter parameters before running the program.
+
+**Provide enter after launcher command** if toggled off will just type the command, not supplying Enter - allowing you to then add more to the command line (such as further parameters) or review it, before execution.
+
 When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.<br/>
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
 If **Add to PATH for execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT - which can get unwieldy. This allows you do away with that, and just add a program to PATH when launched from the menu.
-
-### Parameter prompting
-If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
-You will be able to enter parameters before running the program.
 
 <img width="720" height="600" alt="Run with parameters" src="https://github.com/user-attachments/assets/626513d1-7b62-47d8-a989-d65c3ac0817e" />
 
@@ -465,7 +466,7 @@ Export the contents to a text file with `Export`. You can also send the contents
 
 The text contents are persisted when you close the Note, and will be there when the program is re-opened.
 
-Choose `Clear` to erase the notepad.
+Choose `Clr` to erase the notepad. `Chars` shows a character palette to insert extended/special characters.
 
 <img width="720" height="600" alt="Note" src="https://github.com/user-attachments/assets/c396f27e-8b76-4b04-b360-6eb6d6f61be9" />
 
@@ -477,7 +478,8 @@ You can also export all the cards (everything concatenated) into a text file.
 
 Entries are automatically saved, everything is persisted, and all cards will be visible when the program is re-opened.
 
-<img width="720" height="600" alt="!STACK" src="https://github.com/user-attachments/assets/30508d7a-0419-4ca8-8b59-89eee283e9af" />
+<img width="720" height="600" alt="!STACK" src="https://github.com/user-attachments/assets/b6a64b72-6a5c-4463-aa7a-7ea408abc868" />
+
 
 ### !TODOS.EXE - To-dos
 A simple and flexible To-Do list supporting grouping, due dates (with natural language like "tomorrow", "next Friday", extended description, and tags.
@@ -486,14 +488,15 @@ Tasks can be sorted and tags can be used to filter the list.
 
 Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your locale settings as/if set by `COUNTRY.SYS` in your `CONFIG.SYS`.
 
-<img width="720" height="600" alt="!TODOS" src="https://github.com/user-attachments/assets/cdcc35c9-f2be-4d10-9aa8-dd17890a49c3" />
+<img width="720" height="600" alt="!TODOS" src="https://github.com/user-attachments/assets/cd920ca9-6dcb-4300-903a-b5634fde614d" />
 
 ### !SYSINFO.EXE - System Information
 View useful information about your system, including free memory and disk space.
 
 The system information report can be printed for reference.
 
-<img width="720" height="600" alt="!SYSINFO" src="https://github.com/user-attachments/assets/4ec67977-db09-4894-bf62-248692a28004" />
+<img width="720" height="600" alt="!SYSINFO" src="https://github.com/user-attachments/assets/c18489c2-9383-4881-8d5f-e909189b57b6" />
+
 
 ### !BOXES.EXE - Boxes
 A Sokoban style puzzle game with 100 different challenges.
@@ -502,7 +505,7 @@ Use the arrow keys to move the worker and push boxes to cover all the targets - 
 
 <img width="720" height="600" alt="Boxes" src="https://github.com/user-attachments/assets/f925d3b6-fef8-4caf-a08a-416172b5619d" />
 
-Puzzles are from Microban collections designed by David W. Skinner (http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm)
+Puzzles are from Microban collections designed by [David W. Skinner](http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm)
 
 ### !POP.EXE - Pop
 An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
