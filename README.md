@@ -545,6 +545,8 @@ Tokens are separated by `+`. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, F1-F12, the W
 The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.<br/>
 Use `SHORTCUT /?` for more information.
 
+To maintain system integrity and security, 'SHORTCUT.COM' validates an authentication key in '!.EXE' to ensure the shortcut key will only ever execute (a genuine) Launch! menu.
+
 
 ## AUTOGEN.EXE - an automatic menu generator
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
