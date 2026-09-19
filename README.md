@@ -241,25 +241,26 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 <img width="720" height="600" alt="Menu - Add" src="https://github.com/user-attachments/assets/cddb761b-d607-49f2-8b9f-086d0019315c" />
 
-`CTRL+E` will show you the edit dialog to modify a launcher.
-
-<img width="720" height="600" alt="Menu - Edit" src="https://github.com/user-attachments/assets/10d524cf-9024-4eac-a3c8-d38a0a585255" />
-
 `CTRL+D` will remove the selected item from the menu (with confirmation first).
 
 <img width="720" height="600" alt="Menu - Remove" src="https://github.com/user-attachments/assets/533cfb89-fe2e-4171-9af8-8f9c6d8d9ac6" />
 
-Move selected items up and down with `CTRL+↑/↓`.
+You can move selected items up and down with `CTRL+↑/↓`.
+
+`CTRL+E` will show you the edit dialog to modify a launcher.
+
+<img width="720" height="600" alt="Menu - Edit" src="https://github.com/user-attachments/assets/10d524cf-9024-4eac-a3c8-d38a0a585255" />
 
 When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.<br/>
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
+
+If you **Add to PATH before execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT - which can get unwieldy. This allows you do away with that, and just add a program to PATH when launched from the menu.
 
 ### Parameter prompting
 If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
 You will be able to enter parameters before running the program.
 
 <img width="720" height="600" alt="Run with parameters" src="https://github.com/user-attachments/assets/626513d1-7b62-47d8-a989-d65c3ac0817e" />
-
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
