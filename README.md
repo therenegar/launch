@@ -109,7 +109,9 @@ The Launch! executable `!.EXE` has some useful parameters:
 
 - `/?` - show Launch! help
 - `/CONFIG` - show the configuration dialog
-- `/EXPLORE` - open the Explore & Run dialog directly without the menu
+- `/EXPLORE` - show the Explore & Run dialog directly without the menu
+- `/OPEN` - show the Open File dialog directly without the menu
+- `/BYE` - show the Shutdown... dialog directly without the menu
 - `/NOW` - start the configured screensaver immediately
 - `/USE=file.mnu` - use an alternative menu file from the default `launch.mnu`. It will be assumed to be beside `!.EXE` unless a full path is provided. This allows you to make use of different menu configurations. 
 - `/OPENTO=folder` - open the Launch! menu to the specified folder, e.g. `/OPENTO="System Tools"` would show the menu with the System Tools sub-menu already open. 
@@ -298,6 +300,7 @@ You can also open files with further parameters if required.
 
 <img width="720" height="600" alt="Open File with parameters" src="https://github.com/user-attachments/assets/d2b98204-ed45-4d12-9d38-e61e249e9195" />
 
+The dialog can also be shown on its own, without the menu, by running `! /OPEN`.
 
 ## Explore & Run
 `Explore & Run` is a fixed item at the bottom of the menu.<br/>
@@ -326,7 +329,8 @@ Power Off flushes DOS and SMARTDrive buffers first and then uses power managemen
 
 <img width="720" height="600" alt="Shutdown..." src="https://github.com/user-attachments/assets/05b1c734-8ada-4b28-a1aa-9113cf5bc435" />
 
-You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`)
+You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`). <BR/>
+The dialog can also be shown on its own, without the menu, by running `! /BYE`.
 
 <img width="360" height="300" alt="Power off bitmap" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
