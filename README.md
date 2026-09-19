@@ -385,9 +385,9 @@ The screensavers have been designed to use the EGA 16 color 640x350 screen mode,
 ## Accessories and Games
 Launch! comes with 8 handy accessories, and 5 addictive games that can be useful in a basic DOS environment.
 
-If selected during the Install program, there will be an **Accessories** menu created for you in Launch! providing quick access.
+If selected during the Install program, there will be an **Accessories** and a **Games** menu created for you in Launch! providing quick access.
 
-All accessories depend on Launch! (`!.EXE`) - for shared UI toolkit, and will take on Launch! configuration settings such as color scheme and mouse cursor - so the `.EXE`s can't be distributed without `!.EXE`.<br/>
+All programs depend on Launch! (`!.EXE`) - for shared UI toolkit, and will take on Launch! configuration settings such as color scheme and mouse cursor - so the `.EXE`s can't be distributed without `!.EXE`.<br/>
 They've all been designed with a tiny memory footprint, and maximum compatibility in mind.
 
 Usable with either keyboard or mouse interaction.
