@@ -208,7 +208,7 @@ You can also add your own prompt definitions in `PROMPTS.CFG` and they will appe
 
 Choosing `SET` applies the selected prompt style immediately, and also updates any existing `PROMPT` statement in `AUTOEXEC.BAT` so this style is set at startup.
 
-Styles that using ANSI escape sequences will not show in the selector if an ANSI driver is not detected.
+Styles using ANSI escape sequences will not show in the selector if an ANSI driver is not detected.
 
 <img width="720" height="600" alt="Config: Prompt" src="https://github.com/user-attachments/assets/683fbaae-c2f8-4fb7-9c20-aeb239d7a2cb" />
 
