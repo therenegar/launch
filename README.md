@@ -550,6 +550,8 @@ To maintain system integrity and security, 'SHORTCUT.COM' validates an authentic
 ## AUTOGEN.EXE - an automatic menu generator
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
 
+This database has been extractss from [DirectAccess 5.19](https://winworldpc.com/product/direct-access/5x). 
+
 <img width="360" height="300" alt="AUTOGEN" src="https://github.com/user-attachments/assets/8edbc6cb-a31b-4149-9c6f-6e4d39809a0c" />
 
 
