@@ -285,7 +285,7 @@ SEPARATOR=
 `Open File` is a fixed special item at the bottom of the menu (removable in Config).
 It allows you to browse for files, based on configured associations, and open the file with the configured launcher.
 
-This can allow you to browse and open images with a launcher for an image viewing program - without having to typing a massive command line yourself.
+As an example, this can allow you to browse and open images with a launcher for an image viewing program - without having to typing a massive command line yourself. Or browse zip files, and easily extract with your ZIP program, adding further parameters if required.
 
 There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
 <img width="720" height="600" alt="Open File" src="https://github.com/user-attachments/assets/34575b86-7ae2-4187-9396-173c5db3e152" />
@@ -484,11 +484,14 @@ Click a card (it will show as selected), then click the destination (valid desti
 <img width="720" height="600" alt="Solitaire Game" src="https://github.com/user-attachments/assets/dc53f020-8a03-4afa-a35f-3eadf7c716a5" />
 
 ### !FCELL.EXE - FreeCell
+Play the FreeCell card game. Same interaction and interface as Solitaire.
 
 <img width="720" height="600" alt="FreeCell Game" src="https://github.com/user-attachments/assets/6bd5c3e6-d075-4037-a273-1bac90b22d4a" />
 
 
 ### !SNAKE.EXE - Snake
+Eat the fruit before the timer runs out!
+Watch out for walls and don't run into yourself
 
 <img width="720" height="600" alt="Snake Game" src="https://github.com/user-attachments/assets/aa959862-5c53-424b-a8e1-1a09ea97e105" />
 
