@@ -399,9 +399,11 @@ You can print the calendar out, it will create a full page calendar with big eno
 
 The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specification) that is located beside `!CAL.EXE`
 
+You can also use the `/FILE=` parameter to point to any `.ICS` file, and the Calendar will show events from that file.
+
 <img width="720" height="600" alt="Calendar" src="https://github.com/user-attachments/assets/d9618702-2026-4b2c-bb3c-02368fe174c1" />
 
-You can also use the `/FILE=` parameter to point to any `.ICS` file, and the Calendar will show events from that file.
+<img width="720" height="600" alt="Calendar Day" src="https://github.com/user-attachments/assets/27612163-465e-4700-863c-86ba0d1ddb8a" />
 
 ### !CALC.EXE - Calculator
 A simple calculator, with nice large digits, pretty self explanatory!
