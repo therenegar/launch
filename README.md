@@ -176,6 +176,8 @@ If using a monochrome display, use the 'Mono' scheme for best results.
 
 <img width="720" height="600" alt="Config: Colors" src="https://github.com/user-attachments/assets/2b3e7494-8486-418c-a691-247c5618093c" />
 
+<img width="720" height="591" alt="Color Schemes" src="https://github.com/user-attachments/assets/189807a7-5fd1-4b88-98e5-b120dc750bcc" />
+
 
 ### Screen Saver
 
