@@ -544,4 +544,4 @@ If `LAUNCH.MNU` is missing or invalid at startup and `LAUNCH.BAK` is valid, Laun
 
 ----
 
-<img width="720" height="600" alt="About" src="https://github.com/user-attachments/assets/627f7472-d85c-4e23-aa67-3d36c4045085" />
+<img width="720" height="600" alt="About" src="https://github.com/user-attachments/assets/a4005bdf-61d0-44e7-8407-65f14c780d53" />
