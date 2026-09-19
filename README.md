@@ -404,7 +404,7 @@ They've all been designed with a tiny memory footprint, and maximum compatibilit
 
 Usable with either keyboard or mouse interaction.
 
-Any data files for each program are stored in the 'data' sub-directory of Launch!. Exports will be placed in the 'export' sub-directory.
+Any data files for each program are stored in the `data` sub-directory of Launch!. Exports will be placed in the `exports` sub-directory.
 
 ### !CAL.EXE - Calendar
 A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate months, `Home` returns to the current month.
@@ -492,8 +492,7 @@ Use the arrow keys to move the worker and push boxes to cover all the targets - 
 
 <img width="720" height="600" alt="Boxes" src="https://github.com/user-attachments/assets/f925d3b6-fef8-4caf-a08a-416172b5619d" />
 
-Puzzles are from the Microban I collection (
-https://au-voleur.itch.io/microban-1)
+Puzzles are from Microban collections designed by David W. Skinner (http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm)
 
 ### !POP.EXE - Pop
 An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
