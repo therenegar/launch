@@ -223,6 +223,20 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 
 > Note this feature is not available with an EGA display adapter.
 
+ISO is extracted from IBM PC-DOS 5.02 ISO.CPI
+
+DOS-J is extracted from IBM PC-DOS for DOS/V
+
+DOS-V is extracted from Microsoft MS-DOS/V
+
+ELITE.F16, OAK8.F16, OAK9.F16 and SANSERIF.F16 were extracted directly from the Video BIOS ROM image for the IBM PS/2 model 30-286 Rev 0.
+
+HOWARD.F16, OAKLEY.F16, OAKLYB.F16,. NEIL.F16, ITALIC.F16, OLDENG.F16 and CGA.F16 come from IBM's internally distributed HOWARD the FONT 3.61 archive by Alan E. Beelitz and contributors. 
+
+The remaining come from https://github.com/viler-int10h/vga-text-mode-fonts
+
+All font files have been edited to improve specific glyphs and anipearance over originals.
+
 
 ### Shortcut
 
