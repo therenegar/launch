@@ -173,8 +173,8 @@ The SysBar shows (left to right):
 - The free Environment size (ever get an error 'Not enough space for environment' when running a program?)
 - The free space on the system drive (if you boot from floppy it will be A:)
 - Status indicators for Caps Lock (CL), Num Lock (NL) and Scroll Lock (SL) keys
-- Status indicators for mouse presence, display type and network status
-- The country code for the current DOS locale settings (as/if set by COUNTRY.SYS)
+- Status indicators for mouse presence, display type and network status (based on detection of a loaded network packet driver).
+- The country code for the current DOS locale settings (as/if set by `COUNTRY.SYS`).
 
 
 ### Colors
@@ -230,6 +230,7 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 - ELITE.F16, OAK8.F16, OAK9.F16 and SANSERIF.F16 were extracted directly from the Video BIOS ROM image for the IBM PS/2 model 30-286 Rev 0.
 - HOWARD.F16, OAKLEY.F16, OAKLYB.F16,. NEIL.F16, ITALIC.F16, OLDENG.F16 and CGA.F16 come from IBM's internally distributed HOWARD the FONT 3.61 archive by Alan E. Beelitz and contributors. 
 - Remaining come from https://github.com/viler-int10h/vga-text-mode-fonts
+
 All font files have been edited to improve specific glyphs and appearance over originals.
 
 
