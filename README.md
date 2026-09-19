@@ -487,6 +487,9 @@ Use the arrow keys to move the worker and push boxes to cover all the targets - 
 
 <img width="720" height="600" alt="Boxes" src="https://github.com/user-attachments/assets/f925d3b6-fef8-4caf-a08a-416172b5619d" />
 
+Puzzles are from the Microban I collection (
+https://au-voleur.itch.io/microban-1)
+
 ### !POP.EXE - Pop
 An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
 
@@ -513,6 +516,7 @@ Watch out for walls and don't run into yourself
 
 <img width="720" height="600" alt="Snake Game" src="https://github.com/user-attachments/assets/aa959862-5c53-424b-a8e1-1a09ea97e105" />
 
+Playfields come from the Microsoft QBasic NIBBLES.BAS sample program.
 
 ----
 
