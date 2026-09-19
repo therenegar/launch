@@ -168,6 +168,15 @@ The SysBar (off by default) shows an information bar, top-right of screen every 
 
 <img width="720" height="600" alt="SysBar" src="https://github.com/user-attachments/assets/c5d096b3-0b7c-40aa-9136-73618ac4c5e5" />
 
+The SysBar shows (left to right): 
+- Largest executable program size (free lower memory)
+- The free Environment size (ever get an error 'Not enough space for environment' when running a program?)
+- The free space on the system drive (if you boot from floppy it will be A:)
+- Status indicators for Caps Lock (CL), Num Lock (NL) and Scroll Lock (SL) keys
+- Status indicators for mouse presence, display type and network status
+- The country code for the current DOS locale settings (as/if set by COUNTRY.SYS)
+
+
 ### Colors
 
 There are 9 pre-defined color schemes to choose from, or you can change the colors for any interface element to your liking.
