@@ -2,9 +2,9 @@
 from pathlib import Path
 root=Path(__file__).resolve().parent
 sources=[('launch_glyph16','LAUNCHUI.FNT',16),('launch_glyph14','LAUNCHUI.F14',14)]
-count=85
+count=103
 with (root/'GLYPHDAT.H').open('w') as o:
-    o.write('/* Generated from LAUNCHUI.FNT / LAUNCHUI.F14. Do not hand edit. */\n#define LAUNCH_GLYPH_COUNT 85\n#ifdef LAUNCH_GLYPH_FAR\n#define GLYPH_STORE far\n#else\n#define GLYPH_STORE\n#endif\n')
+    o.write(f'/* Generated from LAUNCHUI.FNT / LAUNCHUI.F14. Do not hand edit. */\n#define LAUNCH_GLYPH_COUNT {count}\n#ifdef LAUNCH_GLYPH_FAR\n#define GLYPH_STORE far\n#else\n#define GLYPH_STORE\n#endif\n')
     for symbol,filename,height in sources:
         data=(root/filename).read_bytes()
         if len(data)!=256*height: raise SystemExit(f'{filename}: wrong size')

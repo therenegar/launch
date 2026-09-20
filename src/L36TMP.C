@@ -1289,7 +1289,14 @@ static void tooltip_glyph_install_one(FONT_REGS *old,int code,const unsigned cha
 static void tooltip_glyph_install(void)
 {
   FONT_REGS old;unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);int is14=(*h==14);
-  if(tooltip_glyph_saved)return;font_plane_open(&old);
+  if(tooltip_glyph_saved)return;
+  if(is14){
+    ega14_glyph_write(CORE_TOOLTIP_GLYPH,tooltip_glyph14);
+    ega14_glyph_write(CORE_TOOLTIP_LEFT_GLYPH,tooltip_left14);
+    ega14_glyph_write(CORE_TOOLTIP_RIGHT_GLYPH,tooltip_right14);
+    tooltip_glyph_saved=1;return;
+  }
+  font_plane_open(&old);
   tooltip_glyph_install_one(&old,CORE_TOOLTIP_GLYPH,is14?tooltip_glyph14:tooltip_glyph16,0);
   /* Install the rounded left cap in char 203 itself.  203 is in VGA's
      C0-DF line-graphics range, so bit 8 is extended into the ninth cell. */
@@ -1301,7 +1308,10 @@ static void tooltip_glyph_install(void)
 static void tooltip_glyph_restore(void)
 {
   FONT_REGS old;unsigned char far *font;int code,slot,i;static const int codes[2]={CORE_TOOLTIP_GLYPH,CORE_TOOLTIP_RIGHT_GLYPH};
-  if(!tooltip_glyph_saved)return;font_plane_open(&old);
+  unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);
+  if(!tooltip_glyph_saved)return;
+  if(*h==14){tooltip_glyph_saved=0;return;}
+  font_plane_open(&old);
   for(slot=0;slot<2;slot++){code=codes[slot];font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)font[i]=tooltip_old_glyph[slot][i];}
   font_plane_close(&old);tooltip_glyph_saved=0;
 }
@@ -1363,26 +1373,54 @@ static const unsigned char launchui_browser_codes[6]={193,183,221,184,197,186};
 static unsigned char far launchui_browser_old[6][32];
 static unsigned char far launchui_divider_old[32];
 static int launchui_active=0;
+/* On genuine EGA, let the BIOS initialise the active 8x14 character set
+   from its own ROM first.  Then overlay only Launch!'s private glyph slots.
+   Do not copy/reload an entire font via the INT 10h/1130 ROM pointer: that
+   proved unreliable on both 86Box EGA and DOSBox EGA. */
+#ifndef __GNUC__
+#pragma code_seg("EGA_FONT_TEXT")
+#endif
+static void ega14_rom_reset(void)
+{
+  union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1111;r.h.bl=0;
+  int86(0x10,&r,&r);
+}
+static void ega14_install_launchui(void)
+{
+  int i;
+  ega14_rom_reset();
+  for(i=0;i<(int)sizeof(launchui_codes);i++)
+    ega14_glyph_write(launchui_codes[i],launch_glyph14[i]);
+  for(i=0;i<6;i++)
+    ega14_glyph_write(launchui_browser_codes[i],launch_glyph14[49+i]);
+  ega14_glyph_write(255,launch_glyph14[55]);
+}
+static void ega14_restore_rom(void){ega14_rom_reset();}
+#ifndef __GNUC__
+#pragma code_seg()
+#endif
 /* Modify the active EGA/VGA character-generator RAM in place.  On genuine
    EGA, loading one character through INT 10h/AH=11 can switch to a user font
    block whose untouched slots are undefined; that is what allowed custom
    icons to appear in ordinary CP437 borders. */
 static void launchui_install(void)
-{FONT_REGS old;unsigned char far *font;int i,j,ega=launchui_ega14();if(launchui_active)return;font_plane_open(&old);for(i=0;i<(int)sizeof(launchui_codes);i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_codes[i]*32);for(j=0;j<32;j++){launchui_old[i][j]=font[j];font[j]=ega?launch_glyph14[i][j]:launch_glyph16[i][j];}}for(i=0;i<6;i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_browser_codes[i]*32);for(j=0;j<32;j++){launchui_browser_old[i][j]=font[j];font[j]=ega?launch_glyph14[49+i][j]:launch_glyph16[49+i][j];}}font=(unsigned char far *)MAKE_FP(0xA000,255*32);for(j=0;j<32;j++){launchui_divider_old[j]=font[j];font[j]=ega?launch_glyph14[55][j]:launch_glyph16[55][j];}font_plane_close(&old);launchui_active=1;}
+{FONT_REGS old;unsigned char far *font;int i,j,ega=launchui_ega14();if(launchui_active)return;if(ega){ega14_install_launchui();launchui_active=1;return;}font_plane_open(&old);for(i=0;i<(int)sizeof(launchui_codes);i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_codes[i]*32);for(j=0;j<32;j++){launchui_old[i][j]=font[j];font[j]=ega?launch_glyph14[i][j]:launch_glyph16[i][j];}}for(i=0;i<6;i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_browser_codes[i]*32);for(j=0;j<32;j++){launchui_browser_old[i][j]=font[j];font[j]=ega?launch_glyph14[49+i][j]:launch_glyph16[49+i][j];}}font=(unsigned char far *)MAKE_FP(0xA000,255*32);for(j=0;j<32;j++){launchui_divider_old[j]=font[j];font[j]=ega?launch_glyph14[55][j]:launch_glyph16[55][j];}font_plane_close(&old);launchui_active=1;}
 static void launchui_rebase(void)
-{FONT_REGS old;unsigned char far *font;int i,j,ega=launchui_ega14();if(!launchui_active)return;font_plane_open(&old);for(i=0;i<(int)sizeof(launchui_codes);i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_codes[i]*32);for(j=0;j<32;j++){launchui_old[i][j]=font[j];font[j]=ega?launch_glyph14[i][j]:launch_glyph16[i][j];}}for(i=0;i<6;i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_browser_codes[i]*32);for(j=0;j<32;j++){launchui_browser_old[i][j]=font[j];font[j]=ega?launch_glyph14[49+i][j]:launch_glyph16[49+i][j];}}font=(unsigned char far *)MAKE_FP(0xA000,255*32);for(j=0;j<32;j++)font[j]=ega?launch_glyph14[55][j]:launch_glyph16[55][j];font_plane_close(&old);}
+{FONT_REGS old;unsigned char far *font;int i,j,ega=launchui_ega14();if(!launchui_active)return;if(ega){ega14_install_launchui();return;}font_plane_open(&old);for(i=0;i<(int)sizeof(launchui_codes);i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_codes[i]*32);for(j=0;j<32;j++){launchui_old[i][j]=font[j];font[j]=ega?launch_glyph14[i][j]:launch_glyph16[i][j];}}for(i=0;i<6;i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_browser_codes[i]*32);for(j=0;j<32;j++){launchui_browser_old[i][j]=font[j];font[j]=ega?launch_glyph14[49+i][j]:launch_glyph16[49+i][j];}}font=(unsigned char far *)MAKE_FP(0xA000,255*32);for(j=0;j<32;j++)font[j]=ega?launch_glyph14[55][j]:launch_glyph16[55][j];font_plane_close(&old);}
 static void launchui_restore(void)
-{FONT_REGS old;unsigned char far *font;int i,j;if(!launchui_active)return;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,255*32);for(j=0;j<32;j++)font[j]=launchui_divider_old[j];for(i=0;i<6;i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_browser_codes[i]*32);for(j=0;j<32;j++)font[j]=launchui_browser_old[i][j];}for(i=0;i<(int)sizeof(launchui_codes);i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_codes[i]*32);for(j=0;j<32;j++)font[j]=launchui_old[i][j];}font_plane_close(&old);launchui_active=0;}
+{FONT_REGS old;unsigned char far *font;int i,j;if(!launchui_active)return;if(launchui_ega14()){ega14_restore_rom();launchui_active=0;return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,255*32);for(j=0;j<32;j++)font[j]=launchui_divider_old[j];for(i=0;i<6;i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_browser_codes[i]*32);for(j=0;j<32;j++)font[j]=launchui_browser_old[i][j];}for(i=0;i<(int)sizeof(launchui_codes);i++){font=(unsigned char far *)MAKE_FP(0xA000,launchui_codes[i]*32);for(j=0;j<32;j++)font[j]=launchui_old[i][j];}font_plane_close(&old);launchui_active=0;}
 
 static void mouse_glyph_write(const unsigned char *glyph)
 {
   FONT_REGS old;unsigned char far *font;int i;
+  if(launchui_ega14()){ega14_glyph_write(127,glyph);return;}
   font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);
 }
 
 static void mouse_target_write(const unsigned char *glyph)
 {
   FONT_REGS old;unsigned char far *font;int i;
+  if(launchui_ega14()){ega14_glyph_write(8,glyph);return;}
   font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,8*32);
   for(i=0;i<32;i++)font[i]=glyph[i];
   font_plane_close(&old);
@@ -1405,8 +1443,8 @@ static void mouse_pointer_install(void)
     int86(0x33,&r,&r);return;
   }
   if(!mouse_glyph_saved){
-    font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)mouse_old_glyph[i]=font[i];font_plane_close(&old);
-    mouse_glyph_saved=1;
+    if(launchui_ega14())mouse_glyph_saved=2;
+    else{font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)mouse_old_glyph[i]=font[i];font_plane_close(&old);mouse_glyph_saved=1;}
   }
   memset(arrow,0,sizeof(arrow));height_ptr=(unsigned char far *)MAKE_FP(0x40,0x85);height=*height_ptr;if(height<8||height>32)height=16;
   for(i=0;i<height;i++){source=i*16/height;if(source>15)source=15;arrow[i]=arrow16[source];}
@@ -1417,7 +1455,7 @@ static void mouse_pointer_install(void)
 static void mouse_pointer_restore(void)
 {
   union REGS r;if(!mouse_glyph_saved&&!mouse_target_saved)return;
-  if(mouse_glyph_saved)mouse_glyph_write(mouse_old_glyph);
+  if(mouse_glyph_saved==1)mouse_glyph_write(mouse_old_glyph);
   if(mouse_target_saved)mouse_target_write(mouse_old_target);
   memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;
   r.x.cx=0xFFFF;r.x.dx=0x7700;int86(0x33,&r,&r);
@@ -3428,7 +3466,7 @@ static void config_about_box(void)
   bx=x+3;subdialog_box(x,y,w,h,"About Launch!");
   textout(x+3,y+2,"(C)Copyright 2026 Ben Renegar",C_INPUT_LABEL,34);
   textout(x+3,y+3,"www.benrenegar.com",C_INPUT_LABEL,34);
-  textout(x+3,y+6,"Version 3.6 - 2026-09-20",C_INPUT_LABEL,34);
+  textout(x+3,y+6,"Version 3.61 - 2026-09-20",C_INPUT_LABEL,34);
   for(;;){
     draw_button(bx,y+h-3,"  OK  ",6,focus==0);
     wait_input(&k,&mx,&my,&mb);

@@ -447,10 +447,10 @@ int main(int argc,char **argv)
       else if(focus==5){int g;g=boxes_goto_dialog();if(g>=0){current_level=g;save_level();load_level(current_level);}focus=0;full=1;}
       else if(focus==6)key=27;
       if(key!=27)key=0;
-    }else if(key==256+72&&focus==0){dirty=move_player(0,-1);key=0;}
-    else if(key==256+80&&focus==0){dirty=move_player(0,1);key=0;}
-    else if(key==256+75&&focus==0){dirty=move_player(-1,0);key=0;}
-    else if(key==256+77&&focus==0){dirty=move_player(1,0);key=0;}
+    }else if(key==256+72){focus=0;dirty=move_player(0,-1);key=0;}
+    else if(key==256+80){focus=0;dirty=move_player(0,1);key=0;}
+    else if(key==256+75){focus=0;dirty=move_player(-1,0);key=0;}
+    else if(key==256+77){focus=0;dirty=move_player(1,0);key=0;}
     else if(key=='r'||key=='R'){focus=0;load_level(current_level);full=1;key=0;}
     else if(key==256+73){focus=0;change_level(-1);full=1;key=0;}
     else if(key==256+81){focus=0;change_level(1);full=1;key=0;}

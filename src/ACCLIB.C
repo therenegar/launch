@@ -47,51 +47,76 @@ static void indexed_write(unsigned port,unsigned char index,unsigned char value)
 static void font_plane_open(FONT_REGS *old){old->seq2=indexed_read(0x3C4,2);old->seq4=indexed_read(0x3C4,4);old->gc4=indexed_read(0x3CE,4);old->gc5=indexed_read(0x3CE,5);old->gc6=indexed_read(0x3CE,6);indexed_write(0x3C4,2,4);indexed_write(0x3C4,4,7);indexed_write(0x3CE,4,2);indexed_write(0x3CE,5,0);indexed_write(0x3CE,6,0);}
 static void font_plane_close(const FONT_REGS *old){indexed_write(0x3C4,2,old->seq2);indexed_write(0x3C4,4,old->seq4);indexed_write(0x3CE,4,old->gc4);indexed_write(0x3CE,5,old->gc5);indexed_write(0x3CE,6,old->gc6);}
 int acc_font_height(void){unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);int v=*h;return(v>=8&&v<=32)?v:16;}
-static void ega14_glyph_write(int code,const unsigned char far *glyph)
+
+/* VGA keeps the direct character-RAM path.  On genuine EGA, initialise the
+   standard 8x14 set with the BIOS ROM-font service, then use BIOS single-glyph
+   writes only.  ROM glyph reads are used solely to save the handful of slots
+   an accessory temporarily replaces; the full font is never copied/reloaded. */
+static int acc_video_is_vga(void)
 {
- unsigned fseg=FP_SEG(glyph),foff=FP_OFF(glyph);
- _asm {
-  push bp
-  push es
-  mov ax,1100h
-  mov bh,14
-  mov bl,0
-  mov cx,1
-  mov dx,code
-  mov ax,fseg
-  mov es,ax
-  mov bp,foff
-  mov ax,1100h
-  int 10h
-  pop es
-  pop bp
- }
+  union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);
+  return r.h.al==0x1A;
+}
+static void ega14_rom_reset(void)
+{
+  union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1111;r.h.bl=0;
+  int86(0x10,&r,&r);
+}
+static void ega14_bios_write_one(int code,const unsigned char far *glyph)
+{
+  unsigned fseg=FP_SEG(glyph),foff=FP_OFF(glyph);
+  _asm {
+    push bp
+    push es
+    mov ax,fseg
+    mov es,ax
+    mov bp,foff
+    mov ax,1100h
+    mov bh,14
+    mov bl,0
+    mov cx,1
+    mov dx,code
+    int 10h
+    pop es
+    pop bp
+  }
 }
 static void ega14_rom_read(int code,unsigned char *glyph)
 {
- unsigned fseg,foff;unsigned char far *p;int i;
- _asm {
-  push bp
-  push es
-  mov ax,1130h
-  mov bh,2
-  int 10h
-  mov ax,es
-  mov fseg,ax
-  mov foff,bp
-  pop es
-  pop bp
- }
- p=(unsigned char far *)MAKE_FP(fseg,foff);p+=(unsigned)code*14U;for(i=0;i<14;i++)glyph[i]=p[i];for(;i<32;i++)glyph[i]=0;
+  unsigned fseg,foff;unsigned char far *rom;int i;
+  _asm {
+    push bp
+    push es
+    mov ax,1130h
+    mov bh,2
+    int 10h
+    mov ax,es
+    mov fseg,ax
+    mov foff,bp
+    pop es
+    pop bp
+  }
+  rom=(unsigned char far *)MAKE_FP(fseg,foff);
+  rom+=(unsigned)code*14U;
+  for(i=0;i<14;i++)glyph[i]=rom[i];
+  for(;i<32;i++)glyph[i]=0;
 }
-/* EGA and VGA both expose character-generator RAM in plane 2 as 32-byte
-   slots.  Writing individual EGA glyphs through INT 10h/AH=11 can select a
-   user-font block before the untouched CP437 characters have been populated,
-   which corrupts ordinary box-drawing characters.  Modify the active font
-   plane in place instead, preserving every glyph we do not explicitly own. */
-static void mouse_glyph_write(const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
-void acc_glyph_read(int code,unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)glyph[i]=font[i];font_plane_close(&old);}
-void acc_glyph_write(int code,const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
+void acc_glyph_write(int code,const unsigned char *glyph);
+static void mouse_glyph_write(const unsigned char *glyph){acc_glyph_write(127,glyph);}
+void acc_glyph_read(int code,unsigned char *glyph)
+{
+  FONT_REGS old;unsigned char far *font;int i;
+  if(acc_font_height()==14&&!acc_video_is_vga()){ega14_rom_read(code,glyph);return;}
+  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);
+  for(i=0;i<32;i++)glyph[i]=font[i];font_plane_close(&old);
+}
+void acc_glyph_write(int code,const unsigned char *glyph)
+{
+  FONT_REGS old;unsigned char far *font;int i;
+  if(acc_font_height()==14&&!acc_video_is_vga()){ega14_bios_write_one(code,glyph);return;}
+  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);
+  for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);
+}
 void acc_glyph_library(int logical_id,int code){
 #ifndef ACCLIB_MIN_GLYPHS
  if(logical_id<1||logical_id>LAUNCH_GLYPH_COUNT)return;acc_glyph_write(code,acc_font_height()==14?launch_glyph14[logical_id-1]:launch_glyph16[logical_id-1]);
@@ -195,9 +220,23 @@ static int launchui_installed=0;
 static int acc_screen_restored=0;
 static void launchui_font(int install)
 {
-  int i;if(saved_mode==7)return;
-  if(install){if(launchui_installed)return;for(i=0;i<(int)sizeof(launchui_codes);i++){acc_glyph_read(launchui_codes[i],launchui_old[i]);acc_glyph_write(launchui_codes[i],launchui_ega14()?launchui_glyphs14[i]:launchui_glyphs[i]);}acc_glyph_read(255,divider_old);acc_glyph_library(56,255);launchui_installed=1;}
-  else if(launchui_installed){acc_glyph_write(255,divider_old);for(i=0;i<(int)sizeof(launchui_codes);i++)acc_glyph_write(launchui_codes[i],launchui_old[i]);launchui_installed=0;}
+  int i,ega;if(saved_mode==7)return;ega=launchui_ega14()&&!acc_video_is_vga();
+  if(install){
+    if(launchui_installed)return;
+    if(ega)ega14_rom_reset();
+    for(i=0;i<(int)sizeof(launchui_codes);i++){
+      acc_glyph_read(launchui_codes[i],launchui_old[i]);
+      acc_glyph_write(launchui_codes[i],ega?launchui_glyphs14[i]:launchui_glyphs[i]);
+    }
+    acc_glyph_read(255,divider_old);acc_glyph_library(56,255);launchui_installed=1;
+  } else if(launchui_installed){
+    if(ega)ega14_rom_reset();
+    else{
+      acc_glyph_write(255,divider_old);
+      for(i=0;i<(int)sizeof(launchui_codes);i++)acc_glyph_write(launchui_codes[i],launchui_old[i]);
+    }
+    launchui_installed=0;
+  }
 }
 static void mouse_pointer_restore(void){union REGS r;if(!mouse_glyph_saved&&!mouse_target_saved)return;if(mouse_glyph_saved)mouse_glyph_write(mouse_old_glyph);if(mouse_target_saved)acc_glyph_write(8,mouse_old_target);memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;r.x.cx=0xFFFF;r.x.dx=0x7700;int86(0x33,&r,&r);mouse_glyph_saved=0;mouse_target_saved=0;}
 static void mouse_pointer_install(void)
@@ -206,7 +245,7 @@ static void mouse_pointer_install(void)
   static const unsigned char target16[32]={0,0,0,0x18,0x18,0x18,0x3C,0xE7,0xE7,0x3C,0x18,0x18,0x18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   FONT_REGS old;unsigned char far *font,height_far;unsigned char arrow[32];union REGS r;int i,height,source;
   if(acc_appearance.mouse_cursor){memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;if(acc_appearance.mouse_cursor==1){r.x.cx=0xFFFF;r.x.dx=0x7700;}else{r.x.cx=0xF000;r.x.dx=0x0FB8;}int86(0x33,&r,&r);return;}
-  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)mouse_old_glyph[i]=font[i];font_plane_close(&old);mouse_glyph_saved=1;
+  acc_glyph_read(127,mouse_old_glyph);mouse_glyph_saved=1;
   memset(arrow,0,sizeof(arrow));height_far=*(unsigned char far *)MAKE_FP(0x40,0x85);height=height_far;if(height<8||height>32)height=16;
   for(i=0;i<height;i++){source=i*16/height;if(source>15)source=15;arrow[i]=arrow16[source];}mouse_glyph_write(arrow);
   memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;r.x.cx=0xF000;r.x.dx=0x0F7F;int86(0x33,&r,&r);

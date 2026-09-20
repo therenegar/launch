@@ -9,7 +9,7 @@
 #include <process.h>
 
 #define PATH_SIZE 128
-#define DAT_MAGIC "L30DAT1\032"
+#define DAT_MAGIC "L361Z1\032"
 
 static unsigned char copy_buffer[4096];
 static void (interrupt far *old_int09)();
@@ -117,20 +117,48 @@ static unsigned read_u16(FILE *f)
 static unsigned long read_u32(FILE *f)
 {unsigned long a=(unsigned char)fgetc(f),b=(unsigned char)fgetc(f),c=(unsigned char)fgetc(f),d=(unsigned char)fgetc(f);return a|(b<<8)|(c<<16)|(d<<24);}
 
+static int decompress_file(FILE *in,FILE *out,unsigned long csize,unsigned long usize)
+{
+  unsigned long produced=0,pos=0;unsigned flags,bit,b1,b2,dist,len,j;int c;
+  memset(copy_buffer,0,sizeof(copy_buffer));
+  while(produced<usize){
+    if(!csize)return 0;c=fgetc(in);if(c==EOF)return 0;flags=(unsigned char)c;csize--;
+    for(bit=0;bit<8&&produced<usize;bit++){
+      if(flags&(1U<<bit)){
+        if(!csize)return 0;c=fgetc(in);if(c==EOF)return 0;csize--;
+        copy_buffer[(unsigned)(pos&4095UL)]=(unsigned char)c;
+        if(fputc(c,out)==EOF)return 0;pos++;produced++;
+      }else{
+        if(csize<2)return 0;b1=(unsigned char)fgetc(in);b2=(unsigned char)fgetc(in);csize-=2;
+        dist=b1|((b2>>4)<<8);len=(b2&15)+3;
+        if(!dist||dist>4095U||(unsigned long)dist>produced)return 0;
+        for(j=0;j<len&&produced<usize;j++){
+          c=copy_buffer[(unsigned)((pos-(unsigned long)dist)&4095UL)];
+          copy_buffer[(unsigned)(pos&4095UL)]=(unsigned char)c;
+          if(fputc(c,out)==EOF)return 0;pos++;produced++;
+        }
+      }
+    }
+  }
+  return produced==usize&&csize==0&&!ferror(in)&&!ferror(out);
+}
+
 static int extract_file(const char *archive,const char *wanted,const char *destination)
 {
-  FILE *in,*out;char magic[8],name[13];unsigned count,i;unsigned long offset,size;size_t n,want;int ok=1;
+  FILE *in,*out;char magic[8],name[13];unsigned count,i;
+  unsigned long offset,csize,usize;int ok;
   in=fopen(archive,"rb");if(!in)return 0;
   if(fread(magic,1,8,in)!=8||memcmp(magic,DAT_MAGIC,8)){fclose(in);return 0;}
   count=read_u16(in);
   for(i=0;i<count;i++){
     if(fread(name,1,13,in)!=13){fclose(in);return 0;}name[12]=0;
-    offset=read_u32(in);size=read_u32(in);
+    offset=read_u32(in);csize=read_u32(in);usize=read_u32(in);
     if(!stricmp(name,wanted)){
       if(fseek(in,(long)offset,SEEK_SET)){fclose(in);return 0;}
       out=fopen(destination,"wb");if(!out){fclose(in);return 0;}
-      while(size){want=size>sizeof(copy_buffer)?sizeof(copy_buffer):(size_t)size;n=fread(copy_buffer,1,want,in);if(n!=want||fwrite(copy_buffer,1,n,out)!=n){ok=0;break;}size-=n;}
+      ok=decompress_file(in,out,csize,usize);
       if(fclose(out)!=0)ok=0;
+      if(!ok)remove(destination);
       fclose(in);return ok;
     }
   }
@@ -386,6 +414,29 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
   return 1;
 }
 
+static int extract_progress_done=0,extract_progress_total=1;
+
+static void draw_extract_progress(void)
+{
+  char line[64];int i,percent,filled,pos=0;
+  percent=(extract_progress_done*100)/extract_progress_total;
+  if(percent>100)percent=100;
+  filled=(extract_progress_done*30)/extract_progress_total;
+  line[pos++]='\r';
+  sprintf(line+pos,"%3d%% [",percent);pos+=(int)strlen(line+pos);
+  for(i=0;i<30;i++)line[pos++]=(char)(i<filled?219:176);
+  line[pos++]=']';line[pos]=0;
+  colour_text(line,11);
+  fflush(stdout);
+  if(extract_progress_done>=extract_progress_total)putchar('\n');
+}
+
+static void advance_extract_progress(void)
+{
+  if(extract_progress_done<extract_progress_total)extract_progress_done++;
+  draw_extract_progress();
+}
+
 static int copy_accessories(const char *archive,const char *install)
 {
   static const char *files[]={"!CAL.EXE","CAL.ICS","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE",
@@ -396,6 +447,7 @@ static int copy_accessories(const char *archive,const char *install)
   for(i=0;files[i];i++){
     sprintf(destination,"%s\\%s",install,files[i]);
     if(!extract_file(archive,files[i],destination)){error_icon(0);printf("Cannot extract %s\n",files[i]);return 0;}
+    advance_extract_progress();
   }
   sprintf(destination,"%s\\DATA",install);if(!make_directories(destination))return 0;
   sprintf(destination,"%s\\EXPORT",install);if(!make_directories(destination))return 0;
@@ -432,20 +484,21 @@ int main(int argc,char **argv)
   else{puts("");use_dosbox=ask_yes("Are you installing in DOSBox?",0,0);}
   puts("");accessories=ask_yes("Install games and accessories?",1,0);
   puts("\nExtracting files...");fflush(stdout);
+  extract_progress_done=0;extract_progress_total=accessories?26:6;draw_extract_progress();
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
   if(!exists(archive)){error_icon(0);printf("Cannot find %s\n",archive);return 1;}
   sprintf(launch_exe,"%s\\!.EXE",install);strcpy(destination,launch_exe);
-  if(!extract_file(archive,"!.EXE",destination)){error_icon(0);puts("Cannot extract !.EXE");return 1;}
+  if(!extract_file(archive,"!.EXE",destination)){error_icon(0);puts("Cannot extract !.EXE");return 1;}advance_extract_progress();
   sprintf(destination,"%s\\SHORTCUT.COM",install);
-  if(!extract_file(archive,use_dosbox?"SHORTCDB.COM":"SHORTCUT.COM",destination)){error_icon(0);puts("Cannot extract SHORTCUT.COM");return 1;}
+  if(!extract_file(archive,use_dosbox?"SHORTCDB.COM":"SHORTCUT.COM",destination)){error_icon(0);puts("Cannot extract SHORTCUT.COM");return 1;}advance_extract_progress();
   sprintf(destination,"%s\\AUTOGEN.EXE",install);
-  if(!extract_file(archive,"AUTOGEN.EXE",destination)){error_icon(0);puts("Cannot extract AUTOGEN.EXE");return 1;}
+  if(!extract_file(archive,"AUTOGEN.EXE",destination)){error_icon(0);puts("Cannot extract AUTOGEN.EXE");return 1;}advance_extract_progress();
   sprintf(destination,"%s\\AUTOGEN.DAT",install);
-  if(!extract_file(archive,"AUTOGEN.DAT",destination)){error_icon(0);puts("Cannot extract AUTOGEN.DAT");return 1;}
+  if(!extract_file(archive,"AUTOGEN.DAT",destination)){error_icon(0);puts("Cannot extract AUTOGEN.DAT");return 1;}advance_extract_progress();
   sprintf(destination,"%s\\PWROFF.BMP",install);
-  if(!extract_file(archive,"PWROFF.BMP",destination)){error_icon(0);puts("Cannot extract PWROFF.BMP");return 1;}
+  if(!extract_file(archive,"PWROFF.BMP",destination)){error_icon(0);puts("Cannot extract PWROFF.BMP");return 1;}advance_extract_progress();
   sprintf(destination,"%s\\FONT.DAT",install);
-  if(!extract_file(archive,"FONT.DAT",destination)){error_icon(0);puts("Cannot extract FONT.DAT");return 1;}
+  if(!extract_file(archive,"FONT.DAT",destination)){error_icon(0);puts("Cannot extract FONT.DAT");return 1;}advance_extract_progress();
   if(accessories&&!copy_accessories(archive,install))return 1;
   menu_result=spawnl(P_WAIT,launch_exe,"!.EXE","/INITMENU",NULL);
   if(menu_result!=0){error_icon(0);puts("Files were copied, but the standard Launch! menu could not be created or updated.");return 1;}

@@ -48,6 +48,8 @@ void acc_shadow(int x,int y,int width,int height);
 void acc_glyph_read(int code,unsigned char *glyph);
 void acc_glyph_write(int code,const unsigned char *glyph);
 void acc_glyph_library(int logical_id,int code);
+void acc_game_glyphs_suspend(void);
+void acc_game_glyphs_resume(void);
 int acc_font_height(void);
 int acc_glyph_is_custom(int code);
 int acc_key(void);

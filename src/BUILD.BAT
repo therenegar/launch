@@ -3,7 +3,7 @@ REM Launch! build script - Microsoft C/C++ 7.0
 REM BUILD with no parameter builds everything.
 REM BUILD ! builds only the core Launch! menu and appends its authentication trailer.
 REM BUILD !SNAKE (etc.) builds only that accessory.
-REM Release 3.6 generated *36TMP.C sources are supplied with this tree.
+REM Release 3.61 generated *36TMP.C sources are supplied with this tree.
 REM GEN36.C is a maintainer regeneration tool and is not run by BUILD.
 IF "%1"=="" GOTO ALL
 IF "%1"=="!" GOTO CORE

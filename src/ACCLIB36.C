@@ -1,4 +1,4 @@
-/* Launch! 3.6 accessory runtime extension.
+/* Launch! 3.61 accessory runtime extension.
    This translation unit wraps the 3.5 ACCLIB implementation to add the
    Release 3.6 tooltip component without duplicating the shared UI runtime. */
 #define acc_begin acc36_begin_base
@@ -119,6 +119,35 @@ static int tooltip_app_is(const char *name)
 {
   return strstr(tooltip_app,name)!=0;
 }
+
+/* Release 3.61 game-number artwork.  Games temporarily replace ASCII 0..9
+   plus numeric '/', ':' and '.' with the canonical Launch! glyphs.  Existing
+   formatting, spacing and attributes are unchanged; only glyph shapes change. */
+static const unsigned char game_glyph_code[13]={'0','1','2','3','4','5','6','7','8','9','/',':','.'};
+static const unsigned char game_glyph_logical[13]={64,65,66,67,68,69,70,71,72,73,57,58,74};
+static unsigned char game_digit_old[13][32];
+static int game_digits_installed=0;
+static int game_digit_app(void)
+{
+  return tooltip_app_is("!BOXES")||tooltip_app_is("!SOL")||
+         tooltip_app_is("!FCELL")||tooltip_app_is("!POP")||
+         tooltip_app_is("!SNAKE")||tooltip_app_is("!PLUMB")||
+         tooltip_app_is("!WORDZ")||tooltip_app_is("!TYPO");
+}
+static void game_digits_install(void)
+{
+  int i;if(game_digits_installed||!game_digit_app())return;
+  for(i=0;i<13;i++){acc_glyph_read(game_glyph_code[i],game_digit_old[i]);acc_glyph_library(game_glyph_logical[i],game_glyph_code[i]);}
+  game_digits_installed=1;
+}
+static void game_digits_restore(void)
+{
+  int i;if(!game_digits_installed)return;
+  for(i=0;i<13;i++)acc_glyph_write(game_glyph_code[i],game_digit_old[i]);
+  game_digits_installed=0;
+}
+void acc_game_glyphs_suspend(void){game_digits_restore();}
+void acc_game_glyphs_resume(void){game_digits_install();}
 
 static int tooltip_button_label(const char *text,char *out)
 {
@@ -328,7 +357,7 @@ static void tooltip_uninstall(void)
 int acc_help(int argc,char **argv,const char *name,const char *description)
 {
   if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){
-    printf("%s - Launch! 3.6 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;
+    printf("%s - Launch! 3.61 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;
   }
   return 0;
 }
@@ -345,7 +374,7 @@ void acc_subbox(int x,int y,int w,int h,const char *title,int toolbar)
 int acc_begin(const char *argv0,const char *title,int graphics)
 {
   int ok;const char *p=argv0,*q;if((q=strrchr(argv0,'\\'))!=0)p=q+1;if((q=strrchr(p,'/'))!=0)p=q+1;strncpy(tooltip_app,p,sizeof(tooltip_app)-1);tooltip_app[sizeof(tooltip_app)-1]=0;strupr(tooltip_app);
-  ok=acc36_begin_base(argv0,title,graphics);if(ok){glyph36_refresh();tooltip_load_setting();tooltip_install();tooltip_active=0;tooltip_region_count=0;acc_hover_button=-1;acc_hover_valid=0;acc_dialog_x=acc_dialog_y=-1;acc_dialog_w=acc_dialog_h=0;note_hover_region=-1;acc_focus_suppressed=0;tooltip_dismissed=0;}return ok;
+  ok=acc36_begin_base(argv0,title,graphics);if(ok){glyph36_refresh();game_digits_install();tooltip_load_setting();tooltip_install();tooltip_active=0;tooltip_region_count=0;acc_hover_button=-1;acc_hover_valid=0;acc_dialog_x=acc_dialog_y=-1;acc_dialog_w=acc_dialog_h=0;note_hover_region=-1;acc_focus_suppressed=0;tooltip_dismissed=0;}return ok;
 }
 
 void acc_end_screen(void)
@@ -367,6 +396,7 @@ void acc_end(void)
 {
   tooltip_restore();tooltip_active=0;acc_hover_button=-1;acc_hover_valid=0;
   tooltip_uninstall();
+  game_digits_restore();
   acc36_end_base();
 }
 
