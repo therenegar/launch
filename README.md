@@ -130,15 +130,15 @@ As an example, this can allow you to browse and open images with a launcher for 
 
 There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
 
-<img width="1440" height="1200" alt="openfile" src="https://github.com/user-attachments/assets/9d15bb77-744a-46f2-84be-efed62b84413" />
+<img width="720" height="600" alt="Open File" src="https://github.com/user-attachments/assets/9d15bb77-744a-46f2-84be-efed62b84413" />
 
 An association consists of one or more file extensions, and a selected launcher from your menu.
 
-<img width="1440" height="1200" alt="openfile-assoc" src="https://github.com/user-attachments/assets/1914df90-1acf-4420-bf77-33c526864b98" />
+<img width="720" height="600" alt="Create Association" src="https://github.com/user-attachments/assets/1914df90-1acf-4420-bf77-33c526864b98" />
 
 You can also open files with further parameters if required.
 
-<img width="1440" height="1200" alt="openfile-params" src="https://github.com/user-attachments/assets/ae87fce6-1ce3-4c2d-8e77-d2f4c6b8d090" />
+<img width="720" height="600" alt="Open file with parameters" src="https://github.com/user-attachments/assets/ae87fce6-1ce3-4c2d-8e77-d2f4c6b8d090" />
 
 The `Open File` dialog can also be shown on its own, without the menu, by running `! /OPEN`.
 
