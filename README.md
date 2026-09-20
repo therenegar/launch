@@ -576,7 +576,7 @@ Tokens are separated by `+`. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, F1-F12, the W
 The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.<br/>
 Use `SHORTCUT /?` for more information.
 
-To maintain system integrity and security, 'SHORTCUT.COM' validates an authentication key in '!.EXE' to ensure the shortcut key will only ever execute (a genuine) Launch! menu.
+To maintain system integrity and security, `SHORTCUT.COM` validates an authentication key in `!.EXE` to ensure the shortcut key will only ever execute (a genuine) Launch! menu.
 
 ## AUTOGEN.EXE - an automatic menu generator
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
@@ -596,7 +596,7 @@ You can use the `/LOOKIN=C,D,E` parameter to change the drives the tool will sea
 Use `AUTOGEN /?` for more information.
 
 
-## File safetyUpdate README.md
+## File safety
 Launch! validates `LAUNCH.MNU` before opening the menu. A valid file must contain the [Launcher] root section and every non-comment line must be a valid section, FOLDER, or ITEM record. Empty, truncated, malformed, or oversized records are rejected.
 
 Before every accepted Add, Edit, Delete, Move, or Sort operation, the existing valid `LAUNCH.MNU` is copied to `LAUNCH.BAK`. The new menu is first written fully to `LAUNCH.$$$` and is installed only after writing succeeds. `LAUNCH.BK$` is used briefly while rotating the backup.
@@ -605,4 +605,5 @@ If `LAUNCH.MNU` is missing or invalid at startup and `LAUNCH.BAK` is valid, Laun
 
 ----
 
-<img width="720" height="600" alt="About" src="https://github.com/user-attachments/assets/a4005bdf-61d0-44e7-8407-65f14c780d53" />
+<img width="720" height="600" alt="About" src="https://github.com/user-attachments/assets/28b12e02-a814-4f4d-9e41-43cfeafebb66" />
+
