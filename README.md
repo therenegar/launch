@@ -52,6 +52,8 @@ Extract the release zip file or mount the floppy image:
 - Your drive can be scanned and an initial menu built.
 - Simply reboot after install and you're ready to go.
 
+<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/d47f2766-413b-4c10-9609-74e7d36d1e02" />
+
 > DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
 
 > **If you already have Launch! installed**, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
@@ -132,15 +134,15 @@ As an example, this can allow you to browse and open images with a launcher for 
 
 There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
 
-<img width="720" height="600" alt="Open File" src="https://github.com/user-attachments/assets/9d15bb77-744a-46f2-84be-efed62b84413" />
+<img width="360" height="300" alt="Open File" src="https://github.com/user-attachments/assets/9d15bb77-744a-46f2-84be-efed62b84413" />
 
 An association consists of one or more file extensions, and a selected launcher from your menu.
 
-<img width="720" height="600" alt="Create Association" src="https://github.com/user-attachments/assets/1914df90-1acf-4420-bf77-33c526864b98" />
+<img width="360" height="300" alt="Create Association" src="https://github.com/user-attachments/assets/1914df90-1acf-4420-bf77-33c526864b98" />
 
 You can also open files with further parameters if required.
 
-<img width="720" height="600" alt="Open file with parameters" src="https://github.com/user-attachments/assets/ae87fce6-1ce3-4c2d-8e77-d2f4c6b8d090" />
+<img width="360" height="300" alt="Open file with parameters" src="https://github.com/user-attachments/assets/ae87fce6-1ce3-4c2d-8e77-d2f4c6b8d090" />
 
 The `Open File` dialog can also be shown on its own, without the menu, by running `! /OPEN`.
 
@@ -153,11 +155,11 @@ The drive bar shows the available disk drives, and allows you to switch between 
 
 The path bar shows a preview of the command line that will be executed when `Run` is chosen.
 
-<img width="720" height="600" alt="Explore and Run" src="https://github.com/user-attachments/assets/c7822dad-0392-4cb1-b70d-8dfbb6f6179c" />
+<img width="360" height="300" alt="Explore and Run" src="https://github.com/user-attachments/assets/c7822dad-0392-4cb1-b70d-8dfbb6f6179c" />
 
 Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
 
-<img width="720" height="600" alt="Run with parameters" src="https://github.com/user-attachments/assets/f230b18c-757c-43e7-b90b-8d605fff35a6" />
+<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/f230b18c-757c-43e7-b90b-8d605fff35a6" />
 
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)<br/>
 
@@ -169,7 +171,7 @@ The `Shutdown...` menu item is also fixed at the bottom of the menu, and when se
 
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="720" height="600" alt="Shutdown..." src="https://github.com/user-attachments/assets/05b1c734-8ada-4b28-a1aa-9113cf5bc435" />
+<img width="360" height="300" alt="Shutdown..." src="https://github.com/user-attachments/assets/05b1c734-8ada-4b28-a1aa-9113cf5bc435" />
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`). <BR/>
 The dialog can also be shown on its own, without the menu, by running `! /BYE`.
@@ -193,13 +195,13 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="720" height="600" alt="Configuration - Menu" src="https://github.com/user-attachments/assets/470f9598-7d75-40b9-b838-20f4a23fc91c" />
+<img width="360" height="300" alt="Configuration - Menu" src="https://github.com/user-attachments/assets/470f9598-7d75-40b9-b838-20f4a23fc91c" />
 
 Contextual help (tooltips) can be turned off - they will appear throughout Launch! with keyboard focus or mouse-over.
 
 The SysBar (off by default) shows an information bar, top-right of screen every time the menu is opened with some handy system status information.
 
-<img width="720" height="600" alt="SysBar" src="https://github.com/user-attachments/assets/c5d096b3-0b7c-40aa-9136-73618ac4c5e5" />
+<img width="360" height="300" alt="SysBar" src="https://github.com/user-attachments/assets/c5d096b3-0b7c-40aa-9136-73618ac4c5e5" />
 
 The SysBar shows (left to right): 
 - Largest executable program size (free lower memory)
@@ -219,9 +221,9 @@ There are 9 pre-defined color schemes to choose from, or you can change the colo
 
 If using a monochrome display, use the 'Mono' scheme for best results.
 
-<img width="720" height="600" alt="Config: Colors" src="https://github.com/user-attachments/assets/2b3e7494-8486-418c-a691-247c5618093c" />
+<img width="360" height="300" alt="Config: Colors" src="https://github.com/user-attachments/assets/2b3e7494-8486-418c-a691-247c5618093c" />
 
-<img width="720" height="591" alt="Color Schemes" src="https://github.com/user-attachments/assets/189807a7-5fd1-4b88-98e5-b120dc750bcc" />
+<img width="360" height="300" alt="Color Schemes" src="https://github.com/user-attachments/assets/189807a7-5fd1-4b88-98e5-b120dc750bcc" />
 
 
 ### Screen Saver
@@ -230,7 +232,7 @@ You can select which screensaver to show, choose `None` to disable this function
 You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).<br/>
 Click `Preview` for an instant preview of the currently selected screensaver.
 
-<img width="720" height="600" alt="Config: Screen Savers" src="https://github.com/user-attachments/assets/5167f0e1-7752-4051-8569-e73e1dcecceb" />
+<img width="360" height="300" alt="Config: Screen Savers" src="https://github.com/user-attachments/assets/5167f0e1-7752-4051-8569-e73e1dcecceb" />
 
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
@@ -246,14 +248,14 @@ Choosing `SET` applies the selected prompt style immediately, and also updates a
 
 Styles using ANSI escape sequences will not show in the selector if an ANSI driver is not detected.
 
-<img width="720" height="600" alt="Config: Prompt" src="https://github.com/user-attachments/assets/683fbaae-c2f8-4fb7-9c20-aeb239d7a2cb" />
+<img width="360" height="300" alt="Config: Prompt" src="https://github.com/user-attachments/assets/683fbaae-c2f8-4fb7-9c20-aeb239d7a2cb" />
 
 
 ###  Font
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
-<img width="720" height="600" alt="Config: Font" src="https://github.com/user-attachments/assets/4f438e38-00f3-43c9-b826-840dda556332" />
+<img width="360" height="300" alt="Config: Font" src="https://github.com/user-attachments/assets/4f438e38-00f3-43c9-b826-840dda556332" />
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
@@ -277,7 +279,7 @@ If the shortcut is active, you can unload it - removing all traces of the TSR fr
 If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT/FDAUTO.BAT` and reboot.<br/>
 Note that changing the key combination also requires a reboot to apply.
 
-<img width="720" height="600" alt="Config: Shortcut" src="https://github.com/user-attachments/assets/17a6ad2b-b110-4ec2-b130-697503a98142" />
+<img width="360" height="300" alt="Config: Shortcut" src="https://github.com/user-attachments/assets/17a6ad2b-b110-4ec2-b130-697503a98142" />
 
 
 ### Reset
@@ -286,7 +288,7 @@ If you mess up your Launch! installation you can reset the configuration, the me
 
 This will return things to the defaults, and rebuild a default menu as well.
 
-<img width="720" height="600" alt="Config: Reset" src="https://github.com/user-attachments/assets/b935db57-be19-45e3-a181-c8f71cf4b357" />
+<img width="360" height="300" alt="Config: Reset" src="https://github.com/user-attachments/assets/b935db57-be19-45e3-a181-c8f71cf4b357" />
 
 
 ## Live menu management
@@ -296,17 +298,17 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="720" height="600" alt="Menu - Add" src="https://github.com/user-attachments/assets/cddb761b-d607-49f2-8b9f-086d0019315c" />
+<img width="360" height="300" alt="Menu - Add" src="https://github.com/user-attachments/assets/cddb761b-d607-49f2-8b9f-086d0019315c" />
 
 `CTRL+D` will remove the selected item from the menu (with confirmation first).
 
-<img width="720" height="600" alt="Menu - Remove" src="https://github.com/user-attachments/assets/533cfb89-fe2e-4171-9af8-8f9c6d8d9ac6" />
+<img width="360" height="300" alt="Menu - Remove" src="https://github.com/user-attachments/assets/533cfb89-fe2e-4171-9af8-8f9c6d8d9ac6" />
 
 You can move selected items up and down with `CTRL+↑/↓`.
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="720" height="600" alt="Menu - Edit" src="https://github.com/user-attachments/assets/10d524cf-9024-4eac-a3c8-d38a0a585255" />
+<img width="360" height="300" alt="Menu - Edit" src="https://github.com/user-attachments/assets/10d524cf-9024-4eac-a3c8-d38a0a585255" />
 
 If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
 You will be able to enter parameters before running the program.
@@ -318,7 +320,7 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 
 If **Add to PATH for execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT/FDAUTO.BAT - which can get unwieldy. This allows you do away with that, and just add a program to PATH when launched from the menu.
 
-<img width="720" height="600" alt="Run with parameters" src="https://github.com/user-attachments/assets/626513d1-7b62-47d8-a989-d65c3ac0817e" />
+<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/626513d1-7b62-47d8-a989-d65c3ac0817e" />
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
@@ -411,15 +413,15 @@ The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specif
 
 You can also use the `/FILE=` parameter to point to any `.ICS` file, and the Calendar will show events from that file.
 
-<img width="720" height="600" alt="Calendar" src="https://github.com/user-attachments/assets/1ad0116f-b7ea-4aeb-b040-029da2b62a02" />
+<img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/1ad0116f-b7ea-4aeb-b040-029da2b62a02" />
 
-<img width="720" height="600" alt="Calendar - Day" src="https://github.com/user-attachments/assets/f5eebd56-4d9a-4e57-b22d-6d956226db99" />
+<img width="360" height="300" alt="Calendar - Day" src="https://github.com/user-attachments/assets/f5eebd56-4d9a-4e57-b22d-6d956226db99" />
 
 
 ### !CALC.EXE - Calculator
 A simple calculator, with nice large digits, pretty self explanatory!
 
-<img width="720" height="600" alt="Calculator" src="https://github.com/user-attachments/assets/789a27b8-fec4-412d-9428-3e43b1b42fc3" />
+<img width="360" height="300" alt="Calculator" src="https://github.com/user-attachments/assets/789a27b8-fec4-412d-9428-3e43b1b42fc3" />
 
 
 ### !DRAW.EXE - Pixel Draw
@@ -435,15 +437,14 @@ The grid can be toggled on/off.
 
 Your drawing is persisted and will be there when the program is re-opened.
 
-<img width="720" height="600" alt="Pixel Draw" src="https://github.com/user-attachments/assets/bcf393ef-1f95-45b5-9f07-8eba7894b2af" />
+<img width="360" height="300" alt="Pixel Draw" src="https://github.com/user-attachments/assets/bcf393ef-1f95-45b5-9f07-8eba7894b2af" />
 
 ### !JOURNAL.EXE - Journal
 A simple and flexible daily journal. Easily navigate between days or go to a specific date.
 
 Export and Print your journal too.
 
-<img width="720" height="600" alt="Journal" src="https://github.com/user-attachments/assets/7ba5f603-9c57-41f8-9cf8-ea11773d6a59" />
-
+<img width="360" height="300" alt="Journal" src="https://github.com/user-attachments/assets/6f01d0d9-7d5d-4090-a943-25c4a5f12202" />
 
 ### !NOTE.EXE - Note
 Simple notepad. You can click and type anywhere.
@@ -456,7 +457,8 @@ The text contents are persisted when you close the Note, and will be there when 
 
 Choose `Clr` to erase the notepad. `Chars` shows a character palette to insert extended/special characters.
 
-<img width="720" height="600" alt="Note" src="https://github.com/user-attachments/assets/c396f27e-8b76-4b04-b360-6eb6d6f61be9" />
+<img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/21281568-5468-4927-ae6e-cd6d3b89d55c" />
+
 
 ### !STACK.EXE - Card Stack
 A stack of index cards. Each card has a title and text, and you can navigate between them. Clicking a card title brings that card to the front of the stack for viewing/editing.
@@ -466,14 +468,15 @@ You can also export all the cards (everything concatenated) into a text file.
 
 Entries are automatically saved, everything is persisted, and all cards will be visible when the program is re-opened.
 
-<img width="720" height="600" alt="!STACK" src="https://github.com/user-attachments/assets/b6a64b72-6a5c-4463-aa7a-7ea408abc868" />
+<img width="360" height="300" alt="Stack" src="https://github.com/user-attachments/assets/e4ded681-2b4b-4d59-98dc-b7e061d437e0" />
+
 
 ### !SYSINFO.EXE - System Information
 View useful information about your system, including free memory and disk space.
 
 The system information report can be printed for reference.
 
-<img width="720" height="600" alt="!SYSINFO" src="https://github.com/user-attachments/assets/c18489c2-9383-4881-8d5f-e909189b57b6" />
+<img width="360" height="300" alt="!SYSINFO" src="https://github.com/user-attachments/assets/c18489c2-9383-4881-8d5f-e909189b57b6" />
 
 ### !TODOS.EXE - To-dos
 A simple and flexible To-Do list supporting grouping, due dates (with natural language like "tomorrow", "next Friday", extended description, and tags.
@@ -482,7 +485,7 @@ Tasks can be sorted and tags can be used to filter the list.
 
 Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your locale settings as/if set by `COUNTRY.SYS` in your `CONFIG.SYS`.
 
-<img width="720" height="600" alt="!TODOS" src="https://github.com/user-attachments/assets/cd920ca9-6dcb-4300-903a-b5634fde614d" />
+<img width="360" height="300" alt="!TODOS" src="https://github.com/user-attachments/assets/cd920ca9-6dcb-4300-903a-b5634fde614d" />
 
 ### !TYPO.EXE - Typo
 Level up on your words-per-minute and put that retro mechanical keyboard to good use, practicing your typing.
@@ -491,7 +494,7 @@ Level up on your words-per-minute and put that retro mechanical keyboard to good
 
 Records are maintained so you can keep track of your high scores.
 
-<img width="720" height="600" alt="!TYPO" src="https://github.com/user-attachments/assets/aade6dc0-c109-488e-b86a-ac85069d7cfa" />
+<img width="360" height="300" alt="!TYPO" src="https://github.com/user-attachments/assets/aade6dc0-c109-488e-b86a-ac85069d7cfa" />
 
 
 ----
@@ -509,20 +512,21 @@ Use the arrow keys to move the worker and push boxes to cover all the targets - 
 
 Puzzles 1-200 can be played out for you by choosing `Solve`. Levels 200-250, you must solve yourself!
 
-<img width="720" height="600" alt="Boxes" src="https://github.com/user-attachments/assets/f925d3b6-fef8-4caf-a08a-416172b5619d" />
+<img width="360" height="300" alt="Boxes" src="https://github.com/user-attachments/assets/619227e0-a11a-44da-b3ff-bfdc6f928a9c" />
 
 Puzzles are from Microban collections designed by [David W. Skinner](http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm)
-
 
 
 ### !FCELL.EXE - FreeCell
 Play the FreeCell card game. Same interaction and interface as Solitaire.
 
-<img width="720" height="600" alt="FreeCell Game" src="https://github.com/user-attachments/assets/6bd5c3e6-d075-4037-a273-1bac90b22d4a" />
+<img width="360" height="300" alt="FreeCell" src="https://github.com/user-attachments/assets/b3ac50a9-b0bc-42e9-9b90-8e4157a7e63b" />
+
 
 ### !PLUMB.EXE - Plumb
+Lay some pipe and stop the leaking slime before it's too late!
 
-<img width="720" height="600" alt="Plumb Game" src="https://github.com/user-attachments/assets/9d2a6de9-735f-4966-8be0-55c1d32e1a23" />
+<img width="360" height="300" alt="Plumb" src="https://github.com/user-attachments/assets/b55a3f1c-c124-40a1-9c47-d685b5f0b0c0" />
 
 
 ### !POP.EXE - Pop
@@ -530,14 +534,15 @@ An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
 
 10 levels with different difficulty levels. Click groups of bubbles to select, and then click again (or Enter) to pop them away!
 
-<img width="720" height="600" alt="Pop Game" src="https://github.com/user-attachments/assets/2f3fd389-ebce-4cfd-baa5-e3b6ea64baac" />
+<img width="360" height="300" alt="Pop" src="https://github.com/user-attachments/assets/dd074517-da75-4182-8d66-c9b286fc1e2b" />
 
 
 ### !SNAKE.EXE - Snake
 Eat the fruit before the timer runs out!
 Watch out for walls and don't run into yourself
 
-<img width="720" height="600" alt="Snake Game" src="https://github.com/user-attachments/assets/aa959862-5c53-424b-a8e1-1a09ea97e105" />
+<img width="360" height="300" alt="Snake" src="https://github.com/user-attachments/assets/814e48a0-76e0-42a2-99e3-b6fc63941097" />
+
 
 Playfields come from the Microsoft QBasic NIBBLES.BAS sample program.
 
@@ -546,12 +551,16 @@ Play draw three Solitaire completely in text mode!
 
 Click a card (it will show as selected), then click the destination (valid destinations are indicated). You can double click a card to move it to the correct foundation pile (if a valid move).
 
-<img width="720" height="600" alt="Solitaire Game" src="https://github.com/user-attachments/assets/68ce19d6-3416-46ba-9684-09d0573a2144" />
+<img width="360" height="300" alt="Solitaire" src="https://github.com/user-attachments/assets/a31812f3-b94b-48da-94a1-4d923ebc919a" />
 
 
 ### !WORDZ.EXE - Wordz
 
-<img width="720" height="600" alt="Wordz Game" src="https://github.com/user-attachments/assets/0a9fc9fb-a9f7-4fa2-9c44-74983466820c" />
+Find the words in the word list in the letter grid. Hints help you out.
+
+Click letters, or click and drag to select a word. Enter commits your selection.
+
+<img width="360" height="300" alt="wordz" src="https://github.com/user-attachments/assets/b7ebd866-c183-4603-b592-c1402bb914da" />
 
 
 ----
@@ -608,5 +617,5 @@ If `LAUNCH.MNU` is missing or invalid at startup and `LAUNCH.BAK` is valid, Laun
 
 Launch is created on a 486DX4/100 machine, 32mb RAM, using PC DOS 7.0. Coded using Quick C IDE, Compiled with Microsoft C/C++ 7.00 from 1992.
 
-<img width="720" height="600" alt="About" src="https://github.com/user-attachments/assets/28b12e02-a814-4f4d-9e41-43cfeafebb66" />
+<img width="360" height="300" alt="About" src="https://github.com/user-attachments/assets/28b12e02-a814-4f4d-9e41-43cfeafebb66" />
 
