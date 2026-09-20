@@ -46,6 +46,7 @@ Extract the release zip file or mount the floppy image:
 - You'll be prompted for a directory to place Launch!
 - You can choose whether to install accessories
 - The necessary files will be copied and you will be prompted for all changes to `AUTOEXEC.BAT`
+    - FreeDOS will be detected automatically and `FDAUTO.BAT` used instead of `AUTOEXEC.BAT` throughout Launch!
 - The keyboard shortcut can be chosen
 - Your drive can be scanned and an initial menu built.
 - Simply reboot after install and you're ready to go.
@@ -240,7 +241,7 @@ You can easily change the appearance of the DOS command prompt, choosing from 10
 
 You can also add your own prompt definitions in `PROMPTS.CFG` and they will appear in the selector here.
 
-Choosing `SET` applies the selected prompt style immediately, and also updates any existing `PROMPT` statement in `AUTOEXEC.BAT` so this style is set at startup.
+Choosing `SET` applies the selected prompt style immediately, and also updates any existing `PROMPT` statement in `AUTOEXEC.BAT/FDAUTO.BAT` so this style is set at startup.
 
 Styles using ANSI escape sequences will not show in the selector if an ANSI driver is not detected.
 
@@ -272,7 +273,7 @@ All font files have been edited to improve specific glyphs and appearance over o
 
 You can view the current status of the shortcut utility, current key combination, and set a new combination.<br/>
 If the shortcut is active, you can unload it - removing all traces of the TSR from memory.<br/>
-If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT` and reboot.<br/>
+If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT/FDAUTO.BAT` and reboot.<br/>
 Note that changing the key combination also requires a reboot to apply.
 
 <img width="720" height="600" alt="Config: Shortcut" src="https://github.com/user-attachments/assets/17a6ad2b-b110-4ec2-b130-697503a98142" />
@@ -314,7 +315,7 @@ You will be able to enter parameters before running the program.
 When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.<br/>
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
-If **Add to PATH for execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT - which can get unwieldy. This allows you do away with that, and just add a program to PATH when launched from the menu.
+If **Add to PATH for execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT/FDAUTO.BAT - which can get unwieldy. This allows you do away with that, and just add a program to PATH when launched from the menu.
 
 <img width="720" height="600" alt="Run with parameters" src="https://github.com/user-attachments/assets/626513d1-7b62-47d8-a989-d65c3ac0817e" />
 
@@ -558,7 +559,7 @@ The keyboard shortcut is provided by a separate utility as it is not required to
 
 If you don't load the keyboard shortcut tool, you'll regain 500 bytes of memory - although `LOADHIGH` is used with `SHORTCUT.COM` to move this to upper memory anyway.
 
-If chosen, it will be added to `AUTOEXEC.BAT` by install so the shortcut is available after startup.
+If chosen, it will be added to `AUTOEXEC.BAT/FDAUTO.BAT` by install so the shortcut is available after startup.
 The combination can be changed any time after install in Configuration.
 
 You can change the keyboard shortcut used by manually adding the `/KEY=` parameter to `SHORTCUT.COM` with readable names or hexadecimal scan codes, e.g.
