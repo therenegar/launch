@@ -178,7 +178,7 @@ If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 colo
 
 
 ----
-<img width="1633" height="250" alt="Configuration" src="https://github.com/user-attachments/assets/281d5d70-bcd8-4730-baf8-df572e7006bf" />
+<img width="1633" height="250" alt="Config: Menu" src="https://github.com/user-attachments/assets/281d5d70-bcd8-4730-baf8-df572e7006bf" />
 
 Run `! /CONFIG` to configure Launch! appearance and preferences. You can also right-click on the main "Launch!" menu title.<br/>
 Options are split across 6 tabs.
@@ -191,7 +191,7 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="1440" height="1200" alt="config-menu" src="https://github.com/user-attachments/assets/470f9598-7d75-40b9-b838-20f4a23fc91c" />
+<img width="720" height="600" alt="Configuration - Menu" src="https://github.com/user-attachments/assets/470f9598-7d75-40b9-b838-20f4a23fc91c" />
 
 Contextual help (tooltips) can be turned off - they will appear throughout Launch! with keyboard focus or mouse-over.
 
