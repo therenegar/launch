@@ -37,7 +37,8 @@ EGA resolution
 - Extremely minimal memory footprint. All resident components can be disabled to have zero memory impact if desired. 
 - Design goal was to push the absolute limits of what a text-mode only DOS program can achieve in terms of user interface design and usability.
 
-## INSTALL.EXE - Installation
+----
+<img width="1633" height="250" alt="Install" src="https://github.com/user-attachments/assets/b7dee4b9-154f-47b6-b407-8b24ef9b03fd" />
 
 Extract the release zip file or mount the floppy image:
 
@@ -53,8 +54,8 @@ Extract the release zip file or mount the floppy image:
 
 > **If you already have Launch! installed**, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
 
-
-## !.EXE - The Launch! Menu
+----
+<img width="1633" height="250" alt="The Menu" src="https://github.com/user-attachments/assets/833bd071-f0c6-436f-8cfa-fd933ac6685f" />
 
 At the **command prompt**, display your menu by pressing the keyboard shortcut which by default is set to:
 ```
@@ -89,7 +90,7 @@ The Launch! executable `!.EXE` has some useful parameters:
 - `/OPENTO=folder` - open the Launch! menu to the specified folder, e.g. `/OPENTO="System Tools"` would show the menu with the System Tools sub-menu already open. 
 
 
-## Keyboard usage
+### Keyboard usage
 
 General navigation
 - `Up/Down`       - Select an entry
@@ -106,7 +107,7 @@ Menu management
 - `Ctrl+S`        - Sort the open menu alphabetically
 
 
-## Mouse usage
+### Mouse usage
 Have you ever seen a mouse cursor at the DOS prompt? Now you can!<br/>
 If a suitable mouse driver has been loaded (`MOUSE.COM`, `MOUSE.SYS`, `CTMOUSE.EXE`, etc.) you will be able to use a mouse with Launch!
 
@@ -121,7 +122,62 @@ The cursor (pointer style by default) will be visible when Launch! is run.<br/>
 - Double clicking opens files and directories in Explore & Run.
 
 
-## Configuration
+## Open File
+`Open File` is a fixed special item at the bottom of the menu (removable in Config).
+It allows you to browse for files, based on configured associations, and open the file with the configured launcher.
+
+As an example, this can allow you to browse and open images with a launcher for an image viewing program - without having to typing a massive command line yourself. Or browse zip files, and easily extract with your ZIP program, adding further parameters if required.
+
+There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
+<img width="720" height="600" alt="Open File" src="https://github.com/user-attachments/assets/34575b86-7ae2-4187-9396-173c5db3e152" />
+
+An association consists of one or more file extensions, and a selected launcher from your menu.
+
+<img width="720" height="600" alt="Create association" src="https://github.com/user-attachments/assets/97525c44-2553-4e37-9193-2503dc32f72b" />
+
+You can also open files with further parameters if required.
+
+<img width="720" height="600" alt="Open File with parameters" src="https://github.com/user-attachments/assets/d2b98204-ed45-4d12-9d38-e61e249e9195" />
+
+The dialog can also be shown on its own, without the menu, by running `! /OPEN`.
+
+## Explore & Run
+`Explore & Run` is a fixed item at the bottom of the menu.<br/>
+When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
+Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
+
+The drive bar shows the available disk drives, and allows you to switch between them.
+
+The path bar shows a preview of the command line that will be executed when `Run` is chosen.
+
+<img width="720" height="600" alt="Explore and Run" src="https://github.com/user-attachments/assets/c7822dad-0392-4cb1-b70d-8dfbb6f6179c" />
+
+Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
+
+<img width="720" height="600" alt="Run with parameters" src="https://github.com/user-attachments/assets/f230b18c-757c-43e7-b90b-8d605fff35a6" />
+
+You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)<br/>
+
+The dialog can also be shown on its own, without the menu, by running `! /EXPLORE`.
+
+
+## Shutdown
+The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Power Off or Reboot.<br/>
+
+Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
+
+<img width="720" height="600" alt="Shutdown..." src="https://github.com/user-attachments/assets/05b1c734-8ada-4b28-a1aa-9113cf5bc435" />
+
+You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`). <BR/>
+The dialog can also be shown on its own, without the menu, by running `! /BYE`.
+
+<img width="360" height="300" alt="Power off bitmap" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
+
+If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 color bitmap.
+
+
+----
+<img width="1633" height="250" alt="Configuration" src="https://github.com/user-attachments/assets/281d5d70-bcd8-4730-baf8-df572e7006bf" />
 
 Run `! /CONFIG` to configure Launch! appearance and preferences. You can also right-click on the main "Launch!" menu title.<br/>
 Options are split across 6 tabs.
@@ -278,61 +334,9 @@ A separator is added with
 SEPARATOR=
 ```
 
-## Open File
-`Open File` is a fixed special item at the bottom of the menu (removable in Config).
-It allows you to browse for files, based on configured associations, and open the file with the configured launcher.
+----
+<img width="1633" height="250" alt="Screen Savers" src="https://github.com/user-attachments/assets/60492c02-09ae-4846-8761-b318f9ddb504" />
 
-As an example, this can allow you to browse and open images with a launcher for an image viewing program - without having to typing a massive command line yourself. Or browse zip files, and easily extract with your ZIP program, adding further parameters if required.
-
-There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
-<img width="720" height="600" alt="Open File" src="https://github.com/user-attachments/assets/34575b86-7ae2-4187-9396-173c5db3e152" />
-
-An association consists of one or more file extensions, and a selected launcher from your menu.
-
-<img width="720" height="600" alt="Create association" src="https://github.com/user-attachments/assets/97525c44-2553-4e37-9193-2503dc32f72b" />
-
-You can also open files with further parameters if required.
-
-<img width="720" height="600" alt="Open File with parameters" src="https://github.com/user-attachments/assets/d2b98204-ed45-4d12-9d38-e61e249e9195" />
-
-The dialog can also be shown on its own, without the menu, by running `! /OPEN`.
-
-## Explore & Run
-`Explore & Run` is a fixed item at the bottom of the menu.<br/>
-When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
-Enter will open the selected directory, or run the selected executable. You can also double-click entries with the mouse for the same effect.
-
-The drive bar shows the available disk drives, and allows you to switch between them.
-
-The path bar shows a preview of the command line that will be executed when `Run` is chosen.
-
-<img width="720" height="600" alt="Explore and Run" src="https://github.com/user-attachments/assets/c7822dad-0392-4cb1-b70d-8dfbb6f6179c" />
-
-Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
-
-<img width="720" height="600" alt="Run with parameters" src="https://github.com/user-attachments/assets/f230b18c-757c-43e7-b90b-8d605fff35a6" />
-
-You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)<br/>
-
-The dialog can also be shown on its own, without the menu, by running `! /EXPLORE`.
-
-
-## Shutdown
-The `Shutdown...` menu item is also fixed at the bottom of the menu, and when selected shows a dialog for you to Power Off or Reboot.<br/>
-
-Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
-
-<img width="720" height="600" alt="Shutdown..." src="https://github.com/user-attachments/assets/05b1c734-8ada-4b28-a1aa-9113cf5bc435" />
-
-You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`). <BR/>
-The dialog can also be shown on its own, without the menu, by running `! /BYE`.
-
-<img width="360" height="300" alt="Power off bitmap" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
-
-If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 color bitmap.
-
-
-## Screensavers
 If there has been inactivity for the configured time (1 minute by default), the screen will blank and show a screensaver (by default the Clock).
 
 You can disable the screensaver completely (choose None) or choose from one of the other screensavers by running `! /CONFIG`.
@@ -377,10 +381,11 @@ The clock is based on a 1979 Vacuum Fluorescent Display alarm clock on my bedsid
 
 ----
 
-## Accessories and Games
-Launch! comes with 8 handy accessories, and 5 addictive games that can be useful in a basic DOS environment.
+<img width="1633" height="250" alt="Accessories" src="https://github.com/user-attachments/assets/98418a23-1b67-43ee-b6f4-77de6fecee98" />
 
-If selected during the Install program, there will be an **Accessories** and a **Games** menu created for you in Launch! providing quick access.
+Launch! comes with 8 handy accessories that can be useful in a basic DOS environment.
+
+If selected during the Install program, there will be an **Accessories** menu created for you in Launch! providing quick access.
 
 All programs depend on Launch! (`!.EXE`) - for shared UI toolkit, and will take on Launch! configuration settings such as color scheme and mouse cursor - so the `.EXE`s can't be distributed without `!.EXE`.<br/>
 They've all been designed with a tiny memory footprint, and maximum compatibility in mind.
@@ -407,13 +412,6 @@ A simple calculator, with nice large digits, pretty self explanatory!
 
 <img width="720" height="600" alt="Calculator" src="https://github.com/user-attachments/assets/e9c27a1a-7168-4db0-879d-4219d2f22023" />
 
-### !JOURNAL.EXE - Journal
-A simple and flexible daily journal. Easily navigate between days or go to a specific date.
-
-Export and Print your journal too.
-
-<img width="720" height="600" alt="Journal" src="https://github.com/user-attachments/assets/7ba5f603-9c57-41f8-9cf8-ea11773d6a59" />
-
 ### !DRAW.EXE - Pixel Draw
 You can create simple pixel images, they can be exported as a bitmap.<br/>
 The canvas is 96x96 pixels, the viewable area is 30x12 and can be scrolled.<br/>
@@ -428,6 +426,14 @@ The grid can be toggled on/off.
 Your drawing is persisted and will be there when the program is re-opened.
 
 <img width="720" height="600" alt="Pixel Draw" src="https://github.com/user-attachments/assets/bcf393ef-1f95-45b5-9f07-8eba7894b2af" />
+
+### !JOURNAL.EXE - Journal
+A simple and flexible daily journal. Easily navigate between days or go to a specific date.
+
+Export and Print your journal too.
+
+<img width="720" height="600" alt="Journal" src="https://github.com/user-attachments/assets/7ba5f603-9c57-41f8-9cf8-ea11773d6a59" />
+
 
 ### !NOTE.EXE - Note
 Simple notepad. You can click and type anywhere.
@@ -452,6 +458,12 @@ Entries are automatically saved, everything is persisted, and all cards will be 
 
 <img width="720" height="600" alt="!STACK" src="https://github.com/user-attachments/assets/b6a64b72-6a5c-4463-aa7a-7ea408abc868" />
 
+### !SYSINFO.EXE - System Information
+View useful information about your system, including free memory and disk space.
+
+The system information report can be printed for reference.
+
+<img width="720" height="600" alt="!SYSINFO" src="https://github.com/user-attachments/assets/c18489c2-9383-4881-8d5f-e909189b57b6" />
 
 ### !TODOS.EXE - To-dos
 A simple and flexible To-Do list supporting grouping, due dates (with natural language like "tomorrow", "next Friday", extended description, and tags.
@@ -462,12 +474,13 @@ Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your l
 
 <img width="720" height="600" alt="!TODOS" src="https://github.com/user-attachments/assets/cd920ca9-6dcb-4300-903a-b5634fde614d" />
 
-### !SYSINFO.EXE - System Information
-View useful information about your system, including free memory and disk space.
 
-The system information report can be printed for reference.
+----
+<img width="1633" height="250" alt="launch-games" src="https://github.com/user-attachments/assets/c4d31625-d74d-4534-a256-eb436e3ece78" />
 
-<img width="720" height="600" alt="!SYSINFO" src="https://github.com/user-attachments/assets/c18489c2-9383-4881-8d5f-e909189b57b6" />
+Launch! comes with 5 addictive games to kill some time.
+
+If selected during the Install program, there will be an **Games** menu created for you in Launch! providing quick access.
 
 
 ### !BOXES.EXE - Boxes
@@ -507,7 +520,9 @@ Watch out for walls and don't run into yourself
 
 Playfields come from the Microsoft QBasic NIBBLES.BAS sample program.
 
+
 ----
+<img width="1633" height="250" alt="Tooling" src="https://github.com/user-attachments/assets/dd935b02-2baa-4626-8c37-9cae052432f4" />
 
 ## SHORTCUT.COM - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
@@ -530,7 +545,6 @@ The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.<br/>
 Use `SHORTCUT /?` for more information.
 
 To maintain system integrity and security, 'SHORTCUT.COM' validates an authentication key in '!.EXE' to ensure the shortcut key will only ever execute (a genuine) Launch! menu.
-
 
 ## AUTOGEN.EXE - an automatic menu generator
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
