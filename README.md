@@ -449,17 +449,16 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 <img width="360" height="300" alt="Journal" src="https://github.com/user-attachments/assets/6f01d0d9-7d5d-4090-a943-25c4a5f12202" />
 
 ### !NOTE.EXE - Note
-Simple notepad. You can click and type anywhere.
+Simple notepad. You can click and type anywhere!
 
-Create tabs, and up to 10 pages per tab.
-
-Export the contents to a text file with `Export`. You can also send the contents to the printer with `Print`.
-
+Create tabs, and up to 10 pages per tab. Export the contents to a text file with `Export`. You can also send the contents to the printer with `Print`.
 The text contents are persisted when you close the Note, and will be there when the program is re-opened.
 
 Choose `Clr` to erase the notepad. `Chars` shows a character palette to insert extended/special characters.
 
 Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copied (`CTRL+X`) or Pasted (`CTRL+X`) anywhere on the page, other pages, or pages in other tabs.
+
+Words will wrap at the end of each line intelligently to the next, for natural typing.
 
 <img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/21281568-5468-4927-ae6e-cd6d3b89d55c" />
 
