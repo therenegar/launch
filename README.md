@@ -39,7 +39,7 @@ EGA displays
 - Design goal was to push the absolute limits of what a text-mode only DOS program can achieve in terms of user interface design and usability.
 
 ----
-<img width="1633" height="250" alt="Install" src="https://github.com/user-attachments/assets/b7dee4b9-154f-47b6-b407-8b24ef9b03fd" />
+# <img width="1633" height="250" alt="Install" src="https://github.com/user-attachments/assets/b7dee4b9-154f-47b6-b407-8b24ef9b03fd" />
 
 Extract the release zip file or mount the floppy image:
 
@@ -182,7 +182,7 @@ If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 colo
 
 
 ----
-<img width="1633" height="250" alt="Config: Menu" src="https://github.com/user-attachments/assets/281d5d70-bcd8-4730-baf8-df572e7006bf" />
+# <img width="1633" height="250" alt="Config" src="https://github.com/user-attachments/assets/281d5d70-bcd8-4730-baf8-df572e7006bf" />
 
 Run `! /CONFIG` to configure Launch! appearance and preferences. You can also right-click on the main "Launch!" menu title.<br/>
 Options are split across 6 tabs.
@@ -345,7 +345,7 @@ SEPARATOR=
 ```
 
 ----
-<img width="1633" height="250" alt="Screen Savers" src="https://github.com/user-attachments/assets/60492c02-09ae-4846-8761-b318f9ddb504" />
+# <img width="1633" height="250" alt="Screen Savers" src="https://github.com/user-attachments/assets/60492c02-09ae-4846-8761-b318f9ddb504" />
 
 If there has been inactivity for the configured time (1 minute by default), the screen will blank and show a screensaver (by default the Clock).
 
@@ -391,7 +391,7 @@ The clock is based on a 1979 Vacuum Fluorescent Display alarm clock on my bedsid
 
 ----
 
-<img width="1633" height="250" alt="Accessories" src="https://github.com/user-attachments/assets/98418a23-1b67-43ee-b6f4-77de6fecee98" />
+# <img width="1633" height="250" alt="Accessories" src="https://github.com/user-attachments/assets/98418a23-1b67-43ee-b6f4-77de6fecee98" />
 
 Launch! comes with 9 handy accessories that can be useful in a basic DOS environment.
 
@@ -503,7 +503,7 @@ Records are maintained so you can keep track of your high scores.
 
 
 ----
-<img width="1633" height="250" alt="launch-games" src="https://github.com/user-attachments/assets/c4d31625-d74d-4534-a256-eb436e3ece78" />
+# <img width="1633" height="250" alt="Games" src="https://github.com/user-attachments/assets/c4d31625-d74d-4534-a256-eb436e3ece78" />
 
 Launch! comes with 7 addictive games to kill some time. My attempt at creating a **DOS Entertainment Pack** if you will. And also a VGA/EGA font plane glyph manipulation game engine for graphics in text mode DOS.
 
@@ -569,7 +569,7 @@ Click letters, or click and drag to select a word. Enter commits your selection.
 
 
 ----
-<img width="1633" height="250" alt="Tooling" src="https://github.com/user-attachments/assets/dd935b02-2baa-4626-8c37-9cae052432f4" />
+# <img width="1633" height="250" alt="Tooling" src="https://github.com/user-attachments/assets/dd935b02-2baa-4626-8c37-9cae052432f4" />
 
 ## SHORTCUT.COM - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
