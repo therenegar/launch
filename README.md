@@ -59,7 +59,7 @@ Extract the release zip file or mount the floppy image:
 > **If you already have Launch! installed**, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
 
 ----
-<img width="1633" height="250" alt="The Menu" src="https://github.com/user-attachments/assets/833bd071-f0c6-436f-8cfa-fd933ac6685f" />
+# <img width="1633" height="250" alt="The Menu" src="https://github.com/user-attachments/assets/833bd071-f0c6-436f-8cfa-fd933ac6685f" />
 
 At the **command prompt**, display your menu by pressing the keyboard shortcut which by default is set to:
 ```
