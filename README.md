@@ -129,17 +129,18 @@ It allows you to browse for files, based on configured associations, and open th
 As an example, this can allow you to browse and open images with a launcher for an image viewing program - without having to typing a massive command line yourself. Or browse zip files, and easily extract with your ZIP program, adding further parameters if required.
 
 There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
-<img width="720" height="600" alt="Open File" src="https://github.com/user-attachments/assets/34575b86-7ae2-4187-9396-173c5db3e152" />
+
+<img width="1440" height="1200" alt="openfile" src="https://github.com/user-attachments/assets/9d15bb77-744a-46f2-84be-efed62b84413" />
 
 An association consists of one or more file extensions, and a selected launcher from your menu.
 
-<img width="720" height="600" alt="Create association" src="https://github.com/user-attachments/assets/97525c44-2553-4e37-9193-2503dc32f72b" />
+<img width="1440" height="1200" alt="openfile-assoc" src="https://github.com/user-attachments/assets/1914df90-1acf-4420-bf77-33c526864b98" />
 
 You can also open files with further parameters if required.
 
-<img width="720" height="600" alt="Open File with parameters" src="https://github.com/user-attachments/assets/d2b98204-ed45-4d12-9d38-e61e249e9195" />
+<img width="1440" height="1200" alt="openfile-params" src="https://github.com/user-attachments/assets/ae87fce6-1ce3-4c2d-8e77-d2f4c6b8d090" />
 
-The dialog can also be shown on its own, without the menu, by running `! /OPEN`.
+The `Open File` dialog can also be shown on its own, without the menu, by running `! /OPEN`.
 
 ## Explore & Run
 `Explore & Run` is a fixed item at the bottom of the menu.<br/>
