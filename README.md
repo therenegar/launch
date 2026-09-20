@@ -3,20 +3,20 @@
 A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- and loads of goodies to uplift an old DOS machine.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
-> You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
+> You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG. 
 
 Requires: DOS 3.3, 80286, EGA or better. 
-1.2MB free hard disk or floppy disk space for install.
+1.2MB free disk space for install.
 
-Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.Compatible with third-party command interpreters such as 4DOS/NDOS.
+Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU.Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/ccc981b2-439f-4722-b7c8-5eca4bc274e3" />
 
-VGA resolution
+VGA displays
 
 <img width="640" height="350" alt="The Launch! Menu - EGA Resolution" src="https://github.com/user-attachments/assets/7208281b-b205-4c7d-af9c-9cf8ff8a047a" />
 
-EGA resolution
+EGA displays 
 
 ## Features
 - Displays a hierarchical folder based menu, modally over the top of the existing console contents.
