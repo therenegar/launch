@@ -422,10 +422,11 @@ static void draw_extract_progress(void)
   percent=(extract_progress_done*100)/extract_progress_total;
   if(percent>100)percent=100;
   filled=(extract_progress_done*30)/extract_progress_total;
-  line[pos++]='\r';
-  sprintf(line+pos,"%3d%% [",percent);pos+=(int)strlen(line+pos);
+  line[pos++]='\r';line[pos++]=' ';
+  line[pos++]='[';
   for(i=0;i<30;i++)line[pos++]=(char)(i<filled?219:176);
-  line[pos++]=']';line[pos]=0;
+  line[pos++]=']';line[pos++]=' ';
+  sprintf(line+pos,"%3d%%",percent);pos+=(int)strlen(line+pos);line[pos]=0;
   colour_text(line,11);
   fflush(stdout);
   if(extract_progress_done>=extract_progress_total)putchar('\n');
@@ -437,22 +438,89 @@ static void advance_extract_progress(void)
   draw_extract_progress();
 }
 
-static int copy_accessories(const char *archive,const char *install)
+typedef struct {
+  char name[13];
+  unsigned long offset,csize,usize;
+} DAT_ENTRY;
+
+static DAT_ENTRY dat_entry[32];
+
+static int accessory_member(const char *name)
 {
-  static const char *files[]={"!CAL.EXE","CAL.ICS","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE",
+  static const char *files[]={
+    "CAL.ICS","!CAL.EXE","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE",
     "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!TODOS.EXE","!TYPO.EXE","TYPO.LVL",
-    "!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE","!SNAKE.EXE","!SOL.EXE",
-    "!WORDZ.EXE","WORDZ.LVL",0};
-  static char destination[PATH_SIZE];int i;
-  for(i=0;files[i];i++){
-    sprintf(destination,"%s\\%s",install,files[i]);
-    if(!extract_file(archive,files[i],destination)){error_icon(0);printf("Cannot extract %s\n",files[i]);return 0;}
-    advance_extract_progress();
+    "!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE","!SNAKE.EXE",
+    "!SOL.EXE","!WORDZ.EXE","WORDZ.LVL",0};
+  int i;for(i=0;files[i];i++)if(!stricmp(name,files[i]))return 1;return 0;
+}
+
+static int selected_member(const char *name,int use_dosbox,int accessories,const char **dest_name)
+{
+  *dest_name=name;
+  if(!stricmp(name,"!.EXE")||!stricmp(name,"AUTOGEN.EXE")||
+     !stricmp(name,"AUTOGEN.DAT")||!stricmp(name,"PWROFF.BMP")||
+     !stricmp(name,"FONT.DAT"))return 1;
+  if(!stricmp(name,"SHORTCUT.COM")){
+    if(use_dosbox)return 0;*dest_name="SHORTCUT.COM";return 1;
   }
+  if(!stricmp(name,"SHORTCDB.COM")){
+    if(!use_dosbox)return 0;*dest_name="SHORTCUT.COM";return 1;
+  }
+  if(accessories&&accessory_member(name))return 1;
+  return 0;
+}
+
+static int skip_compressed(FILE *in,unsigned long size)
+{
+  size_t n,want;
+  while(size){
+    want=size>sizeof(copy_buffer)?sizeof(copy_buffer):(size_t)size;
+    n=fread(copy_buffer,1,want,in);if(n!=want)return 0;size-=n;
+  }
+  return 1;
+}
+
+/* Read INSTALL.DAT once, then walk its payloads sequentially.  This avoids
+   repeatedly reopening and seeking around a floppy for every installed file. */
+static int extract_install_files(const char *archive,const char *install,int use_dosbox,int accessories)
+{
+  FILE *in,*out;char magic[8],destination[PATH_SIZE];const char *dest_name;
+  unsigned count,i;int selected,done=0,ok;
+  in=fopen(archive,"rb");if(!in)return 0;
+  if(fread(magic,1,8,in)!=8||memcmp(magic,DAT_MAGIC,8)){fclose(in);return 0;}
+  count=read_u16(in);if(!count||count>32){fclose(in);return 0;}
+  for(i=0;i<count;i++){
+    if(fread(dat_entry[i].name,1,13,in)!=13){fclose(in);return 0;}
+    dat_entry[i].name[12]=0;
+    dat_entry[i].offset=read_u32(in);
+    dat_entry[i].csize=read_u32(in);
+    dat_entry[i].usize=read_u32(in);
+  }
+  if(fseek(in,(long)dat_entry[0].offset,SEEK_SET)){fclose(in);return 0;}
+
+  for(i=0;i<count;i++){
+    selected=selected_member(dat_entry[i].name,use_dosbox,accessories,&dest_name);
+    if(selected){
+      sprintf(destination,"%s\\%s",install,dest_name);
+      out=fopen(destination,"wb");
+      if(!out){fclose(in);error_icon(0);printf("Cannot create %s\n",destination);return 0;}
+      ok=decompress_file(in,out,dat_entry[i].csize,dat_entry[i].usize);
+      if(fclose(out)!=0)ok=0;
+      if(!ok){remove(destination);fclose(in);error_icon(0);printf("Cannot extract %s\n",dat_entry[i].name);return 0;}
+      done++;advance_extract_progress();
+      if(done>=extract_progress_total)break;
+    }else{
+      if(!skip_compressed(in,dat_entry[i].csize)){fclose(in);return 0;}
+    }
+  }
+  fclose(in);
+  if(done!=extract_progress_total)return 0;
   sprintf(destination,"%s\\DATA",install);if(!make_directories(destination))return 0;
   sprintf(destination,"%s\\EXPORT",install);if(!make_directories(destination))return 0;
   return 1;
 }
+
 
 int main(int argc,char **argv)
 {
@@ -483,23 +551,12 @@ int main(int argc,char **argv)
   if(dosbox_detected){puts("");use_dosbox=ask_yes("It looks like you're running in DOSBox, is that correct?",1,0);}
   else{puts("");use_dosbox=ask_yes("Are you installing in DOSBox?",0,0);}
   puts("");accessories=ask_yes("Install games and accessories?",1,0);
-  puts("\nExtracting files...");fflush(stdout);
+  puts("\n Please wait while files are extracted and copied...");fflush(stdout);
   extract_progress_done=0;extract_progress_total=accessories?26:6;draw_extract_progress();
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
   if(!exists(archive)){error_icon(0);printf("Cannot find %s\n",archive);return 1;}
-  sprintf(launch_exe,"%s\\!.EXE",install);strcpy(destination,launch_exe);
-  if(!extract_file(archive,"!.EXE",destination)){error_icon(0);puts("Cannot extract !.EXE");return 1;}advance_extract_progress();
-  sprintf(destination,"%s\\SHORTCUT.COM",install);
-  if(!extract_file(archive,use_dosbox?"SHORTCDB.COM":"SHORTCUT.COM",destination)){error_icon(0);puts("Cannot extract SHORTCUT.COM");return 1;}advance_extract_progress();
-  sprintf(destination,"%s\\AUTOGEN.EXE",install);
-  if(!extract_file(archive,"AUTOGEN.EXE",destination)){error_icon(0);puts("Cannot extract AUTOGEN.EXE");return 1;}advance_extract_progress();
-  sprintf(destination,"%s\\AUTOGEN.DAT",install);
-  if(!extract_file(archive,"AUTOGEN.DAT",destination)){error_icon(0);puts("Cannot extract AUTOGEN.DAT");return 1;}advance_extract_progress();
-  sprintf(destination,"%s\\PWROFF.BMP",install);
-  if(!extract_file(archive,"PWROFF.BMP",destination)){error_icon(0);puts("Cannot extract PWROFF.BMP");return 1;}advance_extract_progress();
-  sprintf(destination,"%s\\FONT.DAT",install);
-  if(!extract_file(archive,"FONT.DAT",destination)){error_icon(0);puts("Cannot extract FONT.DAT");return 1;}advance_extract_progress();
-  if(accessories&&!copy_accessories(archive,install))return 1;
+  sprintf(launch_exe,"%s\\!.EXE",install);
+  if(!extract_install_files(archive,install,use_dosbox,accessories))return 1;
   menu_result=spawnl(P_WAIT,launch_exe,"!.EXE","/INITMENU",NULL);
   if(menu_result!=0){error_icon(0);puts("Files were copied, but the standard Launch! menu could not be created or updated.");return 1;}
   comspec=getenv("COMSPEC");

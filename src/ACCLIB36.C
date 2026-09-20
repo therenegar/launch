@@ -74,13 +74,11 @@ static const unsigned char tooltip_right14[32]={0xF0,0xFC,0xFC,0xFE,0xFE,0xFE,0x
 static void glyph36_refresh(void)
 {
 #ifndef ACCLIB_MIN_GLYPHS
-  int i;
-  for(i=0;i<(int)sizeof(launchui_codes);i++)
-    acc_glyph_write(launchui_codes[i],
-      acc_font_height()==14?launch_glyph14[i]:launch_glyph16[i]);
+  /* The base runtime now installs the current GLYPHDAT tables directly.
+     Do not program EGA a second time here. */
+  return;
 #else
-  /* STACK keeps its near-data footprint small, but still needs the current
-     two-cell Export/floppy artwork rather than whatever happens to be in ROM. */
+  /* STACK keeps its reduced glyph set but still needs its current artwork. */
   acc_glyph_write(204,acc_font_height()==14?stack_export14a:stack_export16a);
   acc_glyph_write(181,acc_font_height()==14?stack_export14b:stack_export16b);
   acc_glyph_write(209,acc_font_height()==14?stack_delete14a:stack_delete16a);
@@ -120,31 +118,36 @@ static int tooltip_app_is(const char *name)
   return strstr(tooltip_app,name)!=0;
 }
 
-/* Release 3.61 game-number artwork.  Games temporarily replace ASCII 0..9
-   plus numeric '/', ':' and '.' with the canonical Launch! glyphs.  Existing
-   formatting, spacing and attributes are unchanged; only glyph shapes change. */
-static const unsigned char game_glyph_code[13]={'0','1','2','3','4','5','6','7','8','9','/',':','.'};
-static const unsigned char game_glyph_logical[13]={64,65,66,67,68,69,70,71,72,73,57,58,74};
-static unsigned char game_digit_old[13][32];
+/* Release 3.61 game-number artwork.
+   Games replace ASCII 0..9 only.  Punctuation and letters remain ordinary
+   CP437 except for the card-only rank/suit glyphs owned by SOL/FCELL. */
+static const unsigned char game_glyph_code[10]={'0','1','2','3','4','5','6','7','8','9'};
+static const unsigned char game_glyph_logical[10]={64,65,66,67,68,69,70,71,72,73};
+static unsigned char game_digit_old[10][32];
 static int game_digits_installed=0;
 static int game_digit_app(void)
 {
   return tooltip_app_is("!BOXES")||tooltip_app_is("!SOL")||
          tooltip_app_is("!FCELL")||tooltip_app_is("!POP")||
          tooltip_app_is("!SNAKE")||tooltip_app_is("!PLUMB")||
-         tooltip_app_is("!WORDZ")||tooltip_app_is("!TYPO");
+         tooltip_app_is("!WORDZ");
 }
 static void game_digits_install(void)
 {
   int i;if(game_digits_installed||!game_digit_app())return;
-  for(i=0;i<13;i++){acc_glyph_read(game_glyph_code[i],game_digit_old[i]);acc_glyph_library(game_glyph_logical[i],game_glyph_code[i]);}
+  for(i=0;i<10;i++){acc_glyph_read(game_glyph_code[i],game_digit_old[i]);acc_glyph_library(game_glyph_logical[i],game_glyph_code[i]);}
   game_digits_installed=1;
 }
 static void game_digits_restore(void)
 {
   int i;if(!game_digits_installed)return;
-  for(i=0;i<13;i++)acc_glyph_write(game_glyph_code[i],game_digit_old[i]);
+  for(i=0;i<10;i++)acc_glyph_write(game_glyph_code[i],game_digit_old[i]);
   game_digits_installed=0;
+}
+static void game_digits_refresh(void)
+{
+  int i;if(!game_digits_installed)return;
+  for(i=0;i<10;i++)acc_glyph_library(game_glyph_logical[i],game_glyph_code[i]);
 }
 void acc_game_glyphs_suspend(void){game_digits_restore();}
 void acc_game_glyphs_resume(void){game_digits_install();}
@@ -345,6 +348,15 @@ static void tooltip_install(void)
   tooltip_glyph_saved=1;
 }
 
+static void tooltip_refresh_glyphs(void)
+{
+  int h;if(!tooltip_glyph_saved)return;
+  h=acc_font_height();
+  acc_glyph_write(TOOLTIP_ARROW_GLYPH,h==14?tooltip_arrow14:tooltip_arrow16);
+  acc_glyph_write(TOOLTIP_LEFT_GLYPH,h==14?tooltip_left14:tooltip_left16);
+  acc_glyph_write(TOOLTIP_RIGHT_GLYPH,h==14?tooltip_right14:tooltip_right16);
+}
+
 static void tooltip_uninstall(void)
 {
   if(!tooltip_glyph_saved)return;
@@ -390,6 +402,9 @@ void acc_restore_screen(void)
 {
   tooltip_restore();tooltip_active=0;
   acc36_restore_screen_base();
+  glyph36_refresh();
+  game_digits_refresh();
+  tooltip_refresh_glyphs();
 }
 
 void acc_end(void)

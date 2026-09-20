@@ -21,11 +21,6 @@ void acc_modal_end(void);
 #define LOWER_HALF 222
 #define KEY_LEFT 193
 #define KEY_RIGHT 139
-/* Private copies of ordinary CP437 numeric punctuation for the on-screen
-   keyboard.  ASCII digits / : . are globally remapped while games run, so
-   the keyboard cannot display those character codes directly. */
-#define KEY_NORMAL_BASE 140
-#define KEY_NORMAL_COUNT 13
 #define RECORDS 10
 
 #define F_RESET 1
@@ -69,7 +64,6 @@ static int load_level_text(int which)
 }
 
 static unsigned char old_seg[11][32],old_lower[32],old_key[2][32];
-static unsigned char old_key_normal[KEY_NORMAL_COUNT][32];
 static int level=0,focus=-1,running=0,finished=0,errors=0,last_bad=0,last_key=0;
 static unsigned long start_tick=0,last_second=999;
 static long correct_chars=0;
@@ -94,21 +88,9 @@ static void typo_font(int install)
     acc_glyph_read(KEY_LEFT,old_key[0]);acc_glyph_read(KEY_RIGHT,old_key[1]);
     memset(g,0,sizeof(g));if(h==14)memcpy(g,keycap14[0],14);else memcpy(g,keycap16[0],16);acc_glyph_write(KEY_LEFT,g);
     memset(g,0,sizeof(g));if(h==14)memcpy(g,keycap14[1],14);else memcpy(g,keycap16[1],16);acc_glyph_write(KEY_RIGHT,g);
-    /* Preserve ordinary keyboard legends in private slots before restoring
-       the game's custom numeric glyphs.  Text mode stores character codes,
-       not bitmaps, so merely suspending the custom font while drawing would
-       change the already-drawn keys again when the font was resumed. */
-    acc_game_glyphs_suspend();
-    for(i=0;i<KEY_NORMAL_COUNT;i++){
-      static const unsigned char src[KEY_NORMAL_COUNT]={'0','1','2','3','4','5','6','7','8','9','/',':','.'};
-      acc_glyph_read(KEY_NORMAL_BASE+i,old_key_normal[i]);
-      acc_glyph_read(src[i],g);acc_glyph_write(KEY_NORMAL_BASE+i,g);
-    }
-    acc_game_glyphs_resume();
   } else {
     for(i=0;i<11;i++)acc_glyph_write(SEG_BASE+i,old_seg[i]);acc_glyph_write(LOWER_HALF,old_lower);
     acc_glyph_write(KEY_LEFT,old_key[0]);acc_glyph_write(KEY_RIGHT,old_key[1]);
-    for(i=0;i<KEY_NORMAL_COUNT;i++)acc_glyph_write(KEY_NORMAL_BASE+i,old_key_normal[i]);
   }
 }
 
@@ -242,22 +224,13 @@ static int base_key(int c)
   switch(c){case '!':return'1';case '@':return'2';case '#':return'3';case '$':return'4';case '%':return'5';case '^':return'6';case '&':return'7';case '*':return'8';case '(':return'9';case ')':return'0';case '_':return'-';case '+':return'=';case '{':return'[';case '}':return']';case ':':return';';case '"':return'\'';case '<':return',';case '>':return'.';case '?':return'/';case '|':return'\\';}return c;
 }
 
-static unsigned char keyboard_char(int c)
-{
-  if(c>='0'&&c<='9')return(unsigned char)(KEY_NORMAL_BASE+c-'0');
-  if(c=='/')return KEY_NORMAL_BASE+10;
-  if(c==':')return KEY_NORMAL_BASE+11;
-  if(c=='.')return KEY_NORMAL_BASE+12;
-  return(unsigned char)c;
-}
-
 static void key_mark(int x,int y,int ch,int pressed)
 {
   int a=pressed?ACC_SELECT:ACC_CONTROL;
   int capfg=pressed?acc_appearance.selected_bg:acc_appearance.controls_bg;
   int ca=ACC_ATTR(acc_appearance.background,capfg);
   if(!pressed&&(toupper((unsigned char)ch)=='F'||toupper((unsigned char)ch)=='J'))a=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title);
-  acc_put(x,y,KEY_LEFT,ca);acc_put(x+1,y,keyboard_char(ch),a);acc_put(x+2,y,KEY_RIGHT,ca);
+  acc_put(x,y,KEY_LEFT,ca);acc_put(x+1,y,ch,a);acc_put(x+2,y,KEY_RIGHT,ca);
 }
 
 static void space_mark(int x,int y,int pressed)
@@ -294,8 +267,7 @@ static void draw_keyboard(int x,int y)
   static const char *r4="ZXCVBNM,./";
   int i,k=base_key(last_key),fl=keyboard_flags(),shift=(fl&3)!=0,caps=(fl&0x40)!=0;
   int upper=shift^caps;char c;
-  /* Keyboard legends use private copies of ordinary CP437 digits/punctuation,
-     while status numbers elsewhere retain the 3.61 game glyphs. */
+  /* Keyboard legends remain ordinary CP437. */
   for(i=0;r1[i];i++){c=shift?shifted_key(r1[i]):r1[i];key_mark(x+6+i*4,y,c,k==r1[i]);}
   for(i=0;r2[i];i++){c=r2[i];if(isalpha((unsigned char)c))c=(char)(upper?toupper(c):tolower(c));else if(shift)c=shifted_key(c);key_mark(x+8+i*4,y+1,c,k==r2[i]);}
   wide_key(x+2,y+2,"CAPS",caps,7);

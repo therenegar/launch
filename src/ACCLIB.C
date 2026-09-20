@@ -10,7 +10,9 @@
 #include <io.h>
 #include "ACCLIB.H"
 #ifndef ACCLIB_MIN_GLYPHS
+#define LAUNCH_GLYPH_FAR
 #include "GLYPHDAT.H"
+#undef LAUNCH_GLYPH_FAR
 #else
 /* !STACK has a large near-data card store.  Pulling the complete Launch!
    logical glyph library into its small-model DGROUP would push data+stack
@@ -48,26 +50,33 @@ static void font_plane_open(FONT_REGS *old){old->seq2=indexed_read(0x3C4,2);old-
 static void font_plane_close(const FONT_REGS *old){indexed_write(0x3C4,2,old->seq2);indexed_write(0x3C4,4,old->seq4);indexed_write(0x3CE,4,old->gc4);indexed_write(0x3CE,5,old->gc5);indexed_write(0x3CE,6,old->gc6);}
 int acc_font_height(void){unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);int v=*h;return(v>=8&&v<=32)?v:16;}
 
-/* VGA keeps the direct character-RAM path.  On genuine EGA, initialise the
-   standard 8x14 set with the BIOS ROM-font service, then use BIOS single-glyph
-   writes only.  ROM glyph reads are used solely to save the handful of slots
-   an accessory temporarily replaces; the full font is never copied/reloaded. */
-static int acc_video_is_vga(void)
-{
-  union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);
-  return r.h.al==0x1A;
-}
+/* EGA 8x14 font access.
+   launchui_font() first fills block 0 with the complete ROM font and selects
+   that block.  Custom glyphs are then overlaid with the BIOS one at a time. */
 static void ega14_rom_reset(void)
 {
-  union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1111;r.h.bl=0;
+  union REGS r;
+  memset(&r,0,sizeof(r));
+  r.x.ax=0x1101;
+  r.x.bx=0;
+  int86(0x10,&r,&r);
+  memset(&r,0,sizeof(r));
+  r.x.ax=0x1103;
+  r.x.bx=0;
   int86(0x10,&r,&r);
 }
-static void ega14_bios_write_one(int code,const unsigned char far *glyph)
+
+static void ega14_glyph_write(int code,const unsigned char far *glyph)
 {
   unsigned fseg=FP_SEG(glyph),foff=FP_OFF(glyph);
   _asm {
     push bp
     push es
+    /* code is a BP-relative C argument.  Read it BEFORE BP is repurposed
+       as the BIOS ES:BP glyph pointer.  The old ordering read an arbitrary
+       word after BP had changed, so custom glyphs were written into random
+       character slots (including ordinary spaces) on EGA. */
+    mov dx,code
     mov ax,fseg
     mov es,ax
     mov bp,foff
@@ -75,15 +84,15 @@ static void ega14_bios_write_one(int code,const unsigned char far *glyph)
     mov bh,14
     mov bl,0
     mov cx,1
-    mov dx,code
     int 10h
     pop es
     pop bp
   }
 }
+
 static void ega14_rom_read(int code,unsigned char *glyph)
 {
-  unsigned fseg,foff;unsigned char far *rom;int i;
+  unsigned fseg,foff;unsigned char far *font;int i;
   _asm {
     push bp
     push es
@@ -96,34 +105,69 @@ static void ega14_rom_read(int code,unsigned char *glyph)
     pop es
     pop bp
   }
-  rom=(unsigned char far *)MAKE_FP(fseg,foff);
-  rom+=(unsigned)code*14U;
-  for(i=0;i<14;i++)glyph[i]=rom[i];
+  font=(unsigned char far *)MAKE_FP(fseg,foff);
+  font+=(unsigned)code*14U;
+  for(i=0;i<14;i++)glyph[i]=font[i];
   for(;i<32;i++)glyph[i]=0;
 }
-void acc_glyph_write(int code,const unsigned char *glyph);
-static void mouse_glyph_write(const unsigned char *glyph){acc_glyph_write(127,glyph);}
+
+static unsigned char far acc_glyph_stage[32];
+
+static void acc_glyph_write_far(int code,const unsigned char far *glyph)
+{
+  FONT_REGS old;unsigned char far *font;int i;
+  if(acc_font_height()==14){
+    ega14_glyph_write(code,glyph);
+    return;
+  }
+  font_plane_open(&old);
+  font=(unsigned char far *)MAKE_FP(0xA000,code*32);
+  for(i=0;i<32;i++)font[i]=glyph[i];
+  font_plane_close(&old);
+}
+
+static void mouse_glyph_write(const unsigned char *glyph);
+
 void acc_glyph_read(int code,unsigned char *glyph)
 {
   FONT_REGS old;unsigned char far *font;int i;
-  if(acc_font_height()==14&&!acc_video_is_vga()){ega14_rom_read(code,glyph);return;}
-  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);
-  for(i=0;i<32;i++)glyph[i]=font[i];font_plane_close(&old);
+  if(acc_font_height()==14){
+    ega14_rom_read(code,glyph);
+    return;
+  }
+  font_plane_open(&old);
+  font=(unsigned char far *)MAKE_FP(0xA000,code*32);
+  for(i=0;i<32;i++)glyph[i]=font[i];
+  font_plane_close(&old);
 }
+
 void acc_glyph_write(int code,const unsigned char *glyph)
 {
-  FONT_REGS old;unsigned char far *font;int i;
-  if(acc_font_height()==14&&!acc_video_is_vga()){ega14_bios_write_one(code,glyph);return;}
-  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);
-  for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);
+  int i;
+  /* Accessory callers frequently supply near or stack buffers.  Stage them
+     into explicit FAR storage so the EGA BIOS always receives a real ES:BP
+     pointer, exactly as the working core does. */
+  for(i=0;i<32;i++)acc_glyph_stage[i]=glyph[i];
+  acc_glyph_write_far(code,acc_glyph_stage);
 }
-void acc_glyph_library(int logical_id,int code){
+
+static void mouse_glyph_write(const unsigned char *glyph)
+{
+  acc_glyph_write(127,glyph);
+}
+
+void acc_glyph_library(int logical_id,int code)
+{
 #ifndef ACCLIB_MIN_GLYPHS
- if(logical_id<1||logical_id>LAUNCH_GLYPH_COUNT)return;acc_glyph_write(code,acc_font_height()==14?launch_glyph14[logical_id-1]:launch_glyph16[logical_id-1]);
+  if(logical_id<1||logical_id>LAUNCH_GLYPH_COUNT)return;
+  acc_glyph_write_far(code,
+    acc_font_height()==14?launch_glyph14[logical_id-1]:launch_glyph16[logical_id-1]);
 #else
- if(logical_id!=56)return;acc_glyph_write(code,acc_font_height()==14?stack_divider14:stack_divider16);
+  if(logical_id!=56)return;
+  acc_glyph_write(code,acc_font_height()==14?stack_divider14:stack_divider16);
 #endif
 }
+
 static const unsigned char launchui_codes[41]={16,17,30,31,169,170,173,174,175,181,182,183,184,185,186,187,188,189,190,198,199,200,201,202,224,204,205,206,207,208,209,210,211,212,213,214,215,216,220,244,245};
 int acc_glyph_is_custom(int code){int i;if(code==127||code==255||code==8)return 1;for(i=0;i<(int)sizeof(launchui_codes);i++)if((unsigned)code==(unsigned)launchui_codes[i])return 1;return 0;}
 static const unsigned char launchui_glyphs[41][32]={
@@ -220,24 +264,72 @@ static int launchui_installed=0;
 static int acc_screen_restored=0;
 static void launchui_font(int install)
 {
-  int i,ega;if(saved_mode==7)return;ega=launchui_ega14()&&!acc_video_is_vga();
+  int i;
+  if(saved_mode==7)return;
+
+#ifndef ACCLIB_MIN_GLYPHS
+  if(launchui_ega14()){
+    if(install){
+      if(launchui_installed)return;
+      ega14_rom_reset();
+      for(i=0;i<(int)sizeof(launchui_codes);i++)
+        acc_glyph_write_far(launchui_codes[i],launch_glyph14[i]);
+      acc_glyph_write_far(255,launch_glyph14[55]);
+      launchui_installed=1;
+    }else if(launchui_installed){
+      ega14_rom_reset();
+      launchui_installed=0;
+    }
+    return;
+  }
+
   if(install){
     if(launchui_installed)return;
-    if(ega)ega14_rom_reset();
     for(i=0;i<(int)sizeof(launchui_codes);i++){
       acc_glyph_read(launchui_codes[i],launchui_old[i]);
-      acc_glyph_write(launchui_codes[i],ega?launchui_glyphs14[i]:launchui_glyphs[i]);
+      acc_glyph_write_far(launchui_codes[i],launch_glyph16[i]);
     }
-    acc_glyph_read(255,divider_old);acc_glyph_library(56,255);launchui_installed=1;
-  } else if(launchui_installed){
-    if(ega)ega14_rom_reset();
-    else{
-      acc_glyph_write(255,divider_old);
-      for(i=0;i<(int)sizeof(launchui_codes);i++)acc_glyph_write(launchui_codes[i],launchui_old[i]);
-    }
+    acc_glyph_read(255,divider_old);
+    acc_glyph_write_far(255,launch_glyph16[55]);
+    launchui_installed=1;
+  }else if(launchui_installed){
+    acc_glyph_write(255,divider_old);
+    for(i=0;i<(int)sizeof(launchui_codes);i++)
+      acc_glyph_write(launchui_codes[i],launchui_old[i]);
     launchui_installed=0;
   }
+#else
+  /* !STACK retains its reduced glyph set to stay within small-model DGROUP. */
+  if(launchui_ega14()){
+    if(install){
+      if(launchui_installed)return;
+      ega14_rom_reset();
+      for(i=0;i<(int)sizeof(launchui_codes);i++)
+        acc_glyph_write(launchui_codes[i],launchui_glyphs14[i]);
+      acc_glyph_write(255,stack_divider14);
+      launchui_installed=1;
+    }else if(launchui_installed){
+      ega14_rom_reset();launchui_installed=0;
+    }
+    return;
+  }
+  if(install){
+    if(launchui_installed)return;
+    for(i=0;i<(int)sizeof(launchui_codes);i++){
+      acc_glyph_read(launchui_codes[i],launchui_old[i]);
+      acc_glyph_write(launchui_codes[i],launchui_glyphs[i]);
+    }
+    acc_glyph_read(255,divider_old);acc_glyph_write(255,stack_divider16);
+    launchui_installed=1;
+  }else if(launchui_installed){
+    acc_glyph_write(255,divider_old);
+    for(i=0;i<(int)sizeof(launchui_codes);i++)
+      acc_glyph_write(launchui_codes[i],launchui_old[i]);
+    launchui_installed=0;
+  }
+#endif
 }
+
 static void mouse_pointer_restore(void){union REGS r;if(!mouse_glyph_saved&&!mouse_target_saved)return;if(mouse_glyph_saved)mouse_glyph_write(mouse_old_glyph);if(mouse_target_saved)acc_glyph_write(8,mouse_old_target);memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;r.x.cx=0xFFFF;r.x.dx=0x7700;int86(0x33,&r,&r);mouse_glyph_saved=0;mouse_target_saved=0;}
 static void mouse_pointer_install(void)
 {

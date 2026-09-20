@@ -277,6 +277,27 @@ static void draw_grid(int bx,int by)
   }
 }
 
+static void draw_grid_cell(int bx,int by,int x,int y)
+{
+  int a,sel,done,cap;
+  if(x<0||x>=GW||y<0||y>=GH)return;
+  sel=path_contains(x,y)>=0;done=played[y][x]!=0;a=cell_attr(x,y);
+  if(sel){
+    cap=ACC_ATTR(acc_appearance.background,acc_appearance.selected_bg);
+    acc_put(bx+x*4-1,by+y*2,WZ_KEY_LEFT,cap);
+    acc_put(bx+x*4,by+y*2,grid[y][x],ACC_SELECT);
+    acc_put(bx+x*4+1,by+y*2,WZ_KEY_RIGHT,cap);
+  } else if(done){
+    cap=ACC_ATTR(acc_appearance.background,acc_appearance.controls_bg);
+    acc_put(bx+x*4-1,by+y*2,WZ_KEY_LEFT,cap);
+    acc_put(bx+x*4,by+y*2,grid[y][x],ACC_CONTROL);
+    acc_put(bx+x*4+1,by+y*2,WZ_KEY_RIGHT,cap);
+  } else {
+    acc_text(bx+x*4-1,by+y*2,"   ",ACC_BG,3);
+    acc_put(bx+x*4,by+y*2,grid[y][x],a);
+  }
+}
+
 static void draw_word_slot(int x,int y,int number,const char *word,int done)
 {
   char slot[9],s[16];int i,n=(int)strlen(word);
@@ -392,6 +413,7 @@ int main(int argc,char **argv)
       else if(focus==0&&(key==256+80||key==0x5000)){if(cursor_y<GH-1)cursor_y++;need=1;key=0;}
       else if(focus==0&&(key==256+75||key==0x4B00)){if(cursor_x>0)cursor_x--;need=1;key=0;}
       else if(focus==0&&(key==256+77||key==0x4D00)){if(cursor_x<GW-1)cursor_x++;need=1;key=0;}
+      else if(key==8){if(path_len>0){int px=pathx[path_len-1],py=pathy[path_len-1];path_len--;draw_grid_cell(bx,by,px,py);}key=0;}
       else if(key==' '&&!focus){path_toggle(cursor_x,cursor_y);need=1;key=0;}
       else if(key==13&&!focus){submit_path();need=1;key=0;}
       else if(key==13&&focus>0){
@@ -426,12 +448,12 @@ int main(int argc,char **argv)
       if((buttons&1)&&mouse_selecting&&mouse_cell(bx,by,mx,my,&cx,&cy)){
         if(cx!=mouse_start_x||cy!=mouse_start_y)mouse_moved=1;
         if(path_len==0||cx!=pathx[path_len-1]||cy!=pathy[path_len-1]){
-          path_drag_add(cx,cy);cursor_x=cx;cursor_y=cy;need=1;
+          {int ox=cursor_x,oy=cursor_y,old_len=path_len;path_drag_add(cx,cy);cursor_x=cx;cursor_y=cy;draw_grid_cell(bx,by,ox,oy);if(path_len!=old_len||ox!=cx||oy!=cy)draw_grid_cell(bx,by,cx,cy);}
         }
       }
       if(!(buttons&1)&&(last_buttons&1)&&mouse_selecting){
-        if(!mouse_moved&&mouse_start_selected)path_toggle(mouse_start_x,mouse_start_y);
-        mouse_selecting=0;need=1;
+        if(!mouse_moved&&mouse_start_selected){path_toggle(mouse_start_x,mouse_start_y);draw_grid_cell(bx,by,mouse_start_x,mouse_start_y);}
+        mouse_selecting=0;
       }
       last_buttons=buttons;
     }

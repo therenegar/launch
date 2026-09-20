@@ -7,7 +7,7 @@
 #define MAX_EVENTS 128
 #define ICS_LINE 256
 typedef struct {int y,m,d,all_day,start_min,end_min,recur,interval;char summary[64],location[64];} EVENT;
-static EVENT ev[MAX_EVENTS];static EVENT day_list[MAX_EVENTS];static int ev_count;
+static EVENT ev[MAX_EVENTS];static EVENT *day_list[MAX_EVENTS];static int ev_count;
 static const char *months[12]={"January","February","March","April","May","June","July","August","September","October","November","December"};
 static const char *days[7]={"SUN","MON","TUE","WED","THU","FRI","SAT"};static unsigned char calendar_lines[13][57];
 static int leap(int y){return y%4==0&&(y%100!=0||y%400==0);}static int mdays(int m,int y){static int d[12]={31,28,31,30,31,30,31,31,30,31,30,31};return m==1&&leap(y)?29:d[m];}
@@ -39,7 +39,7 @@ static int has_event(int y,int m,int d){int i;for(i=0;i<ev_count;i++)if(occurs(&
 static int line_char(int m){switch(m){case 3:return 179;case 12:return 196;case 10:return 218;case 6:return 191;case 9:return 192;case 5:return 217;case 11:return 195;case 7:return 180;case 14:return 194;case 13:return 193;case 15:return 197;}return ' ';}
 static void draw_month(int x,int y,int m,int year,int tm,int ty,int td){char s[66];int r,c,d,i,xx,yy,start=weekday(year,m,1),n=mdays(m,year),gx=x+2,gy=y+4,sel;acc_fill(x+1,y+1,59,17,' ',ACC_BG);sprintf(s,"%s %d",months[m],year);acc_text(x+2+(57-(int)strlen(s))/2,y+2,s,ACC_HEADING,(int)strlen(s));for(c=0;c<7;c++)acc_text(gx+c*8+2,y+3,days[c],ACC_LABEL,3);acc_fill(gx,gy,57,13,' ',ACC_CONTROL);memset(calendar_lines,0,sizeof(calendar_lines));for(r=0;r<6;r++)for(c=0;c<7;c++){d=r*7+c-start+1;if(d<1||d>n)continue;xx=c*8;yy=r*2;for(i=0;i<8;i++){calendar_lines[yy][xx+i]|=8;calendar_lines[yy][xx+i+1]|=4;calendar_lines[yy+2][xx+i]|=8;calendar_lines[yy+2][xx+i+1]|=4;}for(i=0;i<2;i++){calendar_lines[yy+i][xx]|=2;calendar_lines[yy+i+1][xx]|=1;calendar_lines[yy+i][xx+8]|=2;calendar_lines[yy+i+1][xx+8]|=1;}}for(yy=0;yy<13;yy++)for(xx=0;xx<57;xx++)if(calendar_lines[yy][xx])acc_put(gx+xx,gy+yy,line_char(calendar_lines[yy][xx]),ACC_CONTROL);for(r=0;r<6;r++)for(c=0;c<7;c++){d=r*7+c-start+1;if(d<1||d>n)continue;sel=d==td&&m==tm&&year==ty;sprintf(s,"%-2d",d);acc_text(gx+c*8+2,gy+1+r*2,s,sel?ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles):ACC_CONTROL,2);if(has_event(year,m,d))acc_put(gx+c*8+6,gy+1+r*2,4,ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title));}}
 static void fmt_time(char*b,int mins){int h=mins/60,m=mins%60,hh=h%12;if(!hh)hh=12;sprintf(b,"%d:%02d%s",hh,m,h<12?"am":"pm");}
-static int cmp_event(const void*a,const void*b){const EVENT*x=(const EVENT*)a,*y=(const EVENT*)b;if(x->all_day!=y->all_day)return y->all_day-x->all_day;return x->start_min-y->start_min;}
+static int cmp_event(const void*a,const void*b){const EVENT*x=*(EVENT**)a,*y=*(EVENT**)b;if(x->all_day!=y->all_day)return y->all_day-x->all_day;return x->start_min-y->start_min;}
 static void day_shift(int *year,int *mon,int *day,int delta)
 {
   *day+=delta;
@@ -52,8 +52,8 @@ static void day_dialog(int year,int mon,int day)
   unsigned mb=0;char b[90],t1[16],t2[16];
   static char*wd[]={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
   for(;;){
-    n=0;for(i=0;i<ev_count;i++)if(occurs(&ev[i],year,mon,day))day_list[n++]=ev[i];
-    qsort(day_list,n,sizeof(EVENT),cmp_event);
+    n=0;for(i=0;i<ev_count;i++)if(occurs(&ev[i],year,mon,day))day_list[n++]=&ev[i];
+    qsort(day_list,n,sizeof(EVENT*),cmp_event);
     acc_subbox(x,y,w,h,"Day",0);
     sprintf(b,"%s, %d %s %d",wd[weekday(year,mon,day)],day,months[mon],year);
     acc_text(x+3,y+2,b,ACC_HEADING,36);
@@ -65,16 +65,16 @@ static void day_dialog(int year,int mon,int day)
     for(i=0;i<11;i++)acc_fill(x+3,y+4+i,51,1,' ',ACC_BG);
     for(i=top;i<n&&i<top+6;i++){
       int yy=y+4+(i-top)*2;
-      if(day_list[i].all_day){
-        sprintf(b,"[ %s ]",day_list[i].summary[0]?day_list[i].summary:"All day event");
+      if(day_list[i]->all_day){
+        sprintf(b,"[ %s ]",day_list[i]->summary[0]?day_list[i]->summary:"All day event");
         acc_text(x+3,yy,b,ACC_CONTROL,51);
       }else{
-        fmt_time(t1,day_list[i].start_min);if(day_list[i].end_min)fmt_time(t2,day_list[i].end_min);else t2[0]=0;
+        fmt_time(t1,day_list[i]->start_min);if(day_list[i]->end_min)fmt_time(t2,day_list[i]->end_min);else t2[0]=0;
         acc_put(x+3,yy,218,ACC_LABEL);acc_text(x+6,yy,t1,ACC_LABEL,8);
-        acc_text(x+16,yy,day_list[i].summary,ACC_TEXT,38);
+        acc_text(x+16,yy,day_list[i]->summary,ACC_TEXT,38);
         acc_put(x+3,yy+1,192,ACC_LABEL);acc_put(x+4,yy+1,16,ACC_LABEL);
         if(t2[0])acc_text(x+6,yy+1,t2,ACC_LABEL,8);
-        if(day_list[i].location[0]){acc_text(x+16,yy+1,"@ ",ACC_LABEL,2);acc_text(x+18,yy+1,day_list[i].location,ACC_LABEL,35);}
+        if(day_list[i]->location[0]){acc_text(x+16,yy+1,"@ ",ACC_LABEL,2);acc_text(x+18,yy+1,day_list[i]->location,ACC_LABEL,35);}
       }
     }
     if(top>0)acc_put(x+w-3,y+4,30,ACC_BORDER);if(top+6<n)acc_put(x+w-3,y+15,31,ACC_BORDER);
