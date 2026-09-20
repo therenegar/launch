@@ -229,6 +229,35 @@ static void colour_text(const char *s,int attr)
     if(++col>=cols){col=0;row++;}
   }
 }
+
+static void normalise_current_output_row(void)
+{
+  union REGS r;
+  unsigned char mode,page;
+  unsigned cols,row,col,seg;
+  unsigned short far *video;
+
+  if(!_isatty(_fileno(stdout)))return;
+  fflush(stdout);
+
+  memset(&r,0,sizeof(r));
+  r.h.ah=0x0F;
+  int86(0x10,&r,&r);
+  mode=r.h.al;
+  cols=r.h.ah?r.h.ah:80;
+  page=r.h.bh;
+
+  r.h.ah=3;
+  r.h.bh=page;
+  int86(0x10,&r,&r);
+  row=r.h.dh;
+
+  seg=(mode==7)?0xB000:0xB800;
+  video=(unsigned short far *)((unsigned long)seg<<16);
+  for(col=0;col<cols;col++)
+    video[row*cols+col]=(video[row*cols+col]&0x00FF)|0x0700;
+}
+
 static void status_icon(int indent,int colour,int symbol)
 {
   char block[2],mark[2];int i;
@@ -429,7 +458,13 @@ static void draw_extract_progress(void)
   sprintf(line+pos,"%3d%%",percent);pos+=(int)strlen(line+pos);line[pos]=0;
   colour_text(line,11);
   fflush(stdout);
-  if(extract_progress_done>=extract_progress_total)putchar('\n');
+  if(extract_progress_done>=extract_progress_total){
+    putchar('\n');
+    /* If the newline scrolls the screen, DOS/BIOS can create the new bottom
+       row using the cyan attribute from the progress line.  Restore the whole
+       active row to the installer's normal grey before the next prompt. */
+    normalise_current_output_row();
+  }
 }
 
 static void advance_extract_progress(void)

@@ -5,6 +5,7 @@
 #include <bios.h>
 #include <conio.h>
 #include "ACCLIB.H"
+void acc_mouse_display(int show);
 #define DW 30
 #define DH 12
 #define CW 96
@@ -31,7 +32,7 @@ static void draw_all(int x,int y,int cx,int cy,int ox,int oy,int selected,int fo
 static void keep_visible(int *ox,int *oy,int cx,int cy){if(cx<*ox)*ox=cx;else if(cx>=*ox+DW)*ox=cx-DW+1;if(cy<*oy)*oy=cy;else if(cy>=*oy+DH)*oy=cy-DH+1;}
 int main(int argc,char **argv){char small[ACC_PATH],big[ACC_PATH],message[ACC_PATH*2+48],*bn;int bx,by,x,y,cx=0,cy=0,ox=0,oy=0,mx=0,my=0,colour=15,key=0,focus=-1,vx,vy;unsigned mb=0;if(acc_help(argc,argv,"!DRAW","A persistent scrollable 96 by 96 colour pixel editor with cropped BMP export."))return 0;if(!acc_begin(argv[0],"Pixel Draw",0))return 1;load_pixels();bx=(acc_cols-66)/2;by=(acc_rows-21)/2;x=bx+3;y=by+2;acc_box(bx,by,66,21,"Pixel Draw");draw_all(x,y,cx,cy,ox,oy,colour,focus);
  while(key!=27){acc_button(bx+3,y+DH+4,"  Clear  ",focus==1);acc_button(bx+14,y+DH+4,"  Grid  ",focus==2);acc_button(bx+25,y+DH+4,"  Export  ",focus==3);acc_button(bx+33,y+DH+4,"  Show  ",focus==4);acc_button(bx+56,y+DH+4,"  Close  ",focus==5);acc_wait(&key,&mx,&my,&mb);
-  if((mb&3)&&my>=y&&my<y+DH&&mx>=x&&mx<x+DW*2){union REGS mr;int held=(mb&2)?2:1,buttons;focus=0;memset(&mr,0,sizeof(mr));mr.x.ax=1;int86(0x33,&mr,&mr);do{acc_mouse(&mx,&my,&buttons);if((buttons&held)&&my>=y&&my<y+DH&&mx>=x&&mx<x+DW*2){vx=(mx-x)/2;vy=my-y;cx=ox+vx;cy=oy+vy;pixels[cy*CW+cx]=(held==2)?0:(unsigned char)colour;cell_draw(x,y,vx,vy,1,ox,oy);}}while(buttons&held);mr.x.ax=2;int86(0x33,&mr,&mr);key=0;continue;}
+  if((mb&3)&&my>=y&&my<y+DH&&mx>=x&&mx<x+DW*2){int held=(mb&2)?2:1,buttons;focus=0;acc_mouse_display(1);do{acc_mouse(&mx,&my,&buttons);if((buttons&held)&&my>=y&&my<y+DH&&mx>=x&&mx<x+DW*2){vx=(mx-x)/2;vy=my-y;cx=ox+vx;cy=oy+vy;pixels[cy*CW+cx]=(held==2)?0:(unsigned char)colour;cell_draw(x,y,vx,vy,1,ox,oy);}}while(buttons&held);acc_mouse_display(0);key=0;continue;}
   if((mb&1)&&mx==x+DW*2&&my>=y&&my<y+DH){focus=0;if(my==y&&oy>0)oy--;else if(my==y+DH-1&&oy<CH-DH)oy++;else if(my>y&&my<y+DH-1)oy=(my-y-1)*(CH-DH)/(DH-3);if(cy<oy)cy=oy;if(cy>=oy+DH)cy=oy+DH-1;draw_all(x,y,cx,cy,ox,oy,colour,focus);key=0;continue;}
   if((mb&1)&&my==y+DH&&mx>=x&&mx<x+DW*2){focus=0;if(mx==x&&ox>0)ox--;else if(mx==x+DW*2-1&&ox<CW-DW)ox++;else if(mx>x&&mx<x+DW*2-1)ox=(mx-x-1)*(CW-DW)/(DW*2-3);if(cx<ox)cx=ox;if(cx>=ox+DW)cx=ox+DW-1;draw_all(x,y,cx,cy,ox,oy,colour,focus);key=0;continue;}
   if((mb&1)&&my>=y+DH+1&&my<=y+DH+2&&mx>=x&&mx<x+40){colour=((my-y-DH-1)*8)+(mx-x)/5;palette_draw(x,y+DH+1,colour);key=0;continue;}

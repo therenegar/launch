@@ -14,6 +14,9 @@ typedef struct { char used,title[CT+1],text[CW*VISIBLE_LINES]; } OLD_CARD;
 
 static CARD cards[CARDS];
 static int count=1,current=0;
+#define STACK_CLIP_MAX (CW*TEXT_LINES+TEXT_LINES*2+1)
+static int stack_sel_anchor=-1,stack_sel_caret=-1,stack_clip_len=0,stack_sel_repaint=0;
+static char far stack_clip[STACK_CLIP_MAX];
 
 static void defaults(void)
 {
@@ -93,6 +96,12 @@ static int export_cards(char *p)
   fclose(f);return 1;
 }
 
+static int stack_sel_low(void){return stack_sel_anchor<stack_sel_caret?stack_sel_anchor:stack_sel_caret;}
+static int stack_sel_high(void){return stack_sel_anchor>stack_sel_caret?stack_sel_anchor:stack_sel_caret;}
+static int stack_has_selection(void){return stack_sel_anchor>=0&&stack_sel_caret>=0&&stack_sel_anchor!=stack_sel_caret;}
+static void stack_selection_clear(void){stack_sel_anchor=stack_sel_caret=-1;}
+static int stack_selected(int line,int col){int p=line*CW+col;return stack_has_selection()&&p>=stack_sel_low()&&p<stack_sel_high();}
+
 static void card_box(int x,int y,int index,int active,int title_focus,int title_edit,int text_focus,int cx,int cy,int top)
 {
   char number[8];int i,r,line,w=56,h=12;
@@ -102,7 +111,7 @@ static void card_box(int x,int y,int index,int active,int title_focus,int title_
   if(!active)titleattr=ACC_ATTR(acc_appearance.controls_bg,dimfg);
   else if(title_edit)titleattr=ACC_SELECT;
   else if(title_focus)titleattr=ACC_ATTR(acc_appearance.background,acc_appearance.titles);
-  else titleattr=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles);
+  else titleattr=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title);
   nattr=active?ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles):ACC_ATTR(acc_appearance.controls_bg,dimfg);
   acc_fill(x,y,w,h,' ',ACC_CONTROL);
   acc_put(x,y,218,borderattr);acc_put(x+w-1,y,191,borderattr);
@@ -113,7 +122,7 @@ static void card_box(int x,int y,int index,int active,int title_focus,int title_
   sprintf(number,"%d",index+1);acc_text(x+w-2-(int)strlen(number),y+1,number,nattr,(int)strlen(number));
   for(i=2;i<w-2;i++)acc_put(x+i,y+2,205,ACC_ATTR(acc_appearance.controls_bg,12));
   if(active){
-    for(r=0;r<VISIBLE_LINES;r++){line=top+r;acc_text(x+2,y+3+r,cards[index].text+line*CW,ACC_CONTROL,CW);}
+    for(r=0;r<VISIBLE_LINES;r++){int c;line=top+r;acc_text(x+2,y+3+r,cards[index].text+line*CW,ACC_CONTROL,CW);if(text_focus)for(c=0;c<CW;c++)if(stack_selected(line,c))acc_put(x+2+c,y+3+r,cards[index].text[line*CW+c],ACC_SELECT);}
     /* Compact scroll treatment: only show navigation arrows when that
        direction can actually scroll.  No persistent track. */
     acc_put(x+w-2,y+3,top>0?30:' ',ACC_CONTROL);
@@ -135,6 +144,47 @@ static void cards_draw(int x,int y,int focus,int title_edit,int cx,int cy,int to
   card_box(x,y,current,1,focus==0,title_edit,focus==1,cx,cy,top);
 }
 
+static void stack_word_wrap(int *pcx,int *pcy)
+{
+  int cy=*pcy,start=CW-1,len,i,can=1;char *text=cards[current].text;if(cy>=TEXT_LINES-1)return;
+  if(text[cy*CW+CW-1]==' '){*pcy=cy+1;*pcx=0;return;}
+  while(start>0&&text[cy*CW+start-1]!=' ')start--;
+  if(start<=0){*pcy=cy+1;*pcx=0;return;}
+  len=CW-start;for(i=CW-len;i<CW;i++)if(text[(cy+1)*CW+i]!=' ')can=0;
+  if(!can){*pcy=cy+1;*pcx=0;return;}
+  memmove(text+(cy+1)*CW+len,text+(cy+1)*CW,CW-len);
+  memcpy(text+(cy+1)*CW,text+cy*CW+start,len);memset(text+cy*CW+start,' ',CW-start);
+  *pcy=cy+1;*pcx=len;
+}
+static int stack_shift_down(void){return (*(unsigned char far *)(((unsigned long)0x40<<16)|0x17)&3)!=0;}
+static void stack_selection_move(int oldpos,int newpos,int shift)
+{
+ if(shift){stack_sel_repaint=1;if(stack_sel_anchor<0)stack_sel_anchor=oldpos;stack_sel_caret=newpos;if(stack_sel_caret==stack_sel_anchor)stack_selection_clear();}
+ else {if(stack_has_selection())stack_sel_repaint=1;stack_selection_clear();}
+}
+static void stack_copy_selection(void)
+{
+ int lo,hi,p,row,col,n=0;if(!stack_has_selection())return;lo=stack_sel_low();hi=stack_sel_high();
+ for(p=lo;p<hi&&n<STACK_CLIP_MAX-3;){row=p/CW;col=p%CW;stack_clip[n++]=cards[current].text[row*CW+col];p++;if(p<hi&&p%CW==0){stack_clip[n++]='\r';stack_clip[n++]='\n';}}
+ stack_clip_len=n;
+}
+static void stack_delete_selection(int *pcx,int *pcy)
+{
+ int lo,hi,fr,lr,r,start,end,count;if(!stack_has_selection())return;lo=stack_sel_low();hi=stack_sel_high();fr=lo/CW;lr=(hi-1)/CW;
+ for(r=fr;r<=lr;r++){start=(r==fr)?lo%CW:0;end=(r==lr)?((hi-1)%CW)+1:CW;count=end-start;if(count>0){memmove(cards[current].text+r*CW+start,cards[current].text+r*CW+end,CW-end);memset(cards[current].text+r*CW+CW-count,' ',count);}}
+ *pcy=fr;*pcx=lo%CW;stack_selection_clear();
+}
+static void stack_insert_one(int *pcx,int *pcy,int ch,int insert)
+{
+ int cx=*pcx,cy=*pcy,base=cy*CW;if(insert&&cx<CW-1)memmove(cards[current].text+base+cx+1,cards[current].text+base+cx,CW-cx-1);cards[current].text[base+cx]=(char)ch;if(cx<CW-1)cx++;else if(cy<TEXT_LINES-1)stack_word_wrap(&cx,&cy);*pcx=cx;*pcy=cy;
+}
+static void stack_paste(int *pcx,int *pcy,int insert)
+{
+ int i,c;if(stack_has_selection())stack_delete_selection(pcx,pcy);for(i=0;i<stack_clip_len&&*pcy<TEXT_LINES;i++){c=(unsigned char)stack_clip[i];if(c=='\r')continue;if(c=='\n'){if(*pcy<TEXT_LINES-1){(*pcy)++;*pcx=0;}continue;}stack_insert_one(pcx,pcy,c,insert);}
+}
+
+void acc_tooltip_region(int x,int y,int w,const char *text,int active);
+void acc_tooltip_clear_regions(void);
 int main(int argc,char **argv)
 {
   char counter[12],exported[ACC_PATH],message[ACC_PATH+32];
@@ -154,12 +204,12 @@ int main(int argc,char **argv)
     if(count>1)acc_button(x+14,y+13," Next ",focus==3);else acc_button_disabled(x+14,y+13," Next ");acc_button(x+21,y+13,"  Add  ",focus==4);
     if(count>1)acc_button(x+29,y+13,"  Delete  ",focus==5);else acc_button_disabled(x+29,y+13,"  Delete  ");acc_button(x+37,y+13,"  Export  ",focus==6);
     acc_button(x+55,y+13,"  Close  ",focus==7);
-    acc_wait(&key,&mx,&my,&mb);
+    acc_tooltip_clear_regions();acc_tooltip_region(px+2,y+1,CT,"Select to edit title",1);if(count>=2)acc_tooltip_region(px+4,y-1,CT,"Bring card to front",1);if(count>=3)acc_tooltip_region(px+6,y-3,CT,"Bring card to front",1);acc_wait(&key,&mx,&my,&mb);
 
-    if((mb&1)&&count>=2&&my==y-1&&mx>=px+4&&mx<px+26){select_card(lower_card(1));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
-    if((mb&1)&&count>=3&&my==y-3&&mx>=px+6&&mx<px+28){select_card(lower_card(2));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
+    if((mb&1)&&count>=2&&my==y-1&&mx>=px+4&&mx<px+26){stack_selection_clear();select_card(lower_card(1));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
+    if((mb&1)&&count>=3&&my==y-3&&mx>=px+6&&mx<px+28){stack_selection_clear();select_card(lower_card(2));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
     if((mb&1)&&my==y+1&&mx>=px+2&&mx<px+24){
-      int len=(int)strlen(cards[current].title);
+      int len;stack_selection_clear();len=(int)strlen(cards[current].title);
       if(focus==0){title_edit=1;tp=mx-(px+2);if(tp>len)tp=len;}
       else {focus=0;title_edit=0;tp=mx-(px+2);if(tp>len)tp=len;}
       dirty=1;key=0;continue;
@@ -172,8 +222,8 @@ int main(int argc,char **argv)
       if(cy<top)cy=top;if(cy>=top+VISIBLE_LINES)cy=top+VISIBLE_LINES-1;
       focus=1;title_edit=0;dirty=1;key=0;continue;
     }
-    if((mb&1)&&my>=y+3&&my<y+3+VISIBLE_LINES&&mx>=px+2&&mx<px+2+CW){focus=1;title_edit=0;cx=mx-(px+2);cy=top+my-(y+3);dirty=1;key=0;continue;}
-    if((mb&1)&&my==y+13){title_edit=0;if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+14&&mx<x+19)focus=3;else if(mx>=x+21&&mx<x+27)focus=4;else if(count>1&&mx>=x+29&&mx<x+35)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+55&&mx<x+61)focus=7;key=13;}
+    if((mb&1)&&my>=y+3&&my<y+3+VISIBLE_LINES&&mx>=px+2&&mx<px+2+CW){focus=1;title_edit=0;stack_selection_clear();cx=mx-(px+2);cy=top+my-(y+3);dirty=1;key=0;continue;}
+    if((mb&1)&&my==y+13){stack_selection_clear();title_edit=0;if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+14&&mx<x+19)focus=3;else if(mx>=x+21&&mx<x+27)focus=4;else if(count>1&&mx>=x+29&&mx<x+35)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+55&&mx<x+61)focus=7;key=13;}
 
     if(key==27)break;
     if(key==9||key==271){
@@ -181,17 +231,18 @@ int main(int argc,char **argv)
       title_edit=0;
       if(focus<0)focus=(dir<0)?7:0;
       else do { focus=(focus+dir+8)%8; } while(count<=1&&(focus==2||focus==3||focus==5));
-      dirty=1;key=0;continue;
+      if(focus!=1)stack_selection_clear();dirty=1;key=0;continue;
     }
     if(key==13&&focus==0){
+      stack_selection_clear();
       if(title_edit)title_edit=0;else {title_edit=1;tp=(int)strlen(cards[current].title);}
       dirty=1;key=0;continue;
     }
     if(key==13&&focus>=2){
-      if(focus==2){select_card(higher_card());cx=cy=top=0;}
-      else if(focus==3){select_card(lower_card(1));cx=cy=top=0;}
-      else if(focus==4&&count<CARDS){cards[count].used=1;sprintf(cards[count].title,"Card %d",count+1);memset(cards[count].text,' ',sizeof(cards[count].text));count++;select_card(count-1);cx=cy=top=0;}
-      else if(focus==5&&count>1){for(i=current;i<count-1;i++)cards[i]=cards[i+1];count--;if(current>=count)current=count-1;cx=cy=top=0;}
+      if(focus==2){stack_selection_clear();select_card(higher_card());cx=cy=top=0;}
+      else if(focus==3){stack_selection_clear();select_card(lower_card(1));cx=cy=top=0;}
+      else if(focus==4&&count<CARDS){cards[count].used=1;sprintf(cards[count].title,"Card %d",count+1);memset(cards[count].text,' ',sizeof(cards[count].text));count++;stack_selection_clear();select_card(count-1);cx=cy=top=0;}
+      else if(focus==5&&count>1){for(i=current;i<count-1;i++)cards[i]=cards[i+1];count--;if(current>=count)current=count-1;stack_selection_clear();cx=cy=top=0;}
       else if(focus==6){if(!export_cards(exported))acc_notice("Export","Unable to export stack.");else{sprintf(message,"Card Stack exported to\n%s",exported);acc_notice("Export",message);}}
       else if(focus==7)key=27;
       dirty=1;if(key!=27)key=0;continue;
@@ -208,21 +259,27 @@ int main(int argc,char **argv)
       if(key!=27)key=0;
     } else if(focus==1){
       oldcy=cy;oldtop=top;base=cy*CW;
-      if(key==256+75&&cx>0)cx--;
-      else if(key==256+77&&cx<CW-1)cx++;
-      else if(key==256+72&&cy>0)cy--;
-      else if(key==256+80&&cy<TEXT_LINES-1)cy++;
-      else if(key==256+71)cx=0;
-      else if(key==256+79){cx=CW-1;while(cx>0&&cards[current].text[cy*CW+cx]==' ')cx--;if(cards[current].text[cy*CW+cx]!=' '&&cx<CW-1)cx++;}
-      else if(key==256+82)insert=!insert;
-      else if(key==256+83){memmove(cards[current].text+base+cx,cards[current].text+base+cx+1,CW-cx-1);cards[current].text[base+CW-1]=' ';}
-      else if(key==8){if(cx>0)cx--;cards[current].text[cy*CW+cx]=' ';}
-      else if(key==13){if(cy<TEXT_LINES-1){cy++;cx=0;}}
-      else if((key>=32&&key<=255)||(key>=513&&key<=767)){ch=key>=512?key-512:key;if(insert&&cx<CW-1)memmove(cards[current].text+base+cx+1,cards[current].text+base+cx,CW-cx-1);cards[current].text[base+cx]=(char)ch;if(cx<CW-1)cx++;else if(cy<TEXT_LINES-1){cy++;cx=0;}}
+      {int oldpos=cy*CW+cx,shift=stack_shift_down();
+      if(key==3){stack_copy_selection();key=0;}
+      else if(key==24){stack_copy_selection();stack_delete_selection(&cx,&cy);dirty=1;key=0;}
+      else if((key==22||key==16)){stack_paste(&cx,&cy,insert);dirty=1;key=0;}
+      else if(key==256+75&&cx>0){cx--;stack_selection_move(oldpos,cy*CW+cx,shift);}
+      else if(key==256+77&&cx<CW-1){cx++;stack_selection_move(oldpos,cy*CW+cx,shift);}
+      else if(key==256+72&&cy>0){cy--;stack_selection_move(oldpos,cy*CW+cx,shift);}
+      else if(key==256+80&&cy<TEXT_LINES-1){cy++;stack_selection_move(oldpos,cy*CW+cx,shift);}
+      else if(key==256+71){cx=0;stack_selection_move(oldpos,cy*CW+cx,shift);}
+      else if(key==256+79){cx=CW-1;while(cx>0&&cards[current].text[cy*CW+cx]==' ')cx--;if(cards[current].text[cy*CW+cx]!=' '&&cx<CW-1)cx++;stack_selection_move(oldpos,cy*CW+cx,shift);}
+      else if(key==256+82){stack_selection_clear();insert=!insert;}
+      else if(key==256+83){if(stack_has_selection()){stack_delete_selection(&cx,&cy);dirty=1;}else{base=cy*CW;memmove(cards[current].text+base+cx,cards[current].text+base+cx+1,CW-cx-1);cards[current].text[base+CW-1]=' ';}}
+      else if(key==8){if(stack_has_selection()){stack_delete_selection(&cx,&cy);dirty=1;}else{if(cx>0)cx--;cards[current].text[cy*CW+cx]=' ';}}
+      else if(key==13){if(stack_has_selection()){stack_delete_selection(&cx,&cy);dirty=1;}if(cy<TEXT_LINES-1){cy++;cx=0;}stack_selection_clear();}
+      else if((key>=32&&key<=255)||(key>=513&&key<=767)){if(stack_has_selection()){stack_delete_selection(&cx,&cy);dirty=1;}ch=key>=512?key-512:key;stack_insert_one(&cx,&cy,ch,insert);stack_selection_clear();}
       else if(key!=27)key=0;
+      }
+      if(stack_sel_repaint){dirty=1;stack_sel_repaint=0;}
       if(cy<top)top=cy;if(cy>=top+VISIBLE_LINES)top=cy-VISIBLE_LINES+1;
       if(top<0)top=0;if(top>TEXT_LINES-VISIBLE_LINES)top=TEXT_LINES-VISIBLE_LINES;
-      if(top!=oldtop || oldcy<top || oldcy>=top+VISIBLE_LINES){dirty=1;}
+      if(top!=oldtop || oldcy<top || oldcy>=top+VISIBLE_LINES || stack_has_selection()){dirty=1;}
       else {
         acc_text(px+2,y+3+oldcy-top,cards[current].text+oldcy*CW,ACC_CONTROL,CW);
         if(cy!=oldcy)acc_text(px+2,y+3+cy-top,cards[current].text+cy*CW,ACC_CONTROL,CW);

@@ -185,9 +185,17 @@ static void number_box(int x,int y,int w,const char *s,int fg)
   for(i=0;s[i];i++)acc_put(start+i,y+1,seg_char((unsigned char)s[i]),ACC_ATTR(0,fg));
 }
 
+static void draw_metrics(int x,int y)
+{
+  char s[16];int wpm;
+  sprintf(s,"%03d",errors>999?999:errors);
+  number_box(x+52,y+1,9,s,acc_appearance.main_title);
+  wpm=current_wpm();if(wpm>999)wpm=999;sprintf(s,"%d",wpm);
+  number_box(x+62,y+1,8,s,acc_appearance.launchers);
+}
 static void draw_status(int x,int y)
 {
-  char s[16];int i,filled,wpm;unsigned long sec=elapsed(),left=(unsigned long)level_secs-sec;
+  char s[16];int i,filled;unsigned long sec=elapsed(),left=(unsigned long)level_secs-sec;
   if(left>(unsigned long)level_secs)left=(unsigned long)level_secs;
   filled=(int)(sec*28UL/(unsigned long)level_secs);
   acc_text(x+3,y+2,"Time",ACC_LABEL,4);
@@ -195,19 +203,15 @@ static void draw_status(int x,int y)
     acc_put(x+8+i,y+2,i<filled?219:176,
             ACC_ATTR(acc_appearance.background,i<filled?acc_appearance.launchers:8));
   sprintf(s,"%02lu:%02lu",left/60UL,left%60UL);acc_text(x+40,y+2,s,ACC_HEADING,6);
-  sprintf(s,"%03d",errors>999?999:errors);number_box(x+52,y+1,9,s,acc_appearance.main_title);
-  wpm=current_wpm();if(wpm>999)wpm=999;sprintf(s,"%d",wpm);number_box(x+62,y+1,8,s,acc_appearance.launchers);
+  draw_metrics(x,y);
   acc_text(x+53,y+4,"Mistakes",ACC_LABEL,8);
   acc_text(x+67,y+4,"WPM",ACC_LABEL,3);
 }
 
-static void draw_console(int x,int y)
+static void draw_console_content(int x,int y)
 {
   int i,center=31,w=65;long base=correct_chars-center;char line[66];
   int inner=x+1;
-  acc_put(x,y,218,ACC_BORDER);for(i=1;i<66;i++)acc_put(x+i,y,196,ACC_BORDER);acc_put(x+66,y,191,ACC_BORDER);
-  for(i=1;i<4;i++){acc_put(x,y+i,179,ACC_BORDER);acc_put(x+66,y+i,179,ACC_BORDER);}
-  acc_put(x,y+4,192,ACC_BORDER);for(i=1;i<66;i++)acc_put(x+i,y+4,196,ACC_BORDER);acc_put(x+66,y+4,217,ACC_BORDER);
   acc_fill(inner,y+1,w,3,' ',ACC_ATTR(0,0));
   for(i=0;i<w;i++){char c=stream_char(base+i);line[i]=c?c:' ';}line[w]=0;
   acc_put(inner+center,y+1,31,ACC_ATTR(0,acc_appearance.main_title));
@@ -216,6 +220,14 @@ static void draw_console(int x,int y)
     if(base+i>=0&&base+i<correct_chars)
       {char c=stream_char(base+i);if(c)acc_put(inner+i,y+3,c,ACC_ATTR(0,acc_appearance.launchers));}
   if(last_bad)acc_put(inner+center,y+3,last_bad,ACC_ATTR(0,acc_appearance.main_title));
+}
+static void draw_console(int x,int y)
+{
+  int i;
+  acc_put(x,y,218,ACC_BORDER);for(i=1;i<66;i++)acc_put(x+i,y,196,ACC_BORDER);acc_put(x+66,y,191,ACC_BORDER);
+  for(i=1;i<4;i++){acc_put(x,y+i,179,ACC_BORDER);acc_put(x+66,y+i,179,ACC_BORDER);}
+  acc_put(x,y+4,192,ACC_BORDER);for(i=1;i<66;i++)acc_put(x+i,y+4,196,ACC_BORDER);acc_put(x+66,y+4,217,ACC_BORDER);
+  draw_console_content(x,y);
 }
 
 static int base_key(int c)
@@ -278,6 +290,22 @@ static void draw_keyboard(int x,int y)
   wide_key(x+20,y+4,"SPACE",k==' ',21);
 }
 
+static void draw_keyboard_key(int x,int y,int key,int pressed)
+{
+  static const char *r1="1234567890-=";
+  static const char *r2="QWERTYUIOP[]\\";
+  static const char *r3="ASDFGHJKL;'";
+  static const char *r4="ZXCVBNM,./";
+  int i,k=base_key(key),fl=keyboard_flags(),shift=(fl&3)!=0,caps=(fl&0x40)!=0;
+  int upper=shift^caps;char c;
+  if(!key)return;
+  if(k==' '){wide_key(x+20,y+4,"SPACE",pressed,21);return;}
+  for(i=0;r1[i];i++)if(k==r1[i]){c=shift?shifted_key(r1[i]):r1[i];key_mark(x+6+i*4,y,c,pressed);return;}
+  for(i=0;r2[i];i++)if(k==r2[i]){c=r2[i];if(isalpha((unsigned char)c))c=(char)(upper?toupper(c):tolower(c));else if(shift)c=shifted_key(c);key_mark(x+8+i*4,y+1,c,pressed);return;}
+  for(i=0;r3[i];i++)if(k==r3[i]){c=r3[i];if(isalpha((unsigned char)c))c=(char)(upper?toupper(c):tolower(c));else if(shift)c=shifted_key(c);key_mark(x+10+i*4,y+2,c,pressed);return;}
+  for(i=0;r4[i];i++)if(k==r4[i]){c=r4[i];if(isalpha((unsigned char)c))c=(char)(upper?toupper(c):tolower(c));else if(shift)c=shifted_key(c);key_mark(x+12+i*4,y+3,c,pressed);return;}
+}
+
 static void draw_buttons(int x,int y)
 {
   acc_button(x+3,y+DLG_H-3," Refresh ",focus==F_RESET);
@@ -322,13 +350,17 @@ static void process_char(int ch)
 
 int main(int argc,char **argv)
 {
-  int x,y,key=0,mx=0,my=0,buttons=0,last_buttons=0,hit,need=1,quit=0,last_kflags=-1,kflags;unsigned long sec;
+  int x,y,key=0,mx=0,my=0,buttons=0,last_buttons=0,hit,need=1,quit=0,last_kflags=-1,kflags,old_key;unsigned long sec;
   if(acc_help(argc,argv,"!TYPO","Timed typing practice for accuracy and words per minute."))return 0;
   if(!acc_begin(argv[0],"Typo",0))return 1;acc_mouse_display(1);typo_font(1);load_records();if(!scan_levels()||!load_level_text(0)){acc_notice("Typo Error","TYPO.LVL is missing or invalid.");typo_font(0);acc_end_screen();acc_end();return 1;}x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;acc_box(x,y,DLG_W,DLG_H,"Typo");reset_level();
   while(!quit){
     sec=elapsed();if(running&&sec>=(unsigned long)level_secs){finish_session(0);acc_box(x,y,DLG_W,DLG_H,"Typo");need=1;}
     if(sec!=last_second){last_second=sec;draw_status(x,y);}
-    kflags=keyboard_flags();if(kflags!=last_kflags){last_kflags=kflags;need=1;}
+    kflags=keyboard_flags();
+    if(kflags!=last_kflags){
+      last_kflags=kflags;
+      if(!need)draw_keyboard(x+5,y+12);
+    }
     if(need){draw_all(x,y);need=0;}
     if(kbhit()){
       key=acc_key();
@@ -342,8 +374,25 @@ int main(int argc,char **argv)
         else if(focus==F_CLOSE)quit=1;
         if(!quit){need=1;key=0;}
       } else if(key==8&&!finished){
-        focus=0;last_key=0;if(last_bad)last_bad=0;else if(correct_chars>0)correct_chars--;need=1;key=0;
-      } else if(key>=32&&key<127&&!finished){focus=0;process_char(key);need=1;key=0;}
+        focus=0;old_key=last_key;last_key=0;
+        if(last_bad)last_bad=0;else if(correct_chars>0)correct_chars--;
+        draw_console_content(x+3,y+6);
+        draw_metrics(x,y);
+        draw_keyboard_key(x+5,y+12,old_key,0);
+        key=0;
+      } else if(key>=32&&key<127&&!finished){
+        focus=0;old_key=last_key;process_char(key);
+        if(finished){
+          acc_box(x,y,DLG_W,DLG_H,"Typo");
+          need=1;
+        }else{
+          draw_console_content(x+3,y+6);
+          draw_metrics(x,y);
+          if(old_key!=last_key)draw_keyboard_key(x+5,y+12,old_key,0);
+          draw_keyboard_key(x+5,y+12,last_key,1);
+        }
+        key=0;
+      }
       else key=0;
     }
     if(acc_mouse_present){
