@@ -1,6 +1,6 @@
 <img width="1633" height="250" alt="Launch! for DOS" src="https://github.com/user-attachments/assets/1aa6eb8a-98f3-4e74-a1ef-479e4f7a04ef" />
 
-A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- and loads of goodies to uplift a boring old DOS machine.
+A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- and loads of goodies to uplift an old DOS machine.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
