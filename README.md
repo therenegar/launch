@@ -5,7 +5,8 @@ A lightweight command launcher for any DOS, with huge features to improve the us
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG
 
-Requires DOS 3.3, 80286, EGA or better. 
+Requires: DOS 3.3, 80286, EGA or better. 
+1.2MB free hard disk or floppy disk space for install.
 
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox.Compatible with third-party command interpreters such as 4DOS/NDOS.
 
@@ -604,6 +605,8 @@ Before every accepted Add, Edit, Delete, Move, or Sort operation, the existing v
 If `LAUNCH.MNU` is missing or invalid at startup and `LAUNCH.BAK` is valid, Launch! restores the backup automatically and displays a recovery message. If neither file is usable, the built-in sample menu is installed as both `LAUNCH.MNU` and `LAUNCH.BAK`. An invalid primary file is preserved as `LAUNCH.BAD` when possible.
 
 ----
+
+Launch is created on a 486DX4/100 machine, 32mb RAM, using PC DOS 7.0. Coded using Quick C IDE, Compiled with Microsoft C/C++ 7.00 from 1992.
 
 <img width="720" height="600" alt="About" src="https://github.com/user-attachments/assets/28b12e02-a814-4f4d-9e41-43cfeafebb66" />
 
