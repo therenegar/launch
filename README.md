@@ -26,9 +26,9 @@ EGA resolution
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in file opener to create associations between files and launchers for easy open.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
-- 8 handy and optional text-mode only accessories and 5 games to go with Launch!
-    - Calculator, Calendar, Journal, Note, Pixel Draw, Card Stack, To-Dos, System Info
-    - Boxes, Pop, Snake, Solitaire and FreeCell
+- 9 handy and optional text-mode only accessories and 7 games to go with Launch!
+    - Calculator, Calendar, Journal, Note, Pixel Draw, Card Stack, To-Dos, System Info, Typo
+    - Boxes, Pop, Snake, Solitaire, FreeCell, Plumb and Wordz
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Various Command Prompt styles to choose from to uplift your C:\
 - Custom VGA display fonts to change the look of your whole DOS environment.
@@ -190,7 +190,9 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="720" height="600" alt="Config: Menu" src="https://github.com/user-attachments/assets/75e352c6-63c9-4dae-a9bd-1f75162370fa" />
+<img width="1440" height="1200" alt="config-menu" src="https://github.com/user-attachments/assets/470f9598-7d75-40b9-b838-20f4a23fc91c" />
+
+Contextual help (tooltips) can be turned off - they will appear throughout Launch! with keyboard focus or mouse-over.
 
 The SysBar (off by default) shows an information bar, top-right of screen every time the menu is opened with some handy system status information.
 
@@ -198,12 +200,15 @@ The SysBar (off by default) shows an information bar, top-right of screen every 
 
 The SysBar shows (left to right): 
 - Largest executable program size (free lower memory)
+    - Click to execute `MEM /C`
 - The free Environment size (ever get an error 'Not enough space for environment' when running a program?)
 - The free space on the system drive (if you boot from floppy it will be A:)
+    - Click to execute `FREE C:`
 - Status indicators for Caps Lock (CL), Num Lock (NL) and Scroll Lock (SL) keys
+    - Click to toggle each keyboard indicator (i.e. turn Caps Lock on/off) 
 - Status indicators for mouse presence, display type and network status (based on detection of a loaded network packet driver).
 - The country code for the current DOS locale settings (as/if set by `COUNTRY.SYS`).
-
+    - Click to change the country code for the current DOS session
 
 ### Colors
 
@@ -403,14 +408,16 @@ The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specif
 
 You can also use the `/FILE=` parameter to point to any `.ICS` file, and the Calendar will show events from that file.
 
-<img width="720" height="600" alt="Calendar" src="https://github.com/user-attachments/assets/d9618702-2026-4b2c-bb3c-02368fe174c1" />
+<img width="720" height="600" alt="Calendar" src="https://github.com/user-attachments/assets/1ad0116f-b7ea-4aeb-b040-029da2b62a02" />
 
-<img width="720" height="600" alt="Calendar Day" src="https://github.com/user-attachments/assets/27612163-465e-4700-863c-86ba0d1ddb8a" />
+<img width="720" height="600" alt="Calendar - Day" src="https://github.com/user-attachments/assets/f5eebd56-4d9a-4e57-b22d-6d956226db99" />
+
 
 ### !CALC.EXE - Calculator
 A simple calculator, with nice large digits, pretty self explanatory!
 
-<img width="720" height="600" alt="Calculator" src="https://github.com/user-attachments/assets/e9c27a1a-7168-4db0-879d-4219d2f22023" />
+<img width="720" height="600" alt="Calculator" src="https://github.com/user-attachments/assets/789a27b8-fec4-412d-9428-3e43b1b42fc3" />
+
 
 ### !DRAW.EXE - Pixel Draw
 You can create simple pixel images, they can be exported as a bitmap.<br/>
@@ -474,6 +481,15 @@ Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your l
 
 <img width="720" height="600" alt="!TODOS" src="https://github.com/user-attachments/assets/cd920ca9-6dcb-4300-903a-b5634fde614d" />
 
+### !TYPO.EXE - Typo
+Level up on your words-per-minute and put that retro mechanical keyboard to good use, practicing your typing.
+
+50 different lessons focusing on different skills and types of texts, including coding.
+
+Records are maintained so you can keep track of your high scores.
+
+<img width="720" height="600" alt="!TYPO" src="https://github.com/user-attachments/assets/aade6dc0-c109-488e-b86a-ac85069d7cfa" />
+
 
 ----
 <img width="1633" height="250" alt="launch-games" src="https://github.com/user-attachments/assets/c4d31625-d74d-4534-a256-eb436e3ece78" />
@@ -492,24 +508,24 @@ Use the arrow keys to move the worker and push boxes to cover all the targets - 
 
 Puzzles are from Microban collections designed by [David W. Skinner](http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm)
 
+
+
+### !FCELL.EXE - FreeCell
+Play the FreeCell card game. Same interaction and interface as Solitaire.
+
+<img width="720" height="600" alt="FreeCell Game" src="https://github.com/user-attachments/assets/6bd5c3e6-d075-4037-a273-1bac90b22d4a" />
+
+### !PLUMB.EXE - Plumb
+
+<img width="720" height="600" alt="Plumb Game" src="https://github.com/user-attachments/assets/9d2a6de9-735f-4966-8be0-55c1d32e1a23" />
+
+
 ### !POP.EXE - Pop
 An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
 
 10 levels with different difficulty levels. Click groups of bubbles to select, and then click again (or Enter) to pop them away!
 
 <img width="720" height="600" alt="Pop Game" src="https://github.com/user-attachments/assets/2f3fd389-ebce-4cfd-baa5-e3b6ea64baac" />
-
-### !SOL.EXE - Solitaire
-Play draw three Solitaire completely in text mode!
-
-Click a card (it will show as selected), then click the destination (valid destinations are indicated). You can double click a card to move it to the correct foundation pile (if a valid move).
-
-<img width="720" height="600" alt="Solitaire Game" src="https://github.com/user-attachments/assets/dc53f020-8a03-4afa-a35f-3eadf7c716a5" />
-
-### !FCELL.EXE - FreeCell
-Play the FreeCell card game. Same interaction and interface as Solitaire.
-
-<img width="720" height="600" alt="FreeCell Game" src="https://github.com/user-attachments/assets/6bd5c3e6-d075-4037-a273-1bac90b22d4a" />
 
 
 ### !SNAKE.EXE - Snake
@@ -519,6 +535,18 @@ Watch out for walls and don't run into yourself
 <img width="720" height="600" alt="Snake Game" src="https://github.com/user-attachments/assets/aa959862-5c53-424b-a8e1-1a09ea97e105" />
 
 Playfields come from the Microsoft QBasic NIBBLES.BAS sample program.
+
+### !SOL.EXE - Solitaire
+Play draw three Solitaire completely in text mode!
+
+Click a card (it will show as selected), then click the destination (valid destinations are indicated). You can double click a card to move it to the correct foundation pile (if a valid move).
+
+<img width="720" height="600" alt="Solitaire Game" src="https://github.com/user-attachments/assets/68ce19d6-3416-46ba-9684-09d0573a2144" />
+
+
+### !WORDZ.EXE - Wordz
+
+<img width="720" height="600" alt="Wordz Game" src="https://github.com/user-attachments/assets/0a9fc9fb-a9f7-4fa2-9c44-74983466820c" />
 
 
 ----
