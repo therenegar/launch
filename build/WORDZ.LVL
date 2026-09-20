@@ -1,0 +1,370 @@
+@Animals
+MOUSE|A pantry raider whose name also belongs on a computer desk.|7|1|-1|0
+TIGER|Striped hunter whose range once stretched from Turkey to Siberia.|7|2|-1|1
+HORSE|Power once measured by comparison with this working animal.|5|6|-1|0
+SHEEP|Its fleece supplied an ancient measure of wealth.|4|1|-1|1
+OTTER|River mammal that may use a stone as a tool.|1|5|1|0
+CAMEL|Desert carrier whose hump stores fat, not water.|0|4|1|-1
+BISON|Massive grazer restored to parts of the North American plains.|3|4|1|-1
+BADGER|Burrowing mammal behind a famous British woodland character.|7|5|-1|-1
+
+@Food
+BREAD|A daily staple whose rising depends on trapped gas.|2|4|0|-1
+PASTA|Dough food whose many shapes include penne and fusilli.|1|0|1|1
+APPLE|Fruit that gave New York one of its best-known nicknames.|2|1|1|0
+GRAPE|Vine fruit transformed by fermentation and time.|7|4|-1|-1
+LEMON|Citrus fruit whose name can also mean a disappointing machine.|5|6|-1|0
+ONION|Bulb whose damaged cells release the compounds that bring tears.|2|6|1|-1
+OLIVE|Mediterranean fruit pressed for a kitchen staple.|6|6|-1|-1
+CURRY|A broad family of spiced dishes rather than one single recipe.|0|1|1|1
+
+@Space
+COMET|Small icy body that can grow a tail near the Sun.|2|0|1|0
+EARTH|Only known world with surface oceans and life.|6|5|0|-1
+VENUS|Planet whose day is longer than its year.|1|0|1|1
+ORBIT|The curved path produced by gravity and sideways motion.|6|6|-1|0
+SOLAR|Pertaining to the star at the centre of our system.|7|0|0|1
+NEBULA|Cloud where stars may be born or where dying stars leave debris.|0|1|0|1
+PULSAR|Rapidly rotating stellar remnant detected as regular pulses.|2|4|1|0
+QUASAR|Brilliant distant nucleus powered by an active galaxy.|5|1|0|1
+
+@Ocean
+SHARK|Cartilaginous predator with rows of replaceable teeth.|1|4|1|0
+WHALE|Marine mammal whose ancestors once walked on land.|3|0|1|0
+CORAL|Colonial animal that builds limestone reefs.|4|1|-1|0
+SQUID|Cephalopod propelled partly by a water jet.|3|6|1|0
+SHELL|Hard protection left by many molluscs.|6|3|-1|0
+KELP|Large brown algae forming underwater forests.|7|5|0|-1
+TRENCH|Long deep depression such as the Mariana.|4|5|0|-1
+PLANKTON|Drifting organisms that underpin much marine food life.|7|2|-1|0
+
+@Travel
+TRAIN|Transport whose gauge fixes the distance between its rails.|4|4|-1|0
+PLANE|Vehicle whose lift depends on airflow around wings.|7|6|-1|0
+HOTEL|Temporary lodging descended from the idea of hospitality.|1|2|1|0
+TAXI|Hired car whose name comes from its fare meter.|7|3|0|-1
+FERRY|Vessel whose route repeatedly joins two shores.|6|1|0|1
+HOSTEL|Budget lodging traditionally centred on shared rooms.|1|1|1|1
+PASSPORT|Document asking another state to admit its bearer.|0|3|1|0
+TICKET|Proof of a paid journey, event or right of entry.|0|0|1|0
+
+@Computers
+MOUSE|Pointing device named for its tail-like early cable.|1|5|0|-1
+MODEM|Device whose name contracts modulator and demodulator.|7|4|-1|-1
+FLOPPY|Flexible magnetic medium once sold in several physical sizes.|0|0|0|1
+DRIVE|Hardware or logical home of files identified by a letter in DOS.|5|2|0|1
+BASIC|Language whose name began as an acronym for beginners.|2|2|0|1
+ASCII|Seven-bit character standard from the early 1960s.|4|6|-1|0
+KERNEL|Core software that arbitrates hardware and processes.|5|1|-1|0
+BUFFER|Temporary holding area smoothing mismatched data rates.|4|5|0|-1
+
+@Workshop
+HAMMER|Tool that converts a swinging arm into an impact.|6|1|0|1
+CHISEL|Wedge-edged hand tool driven or pushed through material.|7|1|-1|0
+DRILL|Rotary tool whose bit makes or enlarges holes.|2|4|0|-1
+LEVEL|Instrument whose bubble seeks the highest point in a vial.|6|0|-1|0
+SAW|Toothed tool that removes a narrow kerf while cutting.|5|5|-1|-1
+FILE|Hardened ridged tool for controlled abrasion.|0|0|1|0
+PLIERS|Pivoted jaws that trade hand travel for gripping force.|2|6|1|0
+VISE|Bench-mounted jaws that hold work while both hands remain free.|3|5|1|0
+
+@Garden
+ROSE|Flower whose cultivated forms descend from thorny shrubs.|7|5|-1|-1
+TULIP|Bulb flower once at the centre of a Dutch market mania.|6|5|-1|-1
+GRASS|Plant family that includes lawns, wheat and bamboo.|1|1|1|1
+SPADE|Digging tool with a flatter blade than a shovel.|4|4|-1|0
+HEDGE|Living boundary kept dense by repeated trimming.|2|6|1|0
+SEED|Embryonic plant packaged with stored food.|5|3|-1|-1
+COMPOST|Decayed organic matter returned to soil.|0|5|1|0
+MULCH|Surface layer used to retain moisture and suppress weeds.|7|4|0|-1
+
+@Weather
+STORM|Disturbance combining strong atmospheric effects.|5|0|-1|0
+CLOUD|Visible suspension of tiny droplets or ice crystals.|4|6|-1|0
+FROST|Ice deposited when surfaces cool below freezing.|0|4|1|-1
+SLEET|Wintry precipitation occupying the awkward middle ground.|3|3|1|0
+MONSOON|Seasonal wind reversal associated with dramatic rainfall.|6|6|-1|-1
+THUNDER|Sound produced by rapid expansion around lightning.|1|4|1|0
+CYCLONE|Rotating low-pressure system; terminology varies by ocean.|1|5|1|0
+DROUGHT|Extended shortage of precipitation rather than a single dry day.|0|2|1|0
+
+@Movies
+JAWS|Spielberg thriller that made an unseen shark terrifying.|4|6|0|-1
+ALIEN|1979 science-fiction horror set aboard the Nostromo.|2|1|1|0
+ROCKY|Philadelphia boxer who gets an unlikely title shot.|7|2|-1|0
+PSYCHO|Hitchcock film whose motel shower became cinema history.|0|6|0|-1
+FARGO|Crime tale named for a city despite much of the action being elsewhere.|5|6|-1|-1
+VERTIGO|Hitchcock obsession whose title names a sensation of spinning.|7|0|0|1
+AMADEUS|Drama framing Mozart through Salieri's bitter recollection.|6|5|-1|0
+PATTON|Biographical war film named for the outspoken American general.|6|6|0|-1
+
+@Classic TV
+MASH|Korean War comedy-drama whose finale drew an enormous audience.|3|5|0|-1
+CHEERS|Boston bar where everybody was meant to know your name.|2|5|0|-1
+FRASIER|Radio psychiatrist spun off from a Boston bar comedy.|1|6|0|-1
+DALLAS|Prime-time oil-family saga remembered for one famous shooting.|7|6|0|-1
+COLUMBO|Rumpled detective who usually reveals the killer before solving the case.|6|0|0|1
+DYNASTY|Denver oil-family rival to another glossy prime-time saga.|5|0|0|1
+BONANZA|Western centred on the Cartwright family and the Ponderosa.|0|0|0|1
+MAGNUM|Hawaii private investigator associated with a red Ferrari.|4|5|0|-1
+
+@World Cities
+LONDON|Capital divided by the Thames and once enclosed by Roman walls.|3|6|0|-1
+PARIS|Capital whose modern boulevards owe much to Haussmann.|4|1|0|1
+ROME|City said by legend to have been founded by twins.|2|4|0|-1
+TOKYO|Metropolis formerly known as Edo.|6|0|0|1
+MADRID|European capital near the geographical centre of its country.|5|1|-1|1
+DUBLIN|Capital straddling the River Liffey.|0|6|1|0
+CAIRO|Nile metropolis near, but not containing, the Giza pyramids.|7|6|-1|-1
+MUMBAI|Indian port formerly known in English as Bombay.|0|0|1|0
+
+@Countries
+CANADA|Country with the world's longest coastline.|2|6|1|-1
+BRAZIL|Largest country in South America by both area and population.|1|5|1|0
+FRANCE|Republic whose mainland outline is nicknamed the Hexagon.|0|1|1|0
+INDIA|Subcontinent state whose constitution recognizes many scheduled languages.|6|0|0|1
+JAPAN|Island country historically called Nippon or Nihon.|4|6|-1|-1
+NORWAY|Scandinavian kingdom whose coast is deeply cut by fjords.|3|1|0|1
+CHILE|Long Pacific nation squeezed between Andes and ocean.|1|0|1|0
+KENYA|East African state named for its highest mountain.|7|5|0|-1
+
+@Companies
+IBM|Three-letter technology company once nicknamed Big Blue.|0|5|1|0
+FORD|Motor company that made the moving assembly line famous.|4|0|-1|1
+KODAK|Photography name created partly because its founder liked the letter K.|2|1|1|0
+SONY|Japanese electronics name chosen to be short and internationally pronounceable.|0|6|1|0
+INTEL|Chip maker whose name contracts integrated electronics.|7|2|-1|0
+CANON|Japanese imaging company originally named for a Buddhist figure.|6|6|0|-1
+LEGO|Danish toy name derived from words meaning play well.|3|3|1|0
+BOEING|Aerospace company bearing its founder's surname.|7|5|0|-1
+
+@Cars
+FALCON|Ford name used for family cars in several countries.|7|5|0|-1
+BEETLE|Volkswagen whose rounded profile inspired an insect nickname.|3|0|0|1
+CIVIC|Honda model whose name suggests public-minded citizenship.|0|2|0|1
+MUSTANG|Ford pony car named for a free-ranging horse.|6|6|-1|-1
+CAMARO|Chevrolet coupe introduced as a Mustang rival.|0|6|1|0
+ESCORT|Ford model name shared with the act of accompanying someone.|4|5|0|-1
+MONARO|Australian coupe named after a region spanning NSW and Victoria.|6|6|0|-1
+IMPALA|Chevrolet name borrowed from a swift African antelope.|2|5|0|-1
+
+@Sports
+TENNIS|Racket game whose love score may derive from French.|2|4|1|0
+CRICKET|Bat-and-ball game divided into overs and innings.|1|1|1|0
+RUGBY|Football code named for an English school.|5|0|-1|0
+HOCKEY|Game whose puck version is played on ice.|5|6|-1|0
+BOXING|Contest measured in rounds, with victory possible by count.|2|5|1|0
+ROWING|Sport in which competitors face away from the direction of travel.|2|2|1|0
+ARCHERY|Sport descended from the military use of bow and arrow.|0|0|0|1
+FENCING|Combat sport using foil, epee or sabre.|6|0|0|1
+
+@Music
+PIANO|Keyboard instrument whose full Italian name contrasts soft and loud.|6|5|0|-1
+DRUMS|Percussion family sounded chiefly by stretched membranes.|5|0|-1|0
+FLUTE|Woodwind whose orchestral version is usually metal.|2|6|0|-1
+CELLO|Bowed instrument held between the knees.|2|1|1|0
+BANJO|String instrument with a drum-like circular body.|7|2|-1|1
+ORGAN|Keyboard instrument whose traditional church form drives pipes with air.|3|6|1|0
+VIOLA|Bowed string voice sitting between violin and cello.|5|2|-1|1
+OBOE|Double-reed instrument that often gives the tuning A.|3|4|0|-1
+
+@Books
+ORWELL|Author whose surname became an adjective for oppressive surveillance.|0|5|1|0
+AUSTEN|Novelist of manners who created Elizabeth Bennet.|6|1|-1|0
+DICKENS|Writer whose characters include Micawber and Miss Havisham.|6|3|-1|0
+TOLSTOY|Russian novelist of War and Peace.|0|0|0|1
+HOMER|Traditional name attached to the Iliad and Odyssey.|3|2|1|0
+CONRAD|Polish-born English novelist who wrote Heart of Darkness.|2|4|1|0
+JOYCE|Irish modernist whose Bloomsday falls on 16 June.|1|6|1|0
+POE|American writer associated with a tell-tale heart and a raven.|7|6|-1|0
+
+@Mythology
+ZEUS|Olympian ruler armed with a thunderbolt.|4|4|-1|0
+HERA|Queen of the Greek gods and goddess of marriage.|3|3|0|1
+ODIN|Norse god who sacrificed an eye in pursuit of wisdom.|2|2|1|0
+THOR|Norse thunder god whose hammer returns when thrown.|0|4|1|-1
+LOKI|Trickster whose schemes repeatedly trouble the Norse gods.|7|3|-1|-1
+ATLAS|Titan condemned to hold up the heavens, not the Earth.|0|5|0|-1
+MEDUSA|Gorgon whose gaze turned observers to stone.|5|0|-1|1
+MINOS|Cretan king associated with a labyrinth and a bull-headed prisoner.|5|0|-1|0
+
+@Science
+ATOM|Unit whose name once implied indivisibility.|3|2|-1|1
+QUARK|Fundamental particle named after a word in Joyce.|3|0|0|1
+LASER|Acronym-derived device producing coherent light.|6|5|0|-1
+GENOME|Complete genetic complement of an organism.|7|1|-1|1
+PLASMA|Ionised state of matter also found in stars.|7|5|-1|0
+PHOTON|Quantum of electromagnetic radiation.|1|0|0|1
+ISOTOPE|Atoms sharing proton count but differing in neutrons.|4|6|0|-1
+ENTROPY|Thermodynamic quantity often connected with disorder.|0|6|1|-1
+
+@Aviation
+WING|Airfoil producing lift when moving through air.|2|1|1|0
+AILERON|Wing control surface chiefly governing roll.|0|6|1|0
+RUDDER|Vertical-tail control surface chiefly governing yaw.|5|4|-1|0
+FLAP|Wing surface extended for extra lift and drag at low speed.|7|0|0|1
+COCKPIT|Flight-deck area occupied by the crew.|0|2|1|0
+HANGAR|Large building designed to shelter aircraft.|6|0|-1|0
+GLIDER|Aircraft designed to fly without continuous engine power.|7|5|-1|0
+BIPLANE|Aircraft with two principal wings stacked vertically.|6|3|-1|0
+
+@Railways
+SIGNAL|Lineside indication governing train movement.|0|6|1|0
+POINTS|British term for trackwork that switches one route to another.|6|0|-1|0
+SLEEPER|Cross-piece supporting rails; called a tie in North America.|0|6|0|-1
+BALLAST|Crushed stone bed stabilising track and drainage.|1|5|1|0
+DIESEL|Engine type that displaced steam on many railways.|6|4|-1|0
+TUNNEL|Passage allowing a railway through rather than over an obstacle.|6|1|-1|0
+VIADUCT|Long bridge carrying a route across a valley.|7|2|-1|0
+BRAKE|System converting motion into heat or recovered energy.|4|3|-1|0
+
+@Ships
+ANCHOR|Heavy device lowered to grip the seabed.|5|1|0|1
+RUDDER|Steering surface normally mounted near a vessel's stern.|0|1|1|1
+KEEL|Longitudinal structural backbone running along a hull.|1|0|1|1
+MAST|Vertical spar carrying sails, rigging or antennas.|0|6|0|-1
+BOW|Forward end of a vessel.|4|0|-1|0
+STERN|Aftermost end of a vessel.|0|4|0|-1
+PORT|Left side when looking toward the bow.|7|6|-1|0
+GALLEY|Shipboard kitchen.|6|1|-1|0
+
+@Nature
+FOREST|Large tree-dominated ecosystem.|0|6|0|-1
+DESERT|Region defined by scarce precipitation, not necessarily heat.|5|1|-1|0
+TUNDRA|Cold treeless biome underlain in places by permafrost.|5|0|-1|0
+CANYON|Deep valley cut chiefly by river erosion.|7|0|0|1
+GLACIER|Persistent moving mass of compacted land ice.|7|6|-1|-1
+VOLCANO|Vent and edifice through which magma reaches the surface.|1|4|1|0
+MEADOW|Open grassland often richer in flowers than a lawn.|6|6|-1|0
+MARSH|Wetland dominated by grasses and other herbaceous plants.|1|5|1|0
+
+@Birds
+EAGLE|Large raptor used as an emblem by many states.|7|0|0|1
+FALCON|Raptor family containing some of the fastest animals in a dive.|1|6|0|-1
+HERON|Long-legged waterside hunter often seen standing motionless.|0|0|1|0
+PUFFIN|Seabird with a colourful breeding-season bill.|6|1|-1|0
+MAGPIE|Black-and-white corvid surrounded by counting folklore.|6|5|-1|-1
+CONDOR|Very large New World vulture of the Americas.|5|6|-1|-1
+OSPREY|Fish-eating raptor found on every continent except Antarctica.|1|2|1|0
+KIWI|Flightless New Zealand bird with nostrils near the bill tip.|0|5|0|-1
+
+@Insects
+ANT|Social insect whose colonies divide labour among castes.|5|5|-1|0
+BEE|Pollinator whose waggle dance encodes direction and distance.|0|5|0|-1
+BEETLE|Insect order distinguished by hardened forewings.|0|5|0|-1
+MANTIS|Predator with grasping forelegs held as if in prayer.|6|5|-1|0
+LOCUST|Grasshopper form famous for mass swarming.|0|1|1|0
+TERMITE|Social cellulose eater more closely related to cockroaches than ants.|1|3|1|0
+CICADA|Insect whose males can produce extremely loud calls.|6|2|-1|0
+DRAGON|First half of an insect name for a fast aerial hunter.|1|4|1|0
+
+@Reptiles
+COBRA|Snake whose threat display spreads a hood.|7|2|-1|0
+PYTHON|Constraining snake that also lent its name to a programming language.|6|0|-1|0
+GECKO|Lizard famous for adhesive toe structures.|2|4|0|-1
+IGUANA|Herbivorous lizard family strongly represented in the Americas.|0|6|0|-1
+TURTLE|Shelled reptile whose shoulder girdle lies inside its ribs.|4|0|0|1
+SKINK|Smooth-scaled lizard group, many with reduced limbs.|2|6|1|0
+VIPER|Snake family with long hinged fangs in many species.|7|5|-1|0
+CAIMAN|Alligator relative native to Central and South America.|1|5|0|-1
+
+@Dog Breeds
+BEAGLE|Scent hound whose literary representatives include Snoopy.|7|6|-1|0
+COLLIE|Herding type made famous by Lassie.|2|1|0|1
+POODLE|Water-dog breed whose elaborate clips had practical origins.|1|1|1|1
+BOXER|German breed named for a fighting-style pawing motion.|7|6|-1|-1
+CORGI|Short-legged Welsh herding dog favoured by royalty.|3|0|1|1
+HUSKY|Northern sled dog built for endurance rather than sprinting.|6|4|-1|-1
+PUG|Compact wrinkled companion breed with ancient Chinese roots.|6|1|0|1
+AKITA|Large Japanese breed named for a northern prefecture.|0|5|1|0
+
+@Drinks
+COFFEE|Roasted seed infusion whose stimulant is caffeine.|7|5|0|-1
+TEA|Infusion properly made from Camellia sinensis.|5|3|0|1
+COCOA|Drink and ingredient made from processed cacao beans.|0|4|1|0
+TONIC|Quinine-flavoured mixer originally consumed medicinally.|4|3|-1|0
+CIDER|Fermented apple drink; usage differs between countries.|0|4|1|-1
+ESPRESSO|Coffee brewed by forcing hot water through finely ground beans.|7|0|-1|0
+LATTE|Italian word for milk, abroad shorthand for a coffee drink.|3|5|1|-1
+MOCHA|Coffee-chocolate drink named after a Yemeni port.|4|2|-1|1
+
+@Cooking
+BAKE|Cook using dry heat surrounding the food.|2|3|1|1
+BRAISE|Brown, then cook slowly with a modest amount of liquid.|7|5|-1|-1
+POACH|Cook gently in liquid below a vigorous boil.|7|3|-1|0
+SAUTE|Cook quickly in a small amount of fat.|6|2|-1|1
+WHISK|Beat ingredients while incorporating air or combining liquids.|2|4|1|-1
+SIEVE|Tool that separates particles according to size.|4|6|-1|0
+SKILLET|Flat-bottomed frying pan, often cast iron.|7|0|-1|0
+LADLE|Deep-bowled long-handled serving utensil.|5|2|0|1
+
+@Architecture
+ARCH|Curved structural form carrying loads around an opening.|5|1|0|1
+DOME|Rounded roof that can be understood as an arch rotated about an axis.|1|4|0|-1
+COLUMN|Vertical support whose classical orders include Doric and Ionic.|5|6|-1|-1
+ATRIUM|Central open or skylit space with roots in Roman houses.|7|2|-1|0
+FACADE|Principal exterior face of a building.|2|1|1|0
+GABLE|Triangular wall area beneath a pitched roof.|0|0|1|0
+CORNICE|Projecting moulding crowning a wall or classical order.|4|6|0|-1
+VAULT|Arched ceiling or roof spanning an interior.|6|6|0|-1
+
+@Art
+MURAL|Painting applied directly to a wall or ceiling.|4|0|-1|0
+FRESCO|Pigment painted onto fresh wet plaster.|5|6|-1|0
+ETCHING|Printmaking method in which acid bites exposed metal.|6|0|0|1
+PASTEL|Pigment sticks with relatively little binder.|7|1|0|1
+CANVAS|Woven support commonly stretched for painting.|5|5|-1|0
+MOSAIC|Image assembled from many small pieces called tesserae.|0|3|1|0
+CUBISM|Movement associated especially with Picasso and Braque.|6|2|-1|0
+PORTRAIT|Work whose principal subject is a person or group.|0|4|1|0
+
+@Retro PC
+FLOPPY|Removable magnetic disk once central to software distribution.|7|1|-1|1
+MODEM|Device that turned digital data into signals suitable for a line.|5|2|0|1
+MOUSE|Pointing device that became common on PCs with graphical software.|6|4|-1|-1
+BASIC|Language built into many home computers and early PCs.|0|6|0|-1
+ASCII|Character standard whose decimal 13 is carriage return.|0|5|1|-1
+VGA|IBM display standard introduced with the PS/2 line.|2|5|-1|0
+DOS|Disk operating system family strongly associated with the IBM PC.|3|4|-1|0
+ISA|Expansion bus descended from the original PC and AT slots.|0|3|0|1
+
+@DOS
+DIR|Command that lists directory contents.|4|3|0|-1
+COPY|Command creating a duplicate file.|1|5|1|0
+PATH|Environment setting naming directories searched for commands.|6|6|0|-1
+PROMPT|Command that changes the command interpreter's invitation text.|2|6|1|0
+ATTRIB|Command changing archive, hidden, system and read-only flags.|7|1|-1|0
+CHKDSK|Classic disk checking utility that can also report memory.|7|3|-1|0
+MEM|Command reporting DOS memory usage in later versions.|5|4|0|1
+XCOPY|More capable tree-copying command introduced after COPY.|0|5|1|0
+
+@Languages
+LATIN|Language of ancient Rome and a major ancestor of Romance tongues.|6|1|0|1
+GREEK|Language whose alphabet gave science many symbols.|4|6|-1|-1
+ARABIC|Semitic language written right-to-left in a cursive script.|3|6|0|-1
+HINDI|Indo-Aryan language commonly written in Devanagari.|5|1|0|1
+SWAHILI|East African lingua franca with substantial Arabic influence.|1|6|1|-1
+WELSH|Celtic language whose native name is Cymraeg.|2|5|0|-1
+MAORI|Polynesian language indigenous to Aotearoa New Zealand.|3|0|1|0
+JAPAN|Country whose language uses kanji plus two kana syllabaries.|7|2|0|1
+
+@Geography
+ISLAND|Land entirely surrounded by water.|7|1|-1|0
+PENINS|Land nearly surrounded by water but joined to a larger body.|6|6|0|-1
+ISTHMUS|Narrow land bridge joining larger land areas.|6|3|-1|0
+PLATEAU|Elevated region with relatively level terrain.|4|6|0|-1
+VALLEY|Low elongated landform commonly shaped by rivers or glaciers.|0|2|1|0
+BASIN|Area drained by a river system or enclosed by higher ground.|5|4|-1|0
+STRAIT|Narrow water passage connecting larger bodies of water.|7|5|0|-1
+CAPE|Prominent point of land projecting into water.|2|6|1|0
+
+@Astronomy
+GALAXY|Gravitationally bound system of stars, gas, dust and dark matter.|6|0|-1|0
+ECLIPSE|Alignment in which one body obscures another.|7|6|-1|0
+ZENITH|Point in the sky directly above an observer.|0|2|1|0
+NADIR|Point directly opposite the zenith.|7|0|0|1
+APHELION|Point in an orbit farthest from the Sun.|7|1|-1|0
+PERIGEE|Point in an Earth orbit nearest Earth.|6|4|-1|0
+EQUINOX|Date when the Sun crosses the celestial equator.|0|3|1|0
+SOLSTICE|Annual extreme of the Sun's apparent north-south position.|7|5|-1|0
+

@@ -102,7 +102,7 @@ static void card_box(int x,int y,int index,int active,int title_focus,int title_
   if(!active)titleattr=ACC_ATTR(acc_appearance.controls_bg,dimfg);
   else if(title_edit)titleattr=ACC_SELECT;
   else if(title_focus)titleattr=ACC_ATTR(acc_appearance.background,acc_appearance.titles);
-  else titleattr=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title);
+  else titleattr=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles);
   nattr=active?ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles):ACC_ATTR(acc_appearance.controls_bg,dimfg);
   acc_fill(x,y,w,h,' ',ACC_CONTROL);
   acc_put(x,y,218,borderattr);acc_put(x+w-1,y,191,borderattr);
@@ -138,7 +138,7 @@ static void cards_draw(int x,int y,int focus,int title_edit,int cx,int cy,int to
 int main(int argc,char **argv)
 {
   char counter[12],exported[ACC_PATH],message[ACC_PATH+32];
-  int x,y,px,cx=0,cy=0,top=0,tp=0,key=0,mx=0,my=0,focus=1,title_edit=0,i,dirty=1,insert=1,ch;
+  int x,y,px,cx=0,cy=0,top=0,tp=0,key=0,mx=0,my=0,focus=-1,title_edit=0,i,dirty=1,insert=1,ch;
   int oldcy,oldtop,base;
   unsigned mb=0;
   if(acc_help(argc,argv,"!STACK","A persistent card stack of editable titled text cards."))return 0;
@@ -152,7 +152,7 @@ int main(int argc,char **argv)
     acc_text(x+7,y+13,"",ACC_LABEL,5);acc_text(x+7,y+13,counter,ACC_HEADING,i);
     sprintf(counter,"/%d",count);acc_text(x+7+i,y+13,counter,ACC_LABEL,(int)strlen(counter));
     if(count>1)acc_button(x+14,y+13," Next ",focus==3);else acc_button_disabled(x+14,y+13," Next ");acc_button(x+21,y+13,"  Add  ",focus==4);
-    acc_button(x+29,y+13,"  Delete  ",focus==5);acc_button(x+37,y+13,"  Export  ",focus==6);
+    if(count>1)acc_button(x+29,y+13,"  Delete  ",focus==5);else acc_button_disabled(x+29,y+13,"  Delete  ");acc_button(x+37,y+13,"  Export  ",focus==6);
     acc_button(x+55,y+13,"  Close  ",focus==7);
     acc_wait(&key,&mx,&my,&mb);
 
@@ -173,13 +173,14 @@ int main(int argc,char **argv)
       focus=1;title_edit=0;dirty=1;key=0;continue;
     }
     if((mb&1)&&my>=y+3&&my<y+3+VISIBLE_LINES&&mx>=px+2&&mx<px+2+CW){focus=1;title_edit=0;cx=mx-(px+2);cy=top+my-(y+3);dirty=1;key=0;continue;}
-    if((mb&1)&&my==y+13){title_edit=0;if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+14&&mx<x+19)focus=3;else if(mx>=x+21&&mx<x+27)focus=4;else if(mx>=x+29&&mx<x+35)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+55&&mx<x+61)focus=7;key=13;}
+    if((mb&1)&&my==y+13){title_edit=0;if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+14&&mx<x+19)focus=3;else if(mx>=x+21&&mx<x+27)focus=4;else if(count>1&&mx>=x+29&&mx<x+35)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+55&&mx<x+61)focus=7;key=13;}
 
     if(key==27)break;
     if(key==9||key==271){
       int dir=(key==271)?-1:1;
       title_edit=0;
-      do { focus=(focus+dir+8)%8; } while(count<=1&&(focus==2||focus==3));
+      if(focus<0)focus=(dir<0)?7:0;
+      else do { focus=(focus+dir+8)%8; } while(count<=1&&(focus==2||focus==3||focus==5));
       dirty=1;key=0;continue;
     }
     if(key==13&&focus==0){

@@ -75,24 +75,24 @@ static int character_palette(void)
  int w=36,h=14,x=(acc_cols-w)/2,y=(acc_rows-h)/2,i,index,old=-1,key=0,mx=0,my=0;unsigned mb=0;
  /* Compact DOS Navigator-style palette.  Custom Launch! runtime positions are
     omitted completely; remaining CP437 characters pack together with no gaps. */
- palette_build();index=palette_index_of(128);
+ palette_build();index=-1;
  acc_subbox(x,y,w,h,"Characters",0);
  for(i=0;i<palette_count;i++)palette_draw_cell(x,y,i,0);
- palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);
+ palette_status(x,y,palette_codes[palette_index_of(128)]);
  acc_shadow(x,y,w,h);
  for(;;){
   acc_wait(&key,&mx,&my,&mb);
   if(mb&ACC_MOUSE_MOVED){
-   if(mx>=x+2&&mx<x+34&&my>=y+2&&my<y+10){int n=(my-(y+2))*32+(mx-(x+2));if(n<palette_count&&n!=index){old=index;index=n;palette_draw_cell(x,y,old,0);palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);}}
+   if(mx>=x+2&&mx<x+34&&my>=y+2&&my<y+10){int n=(my-(y+2))*32+(mx-(x+2));if(n<palette_count&&n!=index){old=index;index=n;if(old>=0)palette_draw_cell(x,y,old,0);palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);}}
    key=0;continue;
   }
   if(mb&1){if(mx>=x+2&&mx<x+34&&my>=y+2&&my<y+10){int n=(my-(y+2))*32+(mx-(x+2));if(n<palette_count)return palette_codes[n];}else if(mx<x||mx>=x+w||my<y||my>=y+h)return -1;continue;}
-  if(key==27)return -1;old=index;
+  if(key==27)return -1;if((key==9||key==271)&&index<0){index=palette_index_of(128);palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);continue;}if(index<0)continue;old=index;
   if(key==256+75){if(index>0)index--;}
   else if(key==256+77){if(index+1<palette_count)index++;}
   else if(key==256+72){index-=32;if(index<0)index=old;}
   else if(key==256+80){if(index+32<palette_count)index+=32;}
-  else if(key==13||key==' ')return palette_codes[index];
+  else if(key==13)return palette_codes[index];
   else continue;
   if(index!=old){palette_draw_cell(x,y,old,0);palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);}
  }
@@ -105,7 +105,7 @@ int main(int argc,char**argv){union REGS q;int x,y,tx,ty,cx=4,cy=2,top=2,key=0,m
  /* Mouse toolbar activation mirrors keyboard activation. */
  if(mb&1){if(my==y+17){if(mx>=x+2&&mx<x+7){focus=1;key=13;}else if(mx>=x+9&&mx<x+14){focus=2;key=13;}else if(mx>=x+16&&mx<x+25){focus=3;key=13;}else if(mx>=x+29&&mx<x+38){focus=4;key=13;}else if(mx>=x+40&&mx<x+46){focus=5;key=13;}else if(mx>=x+48&&mx<x+54){focus=6;key=13;}else if(mx>=x+60&&mx<x+66){focus=7;key=13;}}}
  if(key==9||key==271){focus=(key==271)?((focus+6)%7)+1:(focus%7)+1;key=0;continue;}
- if((key==13||key==' ')&&focus){if(focus==1||focus==2){save();stepday(focus==1?-1:1);load();cx=4;cy=2;top=2;}else if(focus==3){save();if(calpick())load();acc_box(x,y,70,20,"Journal");}else if(focus==4){ch=character_palette();acc_box(x,y,70,20,"Journal");if(ch>=0){note[cy*NW+cx]=(char)ch;if(cx<NW-1)cx++;}}else if(focus==5){save();if(export_all(exp)){sprintf(msg,"Journal exported to\n%s",exp);acc_notice("Export",msg);}}else if(focus==6){FILE*f=fopen("LPT1","wb");int r,q2;if(f){for(r=0;r<NL;r++){q2=NW;while(q2&&note[r*NW+q2-1]==' ')q2--;fwrite(note+r*NW,1,q2,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);}}else key=27;view(tx,ty,cx,cy,top);if(key!=27)key=0;continue;}
+ if(key==13&&focus>0){if(focus==1||focus==2){save();stepday(focus==1?-1:1);load();cx=4;cy=2;top=2;}else if(focus==3){save();if(calpick())load();acc_box(x,y,70,20,"Journal");}else if(focus==4){ch=character_palette();acc_box(x,y,70,20,"Journal");if(ch>=0){note[cy*NW+cx]=(char)ch;if(cx<NW-1)cx++;}}else if(focus==5){save();if(export_all(exp)){sprintf(msg,"Journal exported to\n%s",exp);acc_notice("Export",msg);}}else if(focus==6){FILE*f=fopen("LPT1","wb");int r,q2;if(f){for(r=0;r<NL;r++){q2=NW;while(q2&&note[r*NW+q2-1]==' ')q2--;fwrite(note+r*NW,1,q2,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);}}else key=27;view(tx,ty,cx,cy,top);if(key!=27)key=0;continue;}
  if(focus)focus=0;
  oldcy=cy;oldtop=top;
  if((mb&1)&&mx==tx+NW&&my>=ty+2&&my<ty+2+NV){int last=last_text_line();if(my==ty+2&&top>2)top--;else if(my==ty+NV+1&&top+NV<=last)top++;cy=top;cx=4;view(tx,ty,cx,cy,top);key=0;continue;}

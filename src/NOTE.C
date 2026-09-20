@@ -45,7 +45,7 @@ static int input_name(char *out)
 }
 static int confirm_remove(const char *msg)
 {
- int w=36,h=8,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,f=0;unsigned b=0;
+ int w=36,h=8,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,f=-1;unsigned b=0;
  for(;;){
   acc_subbox(x,y,w,h,"Remove",1);acc_text(x+3,y+2,msg,ACC_LABEL,(int)strlen(msg));
   acc_button(x+3,y+5,"  OK  ",f==0);acc_button(x+11,y+5,"  Cancel  ",f==1);
@@ -56,8 +56,8 @@ static int confirm_remove(const char *msg)
    continue;
   }
   if(k==27)return 0;
-  if(k==9||k==271){f=!f;continue;}
-  if((k==13||k==' '))return f==0;
+  if(k==9||k==271){if(f<0)f=(k==271)?1:0;else f=!f;continue;}
+  if(k==13&&f>=0)return f==0;
  }
 }
 
@@ -130,24 +130,24 @@ static int character_palette(void)
  int w=36,h=14,x=(acc_cols-w)/2,y=(acc_rows-h)/2,i,index,old=-1,key=0,mx=0,my=0;unsigned mb=0;
  /* Compact DOS Navigator-style palette.  Custom Launch! runtime positions are
     omitted completely; remaining CP437 characters pack together with no gaps. */
- palette_build();index=palette_index_of(128);
+ palette_build();index=-1;
  acc_subbox(x,y,w,h,"Characters",0);
  for(i=0;i<palette_count;i++)palette_draw_cell(x,y,i,0);
- palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);
+ palette_status(x,y,palette_codes[palette_index_of(128)]);
  acc_shadow(x,y,w,h);
  for(;;){
   acc_wait(&key,&mx,&my,&mb);
   if(mb&ACC_MOUSE_MOVED){
-   if(mx>=x+2&&mx<x+34&&my>=y+2&&my<y+10){int n=(my-(y+2))*32+(mx-(x+2));if(n<palette_count&&n!=index){old=index;index=n;palette_draw_cell(x,y,old,0);palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);}}
+   if(mx>=x+2&&mx<x+34&&my>=y+2&&my<y+10){int n=(my-(y+2))*32+(mx-(x+2));if(n<palette_count&&n!=index){old=index;index=n;if(old>=0)palette_draw_cell(x,y,old,0);palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);}}
    key=0;continue;
   }
   if(mb&1){if(mx>=x+2&&mx<x+34&&my>=y+2&&my<y+10){int n=(my-(y+2))*32+(mx-(x+2));if(n<palette_count)return palette_codes[n];}else if(mx<x||mx>=x+w||my<y||my>=y+h)return -1;continue;}
-  if(key==27)return -1;old=index;
+  if(key==27)return -1;if((key==9||key==271)&&index<0){index=palette_index_of(128);palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);continue;}if(index<0)continue;old=index;
   if(key==256+75){if(index>0)index--;}
   else if(key==256+77){if(index+1<palette_count)index++;}
   else if(key==256+72){index-=32;if(index<0)index=old;}
   else if(key==256+80){if(index+32<palette_count)index+=32;}
-  else if(key==13||key==' ')return palette_codes[index];
+  else if(key==13)return palette_codes[index];
   else continue;
   if(index!=old){palette_draw_cell(x,y,old,0);palette_draw_cell(x,y,index,1);palette_status(x,y,palette_codes[index]);}
  }

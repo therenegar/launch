@@ -5,6 +5,7 @@
 
 #define ACC_PATH 128
 #define ACC_MOUSE_MOVED 0x8000
+#define ACC_MOUSE_OUTSIDE 0x4000
 #define ACC_ATTR(bg,fg) (((bg)<<4)|(fg))
 
 typedef struct {
@@ -53,6 +54,12 @@ int acc_key(void);
 int acc_key_ready(void);
 int acc_mouse(int *x,int *y,int *buttons);
 void acc_wait(int *key,int *x,int *y,unsigned *buttons);
+void acc_set_idle_hook(void (*fn)(void));
+void acc_tooltip_region(int x,int y,int width,const char *text,int active);
+void acc_tooltip_clear_regions(void);
+void acc_modal_begin(void);
+void acc_modal_end(void);
+void acc_mouse_display(int show);
 void acc_path(char *out,const char *subdir,const char *name);
 int acc_make_dir(const char *path);
 int acc_exists(const char *path);

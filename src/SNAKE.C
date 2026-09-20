@@ -34,7 +34,7 @@
 #define SC_HEAD_LEFT   202
 #define SC_HEAD_RIGHT  131
 #define SC_BODY_VERT   132
-#define SC_BODY_HORIZ  203
+#define SC_BODY_HORIZ  218
 #define SC_CORNER_SW   204
 #define SC_CORNER_SE   133
 #define SC_CORNER_NW   205
@@ -161,13 +161,13 @@ static void snake_buttons(int x,int y,int w,int h,int focus)
 
 int main(int argc,char **argv)
 {
-  int w=70,h=22,x,y,ox,oy,key=0,mx=0,my=0,focus=0,last_focus=-1,lastb=0;unsigned long last_tick,t;int tick_div=0,grow_ticks=0;
+  int w=70,h=22,x,y,ox,oy,key=0,mx=0,my=0,focus=-1,last_focus=-2,lastb=0;unsigned long last_tick,t;int tick_div=0,grow_ticks=0;
   if(acc_help(argc,argv,"!SNAKE","A text-mode fruit-eating snake game inspired by Rattler Race."))return 0;
   if(!acc_begin(argv[0],"Snake",0))return 1;snake_font(1);if(acc_mouse_present){union REGS mr;memset(&mr,0,sizeof(mr));mr.x.ax=1;int86(0x33,&mr,&mr);}srand((unsigned)acc_ticks());x=(acc_cols-w)/2;y=(acc_rows-h)/2;ox=x+6;oy=y+4;score=0;lives=3;level=0;reset_round();acc_box(x,y,w,h,"Snake");draw_board(ox,oy);status_draw(x+4,y+2);last_tick=acc_ticks();
   while(key!=27){
     if(focus!=last_focus){snake_buttons(x,y,w,h,focus);last_focus=focus;}
-    if(kbhit()){key=acc_key();if(key==9){focus=(focus+1)%4;key=0;}else if(key==256+72||key==0x4800){nextdir=0;running=1;focus=0;key=0;}else if(key==256+77||key==0x4D00){nextdir=1;running=1;focus=0;key=0;}else if(key==256+80||key==0x5000){nextdir=2;running=1;focus=0;key=0;}else if(key==256+75||key==0x4B00){nextdir=3;running=1;focus=0;key=0;}else if((key==13||key==' ')&&focus){if(focus==1){reset_round();draw_board(ox,oy);}else if(focus==2){level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(focus==3)key=27;if(key!=27)key=0;}}
-    if(acc_mouse_present){int b=0;acc_mouse(&mx,&my,&b);if((b&1)&&!lastb){if(my==y+h-3){if(mx>=x+4&&mx<x+14){focus=1;reset_round();draw_board(ox,oy);}else if(mx>=x+12&&mx<x+18){focus=2;level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(mx>=x+w-11){key=27;}}}lastb=b&1;}
+    if(kbhit()){key=acc_key();if(key==9||key==271){if(focus<0)focus=(key==271)?3:0;else focus=(key==271)?(focus+3)%4:(focus+1)%4;key=0;}else if(key==256+72||key==0x4800){focus=0;nextdir=0;running=1;key=0;}else if(key==256+77||key==0x4D00){focus=0;nextdir=1;running=1;key=0;}else if(key==256+80||key==0x5000){focus=0;nextdir=2;running=1;key=0;}else if(key==256+75||key==0x4B00){focus=0;nextdir=3;running=1;key=0;}else if(key==13&&focus>0){if(focus==1){reset_round();draw_board(ox,oy);}else if(focus==2){level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(focus==3)key=27;if(key!=27)key=0;}}
+    if(acc_mouse_present){int b=0;acc_mouse(&mx,&my,&b);if((b&1)&&!lastb){if((b&1)&&my==y&&(mx==x+w-5||mx==x+w-4)){key=27;}else if(my==y+h-3){if(mx>=x+4&&mx<x+14){focus=1;reset_round();draw_board(ox,oy);}else if(mx>=x+12&&mx<x+18){focus=2;level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(mx>=x+w-11){key=27;}}}lastb=b&1;}
     t=acc_ticks();if(t!=last_tick){last_tick=t;tick_div++;if(running){grow_ticks++;if(grow_ticks>=36){grow_ticks=0;if(target_units<MAX_SNAKE-2)target_units++;}}if(running&&tick_div>=((dir==0||dir==2)?6:3)){tick_div=0;if(timebar>0)timebar--;if(timebar==0){timebar=100;memset(fruit,0,sizeof(fruit));fruit_left=FRUITS;{int i;for(i=0;i<FRUITS;i++)put_fruit();}draw_board(ox,oy);}step_snake(ox,oy);status_draw(x+4,y+2);}}
   }
   acc_end_screen();snake_font(0);acc_end();return 0;

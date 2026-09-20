@@ -389,8 +389,9 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
 static int copy_accessories(const char *archive,const char *install)
 {
   static const char *files[]={"!CAL.EXE","CAL.ICS","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE",
-    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!TODOS.EXE",
-    "!BOXES.EXE","!FCELL.EXE","!POP.EXE","!SNAKE.EXE","!SOL.EXE",0};
+    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!TODOS.EXE","!TYPO.EXE","TYPO.LVL",
+    "!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE","!SNAKE.EXE","!SOL.EXE",
+    "!WORDZ.EXE","WORDZ.LVL",0};
   static char destination[PATH_SIZE];int i;
   for(i=0;files[i];i++){
     sprintf(destination,"%s\\%s",install,files[i]);

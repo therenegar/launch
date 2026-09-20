@@ -25,7 +25,7 @@ static int selx=-1,sely=-1,sel_count=0;
 static long score=0,high_score=0,time_left=MAX_START_TICKS,start_ticks=MAX_START_TICKS;
 static int level=1;
 static unsigned long last_tick;
-static int cursor_x=0,cursor_y=0,focus=0;
+static int cursor_x=0,cursor_y=0,focus=-1;
 
 static const unsigned char pop16[2][32]={
   {0x00,0x00,0x03,0x0F,0x1C,0x1B,0x37,0x37,0x3F,0x3F,0x1F,0x1F,0x0F,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
@@ -98,7 +98,7 @@ static void new_game(void)
 {
   int x,y;unsigned seed=(unsigned)acc_ticks()+(unsigned)(level*977);srand(seed);
   for(y=0;y<BH;y++)for(x=0;x<BW;x++)board[y][x]=(unsigned char)(1+rand()%4);
-  score=0;start_ticks=level_ticks();time_left=start_ticks;last_tick=acc_ticks();cursor_x=0;cursor_y=0;focus=0;clear_selection();
+  score=0;start_ticks=level_ticks();time_left=start_ticks;last_tick=acc_ticks();cursor_x=0;cursor_y=0;clear_selection();
 }
 
 static void gravity(void)
@@ -165,15 +165,22 @@ static void mouse_show(int show){union REGS r;if(!acc_mouse_present)return;memse
 static void pop_ui_glyphs(int ui){(void)ui;}
 static void pop_result_notice(int is_error,long final_score)
 {
-  int w=is_error?44:40,h=11,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,bx;unsigned mb=0;char n[24];
+  int w=is_error?44:40,h=11,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,bx,focus=-1;unsigned mb=0;char n[24];
   if(final_score>high_score)high_score=final_score;
   acc_subbox(x,y,w,h,"Pop",1);bx=x+(w-6)/2;
   if(is_error){acc_put(x+3,y+2,219,ACC_ATTR(acc_appearance.background,4));acc_put(x+4,y+2,173,ACC_ATTR(4,15));acc_put(x+5,y+2,219,ACC_ATTR(acc_appearance.background,4));acc_text(x+7,y+2,"Time's up!",ACC_LABEL,20);}
   else acc_text(x+3,y+2,"Nothing left to pop!",ACC_LABEL,28);
   acc_text(x+3,y+4,"Your score:",ACC_LABEL,12);sprintf(n,"%ld",final_score);acc_text(x+15,y+4,n,ACC_HEADING,w-18);
   acc_text(x+3,y+5,"High score:",ACC_LABEL,12);sprintf(n,"%ld",high_score);acc_text(x+15,y+5,n,ACC_HEADING,w-18);
-  acc_button(bx,y+h-3,"  OK  ",1);
-  while(!k){acc_wait(&k,&mx,&my,&mb);if((mb&1)&&my==y+h-3&&mx>=bx&&mx<bx+6)k=13;}
+  for(;;){
+    acc_button(bx,y+h-3,"  OK  ",focus==0);
+    acc_wait(&k,&mx,&my,&mb);
+    if(k==27)return;
+    if((mb&1)&&my==y+h-3&&mx>=bx&&mx<bx+6)return;
+    if(k==9||k==271){focus=0;k=0;continue;}
+    if(k==13&&focus==0)return;
+    k=0;
+  }
 }
 
 int main(int argc,char **argv)
@@ -191,7 +198,8 @@ int main(int argc,char **argv)
     }
     if(acc_key_ready())key=acc_key();else key=0;
     if(acc_mouse_present){acc_mouse(&mx,&my,&buttons);if((buttons&1)&&!(last_buttons&1)){
-        if(my==y+18&&mx>=x+3&&mx<x+9){acc_press_button(x+3,y+18,"  Retry  ");new_game();full=1;}
+        if((buttons&1)&&my==y&&(mx==x+DLG_W-5||mx==x+DLG_W-4)){key=27;}
+        else         if(my==y+18&&mx>=x+3&&mx<x+9){acc_press_button(x+3,y+18,"  Retry  ");new_game();full=1;}
         else if(my==y+18&&mx>=x+11&&mx<x+16){acc_press_button(x+11,y+18,"  Prev  ");if(--level<1)level=10;new_game();full=1;}
         else if(my==y+18&&mx>=x+18&&mx<x+23){acc_press_button(x+18,y+18,"  Next  ");if(++level>10)level=1;new_game();full=1;}
         else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4){acc_press_button(x+DLG_W-10,y+18,"  Close  ");key=27;}
@@ -199,11 +207,11 @@ int main(int argc,char **argv)
       }last_buttons=buttons;
       hover=-1;if(my==y+18&&mx>=x+3&&mx<x+9)hover=1;else if(my==y+18&&mx>=x+11&&mx<x+16)hover=2;else if(my==y+18&&mx>=x+18&&mx<x+23)hover=3;else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4)hover=4;if(hover!=oldhover){acc_button(x+3,y+18,"  Retry  ",focus==1||hover==1);acc_button(x+11,y+18,"  Prev  ",focus==2||hover==2);acc_button(x+18,y+18,"  Next  ",focus==3||hover==3);acc_button(x+DLG_W-10,y+18,"  Close  ",focus==4||hover==4);oldhover=hover;}
     }
-    if(key==9||key==271){if(key==271){focus--;if(focus<0)focus=4;}else{focus++;if(focus>4)focus=0;}full=1;}
-    else if((key==13||key==' ')&&focus==1){new_game();full=1;}
-    else if((key==13||key==' ')&&focus==2){if(--level<1)level=10;new_game();full=1;}
-    else if((key==13||key==' ')&&focus==3){if(++level>10)level=1;new_game();full=1;}
-    else if((key==13||key==' ')&&focus==4)key=27;
+    if(key==9||key==271){if(focus<0)focus=(key==271)?4:0;else if(key==271){focus--;if(focus<0)focus=4;}else{focus++;if(focus>4)focus=0;}full=1;}
+    else if(key==13&&focus==1){new_game();full=1;}
+    else if(key==13&&focus==2){if(--level<1)level=10;new_game();full=1;}
+    else if(key==13&&focus==3){if(++level>10)level=1;new_game();full=1;}
+    else if(key==13&&focus==4)key=27;
     else if(focus==0&&(key==256+75||key==256+77||key==256+72||key==256+80)){if(key==256+75&&cursor_x>0)cursor_x--;if(key==256+77&&cursor_x<BW-1)cursor_x++;if(key==256+72&&cursor_y>0)cursor_y--;if(key==256+80&&cursor_y<BH-1)cursor_y++;select_at(cursor_x,cursor_y);draw_board(bx,by);}
     else if(focus==0&&(key==13||key==' ')){if(sel_count>=2&&mark[cursor_y][cursor_x]){pop_selected(bx,by);draw_board(bx,by);draw_status(x,y);}else{select_at(cursor_x,cursor_y);draw_board(bx,by);}}
     

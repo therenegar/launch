@@ -84,9 +84,14 @@ static void ega14_rom_read(int code,unsigned char *glyph)
  }
  p=(unsigned char far *)MAKE_FP(fseg,foff);p+=(unsigned)code*14U;for(i=0;i<14;i++)glyph[i]=p[i];for(;i<32;i++)glyph[i]=0;
 }
-static void mouse_glyph_write(const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;if(acc_font_height()==14){ega14_glyph_write(127,(const unsigned char far *)glyph);return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
-void acc_glyph_read(int code,unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;if(acc_font_height()==14){ega14_rom_read(code,glyph);return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)glyph[i]=font[i];font_plane_close(&old);}
-void acc_glyph_write(int code,const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;if(acc_font_height()==14){ega14_glyph_write(code,(const unsigned char far *)glyph);return;}font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
+/* EGA and VGA both expose character-generator RAM in plane 2 as 32-byte
+   slots.  Writing individual EGA glyphs through INT 10h/AH=11 can select a
+   user-font block before the untouched CP437 characters have been populated,
+   which corrupts ordinary box-drawing characters.  Modify the active font
+   plane in place instead, preserving every glyph we do not explicitly own. */
+static void mouse_glyph_write(const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
+void acc_glyph_read(int code,unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)glyph[i]=font[i];font_plane_close(&old);}
+void acc_glyph_write(int code,const unsigned char *glyph){FONT_REGS old;unsigned char far *font;int i;font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);}
 void acc_glyph_library(int logical_id,int code){
 #ifndef ACCLIB_MIN_GLYPHS
  if(logical_id<1||logical_id>LAUNCH_GLYPH_COUNT)return;acc_glyph_write(code,acc_font_height()==14?launch_glyph14[logical_id-1]:launch_glyph16[logical_id-1]);
@@ -94,7 +99,7 @@ void acc_glyph_library(int logical_id,int code){
  if(logical_id!=56)return;acc_glyph_write(code,acc_font_height()==14?stack_divider14:stack_divider16);
 #endif
 }
-static const unsigned char launchui_codes[41]={16,17,30,31,169,170,173,174,175,181,182,183,184,185,186,187,188,189,190,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,220,244,245};
+static const unsigned char launchui_codes[41]={16,17,30,31,169,170,173,174,175,181,182,183,184,185,186,187,188,189,190,198,199,200,201,202,224,204,205,206,207,208,209,210,211,212,213,214,215,216,220,244,245};
 int acc_glyph_is_custom(int code){int i;if(code==127||code==255||code==8)return 1;for(i=0;i<(int)sizeof(launchui_codes);i++)if((unsigned)code==(unsigned)launchui_codes[i])return 1;return 0;}
 static const unsigned char launchui_glyphs[41][32]={
   {0x00,0x00,0x00,0x00,0x30,0x38,0x3C,0x3E,0x3C,0x38,0x30,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
@@ -201,7 +206,7 @@ static void mouse_pointer_install(void)
   static const unsigned char target16[32]={0,0,0,0x18,0x18,0x18,0x3C,0xE7,0xE7,0x3C,0x18,0x18,0x18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   FONT_REGS old;unsigned char far *font,height_far;unsigned char arrow[32];union REGS r;int i,height,source;
   if(acc_appearance.mouse_cursor){memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;if(acc_appearance.mouse_cursor==1){r.x.cx=0xFFFF;r.x.dx=0x7700;}else{r.x.cx=0xF000;r.x.dx=0x0FB8;}int86(0x33,&r,&r);return;}
-  if(acc_font_height()==14)ega14_rom_read(127,mouse_old_glyph);else{font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)mouse_old_glyph[i]=font[i];font_plane_close(&old);}mouse_glyph_saved=1;
+  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,127*32);for(i=0;i<32;i++)mouse_old_glyph[i]=font[i];font_plane_close(&old);mouse_glyph_saved=1;
   memset(arrow,0,sizeof(arrow));height_far=*(unsigned char far *)MAKE_FP(0x40,0x85);height=height_far;if(height<8||height>32)height=16;
   for(i=0;i<height;i++){source=i*16/height;if(source>15)source=15;arrow[i]=arrow16[source];}mouse_glyph_write(arrow);
   memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;r.x.cx=0xF000;r.x.dx=0x0F7F;int86(0x33,&r,&r);
@@ -316,10 +321,13 @@ static int acc_button_icon(const char *text,int *a,int *b)
   /* Preview is deliberately a text button.  Test it before Prev: the
      word "Preview" itself begins with "Prev". */
   if(strstr(text,"Preview"))return 0;
+  /* An explicit Next level label is intentionally textual.  Generic Next
+     controls retain the compact right-arrow icon treatment. */
+  if(strstr(text,"Next level"))return 0;
   if(strstr(text,"Prev")){*a=17;*b=-1;return 1;}if(strstr(text,"Next")){*a=16;*b=-1;return 1;}
   if(strstr(text,"Save")||strstr(text,"Yes")||strstr(text," OK ")){*a=198;*b=199;return 1;}
   if(strstr(text,"Cancel")||strstr(text,"No")||strstr(text,"Close")){*a=close_glyph_l;*b=close_glyph_r;return 1;}
-  if(strstr(text,"Run")&&!strstr(text,"Preview")){*a=202;*b=203;return 2;}if(strstr(text,"Export")){*a=204;*b=181;return 1;}if(strstr(text,"Print")){*a=206;*b=207;return 1;}
+  if(strstr(text,"Run")&&!strstr(text,"Preview")){*a=202;*b=224;return 2;}if(strstr(text,"Export")){*a=204;*b=181;return 1;}if(strstr(text,"Print")){*a=206;*b=207;return 1;}
   if(strstr(text,"Add")||strstr(text,"New")){*a=208;*b=187;return 1;}if(strstr(text,"Edit")){*a=210;*b=182;return 1;}if(strstr(text,"Delete")||strstr(text,"Remove")){*a=209;*b=188;return 1;}if(strstr(text,"Retry")||strstr(text,"Refresh")){*a=214;*b=216;return 1;}return 0;
 }
 static void acc_button_draw_state(int x,int y,const char *text,int selected,int enabled)
@@ -385,7 +393,7 @@ void acc_path(char *out,const char *sub,const char *name)
 static void acc_message_icon(int x,int y,int type)
 {
  int fg,bg,glyph=(type==2)?174:173;
- if(type==0){fg=12;bg=4;}else if(type==1){fg=6;bg=6;}else{fg=7;bg=7;}
+ if(type==0){fg=4;bg=4;}else if(type==1){fg=6;bg=6;}else{fg=7;bg=7;}
  acc_put(x,y,219,ACC_ATTR(acc_appearance.background,fg));
  acc_put(x+1,y,glyph,ACC_ATTR(bg,(type==2)?9:15));
  acc_put(x+2,y,219,ACC_ATTR(acc_appearance.background,fg));
