@@ -497,9 +497,9 @@ Records are maintained so you can keep track of your high scores.
 ----
 <img width="1633" height="250" alt="launch-games" src="https://github.com/user-attachments/assets/c4d31625-d74d-4534-a256-eb436e3ece78" />
 
-Launch! comes with 7 addictive games to kill some time. My attempt at creating a **DOS Entertainment Pack** if you will.
+Launch! comes with 7 addictive games to kill some time. My attempt at creating a **DOS Entertainment Pack** if you will. And also a VGA/EGA font plane glyph manipulation game engine for graphics in text mode DOS.
 
-If selected during the Install program, there will be an **Games** menu created for you in Launch! providing quick access.
+If selected during the Install program, there will be a **Games** menu created for you in Launch! providing quick access.
 
 
 ### !BOXES.EXE - Boxes
