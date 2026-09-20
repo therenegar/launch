@@ -390,7 +390,7 @@ The clock is based on a 1979 Vacuum Fluorescent Display alarm clock on my bedsid
 
 <img width="1633" height="250" alt="Accessories" src="https://github.com/user-attachments/assets/98418a23-1b67-43ee-b6f4-77de6fecee98" />
 
-Launch! comes with 8 handy accessories that can be useful in a basic DOS environment.
+Launch! comes with 9 handy accessories that can be useful in a basic DOS environment.
 
 If selected during the Install program, there will be an **Accessories** menu created for you in Launch! providing quick access.
 
@@ -496,7 +496,7 @@ Records are maintained so you can keep track of your high scores.
 ----
 <img width="1633" height="250" alt="launch-games" src="https://github.com/user-attachments/assets/c4d31625-d74d-4534-a256-eb436e3ece78" />
 
-Launch! comes with 5 addictive games to kill some time.
+Launch! comes with 7 addictive games to kill some time. My attempt at creating a **DOS Entertainment Pack** if you will.
 
 If selected during the Install program, there will be an **Games** menu created for you in Launch! providing quick access.
 
