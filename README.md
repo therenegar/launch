@@ -502,9 +502,11 @@ If selected during the Install program, there will be an **Games** menu created 
 
 
 ### !BOXES.EXE - Boxes
-A Sokoban style puzzle game with 100 different challenges.
+A Sokoban style puzzle game with 250 different challenges.
 
 Use the arrow keys to move the worker and push boxes to cover all the targets - in as few moves as possible.
+
+Puzzles 1-200 can be played out for you by choosing `Solve`. Levels 200-250, you must solve yourself!
 
 <img width="720" height="600" alt="Boxes" src="https://github.com/user-attachments/assets/f925d3b6-fef8-4caf-a08a-416172b5619d" />
 
@@ -562,7 +564,7 @@ If you don't load the keyboard shortcut tool, you'll regain 500 bytes of memory 
 If chosen, it will be added to `AUTOEXEC.BAT/FDAUTO.BAT` by install so the shortcut is available after startup.
 The combination can be changed any time after install in Configuration.
 
-You can change the keyboard shortcut used by manually adding the `/KEY=` parameter to `SHORTCUT.COM` with readable names or hexadecimal scan codes, e.g.
+You can change the keyboard shortcut used by manually adding the `/KEY=` parameter to `SHORTCUT.COM` with readable names or hexadecimal scan codes, e.g.Update README.md
 ```
   SHORTCUT /KEY=LWIN
   SHORTCUT /KEY=CTRL+SPACE
@@ -594,7 +596,7 @@ You can use the `/LOOKIN=C,D,E` parameter to change the drives the tool will sea
 Use `AUTOGEN /?` for more information.
 
 
-## File safety
+## File safetyUpdate README.md
 Launch! validates `LAUNCH.MNU` before opening the menu. A valid file must contain the [Launcher] root section and every non-comment line must be a valid section, FOLDER, or ITEM record. Empty, truncated, malformed, or oversized records are rejected.
 
 Before every accepted Add, Edit, Delete, Move, or Sort operation, the existing valid `LAUNCH.MNU` is copied to `LAUNCH.BAK`. The new menu is first written fully to `LAUNCH.$$$` and is installed only after writing succeeds. `LAUNCH.BK$` is used briefly while rotating the backup.
