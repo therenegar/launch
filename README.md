@@ -444,7 +444,7 @@ A simple and flexible daily journal. Easily navigate between days or go to a spe
 
 Export and Print your journal too.
 
-Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copied (`CTRL+X`) or Pasted (`CTRL+X`) anywhere on the page.
+Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copied (`CTRL+C`) or Pasted (`CTRL+V`) anywhere on the page.
 
 <img width="360" height="300" alt="Journal" src="https://github.com/user-attachments/assets/6f01d0d9-7d5d-4090-a943-25c4a5f12202" />
 
@@ -456,7 +456,7 @@ The text contents are persisted when you close the Note, and will be there when 
 
 Choose `Clr` to erase the notepad. `Chars` shows a character palette to insert extended/special characters.
 
-Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copied (`CTRL+X`) or Pasted (`CTRL+X`) anywhere on the page, other pages, or pages in other tabs.
+Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copied (`CTRL+C`) or Pasted (`CTRL+V`) anywhere on the page, other pages, or pages in other tabs.
 
 Words will wrap at the end of each line intelligently to the next, for natural typing.
 
@@ -495,7 +495,7 @@ Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your l
 ### !TYPO.EXE - Typo
 Level up on your words-per-minute and put that retro mechanical keyboard to good use, practicing your typing.
 
-50 different lessons focusing on different skills and types of texts, including coding.
+50 different lessons focusing on different skills and types of texts, with a focus on technical writing and coding.
 
 Records are maintained so you can keep track of your high scores.
 
