@@ -499,7 +499,7 @@ Some secret hotkeys<br/>
 ### !TYPO.EXE - Typo
 Level up on your words-per-minute and put that retro mechanical keyboard to good use, practicing your typing.
 
-50 different lessons focusing on different skills and types of texts, with a focus on technical writing and coding.
+50 different lessons with different skills and types of texts, and a focus on technical writing and coding.
 
 Records are maintained so you can keep track of your achievements.
 
