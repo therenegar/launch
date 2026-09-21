@@ -138,9 +138,10 @@ The following icons are used across Launch!
 `Open File` is a fixed special item at the bottom of the menu (removable in Config).
 It allows you to browse for files, based on configured associations, and open the file with the configured launcher.
 
-As an example, this can allow you to browse and open images with a launcher for an image viewing program - without having to typing a massive command line yourself. Or browse zip files, and easily extract with your ZIP program, adding further parameters if required.
+As an example, this can allow you to browse and open images with a launcher for an image viewing program - without having to type a massive command line and file path out yourself. Or browse zip files, and easily extract with your ZIP program, adding further parameters if required (like extraction directory).
 
 There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
+
 
 <img width="360" height="300" alt="Open File" src="https://github.com/user-attachments/assets/9d15bb77-744a-46f2-84be-efed62b84413" />
 
@@ -186,7 +187,7 @@ The dialog can also be shown on its own, without the menu, by running `! /BYE`.
 
 <img width="360" height="300" alt="Power off bitmap" src="https://github.com/user-attachments/assets/2eee9995-eed2-49a5-8f5f-6753d8423140" />
 
-If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 color bitmap.
+If desired, you can replace this image as `PWROFF.BMP` with any 320x400 256 color bitmap - it is stretch to full screen.
 
 
 ----
@@ -205,7 +206,7 @@ You can choose where the menu is positioned, what options are displayed, the tim
 
 <img width="360" height="300" alt="Configuration - Menu" src="https://github.com/user-attachments/assets/470f9598-7d75-40b9-b838-20f4a23fc91c" />
 
-Contextual help (tooltips) can be turned off - they will appear throughout Launch! with keyboard focus or mouse-over.
+Contextual help (tooltips) can be turned on (off by default). They will appear throughout Launch! with keyboard focus or mouse-over.
 
 The SysBar (off by default) shows an information bar, top-right of screen every time the menu is opened with some handy system status information.
 
@@ -420,7 +421,7 @@ You can print the calendar out, it will create a full page calendar with big eno
 The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specification) that is located beside `!CAL.EXE`
 
 You can also use the `/FILE=` parameter to point to any `.ICS` file, and the Calendar will show events from that file.<br/>
-e.g. `!CAL C:\DOCS\HOLIDAYS.ICS`
+e.g. `!CAL /FILE=C:\DOCS\HOLIDAYS.ICS`
 
 <img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/1ad0116f-b7ea-4aeb-b040-029da2b62a02" />
 
@@ -564,13 +565,12 @@ Watch out for walls and don't run into yourself
 
 <img width="360" height="300" alt="Snake" src="https://github.com/user-attachments/assets/814e48a0-76e0-42a2-99e3-b6fc63941097" />
 
-
-Levels 1-10 come from the Microsoft QBasic NIBBLES.BAS sample program. Beyond level 10 playfields are randomly generated.
+Levels 1-10 come from the Microsoft QBasic NIBBLES.BAS sample program. Beyond level 10 playfields are randomly generated (and might be crazy).
 
 ### !SOL.EXE - Solitaire
 Play draw three Solitaire completely in text mode!
 
-Click a card (it will show as selected), then click the destination (valid destinations are indicated). You can double click a card to move it to the correct foundation pile (if a valid move).
+Click a card (it will show as selected), then click the destination (valid destinations are indicated). With keyboard, `Space` selects a card, navigate to destination with arrow keys and press `Enter` to commit.
 
 <img width="360" height="300" alt="Solitaire" src="https://github.com/user-attachments/assets/a31812f3-b94b-48da-94a1-4d923ebc919a" />
 
@@ -578,9 +578,11 @@ Click a card (it will show as selected), then click the destination (valid desti
 ### !WORDZ.EXE - Wordz
 
 Over 200 word-find style challenges.
-Find the words in the word list in the letter grid. Hints help you out.
+Use the hints to find all the hidden words in the letter grid.
 
-Click letters, or click and drag to select a word. `Enter` commits your selection. `Backspace` un-selects the last selected letter.
+Click on letters, or click and drag to select a word. `Enter` commits your selection. `Backspace` un-selects the last selected letter.
+
+Words can be horizontal, diagonal down and up. Words will not be on the grid backwards.
 
 <img width="360" height="300" alt="Wordz" src="https://github.com/user-attachments/assets/70801674-2035-48fc-958c-f60538851e4f" />
 
