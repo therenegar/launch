@@ -620,7 +620,8 @@ If `LAUNCH.MNU` is missing or invalid at startup and `LAUNCH.BAK` is valid, Laun
 
 ----
 
-Launch is created on a 486DX4/100 machine, 32mb RAM, using IBM PC DOS 7.0. Coded using Microsoft QuickC IDE and FTE (Folding Text Editor). Graphical glyphs created using Fontraption. Compiled with Microsoft C/C++ Optimized Compiler 7.00 from 1992. 
+Launch is created on a 486DX4/100 machine, 32mb RAM, using IBM PC DOS 7.0. Coded using Microsoft QuickC IDE and [FTE](https://fte.sourceforge.net/) (Folding Text Editor). Graphical glyphs created using [Fontraption](https://int10h.org/blog/2019/05/fontraption-vga-text-mode-font-editor/). Screen layout and composition done with [TheDraw](https://www.abandonwaredos.com/abandonware-game.php?abandonware=TheDraw+4&gid=3563).
+Compiled with Microsoft C/C++ Optimized Compiler 7.00 from 1992. 
 
 <img width="360" height="300" alt="About" src="https://github.com/user-attachments/assets/28b12e02-a814-4f4d-9e41-43cfeafebb66" />
 
