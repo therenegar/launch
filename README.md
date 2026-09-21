@@ -419,7 +419,8 @@ You can print the calendar out, it will create a full page calendar with big eno
 
 The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specification) that is located beside `!CAL.EXE`
 
-You can also use the `/FILE=` parameter to point to any `.ICS` file, and the Calendar will show events from that file.
+You can also use the `/FILE=` parameter to point to any `.ICS` file, and the Calendar will show events from that file.<br/>
+e.g. `!CAL C:\DOCS\HOLIDAYS.ICS`
 
 <img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/1ad0116f-b7ea-4aeb-b040-029da2b62a02" />
 
@@ -446,6 +447,9 @@ The grid can be toggled on/off.
 Your drawing is persisted and will be there when the program is re-opened.
 
 <img width="360" height="300" alt="Pixel Draw" src="https://github.com/user-attachments/assets/bcf393ef-1f95-45b5-9f07-8eba7894b2af" />
+
+`!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing.<br/>
+e.g. `!DRAW C:\ICON.BMP`
 
 ### !JOURNAL.EXE - Journal
 A simple and flexible daily journal. Easily navigate between days or go to a specific date.
@@ -529,7 +533,7 @@ Use the arrow keys to move the worker and push boxes to cover all the targets - 
 
 Puzzles 1-200 can be played out for you by choosing `Solve`. Levels 200-250, you must solve yourself!
 
-<img width="360" height="300" alt="Boxes" src="https://github.com/user-attachments/assets/619227e0-a11a-44da-b3ff-bfdc6f928a9c" />
+<img width="360" height="300" alt="Boxes" src="https://github.com/user-attachments/assets/1836d279-cb98-4d15-8b09-f975eba82bac" />
 
 Puzzles are from Microban collections designed by [David W. Skinner](http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm)
 
@@ -575,9 +579,9 @@ Click a card (it will show as selected), then click the destination (valid desti
 
 Find the words in the word list in the letter grid. Hints help you out.
 
-Click letters, or click and drag to select a word. Enter commits your selection.
+Click letters, or click and drag to select a word. `Enter` commits your selection. `Backspace` un-selects the last selected letter.
 
-<img width="360" height="300" alt="wordz" src="https://github.com/user-attachments/assets/b7ebd866-c183-4603-b592-c1402bb914da" />
+<img width="360" height="300" alt="Wordz" src="https://github.com/user-attachments/assets/70801674-2035-48fc-958c-f60538851e4f" />
 
 
 ----
@@ -604,6 +608,8 @@ The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.<br/>
 Use `SHORTCUT /?` for more information.
 
 To maintain system integrity and security, `SHORTCUT.COM` validates an authentication key in `!.EXE` to ensure the shortcut key will only ever execute (a genuine) Launch! menu.
+
+A separate executable with the same functionality, `SHORTCDB.COM` is provided as a drop-in replacement for DOSBox users.
 
 ## AUTOGEN.EXE - an automatic menu generator
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
