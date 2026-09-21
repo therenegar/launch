@@ -472,7 +472,7 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 
 Words will wrap at the end of each line intelligently to the next, for natural typing.
 
-<img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/21281568-5468-4927-ae6e-cd6d3b89d55c" />
+<img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/94874b5e-ad0d-4665-8233-fdaa41558cff" />
 
 You can add the filename/s (up to 10) of a text file after `!NOTE.EXE` and Note will open your external text file (in a tab labelled 'External' - one file per page). Any changes be saved (overwrite) with the Export button - which will save all opened files. Externally opened files are not persisted.
 e.g. `!NOTE C:\DOCS\CONTACTS.TXT C:\DOCS\BDAYS.TXT`
