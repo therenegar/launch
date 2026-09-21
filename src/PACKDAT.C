@@ -1,4 +1,4 @@
-/* Builds the compressed Launch! 3.61 INSTALL.DAT distribution archive.
+/* Builds the compressed Launch! 3.63 INSTALL.DAT distribution archive.
    Per-file LZSS compression: 4K history window, 3..18 byte matches.
    Microsoft C/C++ 7.0 / DOS small model. */
 #include <stdio.h>

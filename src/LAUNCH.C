@@ -38,8 +38,8 @@ typedef struct {
   unsigned char font_id,font_persist,mouse_cursor,prompt_inactivity;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,0,10,0,1,1,1,0,0};
-static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,0,10,0,1,1,1,0,0};
+static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0};
+static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0};
 
 static void (interrupt far *setkey_old_int09)();
 static volatile unsigned char setkey_scan,setkey_e0,setkey_mods;
@@ -3338,7 +3338,7 @@ static void config_about_box(void)
   bx=x+3;subdialog_box(x,y,w,h,"About Launch!");
   textout(x+3,y+2,"(C)Copyright 2026 Ben Renegar",C_INPUT_LABEL,34);
   textout(x+3,y+3,"www.benrenegar.com",C_INPUT_LABEL,34);
-  textout(x+3,y+6,"Version 3.61 - 2026-09-20",C_INPUT_LABEL,34);
+  textout(x+3,y+6,"Version 3.63 - 2026-09-21",C_INPUT_LABEL,34);
   for(;;){
     draw_button(bx,y+h-3,"  OK  ",6,focus==0);
     wait_input(&k,&mx,&my,&mb);

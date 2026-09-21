@@ -102,7 +102,7 @@ static int stack_has_selection(void){return stack_sel_anchor>=0&&stack_sel_caret
 static void stack_selection_clear(void){stack_sel_anchor=stack_sel_caret=-1;}
 static int stack_selected(int line,int col){int p=line*CW+col;return stack_has_selection()&&p>=stack_sel_low()&&p<stack_sel_high();}
 
-static void card_box(int x,int y,int index,int active,int title_focus,int title_edit,int text_focus,int cx,int cy,int top)
+static void card_box(int x,int y,int index,int active,int title_focus,int title_edit,int title_pos,int text_focus,int cx,int cy,int top)
 {
   char number[8];int i,r,line,w=56,h=12;
   int dimfg=(acc_appearance.controls_fg&7)|8;
@@ -119,6 +119,7 @@ static void card_box(int x,int y,int index,int active,int title_focus,int title_
   for(i=1;i<w-1;i++){acc_put(x+i,y,196,borderattr);acc_put(x+i,y+h-1,196,borderattr);}
   for(i=1;i<h-1;i++){acc_put(x,y+i,179,borderattr);acc_put(x+w-1,y+i,179,borderattr);}
   acc_text(x+2,y+1,cards[index].title,titleattr,CT);
+  if(active&&title_edit){int cp=title_pos;if(cp<0)cp=0;if(cp>=CT)cp=CT-1;acc_put(x+2+cp,y+1,219,ACC_ATTR(acc_appearance.selected_bg,acc_appearance.controls_bg));}
   sprintf(number,"%d",index+1);acc_text(x+w-2-(int)strlen(number),y+1,number,nattr,(int)strlen(number));
   for(i=2;i<w-2;i++)acc_put(x+i,y+2,205,ACC_ATTR(acc_appearance.controls_bg,12));
   if(active){
@@ -136,12 +137,12 @@ static void select_card(int target){if(target>=0&&target<count)current=target;}
 static int lower_card(int offset){int n;if(!count)return 0;n=(current-offset)%count;if(n<0)n+=count;return n;}
 static int higher_card(void){return count?(current+1)%count:0;}
 
-static void cards_draw(int x,int y,int focus,int title_edit,int cx,int cy,int top)
+static void cards_draw(int x,int y,int focus,int title_edit,int tp,int cx,int cy,int top)
 {
   acc_fill(x,y-4,60,17,' ',ACC_BG);
-  if(count>=3)card_box(x+4,y-4,lower_card(2),0,0,0,0,0,0,0);
-  if(count>=2)card_box(x+2,y-2,lower_card(1),0,0,0,0,0,0,0);
-  card_box(x,y,current,1,focus==0,title_edit,focus==1,cx,cy,top);
+  if(count>=3)card_box(x+4,y-4,lower_card(2),0,0,0,0,0,0,0,0);
+  if(count>=2)card_box(x+2,y-2,lower_card(1),0,0,0,0,0,0,0,0);
+  card_box(x,y,current,1,focus==0,title_edit,tp,focus==1,cx,cy,top);
 }
 
 static void stack_word_wrap(int *pcx,int *pcy)
@@ -196,7 +197,7 @@ int main(int argc,char **argv)
   load_cards();x=(acc_cols-68)/2+3;px=x+1;y=(acc_rows-22)/2+6;acc_box(x-3,y-6,68,22,"Card Stack");
 
   while(key!=27){
-    if(dirty){cards_draw(px,y,focus,title_edit,cx,cy,top);dirty=0;}
+    if(dirty){cards_draw(px,y,focus,title_edit,tp,cx,cy,top);dirty=0;}
     if(count>1)acc_button(x,y+13," Prev ",focus==2);else acc_button_disabled(x,y+13," Prev ");
     sprintf(counter,"%d",current+1);i=(int)strlen(counter);
     acc_text(x+7,y+13,"",ACC_LABEL,5);acc_text(x+7,y+13,counter,ACC_HEADING,i);

@@ -103,16 +103,16 @@ static int write_launch36(void)
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT","startup batch file");
     /* 3.6 tooltip preference is part of the persisted appearance.  It is
        appended to the structure so older LAUNCH.CFG files remain valid and
-       default to enabled. */
+       default to disabled. */
     replace_once(line,GEN_LINE,
       "unsigned char font_id,font_persist,mouse_cursor,prompt_inactivity;",
       "unsigned char font_id,font_persist,mouse_cursor,prompt_inactivity,show_tooltips;");
     replace_once(line,GEN_LINE,
-      "static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,0,10,0,1,1,1,0,0};",
-      "static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,0,10,0,1,1,1,0,0,1};");
+      "static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0};",
+      "static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0,0};");
     replace_once(line,GEN_LINE,
-      "static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,0,10,0,1,1,1,0,0};",
-      "static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,0,10,0,1,1,1,0,0,1};");
+      "static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0};",
+      "static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0,0};");
     replace_once(line,GEN_LINE,
       "else if(!stricmp(key,\"SHOW_SYSBAR\")){field=&a->show_sysbar;limit=1;}",
       "else if(!stricmp(key,\"SHOW_SYSBAR\")){field=&a->show_sysbar;limit=1;}\n  else if(!stricmp(key,\"SHOW_TOOLTIPS\")){field=&a->show_tooltips;limit=1;}");
@@ -151,7 +151,7 @@ static int write_launch36(void)
       fputs("    if(my==y+13&&mx>=x+25&&mx<x+63)return CONFIG_CONTROL_BASE+8;\n",out);continue;
     }
     if(strstr(line,"/* Launch! 3.5 - modal command menu for DOS")){
-      fputs("/* Launch! 3.61 - modal command menu for DOS\n",out);continue;
+      fputs("/* Launch! 3.63 - modal command menu for DOS\n",out);continue;
     }
     if(strstr(line,"#define MAX_NODES 96")){
       emit_startup_batch_helpers(out);
@@ -285,7 +285,7 @@ static int write_install36(void)
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT file","startup batch file");
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT","startup batch file");
     if(strstr(line,"/* Launch! 3.5 installer")){
-      fputs("/* Launch! 3.61 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
+      fputs("/* Launch! 3.63 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
     }
     if(strstr(line,"#define PATH_SIZE 128")){
       emit_startup_batch_helpers(out);fputs(line,out);continue;
@@ -305,7 +305,7 @@ static int write_install36(void)
       fputs("    \"!BOXES.EXE\",\"!FCELL.EXE\",\"!PLUMB.EXE\",\"!POP.EXE\",\"!SNAKE.EXE\",\"!SOL.EXE\",\"!WORDZ.EXE\",0};\n",out);continue;
     }
     if(strstr(line,"puts(\"Launch! 3.5 Installation\");")){
-      fputs("  puts(\"Launch! 3.61 Installation\");\n",out);continue;
+      fputs("  puts(\"Launch! 3.63 Installation\");\n",out);continue;
     }
     fputs(line,out);
     if(in_status&&!strcmp(line,"}\n"))in_status=0;
@@ -468,7 +468,7 @@ static int write_snake36(void)
   if(!in){puts("GEN36: cannot open SNAKE.C");return 0;}out=fopen("K36TMP.C","wt");if(!out){fclose(in);return 0;}
   while(fgets(line,GEN_LINE,in)){
     if(replace_once(line,GEN_LINE,"acc_button(x+10,y+h-3,\" Next \",focus==2);","acc_button(x+12,y+h-3,\" Next \",focus==2);")>0)c++;
-    replace_all(line,GEN_LINE,"acc_button(x+12,y+h-3,\" Next ",focus==2);","acc_button(x+12,y+h-3,\" Next ",focus==2);{char ls[16];sprintf(ls,\"Level %d/%d\",level+1,LEVELS);acc_text(x+19,y+h-3,ls,ACC_HEADING,12);}");
+    replace_all(line,GEN_LINE,"acc_button(x+12,y+h-3,\" Next \",focus==2);","acc_button(x+12,y+h-3,\" Next \",focus==2);{char ls[16];sprintf(ls,\"Level %d/%d\",level+1,LEVELS);acc_text(x+19,y+h-3,ls,ACC_HEADING,12);}");
     replace_all(line,GEN_LINE,"mx>=x+12&&mx<x+18","mx>=x+14&&mx<x+20");
     fputs(line,out);
   }
@@ -549,5 +549,5 @@ int main(void)
   if(!write_launch36()||!write_install36()||!write_note36()||
      !write_journal36()||!write_stack36()||!write_cal36()||!write_sysinfo36()||
      !write_snake36()||!write_pop36()||!write_sol36()||!write_boxes36())return 1;
-  puts("Generated Launch! 3.61 build sources.");return 0;
+  puts("Generated Launch! 3.63 build sources.");return 0;
 }

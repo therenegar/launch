@@ -31,6 +31,8 @@
 #define GLYPH_GOAL_R 183
 #define GLYPH_MAN_L 204  /* left cell requires extension; right does not */
 #define GLYPH_MAN_R 184
+#define GLYPH_FIELD_A 221 /* logical glyph 88, rebased into VGA 9th-cell range */
+#define GLYPH_FIELD_B 222 /* logical glyph 89, rebased into VGA 9th-cell range */
 
 #define COL_VOID ACC_BG
 #define COL_FLOOR ACC_ATTR(6,6)
@@ -67,7 +69,7 @@ static const unsigned char boxes_glyph14[8][32]={
   {0xF0,0x08,0x24,0x24,0x84,0x08,0xF0,0xFE,0xFF,0xF8,0xF8,0x3C,0x3C,0x3C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
 };
 
-static unsigned char old_glyph[8][32];
+static unsigned char old_glyph[8][32],old_field[2][32];
 
 static long level_offset[LEVELS];
 static unsigned short current_best=0;
@@ -114,7 +116,12 @@ static void boxes_font(int install)
   int i;
   if(install){
     for(i=0;i<8;i++){acc_glyph_read(glyph_code[i],old_glyph[i]);acc_glyph_library(42+i,glyph_code[i]);}
-  } else for(i=0;i<8;i++)acc_glyph_write(glyph_code[i],old_glyph[i]);
+    acc_glyph_read(GLYPH_FIELD_A,old_field[0]);acc_glyph_read(GLYPH_FIELD_B,old_field[1]);
+    acc_glyph_library(88,GLYPH_FIELD_A);acc_glyph_library(89,GLYPH_FIELD_B);
+  } else {
+    for(i=0;i<8;i++)acc_glyph_write(glyph_code[i],old_glyph[i]);
+    acc_glyph_write(GLYPH_FIELD_A,old_field[0]);acc_glyph_write(GLYPH_FIELD_B,old_field[1]);
+  }
 }
 
 static void boxes_ui_glyphs(int ui){(void)ui;}
@@ -221,7 +228,7 @@ static void draw_pair(int x,int y,int left,int right,int attr)
 static void draw_cell(int bx,int by,int x,int y)
 {
   int i=at(x,y);
-  if(tile[i]==TILE_VOID)draw_pair(bx+x*2,by+y,' ',' ',ACC_BG);
+  if(tile[i]==TILE_VOID)return;
   else if(tile[i]==TILE_WALL)draw_pair(bx+x*2,by+y,GLYPH_WALL_L,GLYPH_WALL_R,COL_WALL);
   else if(x==player_x&&y==player_y)draw_pair(bx+x*2,by+y,GLYPH_MAN_L,GLYPH_MAN_R,COL_MAN);
   else if(box_at[i])draw_pair(bx+x*2,by+y,GLYPH_BOX_L,GLYPH_BOX_R,
@@ -238,7 +245,15 @@ static void remember_board(void)
 
 static void render_board(int bx,int by)
 {
-  int x,y;
+  int x,y,fy=by-(MAX_H-board_h)/2;
+  int dlgx=bx-(DLG_W-board_w*2)/2;
+  int pa=ACC_ATTR(acc_appearance.background,(acc_appearance.background&7)|8);
+  /* Fixed playfield texture: logical glyphs 88 + 89 are always drawn as
+     the same left/right pair. Every row begins 88,89,88,89... with no
+     stagger, and the field extends from the dialog's left inner border to
+     its right inner border. */
+  for(y=0;y<MAX_H;y++)for(x=0;x<(DLG_W-2)/2;x++)
+    draw_pair(dlgx+1+x*2,fy+y,GLYPH_FIELD_A,GLYPH_FIELD_B,pa);
   for(y=0;y<board_h;y++)for(x=0;x<board_w;x++)draw_cell(bx,by,x,y);
   remember_board();
 }
@@ -321,9 +336,12 @@ static int boxes_find_solution(void)
 }
 static unsigned long boxes_play_ticks(void)
 {
- /* Use the shared runtime's direct BIOS tick read.  It is independent of
-    keyboard/mouse services and is already used by the realtime games. */
- return acc_ticks();
+ /* Read the BIOS timer through INT 1Ah during Solve playback.  This makes the
+    animation clock completely independent of mouse polling, hover processing
+    and the accessory idle loop. */
+ union REGS r;
+ memset(&r,0,sizeof(r));r.h.ah=0x00;int86(0x1A,&r,&r);
+ return ((unsigned long)r.x.cx<<16)|(unsigned long)r.x.dx;
 }
 static int boxes_play_solution(int bx,int by,int x,int y)
 {
@@ -332,8 +350,8 @@ static int boxes_play_solution(int bx,int by,int x,int y)
  load_level(current_level);render_board(bx,by);draw_counts(x,y);
  next_tick=boxes_play_ticks();
  for(i=0;i<solve_len;i++){
-   /* One hardware timer tick (~55 ms) between moves.  Deliberately do not
-      call acc_wait, mouse_poll, INT 1Ah, DOS idle, or keyboard BIOS here. */
+   /* One BIOS timer tick (~55 ms) between moves.  No mouse state is read or
+      required for the animation to advance. */
    while((unsigned long)(boxes_play_ticks()-next_tick)<1UL){
      if(kbhit()){int k=acc_key();if(k==27){solve_abort=1;return 0;}}
    }
@@ -422,7 +440,7 @@ int main(int argc,char **argv)
         else if(current_level<SOLVE_LIMIT&&mx>=x+11&&mx<x+20){focus=0;boxes_solve_action(x,y);full=1;dirty=0;key=0;mb=0;}
         else if(mx>=x+23&&mx<x+28){focus=3;change_level(-1);full=1;key=0;}
         else if(mx>=x+30&&mx<x+35){focus=4;change_level(1);full=1;key=0;}
-        else if(mx>=x+36&&mx<x+45){int g;focus=5;g=boxes_goto_dialog();if(g>=0){current_level=g;save_level();load_level(current_level);}focus=0;full=1;key=0;}
+        else if(mx>=x+36&&mx<x+45){int g;focus=5;g=boxes_goto_dialog();if(g>=0){current_level=g;save_level();load_level(current_level);}acc_box(x,y,DLG_W,DLG_H,"Boxes");focus=0;full=1;key=0;}
         else if(mx>=x+DLG_W-10&&mx<x+DLG_W-4){focus=6;key=27;}
       }else if(mx>=bx&&mx<bx+board_w*2&&my>=by&&my<by+board_h){
         focus=0;tx=(mx-bx)/2;ty=my-by;
@@ -444,7 +462,7 @@ int main(int argc,char **argv)
       else if(focus==2&&current_level<SOLVE_LIMIT){focus=0;boxes_solve_action(x,y);full=1;dirty=0;mb=0;}
       else if(focus==3){change_level(-1);full=1;}
       else if(focus==4){change_level(1);full=1;}
-      else if(focus==5){int g;g=boxes_goto_dialog();if(g>=0){current_level=g;save_level();load_level(current_level);}focus=0;full=1;}
+      else if(focus==5){int g;g=boxes_goto_dialog();if(g>=0){current_level=g;save_level();load_level(current_level);}acc_box(x,y,DLG_W,DLG_H,"Boxes");focus=0;full=1;}
       else if(focus==6)key=27;
       if(key!=27)key=0;
     }else if(key==256+72){focus=0;dirty=move_player(0,-1);key=0;}

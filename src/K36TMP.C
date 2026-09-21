@@ -9,7 +9,7 @@
 #define BW 58
 #define BH 13
 #define MAX_SNAKE 256
-#define LEVELS 10
+#define LEVELS 50
 #define FRUITS 8
 
 /* 3.5 canonical Snake glyphs (logical IDs in LAUNCHUI). */
@@ -46,6 +46,7 @@
 typedef struct { unsigned char x,y; } POINT;
 static POINT snake[MAX_SNAKE];
 static int slen,dir,nextdir,score,lives,level,fruit_left,timebar,running,target_units;
+static long fruit_time_left,fruit_time_total;static unsigned long fruit_last_tick;
 static unsigned char board[BH][BW],fruit[BH][BW];
 static unsigned char snake_old_glyph[14][32];
 
@@ -53,9 +54,34 @@ static unsigned char snake_old_glyph[14][32];
    adapted from its 80x50 logical arena to Launch!'s 58x13 text-cell field. */
 static void wall_v(int x,int y1,int y2){int y;if(x<0||x>=BW)return;if(y1<0)y1=0;if(y2>=BH)y2=BH-1;for(y=y1;y<=y2;y++)board[y][x]=1;}
 static void wall_h(int y,int x1,int x2){int x;if(y<0||y>=BH)return;if(x1<0)x1=0;if(x2>=BW)x2=BW-1;for(x=x1;x<=x2;x++)board[y][x]=1;}
+static unsigned level_seed[LEVELS];
+static unsigned local_rand_state;
+static unsigned local_rand(void){local_rand_state=local_rand_state*25173U+13849U;return local_rand_state;}
+static int generated_connected(void)
+{
+ int qx[BW*BH],qy[BW*BH],head=0,tail=0,x,y,nx,ny,d,free_count=0;
+ unsigned char seen[BH][BW];static const int dx4[4]={0,1,0,-1},dy4[4]={-1,0,1,0};
+ memset(seen,0,sizeof(seen));if(board[BH/2][8])return 0;
+ for(y=1;y<BH-1;y++)for(x=1;x<BW-1;x++)if(!board[y][x])free_count++;
+ seen[BH/2][8]=1;qx[tail]=8;qy[tail++]=BH/2;
+ while(head<tail){x=qx[head];y=qy[head++];for(d=0;d<4;d++){nx=x+dx4[d];ny=y+dy4[d];if(nx<1||nx>=BW-1||ny<1||ny>=BH-1||board[ny][nx]||seen[ny][nx])continue;seen[ny][nx]=1;qx[tail]=nx;qy[tail++]=ny;}}
+ return tail==free_count;
+}
+static void generated_board(int lev)
+{
+ int attempt,s,x,y,len,i,vert,segments=5+(lev-10)/5;
+ if(!level_seed[lev]){level_seed[lev]=(unsigned)(rand()^(unsigned)acc_ticks()^(unsigned)(lev*1237U));if(!level_seed[lev])level_seed[lev]=(unsigned)(lev+1);}
+ for(attempt=0;attempt<96;attempt++){
+  memset(board,0,sizeof(board));local_rand_state=level_seed[lev]^(unsigned)(attempt*4051U);
+  for(s=0;s<segments;s++){vert=(int)(local_rand()&1U);len=2+(int)(local_rand()%6U);x=3+(int)(local_rand()%(BW-7));y=2+(int)(local_rand()%(BH-5));for(i=0;i<len;i++){int xx=x+(vert?0:i),yy=y+(vert?i:0);if(xx>0&&xx<BW-1&&yy>0&&yy<BH-1)board[yy][xx]=1;}}
+  for(x=2;x<=10;x++)board[BH/2][x]=0;
+  if(generated_connected())return;
+ }
+ memset(board,0,sizeof(board));
+}
 static void board_load(void)
 {
- int i;memset(board,0,sizeof(board));
+ int i;memset(board,0,sizeof(board));if(level>=10){generated_board(level);return;}
  switch(level){
  case 0: break; /* Nibbles level 1: open arena */
  case 1: wall_h(6,14,43); break;
@@ -64,14 +90,17 @@ static void board_load(void)
  case 4: wall_v(15,3,9);wall_v(42,3,9);wall_h(2,16,41);wall_h(10,16,41);break;
  case 5: for(i=7;i<=50;i+=7){wall_v(i,1,5);wall_v(i,8,12);}break;
  case 6: for(i=1;i<12;i+=2)board[i][29]=1;break;
- case 7: for(i=7;i<=50;i+=7){if(((i/7)&1)==0){wall_v(i,1,10);}else{wall_v(i,3,12);}}break;
- case 8: for(i=2;i<12;i++){int x=4+i*3;if(x<BW-1)board[i][x]=1;if(x+20<BW-1)board[i][x+20]=1;}break;
+ case 7: for(i=7;i<=50;i+=7){if(((i/7)&1)==0)wall_v(i,1,10);else wall_v(i,3,12);}break;
+ case 8: for(i=2;i<12;i++){int xx=4+i*3;if(xx<BW-1)board[i][xx]=1;if(xx+20<BW-1)board[i][xx+20]=1;}break;
  default: for(i=1;i<12;i+=2){board[i][7]=1;board[i+1][14]=1;board[i][21]=1;board[i+1][28]=1;board[i][35]=1;board[i+1][42]=1;board[i][49]=1;}break;
  }
 }
 static int snake_at(int x,int y){int i;for(i=0;i<slen;i++)if((int)snake[i].x==x&&(int)snake[i].y==y)return 1;return 0;}
 static void put_fruit(void){int x,y,tries=0;do{x=1+rand()%(BW-2);y=1+rand()%(BH-2);tries++;}while(tries<500&&(board[y][x]||snake_at(x,y)||fruit[y][x]));if(tries<500)fruit[y][x]=1;}
-static void reset_round(void){int i,x,y,sx=8,sy=BH/2,ok;memset(fruit,0,sizeof(fruit));board_load();slen=6;ok=1;for(i=0;i<slen;i++)if(board[sy][sx-i])ok=0;if(!ok){for(y=1;y<BH-1&&!ok;y++)for(x=6;x<BW-1&&!ok;x++){ok=1;for(i=0;i<slen;i++)if(board[y][x-i]){ok=0;break;}if(ok){sx=x;sy=y;}}}for(i=0;i<slen;i++){snake[i].x=(unsigned char)(sx-i);snake[i].y=(unsigned char)sy;}dir=nextdir=1;target_units=5;fruit_left=FRUITS;timebar=100;running=0;for(i=0;i<FRUITS;i++)put_fruit();}
+static long fruit_limit_ticks(void){int sec=30-(level*25)/(LEVELS-1);if(sec<5)sec=5;return(long)sec*18L;}
+static void fruit_timer_reset(void){fruit_time_total=fruit_limit_ticks();fruit_time_left=fruit_time_total;fruit_last_tick=acc_ticks();timebar=100;}
+static void snake_start(void){if(!running)fruit_last_tick=acc_ticks();running=1;}
+static void reset_round(void){int i,x,y,sx=8,sy=BH/2,ok;memset(fruit,0,sizeof(fruit));board_load();slen=6;ok=1;for(i=0;i<slen;i++)if(board[sy][sx-i])ok=0;if(!ok){for(y=1;y<BH-1&&!ok;y++)for(x=6;x<BW-1&&!ok;x++){ok=1;for(i=0;i<slen;i++)if(board[y][x-i]){ok=0;break;}if(ok){sx=x;sy=y;}}}for(i=0;i<slen;i++){snake[i].x=(unsigned char)(sx-i);snake[i].y=(unsigned char)sy;}dir=nextdir=1;target_units=5;fruit_left=FRUITS;running=0;fruit_timer_reset();for(i=0;i<FRUITS;i++)put_fruit();}
 static void snake_font(int install)
 {
   static const unsigned char code[13]={SC_FRUIT,SC_HEAD_UP,SC_HEAD_DOWN,SC_HEAD_LEFT,
@@ -150,7 +179,7 @@ static void status_draw(int x,int y){char s[32];int i,n=(timebar*22)/100;acc_tex
 static void snake_notice(const char *title,const char *msg){acc_notice(title,msg);}
 static void life_lost(void){lives--;if(lives<=0){snake_notice("Snake","Game over");score=0;lives=3;level=0;}reset_round();}
 static int edge_units(POINT a,POINT b){return a.y==b.y?1:2;}
-static int step_snake(int ox,int oy){int dx=0,dy=0,nx,ny,i,total,grow=0,oldlen=slen;POINT oldsnake[MAX_SNAKE];for(i=0;i<oldlen;i++)oldsnake[i]=snake[i];if(nextdir!=((dir+2)&3))dir=nextdir;if(dir==0)dy=-1;else if(dir==1)dx=1;else if(dir==2)dy=1;else dx=-1;nx=snake[0].x+dx;ny=snake[0].y+dy;if(nx<0||ny<0||nx>=BW||ny>=BH||board[ny][nx]||snake_at(nx,ny)){life_lost();draw_board(ox,oy);return 0;}if(fruit[ny][nx]){fruit[ny][nx]=0;fruit_left--;score+=10;timebar+=20;if(timebar>100)timebar=100;grow=1;target_units+=2;}if(slen<MAX_SNAKE){for(i=slen;i>0;i--)snake[i]=snake[i-1];slen++;}else for(i=slen-1;i>0;i--)snake[i]=snake[i-1];snake[0].x=(unsigned char)nx;snake[0].y=(unsigned char)ny;total=0;for(i=0;i<slen-1;i++){int u=edge_units(snake[i],snake[i+1]);if(total+u>target_units){slen=i+1;break;}total+=u;}for(i=0;i<oldlen;i++)draw_under_cell(ox,oy,oldsnake[i].x,oldsnake[i].y);for(i=0;i<slen;i++)draw_cell(ox,oy,snake[i].x,snake[i].y);if(fruit_left<=0){score+=timebar;level=(level+1)%LEVELS;snake_notice("Snake","Board complete!");reset_round();draw_board(ox,oy);}return 1;}
+static int step_snake(int ox,int oy){int dx=0,dy=0,nx,ny,i,total,grow=0,oldlen=slen;POINT oldsnake[MAX_SNAKE];for(i=0;i<oldlen;i++)oldsnake[i]=snake[i];if(nextdir!=((dir+2)&3))dir=nextdir;if(dir==0)dy=-1;else if(dir==1)dx=1;else if(dir==2)dy=1;else dx=-1;nx=snake[0].x+dx;ny=snake[0].y+dy;if(nx<0||ny<0||nx>=BW||ny>=BH||board[ny][nx]||snake_at(nx,ny)){life_lost();draw_board(ox,oy);return 0;}if(fruit[ny][nx]){fruit[ny][nx]=0;fruit_left--;score+=10;fruit_time_left+=fruit_time_total/5L;if(fruit_time_left>fruit_time_total)fruit_time_left=fruit_time_total;timebar=(int)(fruit_time_left*100L/fruit_time_total);grow=1;target_units+=2;}if(slen<MAX_SNAKE){for(i=slen;i>0;i--)snake[i]=snake[i-1];slen++;}else for(i=slen-1;i>0;i--)snake[i]=snake[i-1];snake[0].x=(unsigned char)nx;snake[0].y=(unsigned char)ny;total=0;for(i=0;i<slen-1;i++){int u=edge_units(snake[i],snake[i+1]);if(total+u>target_units){slen=i+1;break;}total+=u;}for(i=0;i<oldlen;i++)draw_under_cell(ox,oy,oldsnake[i].x,oldsnake[i].y);for(i=0;i<slen;i++)draw_cell(ox,oy,snake[i].x,snake[i].y);if(fruit_left<=0){score+=timebar;level=(level+1)%LEVELS;snake_notice("Snake","Board complete!");reset_round();draw_board(ox,oy);}return 1;}
 
 static void snake_buttons(int x,int y,int w,int h,int focus)
 {
@@ -168,9 +197,9 @@ int main(int argc,char **argv)
   if(!acc_begin(argv[0],"Snake",0))return 1;snake_font(1);if(acc_mouse_present){union REGS mr;memset(&mr,0,sizeof(mr));mr.x.ax=1;int86(0x33,&mr,&mr);}srand((unsigned)acc_ticks());x=(acc_cols-w)/2;y=(acc_rows-h)/2;ox=x+6;oy=y+4;score=0;lives=3;level=0;reset_round();acc_box(x,y,w,h,"Snake");draw_board(ox,oy);status_draw(x+4,y+2);last_tick=acc_ticks();
   while(key!=27){
     if(focus!=last_focus||level!=last_level){snake_buttons(x,y,w,h,focus);last_focus=focus;last_level=level;}
-    if(kbhit()){key=acc_key();if(key==9||key==271){if(focus<0)focus=(key==271)?3:0;else focus=(key==271)?(focus+3)%4:(focus+1)%4;key=0;}else if(key==256+72||key==0x4800){focus=0;nextdir=0;running=1;key=0;}else if(key==256+77||key==0x4D00){focus=0;nextdir=1;running=1;key=0;}else if(key==256+80||key==0x5000){focus=0;nextdir=2;running=1;key=0;}else if(key==256+75||key==0x4B00){focus=0;nextdir=3;running=1;key=0;}else if(key==13&&focus>0){if(focus==1){reset_round();draw_board(ox,oy);}else if(focus==2){level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(focus==3)key=27;if(key!=27)key=0;}}
+    if(kbhit()){key=acc_key();if(key==9||key==271){if(focus<0)focus=(key==271)?3:0;else focus=(key==271)?(focus+3)%4:(focus+1)%4;key=0;}else if(key==256+72||key==0x4800){focus=0;nextdir=0;snake_start();key=0;}else if(key==256+77||key==0x4D00){focus=0;nextdir=1;snake_start();key=0;}else if(key==256+80||key==0x5000){focus=0;nextdir=2;snake_start();key=0;}else if(key==256+75||key==0x4B00){focus=0;nextdir=3;snake_start();key=0;}else if(key==13&&focus>0){if(focus==1){reset_round();draw_board(ox,oy);}else if(focus==2){level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(focus==3)key=27;if(key!=27)key=0;}}
     if(acc_mouse_present){int b=0;acc_mouse(&mx,&my,&b);if(b&ACC_MOUSE_OUTSIDE){key=27;break;}if((b&1)&&!lastb){if((b&1)&&my==y&&(mx==x+w-5||mx==x+w-4)){key=27;}else if(my==y+h-3){if(mx>=x+4&&mx<x+14){focus=1;reset_round();draw_board(ox,oy);}else if(mx>=x+14&&mx<x+20){focus=2;level=(level+1)%LEVELS;reset_round();draw_board(ox,oy);}else if(mx>=x+w-11){key=27;}}}lastb=b&1;}
-    t=acc_ticks();if(t!=last_tick){last_tick=t;tick_div++;if(running){grow_ticks++;if(grow_ticks>=36){grow_ticks=0;if(target_units<MAX_SNAKE-2)target_units++;}}if(running&&tick_div>=((dir==0||dir==2)?6:3)){tick_div=0;if(timebar>0)timebar--;if(timebar==0){timebar=100;memset(fruit,0,sizeof(fruit));fruit_left=FRUITS;{int i;for(i=0;i<FRUITS;i++)put_fruit();}draw_board(ox,oy);}step_snake(ox,oy);status_draw(x+4,y+2);}}
+    t=acc_ticks();if(t!=last_tick){last_tick=t;tick_div++;if(running){grow_ticks++;if(grow_ticks>=36){grow_ticks=0;if(target_units<MAX_SNAKE-2)target_units++;}}if(running){unsigned long elapsed=t-fruit_last_tick;if(elapsed){fruit_last_tick=t;if(fruit_time_left>(long)elapsed)fruit_time_left-=(long)elapsed;else fruit_time_left=0;timebar=(int)(fruit_time_left*100L/fruit_time_total);if(timebar<0)timebar=0;if(fruit_time_left<=0){memset(fruit,0,sizeof(fruit));fruit_left=FRUITS;{int i;for(i=0;i<FRUITS;i++)put_fruit();}fruit_timer_reset();draw_board(ox,oy);}status_draw(x+4,y+2);}}if(running&&tick_div>=((dir==0||dir==2)?6:3)){tick_div=0;step_snake(ox,oy);status_draw(x+4,y+2);}}
   }
   acc_end_screen();snake_font(0);acc_end();return 0;
 }

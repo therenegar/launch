@@ -566,7 +566,7 @@ int main(int argc,char **argv)
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 3.5 Installation");
+  puts("Launch! 3.63 Installation");
   puts("------------------------\n");
   cpu_ok=cpu_at_least_286();display_adapter(&display_ok);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
   question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");

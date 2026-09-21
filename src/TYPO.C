@@ -14,7 +14,7 @@ void acc_modal_end(void);
 
 #define DLG_W 73
 #define DLG_H 22
-#define LEVELS 50
+#define LEVELS 100
 #define MAX_TEXT 3200
 #define MAX_NAME 31
 #define SEG_BASE 128
@@ -201,7 +201,7 @@ static void draw_status(int x,int y)
   acc_text(x+3,y+2,"Time",ACC_LABEL,4);
   for(i=0;i<28;i++)
     acc_put(x+8+i,y+2,i<filled?219:176,
-            ACC_ATTR(acc_appearance.background,i<filled?acc_appearance.launchers:8));
+            ACC_ATTR(acc_appearance.background,i<filled?acc_appearance.launchers:acc_appearance.launchers));
   sprintf(s,"%02lu:%02lu",left/60UL,left%60UL);acc_text(x+40,y+2,s,ACC_HEADING,6);
   draw_metrics(x,y);
   acc_text(x+53,y+4,"Mistakes",ACC_LABEL,8);

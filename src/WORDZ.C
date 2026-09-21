@@ -1,6 +1,6 @@
-/* Launch! Wordz accessory - straight-line word search puzzle game.
-   Release 3.6 V1h uses an external long-play puzzle library with an 8x7 board,
-   horizontal, vertical and diagonal words, click/drag selection and up to 12 answers.
+/* Launch! Wordz accessory - staggered hinted word puzzle game.
+   Release 3.63 uses a staggered 9x12 key field with spaced keycaps and diagonal words,
+   click/drag selection, 200 puzzles and direct level navigation.
    Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,26 +11,29 @@
 #include "ACCLIB.H"
 
 void acc_mouse_display(int show);
+void acc_modal_begin(void);
+void acc_modal_end(void);
 
-#define GW 8
-#define GH 7
+#define GW 9
+#define GH 12
 #define WORDS 12
-#define MAX_PUZZLES 64
+#define MAX_PUZZLES 200
 #define MAX_HINT 79
 #define WZ_SEG_BASE 128
 #define WZ_COLON 139
 #define WZ_LOWER_HALF 222
 #define WZ_KEY_LEFT 193
 #define WZ_KEY_RIGHT 194
-#define DLG_W 70
-#define DLG_H 23
-#define MAX_PATH 8
+#define DLG_W 78
+#define DLG_H 22
+#define MAX_PATH 9
 
 #define BTN_RESET 1
 #define BTN_PREV 2
 #define BTN_NEXT 3
-#define BTN_HINT 4
-#define BTN_CLOSE 5
+#define BTN_GOTO 4
+#define BTN_HINT 5
+#define BTN_CLOSE 6
 
 typedef struct {signed char x,y,dx,dy;} WORD_PLACE;
 static long puzzle_offset[MAX_PUZZLES];
@@ -81,7 +84,7 @@ static void wordz_time_box(int x,int y,int width,unsigned long sec)
  for(i=0;s[i];i++)acc_put(start+i,y+1,wordz_seg_char((unsigned char)s[i]),ACC_ATTR(0,acc_appearance.launchers));
 }
 
-static char puzzle_title[16],puzzle_word[WORDS][9],puzzle_hint[WORDS][MAX_HINT+1];
+static char puzzle_title[16],puzzle_word[WORDS][13],puzzle_hint[WORDS][MAX_HINT+1];
 static WORD_PLACE puzzle_place[WORDS];
 
 static void puzzle_file_path(char *p)
@@ -93,8 +96,8 @@ static void puzzle_strip(char *s)
 static int scan_puzzles(void)
 {
   char p[ACC_PATH],line[192];FILE *f;long pos;puzzle_total=0;puzzle_file_path(p);f=fopen(p,"rt");if(!f)return 0;
-  for(;;){pos=ftell(f);if(!fgets(line,sizeof(line),f))break;if(line[0]=='@'&&puzzle_total<MAX_PUZZLES)puzzle_offset[puzzle_total++]=pos;}
-  fclose(f);return puzzle_total>0;
+  for(;;){pos=ftell(f);if(!fgets(line,sizeof(line),f))break;if(line[0]=='@'){if(puzzle_total>=MAX_PUZZLES){fclose(f);return 0;}puzzle_offset[puzzle_total++]=pos;}}
+  fclose(f);return puzzle_total==MAX_PUZZLES;
 }
 static int load_puzzle(int which)
 {
@@ -105,8 +108,8 @@ static int load_puzzle(int which)
   while(puzzle_words<WORDS&&fgets(line,sizeof(line),f)){
     puzzle_strip(line);if(!line[0]||line[0]=='@')break;part[0]=line;q=line;
     for(i=1;i<6;i++){q=strchr(q,'|');if(!q){fclose(f);return 0;}*q++=0;part[i]=q;}
-    if(strlen(part[0])<3||strlen(part[0])>8){fclose(f);return 0;}
-    strncpy(puzzle_word[puzzle_words],part[0],8);puzzle_word[puzzle_words][8]=0;
+    if(strlen(part[0])<3||strlen(part[0])>MAX_PATH){fclose(f);return 0;}
+    strncpy(puzzle_word[puzzle_words],part[0],MAX_PATH);puzzle_word[puzzle_words][MAX_PATH]=0;
     strncpy(puzzle_hint[puzzle_words],part[1],MAX_HINT);puzzle_hint[puzzle_words][MAX_HINT]=0;
     puzzle_place[puzzle_words].x=(signed char)atoi(part[2]);puzzle_place[puzzle_words].y=(signed char)atoi(part[3]);
     puzzle_place[puzzle_words].dx=(signed char)atoi(part[4]);puzzle_place[puzzle_words].dy=(signed char)atoi(part[5]);
@@ -127,13 +130,33 @@ static int timer_running=0,finished=0,mistakes=0;
 static int puzzle_word_count(void)
 {return puzzle_words;}
 
+static void word_cell(int sx,int sy,int dx,int dy,int step,int *px,int *py)
+{
+  int i,x=sx,y=sy;
+  for(i=0;i<step;i++){
+    if(dy==0)x++;
+    else {
+      /* The one-cell row offset makes diagonal neighbours parity-dependent.
+         dx is the visual direction: +1 means toward the right, -1 left. */
+      if(dx>0){if(y&1)x++;}
+      else {if(!(y&1))x--;}
+      y+=dy;
+    }
+  }
+  *px=x;*py=y;
+}
+
 static int puzzle_data_valid(void)
 {
   int i,j,n,x,y;if(puzzle_words<1||puzzle_words>WORDS)return 0;
   for(i=0;i<puzzle_words;i++){
     n=(int)strlen(puzzle_word[i]);if(n<3||n>MAX_PATH||!puzzle_hint[i][0])return 0;
-    if(puzzle_place[i].dx==0&&puzzle_place[i].dy==0)return 0;
-    for(j=0;j<n;j++){x=puzzle_place[i].x+puzzle_place[i].dx*j;y=puzzle_place[i].y+puzzle_place[i].dy*j;if(x<0||x>=GW||y<0||y>=GH)return 0;}
+    /* Allowed reading directions: W->E, NW->SE, SW->NE and NE->SW. */
+    if(!((puzzle_place[i].dx==1&&puzzle_place[i].dy==0)||
+         (puzzle_place[i].dx==1&&puzzle_place[i].dy==1)||
+         (puzzle_place[i].dx==1&&puzzle_place[i].dy==-1)||
+         (puzzle_place[i].dx==-1&&puzzle_place[i].dy==1)))return 0;
+    for(j=0;j<n;j++){word_cell(puzzle_place[i].x,puzzle_place[i].y,puzzle_place[i].dx,puzzle_place[i].dy,j,&x,&y);if(x<0||x>=GW||y<0||y>=GH)return 0;}
   }
   return 1;
 }
@@ -146,7 +169,7 @@ static void build_grid(void)
   for(i=0;i<count;i++){
     sx=puzzle_place[i].x;sy=puzzle_place[i].y;dx=puzzle_place[i].dx;dy=puzzle_place[i].dy;
     n=(int)strlen(puzzle_word[i]);if(n>MAX_PATH)n=MAX_PATH;sollen[i]=(unsigned char)n;
-    for(j=0;j<n;j++){x=sx+dx*j;y=sy+dy*j;grid[y][x]=puzzle_word[i][j];solx[i][j]=(unsigned char)x;soly[i][j]=(unsigned char)y;}
+    for(j=0;j<n;j++){word_cell(sx,sy,dx,dy,j,&x,&y);grid[y][x]=puzzle_word[i][j];solx[i][j]=(unsigned char)x;soly[i][j]=(unsigned char)y;}
   }
 }
 
@@ -158,7 +181,14 @@ static void reset_puzzle(void)
 
 static int adjacent(int ax,int ay,int bx,int by)
 {
-  int dx=abs(ax-bx),dy=abs(ay-by);return(dx<=1&&dy<=1&&(dx||dy));
+  int dy=abs(ay-by),ac,bc;
+  if(dy==0)return abs(ax-bx)==1;
+  if(dy!=1)return 0;
+  /* Compare displayed key centres, not raw logical columns.  Adjacent rows are offset by two characters and each three-cell keycap
+     has a one-cell gap.  True visual diagonals therefore differ by exactly
+     two screen columns between neighbouring rows. */
+  ac=ax*4+((ay&1)*2);bc=bx*4+((by&1)*2);
+  return abs(ac-bc)<=2;
 }
 
 static int path_contains(int x,int y)
@@ -196,23 +226,15 @@ static void selected_word(char *out)
   int i;for(i=0;i<path_len;i++)out[i]=grid[pathy[i]][pathx[i]];out[path_len]=0;
 }
 
-static int reverse_equal(const char *a,const char *b)
-{
-  int i,n=(int)strlen(a);if((int)strlen(b)!=n)return 0;
-  for(i=0;i<n;i++)if(toupper(a[i])!=toupper(b[n-1-i]))return 0;return 1;
-}
-
 static int word_index(const char *s)
 {
-  int i,count=puzzle_word_count();for(i=0;i<count;i++)if(!stricmp(s,puzzle_word[i])||reverse_equal(s,puzzle_word[i]))return i;return -1;
+  int i,count=puzzle_word_count();for(i=0;i<count;i++)if(!stricmp(s,puzzle_word[i]))return i;return -1;
 }
 
 static int path_is_solution(int wi)
 {
   int i,n;if(wi<0)return 0;n=sollen[wi];if(path_len!=n)return 0;
-  for(i=0;i<n;i++)if(pathx[i]!=solx[wi][i]||pathy[i]!=soly[wi][i])break;
-  if(i==n)return 1;
-  for(i=0;i<n;i++)if(pathx[i]!=solx[wi][n-1-i]||pathy[i]!=soly[wi][n-1-i])return 0;
+  for(i=0;i<n;i++)if(pathx[i]!=solx[wi][i]||pathy[i]!=soly[wi][i])return 0;
   return 1;
 }
 
@@ -247,76 +269,38 @@ static int cell_attr(int x,int y)
   return ACC_TEXT;
 }
 
+static int grid_x(int bx,int x,int y){return bx+((y&1)*2)+x*4;}
 static void draw_grid_frame(int x,int y)
 {
-  int i;
-  acc_put(x,y,218,ACC_BORDER);for(i=1;i<34;i++)acc_put(x+i,y,196,ACC_BORDER);acc_put(x+34,y,191,ACC_BORDER);
-  for(i=1;i<14;i++){acc_put(x,y+i,179,ACC_BORDER);acc_put(x+34,y+i,179,ACC_BORDER);}
-  acc_put(x,y+14,192,ACC_BORDER);for(i=1;i<34;i++)acc_put(x+i,y+14,196,ACC_BORDER);acc_put(x+34,y+14,217,ACC_BORDER);
+  int i,w=39,h=14;
+  acc_put(x,y,218,ACC_BORDER);for(i=1;i<w-1;i++)acc_put(x+i,y,196,ACC_BORDER);acc_put(x+w-1,y,191,ACC_BORDER);
+  for(i=1;i<h-1;i++){acc_put(x,y+i,179,ACC_BORDER);acc_put(x+w-1,y+i,179,ACC_BORDER);}
+  acc_put(x,y+h-1,192,ACC_BORDER);for(i=1;i<w-1;i++)acc_put(x+i,y+h-1,196,ACC_BORDER);acc_put(x+w-1,y+h-1,217,ACC_BORDER);
 }
-
-static void draw_grid(int bx,int by)
-{
-  int x,y,a,sel,done,cap;
-  for(y=0;y<GH;y++)for(x=0;x<GW;x++){
-    sel=path_contains(x,y)>=0;done=played[y][x]!=0;a=cell_attr(x,y);
-    if(sel){
-      cap=ACC_ATTR(acc_appearance.background,acc_appearance.selected_bg);
-      acc_put(bx+x*4-1,by+y*2,WZ_KEY_LEFT,cap);
-      acc_put(bx+x*4,by+y*2,grid[y][x],ACC_SELECT);
-      acc_put(bx+x*4+1,by+y*2,WZ_KEY_RIGHT,cap);
-    } else if(done){
-      cap=ACC_ATTR(acc_appearance.background,acc_appearance.controls_bg);
-      acc_put(bx+x*4-1,by+y*2,WZ_KEY_LEFT,cap);
-      acc_put(bx+x*4,by+y*2,grid[y][x],ACC_CONTROL);
-      acc_put(bx+x*4+1,by+y*2,WZ_KEY_RIGHT,cap);
-    } else {
-      acc_text(bx+x*4-1,by+y*2,"   ",ACC_BG,3);
-      acc_put(bx+x*4,by+y*2,grid[y][x],a);
-    }
-  }
-}
-
 static void draw_grid_cell(int bx,int by,int x,int y)
 {
-  int a,sel,done,cap;
-  if(x<0||x>=GW||y<0||y>=GH)return;
-  sel=path_contains(x,y)>=0;done=played[y][x]!=0;a=cell_attr(x,y);
-  if(sel){
-    cap=ACC_ATTR(acc_appearance.background,acc_appearance.selected_bg);
-    acc_put(bx+x*4-1,by+y*2,WZ_KEY_LEFT,cap);
-    acc_put(bx+x*4,by+y*2,grid[y][x],ACC_SELECT);
-    acc_put(bx+x*4+1,by+y*2,WZ_KEY_RIGHT,cap);
-  } else if(done){
+  int sx,a,sel,done,cap;
+  if(x<0||x>=GW||y<0||y>=GH)return;sx=grid_x(bx,x,y);sel=path_contains(x,y)>=0;done=played[y][x]!=0;
+  if(sel){cap=ACC_ATTR(acc_appearance.background,acc_appearance.selected_bg);acc_put(sx,y+by,WZ_KEY_LEFT,cap);acc_put(sx+1,y+by,grid[y][x],ACC_SELECT);acc_put(sx+2,y+by,WZ_KEY_RIGHT,cap);}
+  else if(done){cap=ACC_ATTR(acc_appearance.background,2);acc_put(sx,y+by,WZ_KEY_LEFT,cap);acc_put(sx+1,y+by,grid[y][x],ACC_ATTR(2,15));acc_put(sx+2,y+by,WZ_KEY_RIGHT,cap);}
+  else {
+    /* Idle letters use the same compact three-cell keycap form as the rest of
+       the game, using the Controls scheme. */
     cap=ACC_ATTR(acc_appearance.background,acc_appearance.controls_bg);
-    acc_put(bx+x*4-1,by+y*2,WZ_KEY_LEFT,cap);
-    acc_put(bx+x*4,by+y*2,grid[y][x],ACC_CONTROL);
-    acc_put(bx+x*4+1,by+y*2,WZ_KEY_RIGHT,cap);
-  } else {
-    acc_text(bx+x*4-1,by+y*2,"   ",ACC_BG,3);
-    acc_put(bx+x*4,by+y*2,grid[y][x],a);
+    acc_put(sx,y+by,WZ_KEY_LEFT,cap);acc_put(sx+1,y+by,grid[y][x],ACC_CONTROL);acc_put(sx+2,y+by,WZ_KEY_RIGHT,cap);
   }
 }
-
+static void draw_grid(int bx,int by)
+{int x,y;for(y=0;y<GH;y++)for(x=0;x<GW;x++)draw_grid_cell(bx,by,x,y);}
 static void draw_word_slot(int x,int y,int number,const char *word,int done)
 {
-  char slot[9],s[16];int i,n=(int)strlen(word);
-  if(n>8)n=8;
-  if(done){strncpy(slot,word,n);slot[n]=0;}
-  else {for(i=0;i<n;i++)slot[i]='_';slot[n]=0;}
-  if(number<10)sprintf(s,"%d  %-8s",number,slot);
-  else sprintf(s,"%d %-8s",number,slot);
-  acc_text(x,y,s,ACC_CONTROL,11);
+  char slot[13],s[20];int i,n=(int)strlen(word);if(n>12)n=12;if(done){strncpy(slot,word,n);slot[n]=0;}else{for(i=0;i<n;i++)slot[i]='_';slot[n]=0;}if(number<10)sprintf(s,"%d  %-12s",number,slot);else sprintf(s,"%d %-12s",number,slot);acc_text(x,y,s,ACC_CONTROL,15);
 }
-
 static void draw_words(int x,int y)
 {
   int i,count=puzzle_word_count();char title[16];int title_attr=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles);
-  acc_fill(x,y,27,9,' ',ACC_CONTROL);sprintf(title,"%s",puzzle_title);acc_text(x+2,y+1,title,title_attr,13);
-  for(i=0;i<WORDS;i++){
-    int px=x+2+(i>=6?14:0),py=y+2+(i%6);
-    if(i<count)draw_word_slot(px,py,i+1,puzzle_word[i],solved[i]);else acc_text(px,py,"",ACC_CONTROL,11);
-  }
+  acc_fill(x,y,32,9,' ',ACC_CONTROL);sprintf(title,"%s",puzzle_title);acc_text(x+2,y+1,title,title_attr,28);
+  for(i=0;i<WORDS;i++){int px=x+1+(i>=6?15:0),py=y+2+(i%6);if(i<count)draw_word_slot(px,py,i+1,puzzle_word[i],solved[i]);else acc_text(px,py,"",ACC_CONTROL,15);}
 }
 
 static void draw_plain_button(int x,int y,const char *text,int selected)
@@ -367,29 +351,32 @@ static void draw_buttons(int x,int y)
   acc_button(x+3,y+DLG_H-3," Refresh ",focus==BTN_RESET);
   acc_button(x+12,y+DLG_H-3," Prev ",focus==BTN_PREV);
   acc_button(x+20,y+DLG_H-3," Next ",focus==BTN_NEXT);
-  sprintf(s,"Puzzle %d/%d",puzzle_no+1,puzzle_total);acc_text(x+28,y+DLG_H-3,s,ACC_HEADING,16);
+  acc_button(x+28,y+DLG_H-3,"  Go To  ",focus==BTN_GOTO);
+  sprintf(s,"Puzzle %d/%d",puzzle_no+1,puzzle_total);acc_text(x+39,y+DLG_H-3,s,ACC_HEADING,22);
   acc_button(x+DLG_W-10,y+DLG_H-3," Close ",focus==BTN_CLOSE);
 }
-
 static void draw_all(int x,int y,int bx,int by)
 {
   acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);
-  draw_status(x,y);draw_grid_frame(x+3,y+4);draw_grid(bx,by);draw_words(x+40,y+2);draw_hint(x+42,y+12);draw_buttons(x,y);
+  draw_status(x,y);draw_grid(bx,by);draw_words(x+43,y+2);draw_hint(x+45,y+12);draw_buttons(x,y);
 }
-
 static int mouse_cell(int bx,int by,int mx,int my,int *cx,int *cy)
 {
-  int rx;if(my<by||my>by+(GH-1)*2||((my-by)&1))return 0;
-  if(mx<bx-1||mx>bx+(GW-1)*4+1)return 0;
-  rx=mx-(bx-1);*cx=rx/4;if(*cx<0||*cx>=GW)return 0;
-  if(mx<bx+(*cx)*4-1||mx>bx+(*cx)*4+1)return 0;
-  *cy=(my-by)/2;return 1;
+  int start,rx;if(my<by||my>=by+GH)return 0;*cy=my-by;start=bx+(((*cy)&1)*2);if(mx<start||mx>=start+GW*4-1)return 0;rx=mx-start;if((rx&3)==3)return 0;*cx=rx/4;if(*cx<0||*cx>=GW)return 0;return 1;
 }
-
 static void change_puzzle(int delta)
 {
-  int old=puzzle_no;puzzle_no+=delta;if(puzzle_no<0)puzzle_no=puzzle_total-1;if(puzzle_no>=puzzle_total)puzzle_no=0;
-  if(!load_puzzle(puzzle_no)){puzzle_no=old;load_puzzle(puzzle_no);return;}reset_puzzle();
+  int old=puzzle_no;puzzle_no+=delta;if(puzzle_no<0)puzzle_no=puzzle_total-1;if(puzzle_no>=puzzle_total)puzzle_no=0;if(!load_puzzle(puzzle_no)){puzzle_no=old;load_puzzle(puzzle_no);return;}reset_puzzle();
+}
+static int wordz_goto_dialog(void)
+{
+  int w=38,h=9,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,pos=0,df=-1,v,result=-1;unsigned mb=0;char s[5];s[0]=0;acc_modal_begin();
+  for(;;){acc_subbox(x,y,w,h,"Go To",1);acc_text(x+3,y+2,"Puzzle number:",ACC_LABEL,14);acc_fill(x+18,y+2,5,1,' ',df==0?ACC_SELECT:ACC_CONTROL);acc_text(x+18,y+2,s,df==0?ACC_SELECT:ACC_CONTROL,4);acc_button(x+3,y+6,"  Go  ",df==1);acc_button(x+11,y+6,"  Cancel  ",df==2);acc_wait(&k,&mx,&my,&mb);
+    if((mb&1)&&my==y+2&&mx>=x+18&&mx<x+23){df=0;k=0;continue;}if((mb&1)&&my==y+6){if(mx>=x+3&&mx<x+9){df=1;k=13;}else if(mx>=x+11&&mx<x+21){df=2;k=13;}}
+    if(k==27){result=-1;break;}if(k==9||k==271){if(df<0)df=(k==271)?2:0;else df=(k==271)?(df+2)%3:(df+1)%3;k=0;continue;}if(k==13&&df==2){result=-1;break;}if(k==13&&df==1){v=atoi(s);if(v>=1&&v<=puzzle_total){result=v-1;break;}k=0;continue;}
+    if(df==0){if(k==8&&pos){s[--pos]=0;}else if(k>='0'&&k<='9'&&pos<3){s[pos++]=(char)k;s[pos]=0;}}k=0;
+  }
+  acc_modal_end();return result;
 }
 
 int main(int argc,char **argv)
@@ -397,9 +384,9 @@ int main(int argc,char **argv)
   int x,y,bx,by,key=0,mx=0,my=0,buttons=0,last_buttons=0,cx,cy,need=1,last_sec=-1;
   int mouse_selecting=0,mouse_moved=0,mouse_start_x=-1,mouse_start_y=-1,mouse_start_selected=0,hint_hover=0,last_hint_hover=-1;
   unsigned long sec;
-  if(acc_help(argc,argv,"!WORDZ","Find hinted words horizontally, vertically or diagonally."))return 0;
+  if(acc_help(argc,argv,"!WORDZ","Find hinted words horizontally or diagonally."))return 0;
   if(!acc_begin(argv[0],"Wordz",0))return 1;wordz_font(1);acc_mouse_display(1);if(!scan_puzzles()){acc_notice("Wordz Error","WORDZ.LVL is missing or invalid.");acc_end_screen();acc_end();return 1;}srand((unsigned)acc_ticks());puzzle_no=puzzle_total>1?rand()%puzzle_total:0;if(!load_puzzle(puzzle_no)){acc_notice("Wordz Error","WORDZ.LVL is missing or invalid.");acc_end_screen();acc_end();return 1;}if(!puzzle_data_valid()){acc_notice("Wordz Error","Puzzle data is invalid.");acc_end_screen();acc_end();return 1;}
-  x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;bx=x+6;by=y+5;
+  x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;bx=x+3;by=y+5;
   acc_box(x,y,DLG_W,DLG_H,"Wordz");reset_puzzle();
 
   while(key!=27){
@@ -420,6 +407,7 @@ int main(int argc,char **argv)
         if(focus==BTN_RESET)reset_puzzle();
         else if(focus==BTN_PREV)change_puzzle(-1);
         else if(focus==BTN_NEXT)change_puzzle(1);
+        else if(focus==BTN_GOTO){int g=wordz_goto_dialog();if(g>=0){puzzle_no=g;load_puzzle(puzzle_no);reset_puzzle();}acc_box(x,y,DLG_W,DLG_H,"Wordz");focus=0;}
         else if(focus==BTN_HINT){int count=puzzle_word_count();if(count)hint_word=(hint_word+1)%count;}
         else if(focus==BTN_CLOSE)key=27;
         if(key!=27){need=1;key=0;}
@@ -428,8 +416,8 @@ int main(int argc,char **argv)
 
     if(acc_mouse_present){
       acc_mouse(&mx,&my,&buttons);if(buttons&ACC_MOUSE_OUTSIDE){key=27;break;}
-      hint_hover=(my==y+12&&mx>=x+53&&mx<x+59);
-      if(hint_hover!=last_hint_hover){draw_plain_button(x+53,y+12," Next ",focus==BTN_HINT||hint_hover);last_hint_hover=hint_hover;}
+      hint_hover=(my==y+12&&mx>=x+56&&mx<x+62);
+      if(hint_hover!=last_hint_hover){draw_plain_button(x+56,y+12," Next ",focus==BTN_HINT||hint_hover);last_hint_hover=hint_hover;}
       if((buttons&1)&&!(last_buttons&1)){
         mouse_selecting=0;mouse_moved=0;
         if((buttons&1)&&my==y&&(mx==x+DLG_W-5||mx==x+DLG_W-4)){key=27;}
@@ -440,8 +428,9 @@ int main(int argc,char **argv)
           if(mx>=x+3&&mx<x+9){focus=BTN_RESET;reset_puzzle();need=1;}
           else if(mx>=x+12&&mx<x+17){focus=BTN_PREV;change_puzzle(-1);need=1;}
           else if(mx>=x+20&&mx<x+25){focus=BTN_NEXT;change_puzzle(1);need=1;}
+          else if(mx>=x+28&&mx<x+37){int g;focus=BTN_GOTO;g=wordz_goto_dialog();if(g>=0){puzzle_no=g;load_puzzle(puzzle_no);reset_puzzle();}acc_box(x,y,DLG_W,DLG_H,"Wordz");focus=0;need=1;}
           else if(mx>=x+DLG_W-10&&mx<x+DLG_W-4)key=27;
-        } else if(my==y+12&&mx>=x+53&&mx<x+59){
+        } else if(my==y+12&&mx>=x+56&&mx<x+62){
           focus=BTN_HINT;{int count=puzzle_word_count();if(count)hint_word=(hint_word+1)%count;}need=1;
         }
       }

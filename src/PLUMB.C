@@ -60,6 +60,7 @@ static long score=0;
 static int flow_started=0,round_started=0,paused=0,qualified=0;
 static unsigned long round_start,last_step,pause_started;
 static int focus=-1;
+static int ui_x,ui_y,ui_bx,ui_by;
 
 /* Direction indices are N,E,S,W. */
 static const int dx[4]={0,1,0,-1};
@@ -191,6 +192,39 @@ static void draw_board(int bx,int by)
   for(y=0;y<BH;y++)for(x=0;x<BW;x++)draw_cell(bx,by,x,y);
 }
 
+static void draw_target(int bx,int by)
+{
+  char s[24];sprintf(s,"Connect %d pipes",target);acc_text(bx-2,by+BH+1,s,ACC_HEADING,20);
+}
+static void spill_animation(int bx,int by)
+{
+  unsigned short tile_cell[BW*BH];
+  unsigned long start,elapsed;
+  int n=0,i,j,x,y,target_count,done=0,tmp;
+  int attr=ACC_ATTR(0,10);
+  /* Animate whole Plumb tiles, not individual character cells.  Each board
+     square is two text cells wide, so painting the pair together keeps the
+     splash visually aligned with the pipe grid.  Empty tiles are shuffled
+     once, then progressively revealed so every non-pipe tile is bright green
+     by the end of the four-second sequence. */
+  for(y=0;y<BH;y++)for(x=0;x<BW;x++)if(board[y][x]==EMPTY)
+    tile_cell[n++]=(unsigned short)((y<<8)|x);
+  for(i=n-1;i>0;i--){j=rand()%(i+1);tmp=tile_cell[i];tile_cell[i]=tile_cell[j];tile_cell[j]=(unsigned short)tmp;}
+  acc_mouse_display(0);start=acc_ticks();
+  while(done<n){
+    elapsed=(unsigned long)(acc_ticks()-start);if(elapsed>72UL)elapsed=72UL;
+    target_count=(int)((elapsed*(unsigned long)n)/72UL);
+    if(target_count>n)target_count=n;
+    while(done<target_count){
+      y=(tile_cell[done]>>8)&255;x=tile_cell[done]&255;
+      acc_put(bx+x*2,by+y,219,attr);
+      acc_put(bx+x*2+1,by+y,219,attr);
+      done++;
+    }
+  }
+  acc_mouse_display(1);
+}
+
 static void queue_fill(void)
 {
   int i;for(i=0;i<QUEUE;i++)queue_piece[i]=(unsigned char)(rand()%PIECES);
@@ -291,8 +325,10 @@ static void draw_buttons(int x,int y,int focus_now)
 static void draw_all(int x,int y,int bx,int by)
 {
   acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);
-  draw_status(x,y);draw_queue(x+3,y+4);draw_board(bx,by);draw_buttons(x,y,focus);
+  draw_status(x,y);draw_queue(x+3,y+4);draw_board(bx,by);draw_target(bx,by);draw_buttons(x,y,focus);
 }
+static void redraw_main_window(void)
+{acc_box(ui_x,ui_y,DLG_W,DLG_H,"Plumb");draw_all(ui_x,ui_y,ui_bx,ui_by);}
 
 static void redraw_board_action(int x,int y,int bx,int by,int oldx,int oldy)
 {
@@ -358,20 +394,21 @@ static void plumb_retry_dialog(const char *msg)
 static void round_result(int success)
 {
   char msg[64];
+  spill_animation(ui_bx,ui_by);
   if(success){
     score+=500L+(long)(flow_tiles-target)*25L;
     sprintf(msg,"Level %d complete! %d pipes filled.",level,flow_tiles);
     plumb_next_level_dialog(msg);
     level++;if(level>20)level=20;
-    new_round(0);
+    new_round(0);redraw_main_window();
   } else {
     lives--;
     if(lives<=0){
       sprintf(msg,"Game over. Score %ld.",score);plumb_retry_dialog(msg);
-      level=1;lives=3;new_round(1);
+      level=1;lives=3;new_round(1);redraw_main_window();
     } else {
       sprintf(msg,"Oh no, you have a leak!\nYou plumbed %d of %d pipes.",flow_tiles,target);plumb_retry_dialog(msg);
-      new_round(0);
+      new_round(0);redraw_main_window();
     }
   }
 }
@@ -410,7 +447,7 @@ int main(int argc,char **argv)
   int last_focus=-1,last_sec=-1;unsigned long now;
   if(acc_help(argc,argv,"!PLUMB","Lay a continuous pipe before the flow catches you."))return 0;
   if(!acc_begin(argv[0],"Plumb",0))return 1;
-  srand((unsigned)acc_ticks());x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;bx=x+17;by=y+5;
+  srand((unsigned)acc_ticks());x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;bx=x+17;by=y+5;ui_x=x;ui_y=y;ui_bx=bx;ui_by=by;
   acc_box(x,y,DLG_W,DLG_H,"Plumb");plumb_font(1);new_round(1);acc_mouse_display(1);
   while(key!=27){
     now=acc_ticks();
