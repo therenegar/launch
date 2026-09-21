@@ -511,7 +511,7 @@ Some secret hotkeys<br/>
 ### !TYPO.EXE - Typo
 Level up on your words-per-minute and put that retro mechanical keyboard to good use, practicing your typing.
 
-50 different lessons with different skills and types of texts, and a focus on technical writing and coding.
+100 different lessons with different skills and types of texts, and a focus on technical writing and coding.
 
 Records are maintained so you can keep track of your achievements.
 
@@ -565,7 +565,7 @@ Watch out for walls and don't run into yourself
 <img width="360" height="300" alt="Snake" src="https://github.com/user-attachments/assets/814e48a0-76e0-42a2-99e3-b6fc63941097" />
 
 
-Playfields come from the Microsoft QBasic NIBBLES.BAS sample program.
+Levels 1-10 come from the Microsoft QBasic NIBBLES.BAS sample program. Beyond level 10 playfields are randomly generated.
 
 ### !SOL.EXE - Solitaire
 Play draw three Solitaire completely in text mode!
@@ -577,6 +577,7 @@ Click a card (it will show as selected), then click the destination (valid desti
 
 ### !WORDZ.EXE - Wordz
 
+Over 200 word-find style challenges.
 Find the words in the word list in the letter grid. Hints help you out.
 
 Click letters, or click and drag to select a word. `Enter` commits your selection. `Backspace` un-selects the last selected letter.
