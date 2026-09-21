@@ -454,7 +454,7 @@ Simple notepad. You can click and type anywhere!
 Create tabs, and up to 10 pages per tab. Export the contents to a text file with `Export`. You can also send the contents to the printer with `Print`.
 The text contents are persisted when you close the Note, and will be there when the program is re-opened.
 
-Choose `Clr` to erase the notepad. `Chars` shows a character palette to insert extended/special characters.
+Choose `Clr` to erase everything on the current page. `Chars` shows a character palette to insert extended/special characters.
 
 Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copied (`CTRL+C`) or Pasted (`CTRL+V`) anywhere on the page, other pages, or pages in other tabs.
 
@@ -462,7 +462,8 @@ Words will wrap at the end of each line intelligently to the next, for natural t
 
 <img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/21281568-5468-4927-ae6e-cd6d3b89d55c" />
 
-You can add the filename/s (up to 10) of a text file after `!NOTE.EXE` and Note will open your external text file. It can be saved (overwrite) with the Export button.
+You can add the filename/s (up to 10) of a text file after `!NOTE.EXE` and Note will open your external text file (in a tab labelled 'External' - one file per page). Any changes be saved (overwrite) with the Export button - which will save all opened files. Externally opened files are not persisted.
+e.g. `!NOTE C:\DOCS\CONTACTS.TXT C:\DOCS\BDAYS.TXT`
 
 
 ### !STACK.EXE - Card Stack
@@ -490,6 +491,9 @@ Tasks can be sorted and tags can be used to filter the list.
 
 Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your locale settings as/if set by `COUNTRY.SYS` in your `CONFIG.SYS`.
 
+Some secret hotkeys<br/>
+`A` Adds a task, `E` Edits selected, `D` Deletes selected `S` sorts the active group.
+
 <img width="360" height="300" alt="!TODOS" src="https://github.com/user-attachments/assets/cd920ca9-6dcb-4300-903a-b5634fde614d" />
 
 ### !TYPO.EXE - Typo
@@ -497,7 +501,7 @@ Level up on your words-per-minute and put that retro mechanical keyboard to good
 
 50 different lessons focusing on different skills and types of texts, with a focus on technical writing and coding.
 
-Records are maintained so you can keep track of your high scores.
+Records are maintained so you can keep track of your achievements.
 
 <img width="360" height="300" alt="!TYPO" src="https://github.com/user-attachments/assets/aade6dc0-c109-488e-b86a-ac85069d7cfa" />
 
