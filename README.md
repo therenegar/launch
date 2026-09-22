@@ -10,7 +10,7 @@ Requires: DOS 3.3, 80286, EGA or better.
 
 Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU.Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/ccc981b2-439f-4722-b7c8-5eca4bc274e3" />
+<img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/e15b3240-cbf4-4265-ba27-ae2c8c0fc210" />
 
 VGA displays
 
@@ -52,7 +52,8 @@ Extract the release zip file or mount the floppy image:
 - Your drive can be scanned and an initial menu built.
 - Simply reboot after install and you're ready to go.
 
-<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/d47f2766-413b-4c10-9609-74e7d36d1e02" />
+<img width="720" height="600" alt="Install" src="https://github.com/user-attachments/assets/6bd58bc5-f03b-417b-9e97-cf70a384d8d6" />
+
 
 > DOSBox installs will be detected by the installer, and a different DOSBox compatible version of the shortcut key tool will be installed.
 
@@ -142,16 +143,15 @@ As an example, this can allow you to browse and open images with a launcher for 
 
 There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
 
-
-<img width="360" height="300" alt="Open File" src="https://github.com/user-attachments/assets/9d15bb77-744a-46f2-84be-efed62b84413" />
+<img width="360" height="300" alt="Open File" src="https://github.com/user-attachments/assets/9f147b61-a2fd-4be4-a595-5aa816191d3b" />
 
 An association consists of one or more file extensions, and a selected launcher from your menu.
 
-<img width="360" height="300" alt="Create Association" src="https://github.com/user-attachments/assets/1914df90-1acf-4420-bf77-33c526864b98" />
+<img width="360" height="300" alt="Create association" src="https://github.com/user-attachments/assets/15d224b0-160e-49e0-8b0f-df110a80fca9" />
 
 You can also open files with further parameters if required.
 
-<img width="360" height="300" alt="Open file with parameters" src="https://github.com/user-attachments/assets/ae87fce6-1ce3-4c2d-8e77-d2f4c6b8d090" />
+<img width="360" height="300" alt="Open file with parameters" src="https://github.com/user-attachments/assets/5d512c3f-1a81-43a3-86af-12958f6ce410" />
 
 The `Open File` dialog can also be shown on its own, without the menu, by running `! /OPEN`.
 
@@ -164,11 +164,12 @@ The drive bar shows the available disk drives, and allows you to switch between 
 
 The path bar shows a preview of the command line that will be executed when `Run` is chosen.
 
-<img width="360" height="300" alt="Explore and Run" src="https://github.com/user-attachments/assets/c7822dad-0392-4cb1-b70d-8dfbb6f6179c" />
+<img width="360" height="300" alt="Explore & Run" src="https://github.com/user-attachments/assets/cb6f2115-bf70-4bd2-9472-5339c926eac4" />
 
 Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
 
-<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/f230b18c-757c-43e7-b90b-8d605fff35a6" />
+<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/8b22bbe5-c4f2-4f2b-97e1-592fd4e9e02b" />
+
 
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)<br/>
 
@@ -180,7 +181,8 @@ The `Shutdown...` menu item is also fixed at the bottom of the menu, and when se
 
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="360" height="300" alt="Shutdown..." src="https://github.com/user-attachments/assets/05b1c734-8ada-4b28-a1aa-9113cf5bc435" />
+<img width="360" height="300" alt="Shutdown" src="https://github.com/user-attachments/assets/4ab363bd-11a9-4b94-830a-ecfdb37f39aa" />
+
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`). <BR/>
 The dialog can also be shown on its own, without the menu, by running `! /BYE`.
@@ -204,7 +206,7 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="360" height="300" alt="Configuration - Menu" src="https://github.com/user-attachments/assets/470f9598-7d75-40b9-b838-20f4a23fc91c" />
+<img width="360" height="300" alt="Config" src="https://github.com/user-attachments/assets/2fb43d38-3440-4b6c-a666-2eee8e908d21" />
 
 Contextual help (tooltips) can be turned on (off by default). They will appear throughout Launch! with keyboard focus or mouse-over.
 
@@ -230,7 +232,8 @@ There are 9 pre-defined color schemes to choose from, or you can change the colo
 
 If using a monochrome display, use the 'Mono' scheme for best results.
 
-<img width="360" height="300" alt="Config: Colors" src="https://github.com/user-attachments/assets/2b3e7494-8486-418c-a691-247c5618093c" />
+<img width="360" height="300" alt="Config - Colors" src="https://github.com/user-attachments/assets/bcf4aa44-d996-400f-8ed1-f6da56fe9223" />
+
 
 <img width="360" height="300" alt="Color Schemes" src="https://github.com/user-attachments/assets/189807a7-5fd1-4b88-98e5-b120dc750bcc" />
 
@@ -241,11 +244,10 @@ You can select which screensaver to show, choose `None` to disable this function
 You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).<br/>
 Click `Preview` for an instant preview of the currently selected screensaver.
 
-<img width="360" height="300" alt="Config: Screen Savers" src="https://github.com/user-attachments/assets/5167f0e1-7752-4051-8569-e73e1dcecceb" />
+<img width="360" height="300" alt="Config - Screen Saver" src="https://github.com/user-attachments/assets/ca25f7cc-cfe0-4cdf-a1f9-2d343bf9176d" />
 
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
-
 
 ### Prompt
 
@@ -257,14 +259,13 @@ Choosing `SET` applies the selected prompt style immediately, and also updates a
 
 Styles using ANSI escape sequences will not show in the selector if an ANSI driver is not detected.
 
-<img width="360" height="300" alt="Config: Prompt" src="https://github.com/user-attachments/assets/683fbaae-c2f8-4fb7-9c20-aeb239d7a2cb" />
-
+<img width="360" height="300" alt="Config - Prompt" src="https://github.com/user-attachments/assets/76b326cd-275b-4360-83ef-49e6cfd01073" />
 
 ###  Font
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
-<img width="360" height="300" alt="Config: Font" src="https://github.com/user-attachments/assets/4f438e38-00f3-43c9-b826-840dda556332" />
+<img width="360" height="300" alt="Config - Font" src="https://github.com/user-attachments/assets/8e693cee-1e3c-43f5-adc0-7362ac812aa5" />
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
@@ -288,7 +289,7 @@ If the shortcut is active, you can unload it - removing all traces of the TSR fr
 If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT/FDAUTO.BAT` and reboot.<br/>
 Note that changing the key combination also requires a reboot to apply.
 
-<img width="360" height="300" alt="Config: Shortcut" src="https://github.com/user-attachments/assets/17a6ad2b-b110-4ec2-b130-697503a98142" />
+<img width="360" height="300" alt="Config - Shortcut" src="https://github.com/user-attachments/assets/4a801435-949b-4127-8c45-3390f4f8926a" />
 
 
 ### Reset
@@ -297,7 +298,7 @@ If you mess up your Launch! installation you can reset the configuration, the me
 
 This will return things to the defaults, and rebuild a default menu as well.
 
-<img width="360" height="300" alt="Config: Reset" src="https://github.com/user-attachments/assets/b935db57-be19-45e3-a181-c8f71cf4b357" />
+<img width="360" height="300" alt="Config - Reset" src="https://github.com/user-attachments/assets/74c09346-27ee-4e20-aa6a-05e61749c9b0" />
 
 
 ## Live menu management
@@ -307,17 +308,17 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="360" height="300" alt="Menu - Add" src="https://github.com/user-attachments/assets/cddb761b-d607-49f2-8b9f-086d0019315c" />
+<img width="360" height="300" alt="Menu - Add" src="https://github.com/user-attachments/assets/3154cb10-d90f-48d9-a7ca-ce36a49bef4d" />
 
 `CTRL+D` will remove the selected item from the menu (with confirmation first).
 
-<img width="360" height="300" alt="Menu - Remove" src="https://github.com/user-attachments/assets/533cfb89-fe2e-4171-9af8-8f9c6d8d9ac6" />
+<img width="360" height="300" alt="Menu - Remove" src="https://github.com/user-attachments/assets/b58b44b4-c05d-4d8c-9ce3-d0087c7a9032" />
 
 You can move selected items up and down with `CTRL+↑/↓`.
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="360" height="300" alt="Menu - Edit" src="https://github.com/user-attachments/assets/10d524cf-9024-4eac-a3c8-d38a0a585255" />
+<img width="360" height="300" alt="Menu - Edit" src="https://github.com/user-attachments/assets/68079182-8d6c-43cc-811b-7876fdf6b9d6" />
 
 If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
 You will be able to enter parameters before running the program.
