@@ -271,6 +271,7 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 > Note this feature is not available with an EGA display adapter.
 
 **Font Sources**
+- Launch! Sans was custom drawn by me, for Launch!
 - ISO is extracted from IBM PC-DOS 5.02 ISO.CPI
 - DOS-J is extracted from IBM PC-DOS for DOS/V
 - DOS-V is extracted from Microsoft MS-DOS/V
