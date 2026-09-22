@@ -212,7 +212,7 @@ Contextual help (tooltips) can be turned on (off by default). They will appear t
 
 The SysBar (off by default) shows an information bar, top-right of screen every time the menu is opened with some handy system status information.
 
-<img width="360" height="300" alt="SysBar" src="https://github.com/user-attachments/assets/c5d096b3-0b7c-40aa-9136-73618ac4c5e5" />
+<img width="360" height="300" alt="SysBar" src="https://github.com/user-attachments/assets/f0826a71-353b-488d-a7e8-8098ea7bb24d" />
 
 The SysBar shows (left to right): 
 - Largest executable program size (free lower memory)
@@ -233,7 +233,6 @@ There are 9 pre-defined color schemes to choose from, or you can change the colo
 If using a monochrome display, use the 'Mono' scheme for best results.
 
 <img width="360" height="300" alt="Config - Colors" src="https://github.com/user-attachments/assets/bcf4aa44-d996-400f-8ed1-f6da56fe9223" />
-
 
 <img width="360" height="300" alt="Color Schemes" src="https://github.com/user-attachments/assets/189807a7-5fd1-4b88-98e5-b120dc750bcc" />
 
@@ -330,7 +329,8 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 
 If **Add to PATH for execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT/FDAUTO.BAT - which can get unwieldy. This allows you do away with that, and just add a program to PATH when launched from the menu.
 
-<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/626513d1-7b62-47d8-a989-d65c3ac0817e" />
+<img width="360" height="300" alt="menu-params" src="https://github.com/user-attachments/assets/cdf50aa7-9e9f-4e12-a706-158e01a3588f" />
+
 
 ### Manual menu configuration
 `LAUNCH.MNU` is a plain text file that you can edit yourself with any text editor.<br/>
@@ -424,15 +424,15 @@ The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specif
 You can also use add one or more `.ICS` files as a parameter, and the Calendar will show events from those files.<br/>
 e.g. `!CAL C:\DOCS\HOLIDAYS.ICS C:\DOCS\BDAYS.ICS`
 
-<img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/1ad0116f-b7ea-4aeb-b040-029da2b62a02" />
+<img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/3795d651-0f2a-4cb9-88df-cbed3c4314a3" />
 
-<img width="360" height="300" alt="Calendar - Day" src="https://github.com/user-attachments/assets/f5eebd56-4d9a-4e57-b22d-6d956226db99" />
+<img width="360" height="300" alt="Calendar - Day View" src="https://github.com/user-attachments/assets/e4eb15db-e99b-4190-824e-b4e609e2def4" />
 
 
 ### !CALC.EXE - Calculator
 A simple calculator, with nice large digits, pretty self explanatory!
 
-<img width="360" height="300" alt="Calculator" src="https://github.com/user-attachments/assets/789a27b8-fec4-412d-9428-3e43b1b42fc3" />
+<img width="360" height="300" alt="Calculator" src="https://github.com/user-attachments/assets/2ff608b0-54b7-4e2a-854a-420fbef83096" />
 
 
 ### !DRAW.EXE - Pixel Draw
@@ -444,11 +444,13 @@ Click a palette color and then draw in the drawing area. You can hold down the m
 The right mouse button erases.<br/>
 The grid can be toggled on/off.
 
-`Show` will render your drawing in large scale graphics mode fullscreen.
-
 Your drawing is persisted and will be there when the program is re-opened.
 
-<img width="360" height="300" alt="Pixel Draw" src="https://github.com/user-attachments/assets/bcf393ef-1f95-45b5-9f07-8eba7894b2af" />
+<img width="360" height="300" alt="!DRAW01" src="https://github.com/user-attachments/assets/1bd259e7-1f97-4438-8490-8f9ebfcfd9cc" />
+
+`Show` will render your drawing in large scale graphics mode fullscreen.
+
+<img width="360" height="300" alt="!DRAW02" src="https://github.com/user-attachments/assets/92e85ce2-a6c3-4c43-a9a4-69954d4e1e76" />
 
 `!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing.<br/>
 e.g. `!DRAW C:\ICON.BMP`
@@ -460,10 +462,11 @@ Export and Print your journal too.
 
 Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copied (`CTRL+C`) or Pasted (`CTRL+V`) anywhere on the page.
 
-<img width="360" height="300" alt="Journal" src="https://github.com/user-attachments/assets/6f01d0d9-7d5d-4090-a943-25c4a5f12202" />
+<img width="360" height="300" alt="Journal" src="https://github.com/user-attachments/assets/3662dbc6-97d3-4683-9f79-d93a24699732" />
+
 
 ### !MKDOWN.EXE - Markdown
-A fully fledged markdown editor with split-screen live preview, full-screen graphical preview (font sizes and styles), and focus mode for no-distraction blue-screening typing.
+A simple markdown editor with split-screen live preview, full-screen graphical preview (font sizes and styles), and focus mode for no-distraction blue-screening typing.
 
 The `Split` button toggles between markdown entry only, split-screen preview, and preview only. 
 
@@ -476,10 +479,10 @@ You can open one or more markdown (`.MD`) files by adding as a parameter to `!MK
 
 Save and print the current page with the respective buttons.
 
-<img width="360" height="300" alt="Markdown" src="https://github.com/user-attachments/assets/4db305d7-a9bf-4970-a207-3921d0984b45" />
-<img width="360" height="300" alt="Graphical Preview" src="https://github.com/user-attachments/assets/5ad582ff-432c-4e53-9b39-a32a20905fe7" />
-<img width="360" height="300" alt="Focus Mode" src="https://github.com/user-attachments/assets/4b261916-d451-4cdc-9916-323e522b26ff" />
-<img width="360" height="300" alt="Live Preview" src="https://github.com/user-attachments/assets/5671b03a-8089-4e94-b95b-8dbb1e3db3c8" />
+<img width="360" height="300" alt="Markdown" src="https://github.com/user-attachments/assets/cc8ad6f7-0228-4064-9fb5-f7200be40e4b" />
+<img width="360" height="300" alt="!MKDOW09" src="https://github.com/user-attachments/assets/118f0979-87e5-4a64-9756-3c0d82368064" />
+<img width="360" height="300" alt="!MKDOW02" src="https://github.com/user-attachments/assets/01fff270-d3fd-4376-bb0d-71c80cd3ba2f" />
+<img width="360" height="300" alt="!MKDOW08" src="https://github.com/user-attachments/assets/778cb07f-2a4a-4950-9bc6-f65ccc8f3eec" />
 
 ### !NOTE.EXE - Note
 Simple notepad. You can click and type anywhere!
@@ -493,7 +496,7 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 
 Words will wrap at the end of each line intelligently to the next, for natural typing.
 
-<img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/94874b5e-ad0d-4665-8233-fdaa41558cff" />
+<img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/2330b2ed-91af-4371-8f48-c4c9afa03f82" />
 
 You can add the filename/s (up to 10) of a text file after `!NOTE.EXE` and Note will open your external text file (in a tab labelled 'External' - one file per page). Any changes be saved (overwrite) with the Export button - which will save all opened files. Externally opened files are not persisted.
 e.g. `!NOTE C:\DOCS\CONTACTS.TXT C:\DOCS\BDAYS.TXT`
@@ -507,15 +510,15 @@ You can also export all the cards (everything concatenated) into a text file.
 
 Entries are automatically saved, everything is persisted, and all cards will be visible when the program is re-opened.
 
-<img width="360" height="300" alt="Stack" src="https://github.com/user-attachments/assets/e4ded681-2b4b-4d59-98dc-b7e061d437e0" />
-
+<img width="360" height="300" alt="Stack" src="https://github.com/user-attachments/assets/3dccfc00-b8d1-46c2-a187-964599c6a4d8" />
 
 ### !SYSINFO.EXE - System Information
 View useful information about your system, including free memory and disk space.
 
 The system information report can be printed for reference.
 
-<img width="360" height="300" alt="!SYSINFO" src="https://github.com/user-attachments/assets/c18489c2-9383-4881-8d5f-e909189b57b6" />
+<img width="360" height="300" alt="System Information" src="https://github.com/user-attachments/assets/e8b16ad3-9052-42f2-81e4-4d4d39de9679" />
+
 
 ### !TODOS.EXE - To-dos
 A simple and flexible To-Do list supporting grouping, due dates (with natural language like "tomorrow", "next Friday", extended description, and tags.
@@ -527,7 +530,7 @@ Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your l
 Some secret hotkeys<br/>
 `A` Adds a task, `E` Edits selected, `D` Deletes selected `S` sorts the active group.
 
-<img width="360" height="300" alt="!TODOS" src="https://github.com/user-attachments/assets/cd920ca9-6dcb-4300-903a-b5634fde614d" />
+<img width="360" height="300" alt="To-dos" src="https://github.com/user-attachments/assets/d1f4e108-7fe5-442a-8eb0-13d7daef3ed0" />
 
 ### !TYPO.EXE - Typo
 Level up on your words-per-minute and put that retro mechanical keyboard to good use, practicing your typing.
@@ -536,8 +539,7 @@ Level up on your words-per-minute and put that retro mechanical keyboard to good
 
 Records are maintained so you can keep track of your achievements.
 
-<img width="360" height="300" alt="!TYPO" src="https://github.com/user-attachments/assets/aade6dc0-c109-488e-b86a-ac85069d7cfa" />
-
+<img width="360" height="300" alt="Typo" src="https://github.com/user-attachments/assets/4011f9c7-0192-400d-865f-f0015f1f05a0" />
 
 ----
 # <img width="1633" height="250" alt="Games" src="https://github.com/user-attachments/assets/c4d31625-d74d-4534-a256-eb436e3ece78" />
@@ -554,7 +556,7 @@ Use the arrow keys to move the worker and push boxes to cover all the targets - 
 
 Puzzles 1-200 can be played out for you by choosing `Solve`. Levels 200-250, you must solve yourself!
 
-<img width="360" height="300" alt="Boxes" src="https://github.com/user-attachments/assets/1836d279-cb98-4d15-8b09-f975eba82bac" />
+<img width="360" height="300" alt="Boxes" src="https://github.com/user-attachments/assets/5a5f48ac-43ac-4001-8b4b-35e0f26ec056" />
 
 Puzzles are from Microban collections designed by [David W. Skinner](http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm)
 
@@ -562,13 +564,15 @@ Puzzles are from Microban collections designed by [David W. Skinner](http://www.
 ### !FCELL.EXE - FreeCell
 Play the FreeCell card game. Same interaction and interface as Solitaire.
 
-<img width="360" height="300" alt="FreeCell" src="https://github.com/user-attachments/assets/b3ac50a9-b0bc-42e9-9b90-8e4157a7e63b" />
+<img width="360" height="300" alt="FreeCell" src="https://github.com/user-attachments/assets/a468026b-f088-4b30-98b3-bb5fa4aa2f00" />
+
 
 
 ### !PLUMB.EXE - Plumb
 Lay some pipe and stop the leaking slime before it's too late!
 
-<img width="360" height="300" alt="Plumb" src="https://github.com/user-attachments/assets/b55a3f1c-c124-40a1-9c47-d685b5f0b0c0" />
+<img width="360" height="300" alt="Plumb" src="https://github.com/user-attachments/assets/f09f0852-f709-4f23-a672-d2e601246c6c" />
+
 
 
 ### !POP.EXE - Pop
@@ -583,7 +587,7 @@ An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
 Eat the fruit before the timer runs out!
 Watch out for walls and don't run into yourself
 
-<img width="360" height="300" alt="Snake" src="https://github.com/user-attachments/assets/814e48a0-76e0-42a2-99e3-b6fc63941097" />
+<img width="360" height="300" alt="Snake" src="https://github.com/user-attachments/assets/b6af6a74-8aef-40e6-a101-9b4a10bbf348" />
 
 Levels 1-10 come from the Microsoft QBasic NIBBLES.BAS sample program. Beyond level 10 playfields are randomly generated (and might be crazy).
 
@@ -592,7 +596,7 @@ Play draw three Solitaire completely in text mode!
 
 Click a card (it will show as selected), then click the destination (valid destinations are indicated). With keyboard, `Space` selects a card, navigate to destination with arrow keys and press `Enter` to commit.
 
-<img width="360" height="300" alt="Solitaire" src="https://github.com/user-attachments/assets/a31812f3-b94b-48da-94a1-4d923ebc919a" />
+<img width="360" height="300" alt="Solitaire" src="https://github.com/user-attachments/assets/981ef699-b18e-4f8d-97e1-e82d13cd934c" />
 
 
 ### !WORDZ.EXE - Wordz
@@ -604,7 +608,7 @@ Click on letters, or click and drag to select a word. `Enter` commits your selec
 
 Words can be horizontal, diagonal down and up. Words will not be on the grid backwards.
 
-<img width="360" height="300" alt="Wordz" src="https://github.com/user-attachments/assets/70801674-2035-48fc-958c-f60538851e4f" />
+<img width="360" height="300" alt="Wordz" src="https://github.com/user-attachments/assets/fb275ba6-fc2f-4640-8f62-97315d06892c" />
 
 
 ----
@@ -666,5 +670,6 @@ Compiled with Microsoft C/C++ Optimizing Compiler 7.00 from 1992.
 
 Screenshots taken on this machine using [Screen Thief](http://www.win3x.org/win3board/viewtopic.php?t=2710&view=min).
 
-<img width="360" height="300" alt="About" src="https://github.com/user-attachments/assets/28b12e02-a814-4f4d-9e41-43cfeafebb66" />
+<img width="360" height="300" alt="About" src="https://github.com/user-attachments/assets/b967e252-d59e-4689-b765-46ee375e6a8b" />
+
 
