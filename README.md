@@ -27,8 +27,8 @@ EGA displays
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in file opener to create associations between files and launchers for easy open.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
-- 9 handy and optional text-mode only accessories and 7 games to go with Launch!
-    - Calculator, Calendar, Journal, Note, Pixel Draw, Card Stack, To-Dos, System Info, Typo
+- 10 handy and optional text-mode only accessories and 7 games to go with Launch!
+    - Calculator, Calendar, Journal, Markdown, Note, Pixel Draw, Card Stack, System Info, To-Dos, Typo
     - Boxes, Pop, Snake, Solitaire, FreeCell, Plumb and Wordz
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Various Command Prompt styles to choose from to uplift your C:\
@@ -84,13 +84,13 @@ Launch! locates and saves `LAUNCH.MNU` beside `!.EXE,` regardless of the current
 ### Parameters
 The Launch! executable `!.EXE` has some useful parameters:
 
+- `file.mnu` - use an alternative menu file from the default `launch.mnu`. It will be assumed to be beside `!.EXE` unless a full path is provided. This allows you to make use of different menu configurations, e.g.`! TEST.MNU`
 - `/?` - show Launch! help
 - `/CONFIG` - show the configuration dialog
 - `/EXPLORE` - show the Explore & Run dialog directly without the menu
 - `/OPEN` - show the Open File dialog directly without the menu
 - `/BYE` - show the Shutdown... dialog directly without the menu
 - `/NOW` - start the configured screensaver immediately
-- `/USE=file.mnu` - use an alternative menu file from the default `launch.mnu`. It will be assumed to be beside `!.EXE` unless a full path is provided. This allows you to make use of different menu configurations. 
 - `/OPENTO=folder` - open the Launch! menu to the specified folder, e.g. `/OPENTO="System Tools"` would show the menu with the System Tools sub-menu already open. 
 
 
@@ -420,8 +420,8 @@ You can print the calendar out, it will create a full page calendar with big eno
 
 The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specification) that is located beside `!CAL.EXE`
 
-You can also use the `/FILE=` parameter to point to any `.ICS` file, and the Calendar will show events from that file.<br/>
-e.g. `!CAL /FILE=C:\DOCS\HOLIDAYS.ICS`
+You can also use add one or more `.ICS` files as a parameter, and the Calendar will show events from those files.<br/>
+e.g. `!CAL C:\DOCS\HOLIDAYS.ICS C:\DOCS\BDAYS.ICS`
 
 <img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/1ad0116f-b7ea-4aeb-b040-029da2b62a02" />
 
@@ -460,6 +460,25 @@ Export and Print your journal too.
 Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copied (`CTRL+C`) or Pasted (`CTRL+V`) anywhere on the page.
 
 <img width="360" height="300" alt="Journal" src="https://github.com/user-attachments/assets/6f01d0d9-7d5d-4090-a943-25c4a5f12202" />
+
+### !MKDOWN.EXE - Markdown
+A fully fledged markdown editor with split-screen live preview, full-screen graphical preview (font sizes and styles), and focus mode for no-distraction blue-screening typing.
+
+The `Split` button toggles between markdown entry only, split-screen preview, and preview only. 
+
+`Show` displays a rendered full-screen graphical preview of the markdown - up/down/PgUp/PgDn scrolls, and Esc returns to the editor. 
+> Note the graphic preview requires a VGA display adapter.
+
+All markdown syntax [on this page](https://github.com/adam-p/markdown-here/wiki/markdown-cheatsheet) is supported except images and videos.
+
+You can open one or more markdown (`.MD`) files by adding as a parameter to `!MKDOWN.EXE`, e.g. `!MKDOWN C:\DOCS\REPORT.MD`
+
+Save and print the current page with the respective buttons.
+
+<img width="360" height="300" alt="Markdown" src="https://github.com/user-attachments/assets/4db305d7-a9bf-4970-a207-3921d0984b45" />
+<img width="360" height="300" alt="Graphical Preview" src="https://github.com/user-attachments/assets/5ad582ff-432c-4e53-9b39-a32a20905fe7" />
+<img width="360" height="300" alt="Focus Mode" src="https://github.com/user-attachments/assets/4b261916-d451-4cdc-9916-323e522b26ff" />
+<img width="360" height="300" alt="Live Preview" src="https://github.com/user-attachments/assets/5671b03a-8089-4e94-b95b-8dbb1e3db3c8" />
 
 ### !NOTE.EXE - Note
 Simple notepad. You can click and type anywhere!
