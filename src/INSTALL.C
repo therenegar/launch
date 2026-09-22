@@ -326,7 +326,7 @@ static int cpu_is_286(void){unsigned before,after;
 #endif
 }
 static const char *display_adapter(int *suitable){union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);if(r.h.al==0x1A){*suitable=1;return"VGA or compatible";}memset(&r,0,sizeof(r));r.h.ah=0x12;r.h.bl=0x10;int86(0x10,&r,&r);if(r.h.bl!=0x10){*suitable=1;return"EGA or compatible";}*suitable=0;return"CGA/MDA compatible";}
-static int write_initial_font_config(const char *install,int font_id){char path[PATH_SIZE];FILE*f;sprintf(path,"%s\\LAUNCH.CFG",install);f=fopen(path,"wt");if(!f)return 0;fprintf(f,"FONT_ID=%d\n",font_id);return fclose(f)==0;}
+static int write_initial_font_config(const char *install,int font_id){char path[PATH_SIZE];FILE*f;sprintf(path,"%s\\LAUNCH.CFG",install);f=fopen(path,"wt");if(!f)return 0;fprintf(f,"TITLEBAR_FG=15\nTITLEBAR_BG=7\nFONT_ID=%d\n",font_id);return fclose(f)==0;}
 static int hardware_warning(void){char answer[16];error_icon(0);fputs("This system's hardware doesn't meet minimum recommended requirements. Proceed ",stdout);choice_default(0);if(!fgets(answer,sizeof(answer),stdin))return 0;return toupper(answer[0])=='Y';}
 
 static unsigned char far *bios_byte(unsigned offset)
