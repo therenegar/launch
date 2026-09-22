@@ -101,6 +101,12 @@ static int write_launch36(void)
     if(replace_once(line,GEN_LINE,"strcpy(autoexec+1,\":\\\\AUTOEXEC.BAT\")","strcpy(autoexec+1,startup_batch_suffix())")>0)startup_hits++;
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT file","startup batch file");
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT","startup batch file");
+    replace_once(line,GEN_LINE,
+      "Usage: ! [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /USE=file.mnu | /OPENTO=folder | /?]",
+      "Usage: ! [menu.mnu] [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /OPENTO=folder | /?]");
+    replace_once(line,GEN_LINE,
+      "  /USE=file.mnu Use another menu file beside !.EXE (or a full path)",
+      "  menu.mnu      Use another menu file beside !.EXE (or a full path)");
     /* 3.6 tooltip preference is part of the persisted appearance.  It is
        appended to the structure so older LAUNCH.CFG files remain valid and
        default to disabled. */
@@ -151,7 +157,7 @@ static int write_launch36(void)
       fputs("    if(my==y+13&&mx>=x+25&&mx<x+63)return CONFIG_CONTROL_BASE+8;\n",out);continue;
     }
     if(strstr(line,"/* Launch! 3.5 - modal command menu for DOS")){
-      fputs("/* Launch! 3.63 - modal command menu for DOS\n",out);continue;
+      fputs("/* Launch! 3.64 - modal command menu for DOS\n",out);continue;
     }
     if(strstr(line,"#define MAX_NODES 96")){
       emit_startup_batch_helpers(out);
@@ -285,7 +291,7 @@ static int write_install36(void)
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT file","startup batch file");
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT","startup batch file");
     if(strstr(line,"/* Launch! 3.5 installer")){
-      fputs("/* Launch! 3.63 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
+      fputs("/* Launch! 3.64 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
     }
     if(strstr(line,"#define PATH_SIZE 128")){
       emit_startup_batch_helpers(out);fputs(line,out);continue;
@@ -305,7 +311,7 @@ static int write_install36(void)
       fputs("    \"!BOXES.EXE\",\"!FCELL.EXE\",\"!PLUMB.EXE\",\"!POP.EXE\",\"!SNAKE.EXE\",\"!SOL.EXE\",\"!WORDZ.EXE\",0};\n",out);continue;
     }
     if(strstr(line,"puts(\"Launch! 3.5 Installation\");")){
-      fputs("  puts(\"Launch! 3.63 Installation\");\n",out);continue;
+      fputs("  puts(\"Launch! 3.64 Installation\");\n",out);continue;
     }
     fputs(line,out);
     if(in_status&&!strcmp(line,"}\n"))in_status=0;
@@ -549,5 +555,5 @@ int main(void)
   if(!write_launch36()||!write_install36()||!write_note36()||
      !write_journal36()||!write_stack36()||!write_cal36()||!write_sysinfo36()||
      !write_snake36()||!write_pop36()||!write_sol36()||!write_boxes36())return 1;
-  puts("Generated Launch! 3.63 build sources.");return 0;
+  puts("Generated Launch! 3.64 build sources.");return 0;
 }

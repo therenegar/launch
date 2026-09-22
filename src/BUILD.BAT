@@ -3,7 +3,7 @@ REM Launch! build script - Microsoft C/C++ 7.0
 REM BUILD with no parameter builds everything.
 REM BUILD ! builds only the core Launch! menu and appends its authentication trailer.
 REM BUILD !SNAKE (etc.) builds only that accessory.
-REM Release 3.63 generated *36TMP.C sources are supplied with this tree.
+REM Release 3.64 generated *36TMP.C sources are supplied with this tree.
 REM GEN36.C is a maintainer regeneration tool and is not run by BUILD.
 IF "%1"=="" GOTO ALL
 IF "%1"=="!" GOTO CORE
@@ -12,6 +12,7 @@ IF "%1"=="!CALC" GOTO CALC
 IF "%1"=="!DRAW" GOTO DRAW
 IF "%1"=="!NOTE" GOTO NOTE
 IF "%1"=="!JOURNAL" GOTO JOURNAL
+IF "%1"=="!MKDOWN" GOTO MKDOWN
 IF "%1"=="!STACK" GOTO STACK
 IF "%1"=="!SYSINFO" GOTO SYSINFO
 IF "%1"=="!BOXES" GOTO BOXES
@@ -29,6 +30,7 @@ IF "%1"=="!calc" GOTO CALC
 IF "%1"=="!draw" GOTO DRAW
 IF "%1"=="!note" GOTO NOTE
 IF "%1"=="!journal" GOTO JOURNAL
+IF "%1"=="!mkdown" GOTO MKDOWN
 IF "%1"=="!stack" GOTO STACK
 IF "%1"=="!sysinfo" GOTO SYSINFO
 IF "%1"=="!boxes" GOTO BOXES
@@ -66,6 +68,9 @@ GOTO CHECK
 :JOURNAL
 CL /AS /Os /Gs /W3 /Fe!JOURNAL.EXE J36TMP.C ACCLIB36.C
 GOTO CHECK
+:MKDOWN
+CL /AS /Os /Gs /W3 /Fe!MKDOWN.EXE MKDOWN.C ACCLIB36.C
+GOTO CHECK
 :STACK
 CL /AS /Os /Gs /W3 /DACCLIB_MIN_GLYPHS /Fe!STACK.EXE S36TMP.C ACCLIB36.C
 GOTO CHECK
@@ -101,9 +106,21 @@ CL /AS /Os /Gs /W3 /Fe!TYPO.EXE TYPO.C ACCLIB36.C
 GOTO CHECK
 :CHECK
 IF ERRORLEVEL 1 GOTO FAIL
+IF "%L364FULL%"=="1" GOTO CHECKDONE
+REM Keep the installer synchronized after every focused component build.
+CL /AS /Os /Gs /W3 /FeINSTALL.EXE I36TMP.C
+IF ERRORLEVEL 1 GOTO FAIL
+CL /AS /Os /Gs /W3 PACKDAT.C
+IF ERRORLEVEL 1 GOTO FAIL
+PACKDAT.EXE
+IF ERRORLEVEL 1 GOTO FAIL
+ECHO Built %1 and refreshed INSTALL.EXE / INSTALL.DAT
+GOTO END
+:CHECKDONE
 ECHO Built %1
 GOTO END
 :ALL
+SET L364FULL=1
 CL /AM /Os /Gs /W3 /Fe!.EXE L36TMP.C SAVERS.C
 IF ERRORLEVEL 1 GOTO FAIL
 COPY /B !.EXE+AUTH35.SIG !.$$$ >NUL
@@ -126,6 +143,8 @@ IF ERRORLEVEL 1 GOTO FAIL
 CL /AS /Os /Gs /W3 /Fe!NOTE.EXE N36TMP.C ACCLIB36.C
 IF ERRORLEVEL 1 GOTO FAIL
 CL /AS /Os /Gs /W3 /Fe!JOURNAL.EXE J36TMP.C ACCLIB36.C
+IF ERRORLEVEL 1 GOTO FAIL
+CALL BUILD !MKDOWN
 IF ERRORLEVEL 1 GOTO FAIL
 CL /AS /Os /Gs /W3 /DACCLIB_MIN_GLYPHS /Fe!STACK.EXE S36TMP.C ACCLIB36.C
 IF ERRORLEVEL 1 GOTO FAIL
@@ -151,8 +170,10 @@ CALL BUILD !TYPO
 IF ERRORLEVEL 1 GOTO FAIL
 PACKDAT.EXE
 IF ERRORLEVEL 1 GOTO FAIL
+SET L364FULL=
 ECHO Built complete Launch! distribution
 GOTO END
 :FAIL
+SET L364FULL=
 ECHO Build failed.
 :END

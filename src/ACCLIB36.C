@@ -1,4 +1,4 @@
-/* Launch! 3.63 accessory runtime extension.
+/* Launch! 3.64 accessory runtime extension.
    This translation unit wraps the 3.5 ACCLIB implementation to add the
    Release 3.63 tooltip component without duplicating the shared UI runtime. */
 #define acc_begin acc36_begin_base
@@ -187,6 +187,7 @@ static int tooltip_button_label(const char *text,char *out)
     if(!stricmp(out,"Today")){strcpy(out,"Jump to current month");return 1;}
   }
   if(tooltip_app_is("!DRAW")){if(!stricmp(out,"Show")){strcpy(out,"Fullscreen graphics mode");return 1;}if(!stricmp(out,"Clear")){strcpy(out,"Erase entire canvas");return 1;}if(!stricmp(out,"Grid")){strcpy(out,"Show/hide grid");return 1;}}
+  if(tooltip_app_is("!MKDOWN")){if(!stricmp(out,"Show")){strcpy(out,"Print preview");return 1;}if(!stricmp(out,"Print")){strcpy(out,"Print formatted page");return 1;}if(!strnicmp(out,"Split",5)){strcpy(out,"Show/hide live preview");return 1;}if(!stricmp(out,"Focus")){strcpy(out,"Distraction-free editor");return 1;}if(!stricmp(out,"Export")||!stricmp(out,"Save")){strcpy(out,"Save Markdown file");return 1;}}
   if(tooltip_app_is("!JOURNAL")){
     if(strstr(text,"Prev")||ia==17||((unsigned char)out[0]==17&&!out[1])){strcpy(out,"Previous day");return 1;}
     if(strstr(text,"Next")||ia==16||((unsigned char)out[0]==16&&!out[1])){strcpy(out,"Next day");return 1;}
@@ -395,7 +396,7 @@ static void tooltip_uninstall(void)
 int acc_help(int argc,char **argv,const char *name,const char *description)
 {
   if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){
-    printf("%s - Launch! 3.63 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;
+    printf("%s - Launch! 3.64 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;
   }
   return 0;
 }

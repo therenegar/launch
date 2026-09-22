@@ -489,7 +489,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
   else if(!stricmp(key,"SAVER_DELAY")){field=&a->saver_delay;limit=3;}
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
-  else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=21;}
+  else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=24;}
   else if(!stricmp(key,"FONT_PERSIST")){field=&a->font_persist;limit=1;}
   else if(!stricmp(key,"MOUSE_CURSOR")){field=&a->mouse_cursor;limit=2;}
   else if(!stricmp(key,"PROMPT_INACTIVITY")){field=&a->prompt_inactivity;limit=1;}
@@ -734,7 +734,7 @@ static int merge_default_menu_nodes(int *changed)
   DOS_INFO dos;int folder;
   *changed=0;
 
-  if(sibling_exists("!CAL.EXE")||sibling_exists("!CALC.EXE")||sibling_exists("!DRAW.EXE")||
+  if(sibling_exists("!CAL.EXE")||sibling_exists("!CALC.EXE")||sibling_exists("!DRAW.EXE")||sibling_exists("!MKDOWN.EXE")||
      sibling_exists("!JOURNAL.EXE")||sibling_exists("!NOTE.EXE")||sibling_exists("!STACK.EXE")||
      sibling_exists("!SYSINFO.EXE")||sibling_exists("!TODOS.EXE")||sibling_exists("!TYPO.EXE")){
     folder=ensure_default_folder("Accessories",changed);if(folder<0)return 0;
@@ -742,6 +742,7 @@ static int merge_default_menu_nodes(int *changed)
     if(sibling_exists("!CAL.EXE")&&!ensure_launcher(folder,"Calendar","!CAL",1,changed))return 0;
     if(sibling_exists("!STACK.EXE")&&!ensure_launcher(folder,"Card Stack","!STACK",1,changed))return 0;
     if(sibling_exists("!JOURNAL.EXE")&&!ensure_launcher(folder,"Journal","!JOURNAL",1,changed))return 0;
+    if(sibling_exists("!MKDOWN.EXE")&&!ensure_launcher(folder,"Markdown","!MKDOWN",1,changed))return 0;
     if(sibling_exists("!NOTE.EXE")&&!ensure_launcher(folder,"Note","!NOTE",1,changed))return 0;
     if(sibling_exists("!DRAW.EXE")&&!ensure_launcher(folder,"Pixel Draw","!DRAW",1,changed))return 0;
     if(sibling_exists("!SYSINFO.EXE")&&!ensure_launcher(folder,"System Info","!SYSINFO",1,changed))return 0;
@@ -3054,8 +3055,8 @@ static const char *saver_delay_names[4]={
 };
 static const char *mouse_cursor_names[3]={"Pointer","Block","Up Arrow"};
 
-static const char *font_names[22]={
-  "Standard","Bold Sans","Tall Sans","IBM ISO","CGAlike","Elite",
+static const char *font_names[25]={
+  "Standard","!Launch Sans","ProFont","ProFont Bold","Bold Sans","Tall Sans","IBM ISO","CGAlike","Elite",
   "Oakley","Oakley Big","Sans Serif","Howard","Neil","Italic",
   "Olde Eng","DOS/V","MSDOS/V","Roman","Fatscii","Elergon",
   "Police","Espy","Scribble","Script"
@@ -3163,7 +3164,7 @@ static unsigned char *config_field(int tab,int item,int *limit)
     }
   }
   if(tab==4){
-    if(item==0){*limit=21;return &appearance.font_id;}
+    if(item==0){*limit=24;return &appearance.font_id;}
     if(item==1){*limit=1;return &appearance.font_persist;}
   }
   return 0;
@@ -3533,7 +3534,7 @@ static void config_about_box(void)
   bx=x+3;subdialog_box(x,y,w,h,"About Launch!");
   textout(x+3,y+2,"(C)Copyright 2026 Ben Renegar",C_INPUT_LABEL,34);
   textout(x+3,y+3,"www.benrenegar.com",C_INPUT_LABEL,34);
-  textout(x+3,y+6,"Version 3.63 - 2026-09-21",C_INPUT_LABEL,34);
+  textout(x+3,y+6,"Version 3.64 - 2026-09-22",C_INPUT_LABEL,34);
   for(;;){
     draw_button(bx,y+h-3,"  OK  ",6,focus==0);
     wait_input(&k,&mx,&my,&mb);
@@ -6084,8 +6085,8 @@ static void shortcut_idle_sync(void)
 
 static void show_help(void)
 {
-  puts("Launch! 3.5 - a lightweight command menu for DOS\n");
-  puts("Usage: ! [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /USE=file.mnu | /OPENTO=folder | /?]\n");
+  puts("Launch! 3.64 - a lightweight command menu for DOS\n");
+  puts("Usage: ! [menu.mnu] [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
   puts("  Ctrl+D        Delete the selected item");
@@ -6098,7 +6099,7 @@ static void show_help(void)
   puts("  /OPEN         Open Open File directly");
   puts("  /BYE          Open Shutdown... directly");
   puts("  /NOW          Start the selected screensaver immediately");
-  puts("  /USE=file.mnu Use another menu file beside !.EXE (or a full path)");
+  puts("  menu.mnu      Use another menu file beside !.EXE (or a full path)");
   puts("  /OPENTO=name  Open directly to the first folder with this name");
   puts("  /?            Show this help");
 }
@@ -6118,8 +6119,8 @@ int main(int argc,char **argv)
     else if(!stricmp(argv[i],"/BYE"))bye_mode=1;
     else if(!stricmp(argv[i],"/NOW"))now_mode=1;
     else if(!stricmp(argv[i],"/INITMENU"))initmenu_mode=1;
-    else if(!strnicmp(argv[i],"/USE=",5)){
-      if(!select_menu_file(argv[i]+5)){puts("Launch!: invalid /USE menu filename.");return 1;}
+    else if(i==1&&argv[i][0]!='/'&&argv[i][0]!='-'){
+      if(!select_menu_file(argv[i])){puts("Launch!: invalid menu filename.");return 1;}
     }
     else if(!strnicmp(argv[i],"/OPENTO=",8)){
       strncpy(open_to,argv[i]+8,MAX_TITLE-1);open_to[MAX_TITLE-1]=0;

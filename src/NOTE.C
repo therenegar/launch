@@ -387,6 +387,11 @@ static void note_paste(int *pcx,int *pcy,int insert)
   note_insert_one(pcx,pcy,c,insert);
  }
 }
+static int note_used(int row){int n=EW;while(n>0&&note[row*NW+n-1]==' ')n--;return n;}
+static void note_remove_row(int row){int r;for(r=row;r<NL-1;r++){memcpy(note+r*NW,note+(r+1)*NW,EW);softwrap[r]=softwrap[r+1];}memset(note+(NL-1)*NW,' ',EW);softwrap[NL-1]=0;}
+static void note_join_next(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,n,take,room;if(cy>=NL-1)return;n=note_used(cy+1);room=EW-cx;take=n<room?n:room;if(take)memcpy(note+cy*NW+cx,note+(cy+1)*NW,take);if(take>=n)note_remove_row(cy+1);else{memmove(note+(cy+1)*NW,note+(cy+1)*NW+take,EW-take);memset(note+(cy+1)*NW+EW-take,' ',take);}}
+static void note_join_previous(int *pcx,int *pcy){int cx,cy=*pcy,prev,n,take,room;if(cy<=0)return;prev=note_used(cy-1);n=note_used(cy);room=EW-prev;if(room<=0){*pcy=cy-1;*pcx=EW-1;return;}take=n<room?n:room;if(take)memcpy(note+(cy-1)*NW+prev,note+cy*NW,take);if(take>=n)note_remove_row(cy);else{memmove(note+cy*NW,note+cy*NW+take,EW-take);memset(note+cy*NW+EW-take,' ',take);}cx=prev;*pcy=cy-1;*pcx=cx;}
+static void note_split_line(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,r,n,tail;if(cy>=NL-1)return;for(r=NL-1;r>cy+1;r--){memcpy(note+r*NW,note+(r-1)*NW,EW);softwrap[r]=softwrap[r-1];}memset(note+(cy+1)*NW,' ',EW);n=note_used(cy);tail=n>cx?n-cx:0;if(tail)memcpy(note+(cy+1)*NW,note+cy*NW+cx,tail);memset(note+cy*NW+cx,' ',EW-cx);softwrap[cy+1]=0;*pcy=cy+1;*pcx=0;}
 static int confirm_external_save(const char *path)
 {
  int w=58,h=9,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,f=-1;unsigned b=0;char shown[45];
@@ -470,9 +475,9 @@ int main(int argc,char**argv)
    else if(key==256+73){cy-=NV;if(cy<0)cy=0;note_selection_move(oldpos,cy*EW+cx,shift);}
    else if(key==256+81){cy+=NV;if(cy>=NL)cy=NL-1;note_selection_move(oldpos,cy*EW+cx,shift);}
    else if(key==256+82){note_selection_clear();insert=!insert;}
-   else if(key==256+83){if(note_has_selection()){note_delete_selection(&cx,&cy);oldtop=-1;}else{base=cy*NW;memmove(note+base+cx,note+base+cx+1,EW-cx-1);note[base+EW-1]=' ';}}
-   else if(key==8){if(note_has_selection()){note_delete_selection(&cx,&cy);oldtop=-1;}else if(cx>0)note[cy*NW+--cx]=' ';else if(cy>0&&softwrap[cy]){softwrap[cy]=0;cy--;cx=EW;while(cx>0&&note[cy*NW+cx-1]==' ')cx--;if(cx>0)note[cy*NW+--cx]=' ';}}
-   else if(key==13&&cy<NL-1){if(note_has_selection()){note_delete_selection(&cx,&cy);oldtop=-1;}cy++;cx=0;softwrap[cy]=0;note_selection_clear();}
+   else if(key==256+83){if(note_has_selection()){note_delete_selection(&cx,&cy);oldtop=-1;}else if(cx>=note_used(cy))note_join_next(&cx,&cy);else{base=cy*NW;memmove(note+base+cx,note+base+cx+1,EW-cx-1);note[base+EW-1]=' ';}}
+   else if(key==8){if(note_has_selection()){note_delete_selection(&cx,&cy);oldtop=-1;}else if(cx>0){cx--;base=cy*NW;memmove(note+base+cx,note+base+cx+1,EW-cx-1);note[base+EW-1]=' ';}else note_join_previous(&cx,&cy);}
+   else if(key==13&&cy<NL-1){if(note_has_selection()){note_delete_selection(&cx,&cy);oldtop=-1;}note_split_line(&cx,&cy);note_selection_clear();}
    else if((key>=32&&key<=255)||(key>=513&&key<=767)){if(note_has_selection()){note_delete_selection(&cx,&cy);oldtop=-1;}ch=key>=512?key-512:key;note_insert_one(&cx,&cy,ch,insert);note_selection_clear();}
    else if(key==27)break;else key=0;
   }

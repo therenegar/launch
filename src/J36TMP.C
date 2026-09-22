@@ -164,6 +164,11 @@ static void journal_paste(int *pcx,int *pcy,int insert)
   journal_insert_one(pcx,pcy,c,insert);
  }
 }
+static int journal_used(int row){int n=NW;while(n>4&&note[row*NW+n-1]==' ')n--;return n-4;}
+static void journal_remove_row(int row){int r;for(r=row;r<NL-1;r++){memcpy(note+r*NW+4,note+(r+1)*NW+4,JW);softwrap[r]=softwrap[r+1];}memset(note+(NL-1)*NW+4,' ',JW);softwrap[NL-1]=0;}
+static void journal_join_next(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,n,take,room;if(cy>=NL-1)return;n=journal_used(cy+1);room=NW-cx;take=n<room?n:room;if(take)memcpy(note+cy*NW+cx,note+(cy+1)*NW+4,take);if(take>=n)journal_remove_row(cy+1);else{memmove(note+(cy+1)*NW+4,note+(cy+1)*NW+4+take,JW-take);memset(note+(cy+1)*NW+NW-take,' ',take);}}
+static void journal_join_previous(int *pcx,int *pcy){int cy=*pcy,prev,n,take,room;if(cy<=2)return;prev=journal_used(cy-1);n=journal_used(cy);room=JW-prev;if(room<=0){*pcy=cy-1;*pcx=NW-1;return;}take=n<room?n:room;if(take)memcpy(note+(cy-1)*NW+4+prev,note+cy*NW+4,take);if(take>=n)journal_remove_row(cy);else{memmove(note+cy*NW+4,note+cy*NW+4+take,JW-take);memset(note+cy*NW+NW-take,' ',take);}*pcy=cy-1;*pcx=4+prev;}
+static void journal_split_line(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,r,n,tail;if(cy>=NL-1)return;for(r=NL-1;r>cy+1;r--){memcpy(note+r*NW+4,note+(r-1)*NW+4,JW);softwrap[r]=softwrap[r-1];}memset(note+(cy+1)*NW+4,' ',JW);n=journal_used(cy);tail=n>cx-4?n-(cx-4):0;if(tail)memcpy(note+(cy+1)*NW+4,note+cy*NW+cx,tail);memset(note+cy*NW+cx,' ',NW-cx);softwrap[cy+1]=0;*pcy=cy+1;*pcx=4;}
 int main(int argc,char**argv){union REGS q;int x,y,tx,ty,cx=4,cy=2,top=2,key=0,mx=0,my=0,focus=-1,ch,base,insert=1,oldcy,oldtop;unsigned mb=0;char exp[ACC_PATH],msg[ACC_PATH+24];if(acc_help(argc,argv,"!JOURNAL","Daily journal with date navigation."))return 0;if(!acc_begin(argv[0],"Journal",0))return 1;q.h.ah=0x2A;int86(0x21,&q,&q);jy=q.x.cx;jm=q.h.dh;jd=q.h.dl;x=(acc_cols-70)/2;y=(acc_rows-20)/2;tx=x+3;ty=y+2;load();acc_box(x,y,70,20,"Journal");view(tx,ty,cx,cy,top);while(key!=27){
  /* Toolbar: one-cell gap between buttons; separator immediately after Go To. */
  acc_button(x+3,y+17,"  \021  ",focus==1);acc_button(x+10,y+17,"  \020  ",focus==2);acc_button(x+17,y+17,"  Go To  ",focus==3);acc_put(x+28,y+17,179,ACC_BORDER);acc_button(x+30,y+17,"  Chars  ",focus==4);acc_button(x+41,y+17,"  Export  ",focus==5);acc_button(x+49,y+17,"  Print  ",focus==6);acc_button(x+60,y+17,"  Close  ",focus==7);acc_wait(&key,&mx,&my,&mb);
@@ -189,9 +194,9 @@ int main(int argc,char**argv){union REGS q;int x,y,tx,ty,cx=4,cy=2,top=2,key=0,m
   else if(key==256+73){cy-=NV;if(cy<2)cy=2;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
   else if(key==256+81){cy+=NV;if(cy>=NL)cy=NL-1;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
   else if(key==256+82){journal_selection_clear();insert=!insert;}
-  else if(key==256+83&&editable(cy)){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}else{base=cy*NW+cx;memmove(note+base,note+base+1,NW-cx-1);note[cy*NW+NW-1]=' ';}}
-  else if(key==8){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}else if(cx>4){cx--;base=cy*NW+cx;memmove(note+base,note+base+1,NW-cx-1);note[cy*NW+NW-1]=' ';}else if(cy>2&&softwrap[cy]){softwrap[cy]=0;cy--;cx=NW;while(cx>4&&note[cy*NW+cx-1]==' ')cx--;if(cx>4){cx--;base=cy*NW+cx;memmove(note+base,note+base+1,NW-cx-1);note[cy*NW+NW-1]=' ';}}}
-  else if(key==13&&cy<NL-1){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}cy++;cx=4;softwrap[cy]=0;journal_selection_clear();}
+  else if(key==256+83&&editable(cy)){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}else if(cx-4>=journal_used(cy))journal_join_next(&cx,&cy);else{base=cy*NW+cx;memmove(note+base,note+base+1,NW-cx-1);note[cy*NW+NW-1]=' ';}}
+  else if(key==8){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}else if(cx>4){cx--;base=cy*NW+cx;memmove(note+base,note+base+1,NW-cx-1);note[cy*NW+NW-1]=' ';}else journal_join_previous(&cx,&cy);}
+  else if(key==13&&cy<NL-1){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}journal_split_line(&cx,&cy);journal_selection_clear();}
   else if(key>=32&&key<=255&&editable(cy)){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}journal_insert_one(&cx,&cy,key,insert);journal_selection_clear();}
   else if(key==27)break;else key=0;
  }

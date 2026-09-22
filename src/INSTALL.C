@@ -304,7 +304,29 @@ static int cpu_at_least_286(void){unsigned before,after;
  before=after=0;return 1;
 #endif
 }
+static int cpu_is_286(void){unsigned before,after;
+#ifndef __GNUC__
+ _asm {
+  pushf
+  pop ax
+  mov before,ax
+  xor ax,7000h
+  push ax
+  popf
+  pushf
+  pop ax
+  mov after,ax
+  mov ax,before
+  push ax
+  popf
+ }
+ return ((before^after)&0x7000)==0;
+#else
+ before=after=0;return 0;
+#endif
+}
 static const char *display_adapter(int *suitable){union REGS r;memset(&r,0,sizeof(r));r.x.ax=0x1A00;int86(0x10,&r,&r);if(r.h.al==0x1A){*suitable=1;return"VGA or compatible";}memset(&r,0,sizeof(r));r.h.ah=0x12;r.h.bl=0x10;int86(0x10,&r,&r);if(r.h.bl!=0x10){*suitable=1;return"EGA or compatible";}*suitable=0;return"CGA/MDA compatible";}
+static int write_initial_font_config(const char *install,int font_id){char path[PATH_SIZE];FILE*f;sprintf(path,"%s\\LAUNCH.CFG",install);f=fopen(path,"wt");if(!f)return 0;fprintf(f,"FONT_ID=%d\n",font_id);return fclose(f)==0;}
 static int hardware_warning(void){char answer[16];error_icon(0);fputs("This system's hardware doesn't meet minimum recommended requirements. Proceed ",stdout);choice_default(0);if(!fgets(answer,sizeof(answer),stdin))return 0;return toupper(answer[0])=='Y';}
 
 static unsigned char far *bios_byte(unsigned offset)
@@ -478,29 +500,32 @@ typedef struct {
   unsigned long offset,csize,usize;
 } DAT_ENTRY;
 
-static DAT_ENTRY dat_entry[32];
+static DAT_ENTRY dat_entry[40];
 
 static int accessory_member(const char *name)
 {
   static const char *files[]={
-    "CAL.ICS","!CAL.EXE","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE",
+    "CAL.ICS","PROFONT.FNT","PROFONTB.FNT","PROFONTI.FNT","!CAL.EXE","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE","!MKDOWN.EXE",
     "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!TODOS.EXE","!TYPO.EXE","TYPO.LVL",
     "!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE","!SNAKE.EXE",
     "!SOL.EXE","!WORDZ.EXE","WORDZ.LVL",0};
   int i;for(i=0;files[i];i++)if(!stricmp(name,files[i]))return 1;return 0;
 }
 
-static int selected_member(const char *name,int use_dosbox,int accessories,const char **dest_name)
+static int selected_member(const char *name,int shortcut_build,int accessories,const char **dest_name)
 {
   *dest_name=name;
   if(!stricmp(name,"!.EXE")||!stricmp(name,"AUTOGEN.EXE")||
      !stricmp(name,"AUTOGEN.DAT")||!stricmp(name,"PWROFF.BMP")||
-     !stricmp(name,"FONT.DAT"))return 1;
+     !stricmp(name,"FONT.DAT")||!stricmp(name,"!SANS.FNT"))return 1;
   if(!stricmp(name,"SHORTCUT.COM")){
-    if(use_dosbox)return 0;*dest_name="SHORTCUT.COM";return 1;
+    if(shortcut_build!=0)return 0;*dest_name="SHORTCUT.COM";return 1;
   }
   if(!stricmp(name,"SHORTCDB.COM")){
-    if(!use_dosbox)return 0;*dest_name="SHORTCUT.COM";return 1;
+    if(shortcut_build!=1)return 0;*dest_name="SHORTCUT.COM";return 1;
+  }
+  if(!stricmp(name,"SHORT286.COM")){
+    if(shortcut_build!=2)return 0;*dest_name="SHORTCUT.COM";return 1;
   }
   if(accessories&&accessory_member(name))return 1;
   return 0;
@@ -518,13 +543,13 @@ static int skip_compressed(FILE *in,unsigned long size)
 
 /* Read INSTALL.DAT once, then walk its payloads sequentially.  This avoids
    repeatedly reopening and seeking around a floppy for every installed file. */
-static int extract_install_files(const char *archive,const char *install,int use_dosbox,int accessories)
+static int extract_install_files(const char *archive,const char *install,int shortcut_build,int accessories)
 {
   FILE *in,*out;char magic[8],destination[PATH_SIZE];const char *dest_name;
   unsigned count,i;int selected,done=0,ok;
   in=fopen(archive,"rb");if(!in)return 0;
   if(fread(magic,1,8,in)!=8||memcmp(magic,DAT_MAGIC,8)){fclose(in);return 0;}
-  count=read_u16(in);if(!count||count>32){fclose(in);return 0;}
+  count=read_u16(in);if(!count||count>40){fclose(in);return 0;}
   for(i=0;i<count;i++){
     if(fread(dat_entry[i].name,1,13,in)!=13){fclose(in);return 0;}
     dat_entry[i].name[12]=0;
@@ -535,7 +560,7 @@ static int extract_install_files(const char *archive,const char *install,int use
   if(fseek(in,(long)dat_entry[0].offset,SEEK_SET)){fclose(in);return 0;}
 
   for(i=0;i<count;i++){
-    selected=selected_member(dat_entry[i].name,use_dosbox,accessories,&dest_name);
+    selected=selected_member(dat_entry[i].name,shortcut_build,accessories,&dest_name);
     if(selected){
       sprintf(destination,"%s\\%s",install,dest_name);
       out=fopen(destination,"wb");
@@ -562,13 +587,14 @@ int main(int argc,char **argv)
   static char install[PATH_SIZE],source_dir[PATH_SIZE],archive[PATH_SIZE];
   static char destination[PATH_SIZE],launch_exe[PATH_SIZE],autoexec[16],key_spec[64];
   char *comspec;
-  int n,dosbox_detected,use_dosbox,update_autoexec=0,upgrade=0,accessories=0,cpu_ok,display_ok,menu_result;
+  int n,dosbox_detected,shortcut_build,is286,update_autoexec=0,upgrade=0,accessories=0,cpu_ok,display_ok,vga_display,menu_result;
+  const char *display_name;
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 3.63 Installation");
+  puts("Launch! 3.64 Installation");
   puts("------------------------\n");
-  cpu_ok=cpu_at_least_286();display_adapter(&display_ok);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
+  cpu_ok=cpu_at_least_286();display_name=display_adapter(&display_ok);vga_display=!strncmp(display_name,"VGA",3);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
   question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
   strip_line(install);
@@ -582,16 +608,18 @@ int main(int argc,char **argv)
   sprintf(destination,"%s\\LAUNCH.MNU",install);upgrade=exists(destination);
   if(!upgrade){sprintf(destination,"%s\\LAUNCH.CFG",install);upgrade=exists(destination);}
   if(upgrade)puts("\nExisting Launch! installation detected.\nExisting menu/configuration will be retained; missing standard menu entries will be added.");
-  dosbox_detected=running_in_dosbox();
-  if(dosbox_detected){puts("");use_dosbox=ask_yes("It looks like you're running in DOSBox, is that correct?",1,0);}
-  else{puts("");use_dosbox=ask_yes("Are you installing in DOSBox?",0,0);}
+  is286=cpu_is_286();dosbox_detected=running_in_dosbox();
+  if(is286){puts("\n80286-class CPU detected; the 286-safe shortcut will be installed.");shortcut_build=2;}
+  else if(dosbox_detected){puts("");shortcut_build=ask_yes("It looks like you're running in DOSBox, is that correct?",1,0)?1:0;}
+  else{puts("");shortcut_build=ask_yes("Are you installing in DOSBox?",0,0)?1:0;}
   puts("");accessories=ask_yes("Install games and accessories?",1,0);
   puts("\n Please wait while files are extracted and copied...");fflush(stdout);
-  extract_progress_done=0;extract_progress_total=accessories?26:6;draw_extract_progress();
+  extract_progress_done=0;extract_progress_total=accessories?31:7;draw_extract_progress();
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
   if(!exists(archive)){error_icon(0);printf("Cannot find %s\n",archive);return 1;}
   sprintf(launch_exe,"%s\\!.EXE",install);
-  if(!extract_install_files(archive,install,use_dosbox,accessories))return 1;
+  if(!extract_install_files(archive,install,shortcut_build,accessories))return 1;
+  if(!upgrade&&!write_initial_font_config(install,vga_display?1:0)){error_icon(0);puts("Files were copied, but the initial font configuration could not be created.");return 1;}
   menu_result=spawnl(P_WAIT,launch_exe,"!.EXE","/INITMENU",NULL);
   if(menu_result!=0){error_icon(0);puts("Files were copied, but the standard Launch! menu could not be created or updated.");return 1;}
   comspec=getenv("COMSPEC");
@@ -616,7 +644,7 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 3.5 build: %s\n",use_dosbox?"DOSBox":"real/emulated BIOS");
+  printf("- SHORTCUT 3.64 build: %s\n",shortcut_build==2?"80286-safe":(shortcut_build==1?"DOSBox":"386+ real/emulated BIOS"));
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
   puts("- Created or updated the standard menu entries for this DOS installation.");

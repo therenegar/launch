@@ -1,4 +1,4 @@
-/* Builds the compressed Launch! 3.63 INSTALL.DAT distribution archive.
+/* Builds the compressed Launch! 3.64 INSTALL.DAT distribution archive.
    Per-file LZSS compression: 4K history window, 3..18 byte matches.
    Microsoft C/C++ 7.0 / DOS small model. */
 #include <stdio.h>
@@ -13,9 +13,9 @@
 #define MAX_CHAIN 256
 
 static const char *files[]={
-  "!.EXE","SHORTCUT.COM","SHORTCDB.COM","AUTOGEN.EXE","AUTOGEN.DAT",
-  "PWROFF.BMP","FONT.DAT","PROMPTS.CFG","CAL.ICS","!CAL.EXE","!CALC.EXE",
-  "!DRAW.EXE","!JOURNAL.EXE","!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE",
+  "!.EXE","SHORTCUT.COM","SHORTCDB.COM","SHORT286.COM","AUTOGEN.EXE","AUTOGEN.DAT",
+  "PWROFF.BMP","FONT.DAT","!SANS.FNT","PROMPTS.CFG","CAL.ICS","PROFONT.FNT","PROFONTB.FNT","PROFONTI.FNT","!CAL.EXE","!CALC.EXE",
+  "!DRAW.EXE","!JOURNAL.EXE","!MKDOWN.EXE","!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE",
   "!TODOS.EXE","!TYPO.EXE","TYPO.LVL","!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE",
   "!SNAKE.EXE","!SOL.EXE","!WORDZ.EXE","WORDZ.LVL",0
 };
@@ -116,7 +116,7 @@ static int compress_file(FILE *in,FILE *out,unsigned long *usize,unsigned long *
 
 int main(void)
 {
-  FILE *in,*out;char name[13];unsigned long offsets[32],csizes[32],usizes[32],data_start,total_raw=0,total_cmp=0;
+  FILE *in,*out;char name[13];unsigned long offsets[40],csizes[40],usizes[40],data_start,total_raw=0,total_cmp=0;
   int i,count=0,ok=1;
   while(files[count])count++;
   out=fopen("INSTALL.DAT","w+b");

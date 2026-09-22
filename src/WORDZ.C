@@ -1,5 +1,5 @@
 /* Launch! Wordz accessory - staggered hinted word puzzle game.
-   Release 3.63 uses a staggered 9x12 key field with spaced keycaps and diagonal words,
+   Release 3.64 uses a staggered 9x12 key field, animated keycaps and diagonal words,
    click/drag selection, 200 puzzles and direct level navigation.
    Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
@@ -126,6 +126,7 @@ static unsigned char solx[WORDS][MAX_PATH],soly[WORDS][MAX_PATH],sollen[WORDS];
 static int path_len=0,cursor_x=0,cursor_y=0,puzzle_no=0,focus=-1,hint_word=0;
 static unsigned long start_tick=0,pause_tick=0;
 static int timer_running=0,finished=0,mistakes=0;
+static int animation_pending=1;
 
 static int puzzle_word_count(void)
 {return puzzle_words;}
@@ -177,6 +178,7 @@ static void reset_puzzle(void)
 {
   build_grid();path_len=0;cursor_x=0;cursor_y=0;hint_word=0;
   start_tick=0;pause_tick=0;timer_running=0;finished=0;mistakes=0;
+  animation_pending=1;
 }
 
 static int adjacent(int ax,int ay,int bx,int by)
@@ -292,6 +294,27 @@ static void draw_grid_cell(int bx,int by,int x,int y)
 }
 static void draw_grid(int bx,int by)
 {int x,y;for(y=0;y<GH;y++)for(x=0;x<GW;x++)draw_grid_cell(bx,by,x,y);}
+static void animate_grid(int bx,int by)
+{
+  unsigned long begun=acc_ticks(),now,elapsed;unsigned char offset[GH][GW];
+  int x,y,phase,last_phase=-1,sx,done,letter=ACC_ATTR(0,15),cap=ACC_ATTR(acc_appearance.background,0);char ch;
+  /* Twelve three-tick flips plus a small independent start offset gives a
+     brisk mechanical departure-board effect.  The real puzzle
+     letters remain in grid[] and are revealed only as each key settles. */
+  for(y=0;y<GH;y++)for(x=0;x<GW;x++)offset[y][x]=(unsigned char)(rand()%7);
+  for(;;){
+    now=acc_ticks();elapsed=now-begun;phase=(int)(elapsed/3UL);if(phase==last_phase)continue;last_phase=phase;done=1;
+    for(y=0;y<GH;y++)for(x=0;x<GW;x++){
+      long local=(long)elapsed-(long)offset[y][x];sx=grid_x(bx,x,y);
+      if(local<0L){ch=(char)('A'+rand()%26);done=0;}
+      else if(local/3L<12L){ch=(char)('A'+rand()%26);done=0;}
+      else ch=grid[y][x];
+      acc_put(sx,by+y,WZ_KEY_LEFT,cap);acc_put(sx+1,by+y,ch,letter);acc_put(sx+2,by+y,WZ_KEY_RIGHT,cap);
+    }
+    if(done||elapsed>=44UL)break;
+  }
+  draw_grid(bx,by);animation_pending=0;
+}
 static void draw_word_slot(int x,int y,int number,const char *word,int done)
 {
   char slot[13],s[20];int i,n=(int)strlen(word);if(n>12)n=12;if(done){strncpy(slot,word,n);slot[n]=0;}else{for(i=0;i<n;i++)slot[i]='_';slot[n]=0;}if(number<10)sprintf(s,"%d  %-12s",number,slot);else sprintf(s,"%d %-12s",number,slot);acc_text(x,y,s,ACC_CONTROL,15);
@@ -391,7 +414,7 @@ int main(int argc,char **argv)
 
   while(key!=27){
     sec=elapsed_seconds();if((int)sec!=last_sec){last_sec=(int)sec;draw_status(x,y);}
-    if(need){draw_all(x,y,bx,by);last_hint_hover=-1;need=0;}
+    if(need){draw_all(x,y,bx,by);if(animation_pending)animate_grid(bx,by);last_hint_hover=-1;need=0;}
 
     if(kbhit()){
       key=acc_key();
