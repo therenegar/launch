@@ -3,8 +3,8 @@
 Paragraphs are separated by a blank line.
 
 2nd paragraph. *Italic*, **bold**, {{underline}} and `monospace`.
-Itemized lists
-look like:
+That underline is custom for Launch! because underline is useful in DOS.
+Itemized lists look like:
 
   * this one
   * that one
@@ -42,8 +42,8 @@ define foobar() {
 }
 ```
 
-(which makes copying & pasting easier). You can optionally mark the
-delimited block for Pandoc to syntax highlight it:
+(which makes copying & pasting easier). Syntax highlighting will come one day, 
+and when it does it will use this to determine code type:
 
 ```python
 import time
@@ -59,9 +59,9 @@ Now a nested list:
 
  1. First, get these ingredients:
 
-      * carrots
-      * celery
-      * lentils
+      - carrots
+      - celery
+      - lentils
 
  2. Boil some water.
 
@@ -76,7 +76,7 @@ Now a nested list:
         6. wait 10 minutes
         7. goto first step (or shut off burner when done)
 
-> Do not bump wooden spoon or it will fall.
+> Do not bump wooden spoon or it will fall!
 
 Notice again how text always lines up on 4-space indents (including
 that last line which continues item 3 above).
