@@ -1,11 +1,10 @@
 <img width="1633" height="250" alt="Launch! for DOS" src="https://github.com/user-attachments/assets/1aa6eb8a-98f3-4e74-a1ef-479e4f7a04ef" />
 
-_A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- and loads of goodies to uplift an old DOS machine._
+> A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- and loads of goodies to uplift an old DOS machine.
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
-> You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG. 
 
-Requires: DOS 3.3, 80286, EGA or better. 1.2MB free disk space for install.
+**Requires:** DOS 3.3, 80286, EGA or better. 1.2MB free disk space for install.
 
 Works with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU. Compatible with third-party command interpreters such as 4DOS/NDOS.
 
@@ -39,7 +38,6 @@ Works with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machi
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI. Custom UI toolkit written in C. Fast and simple.
 - Extremely minimal memory footprint. All resident components can be disabled to have zero memory impact if desired. 
-- Design goal was to push the absolute limits of what a text-mode only DOS program can achieve in terms of user interface design and usability.
 
 ----
 <a id="install"></a>
@@ -498,6 +496,7 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 <a id="!mkdown"></a>
 ### !MKDOWN.EXE - Markdown
 A simple markdown editor with split-screen live preview, full-screen graphical preview (font formatting and styles), and focus mode for a distraction free retro word processing experience.
+All markdown syntax [in this document](https://github.com/therenegar/launch/blob/main/res/SAMPLE.MD) is supported, and will be 'rendered' in the live preview or graphical preview (including tables!).
 
 <img width="360" height="300" alt="Markdown" src="https://github.com/user-attachments/assets/90dfdb60-1e91-4338-b138-4c67b08c17a8" />
 
