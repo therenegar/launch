@@ -278,10 +278,10 @@ You can change the VGA font used across the entire DOS session. `Standard` uses 
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
-> Note this feature is not available with an EGA display adapter.
+> Note font customization is not available with an EGA display adapter.
 
 **Font Choices**
-There's a whopping 30 highly curated display fonts to choose from. Launch! is unsurprisingly the default.
+There's a whopping 30 highly curated display fonts to choose from. Launch! is the default at install.
 
 <img width="456" height="50" alt="LAUNCH" src="https://github.com/user-attachments/assets/bf7c725c-c644-4c8e-9e5d-c3a8348ef29f" />
 <img width="456" height="50" alt="BIG" src="https://github.com/user-attachments/assets/541640d9-7bff-424b-8ebd-cf4254d645dc" />
