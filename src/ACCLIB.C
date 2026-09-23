@@ -500,6 +500,16 @@ int acc_mouse(int *x,int *y,int *buttons)
 static int acc_enhanced_keyboard(void){static int known=-1;unsigned char far *p;union REGS r;if(known>=0)return known;p=(unsigned char far *)MAKE_FP(0x40,0x96);if((*p)&0x10)return known=1;memset(&r,0,sizeof(r));r.h.ah=0x09;int86(0x16,&r,&r);return known=(r.h.al&1)?1:0;}
 int acc_key(void){unsigned w=_bios_keybrd(acc_enhanced_keyboard()?0x10:_KEYBRD_READ);int c=w&255,scan=(w>>8)&255;/* Enhanced INT 16h returns AL=E0h for many navigation/editing keys. Treat that exactly like AL=00h when a scan code is present; otherwise Focus/Maximize sees E0h as a printable character. Preserve genuine Alt-numpad extended characters, which arrive with scan==0. */if(scan==0x0E&&(c==8||c==0||c==0x7F||c==0xE0))return 8;if(!scan&&c)return 512+c;if(!c||c==0xE0)return 256+scan;return c;}
 int acc_key_ready(void){return _bios_keybrd(acc_enhanced_keyboard()?0x11:_KEYBRD_READY)!=0;}
+void acc_caret_hide(void)
+{
+  union REGS r;memset(&r,0,sizeof(r));r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);
+}
+void acc_caret_set(int x,int y)
+{
+  union REGS r;if(x<0||x>=acc_cols||y<0||y>=acc_rows){acc_caret_hide();return;}
+  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)saved_page;r.h.dh=(unsigned char)y;r.h.dl=(unsigned char)x;int86(0x10,&r,&r);
+  r.h.ah=1;r.h.ch=0x0D;r.h.cl=0x0F;int86(0x10,&r,&r);
+}
 void acc_wait(int *key,int *x,int *y,unsigned *buttons)
 {
  union REGS r;int i,w;

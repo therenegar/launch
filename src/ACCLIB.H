@@ -67,6 +67,8 @@ void acc_modal_end(void);
 void acc_mouse_display(int show);
 void acc_canvas_cursor_region(int x,int y,int width,int height,int colour);
 void acc_mouse_reapply_cursor(void);
+void acc_caret_set(int x,int y);
+void acc_caret_hide(void);
 void acc_path(char *out,const char *subdir,const char *name);
 int acc_make_dir(const char *path);
 int acc_exists(const char *path);

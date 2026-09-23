@@ -390,18 +390,8 @@ static void emit_stack_wrap(FILE *out)
 
 static int write_stack36(void)
 {
-  FILE *in=fopen("STACK.C","rt"),*out;char *line=gen_line;int changed=0,helper=0;
-  if(!in){puts("GEN36: cannot open STACK.C");return 0;}
-  out=fopen("S36TMP.C","wt");if(!out){fclose(in);puts("GEN36: cannot create S36TMP.C");return 0;}
-  while(fgets(line,GEN_LINE,in)){
-    if(strstr(line,"int main(int argc,char **argv)")){emit_stack_wrap(out);emit_acc_tooltip_decl(out);helper=1;}
-    if(replace_once(line,GEN_LINE,"else if(cy<TEXT_LINES-1){cy++;cx=0;}","else if(cy<TEXT_LINES-1)stack_word_wrap(&cx,&cy);")>0)changed=1;
-    if(strstr(line,"    acc_wait(&key,&mx,&my,&mb);"))replace_once(line,GEN_LINE,"    acc_wait(&key,&mx,&my,&mb);","    acc_tooltip_clear_regions();acc_tooltip_region(px+2,y+1,CT,\"Select to edit title\",1);if(count>=2)acc_tooltip_region(px+4,y-1,CT,\"Bring card to front\",1);if(count>=3)acc_tooltip_region(px+6,y-3,CT,\"Bring card to front\",1);acc_wait(&key,&mx,&my,&mb);");
-    fputs(line,out);
-  }
-  if(!changed||!helper){fclose(out);fclose(in);remove("S36TMP.C");puts("GEN36: STACK.C soft-wrap patch point not found");return 0;}
-  if(ferror(in)||fclose(out)!=0){fclose(in);remove("S36TMP.C");puts("GEN36: failed writing S36TMP.C");return 0;}
-  fclose(in);return 1;
+  if(!copy_generated_source("STACK.C","S36TMP.C")){puts("GEN36: failed copying STACK.C to S36TMP.C");return 0;}
+  return 1;
 }
 
 

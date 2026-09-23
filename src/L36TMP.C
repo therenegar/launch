@@ -310,6 +310,17 @@ static void cursor_restore(void)
   r.h.ah=2;r.h.bh=0;r.h.dh=cursor_y;r.h.dl=cursor_x;int86(0x10,&r,&r);
 }
 
+static void edit_caret_hide(void)
+{
+  union REGS r;memset(&r,0,sizeof(r));r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);
+}
+static void edit_caret_set(int x,int y)
+{
+  union REGS r;if(x<0||x>=screen_cols||y<0||y>=screen_rows){edit_caret_hide();return;}
+  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=0;r.h.dh=(unsigned char)y;r.h.dl=(unsigned char)x;int86(0x10,&r,&r);
+  r.h.ah=1;r.h.ch=0x0D;r.h.cl=0x0F;int86(0x10,&r,&r);
+}
+
 static void box(int x,int y,int w,int h,const char *title,int title_attr,int title_bg,int title_border)
 {
   int i,j,len,top_border=ATTR(title_bg,title_border),top_title=ATTR(title_bg,title_attr&15);
@@ -489,7 +500,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
   else if(!stricmp(key,"SAVER_DELAY")){field=&a->saver_delay;limit=3;}
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
-  else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=24;}
+  else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=32;}
   else if(!stricmp(key,"FONT_PERSIST")){field=&a->font_persist;limit=1;}
   else if(!stricmp(key,"MOUSE_CURSOR")){field=&a->mouse_cursor;limit=2;}
   else if(!stricmp(key,"PROMPT_INACTIVITY")){field=&a->prompt_inactivity;limit=1;}
@@ -2894,7 +2905,7 @@ static void field_line(int x,int y,const char *label,const char *value,
   int at=(focused||hovered)?C_SELECTED:C_INPUT_FIELD,scroll=0;
   if(pos>=width)scroll=pos-width+1;
   textout(x,y,label,C_INPUT_LABEL,len); textout(x+13,y,value+scroll,at,width);
-  if(focused){i=pos-scroll;cell(x+13+i,y,(pos<vlen)?value[pos]:' ',C_INPUT_FIELD);}
+  if(focused){i=pos-scroll;cell(x+13+i,y,(pos<vlen)?value[pos]:' ',C_INPUT_FIELD);edit_caret_set(x+13+i,y);}
 }
 
 static void check_line(int x,int y,const char *label,int checked,int focused)
@@ -2918,7 +2929,7 @@ static int item_form(int folder,char *name,char *exe,char *params,
   x=(screen_cols-(folder?52:64))/2;y=(screen_rows-(folder?10:15))/2;
   if(folder)subdialog_box(x,y,52,10,editing?"Edit Folder":"Add Folder");else dialog_box(x,y,64,15,editing?"Edit Launcher":"Add Launcher");
   for(;;){
-    wait_vertical_retrace();
+    wait_vertical_retrace();edit_caret_hide();
     field_line(x+3,y+2,"Name:",name,focus==0,hover==0,pos[0],folder?30:42);
     if(!folder){
       field_line(x+3,y+4,"Command:",exe,focus==1,hover==1,pos[1],42);
@@ -3055,11 +3066,12 @@ static const char *saver_delay_names[4]={
 };
 static const char *mouse_cursor_names[3]={"Pointer","Block","Up Arrow"};
 
-static const char *font_names[25]={
-  "Standard","Launch!","ISO","Neat","Neat Alt","Clean","Big","Tall","Bold",
-  "Bold Alt","Extra","Max","Chunky","Pixel","Humanist","Elite",
-  "Max Elite","Elergon","Roman","Olde Eng","Italic","Scribble","Script",
-  "ProFont","ProFont Bold"
+static const char *font_names[33]={
+  "Standard","Launch!","ISO","Clean","Big","Tall","Bold","Bold Alt",
+  "Extra","Max","Chunky","Pixel","Humanist","Elite","Max Elite","Elergon",
+  "Roman","Olde Eng","Cursive","Scribble","Script","ProFont","ProFont Bold",
+  "Bauhaus '89","Bold Italic","Broadway","Courier","Italic","Modern","Nutso",
+  "Super","Times","Tiny"
 };
 
 static void cycle_control(int x,int y,const char *value,int focused)
@@ -3164,7 +3176,7 @@ static unsigned char *config_field(int tab,int item,int *limit)
     }
   }
   if(tab==4){
-    if(item==0){*limit=24;return &appearance.font_id;}
+    if(item==0){*limit=32;return &appearance.font_id;}
     if(item==1){*limit=1;return &appearance.font_persist;}
   }
   return 0;
@@ -3850,7 +3862,7 @@ static void parameter_field(int x,int y,const char *value,int position,
   if(position>=width)scroll=position-width+1;
   textout(x,y,value+scroll,(focused||hovered)?C_SELECTED:C_INPUT_FIELD,width);
   if(focused){cursor=position-scroll;cell(x+cursor,y,
-      position<length?value[position]:' ',C_INPUT_FIELD);}
+      position<length?value[position]:' ',C_INPUT_FIELD);edit_caret_set(x+cursor,y);}
 }
 
 static void command_filename(const char *executable,char *name)
@@ -3889,7 +3901,7 @@ static int parameter_prompt_command(const char *title,const char *command)
   textout(x+7,y+2,display_name,C_ITEM,strlen(display_name));
   textout(x+7+strlen(display_name),y+2," with parameters:",C_INPUT_LABEL,17);
   for(;;){
-    wait_vertical_retrace();
+    wait_vertical_retrace();edit_caret_hide();
     parameter_field(x+3,y+4,parameters,position,focus==0,hover==0,48);
     draw_button_tip(x+3,y+6,"  Run  ",9,focus==1||hover==1,"Run now");
     draw_button(x+14,y+6,"  Cancel  ",10,focus==2||hover==2);
@@ -4666,16 +4678,16 @@ static int assoc_scroll_for_cursor(int pos,int width)
 }
 
 static void assoc_draw_field(int lx,int fx,int row,const char *label,
-                             const char *value,int width,int pos,int active)
+                             const char *value,int width,int pos,int focused,int hovered)
 {
   int scroll=assoc_scroll_for_cursor(pos,width),cursor=pos-scroll;
-  int attr=active?C_SELECTED:C_INPUT_FIELD;
+  int attr=(focused||hovered)?C_SELECTED:C_INPUT_FIELD;
   textout(lx,row,label,C_INPUT_LABEL,(int)strlen(label));
   textout(fx,row,value+scroll,attr,width);
-  if(active){
+  if(focused){
     int len=(int)strlen(value);
     if(cursor<0)cursor=0;if(cursor>=width)cursor=width-1;
-    cell(fx+cursor,row,pos<len?value[pos]:' ',C_INPUT_FIELD);
+    cell(fx+cursor,row,pos<len?value[pos]:' ',C_INPUT_FIELD);edit_caret_set(fx+cursor,row);
   }
 }
 
@@ -4718,9 +4730,9 @@ static int collection_edit_dialog(int edit_index)
     if(focus==A_SAVE&&!save_ok)focus=A_CANCEL;
 
     if(redraw){
-      if(redraw==2)subdialog_box(x,y,60,14,edit_index>=0?"Edit association":"Create association");
-      assoc_draw_field(x+3,x+29,y+2,"Association name:",name,16,pos_name,focus==A_NAME||hover==A_NAME);
-      assoc_draw_field(x+3,x+29,y+4,"File extension/s:",ext,26,pos_ext,focus==A_EXT||hover==A_EXT);
+      edit_caret_hide();if(redraw==2)subdialog_box(x,y,60,14,edit_index>=0?"Edit association":"Create association");
+      assoc_draw_field(x+3,x+29,y+2,"Association name:",name,16,pos_name,focus==A_NAME,hover==A_NAME);
+      assoc_draw_field(x+3,x+29,y+4,"File extension/s:",ext,26,pos_ext,focus==A_EXT,hover==A_EXT);
       textout(x+29,y+5,"Separate multiple with ,",C_INPUT_LABEL,24);
       textout(x+3,y+7,"Open with launcher...",C_INPUT_LABEL,21);
       draw_button_tip(x+29,y+7,"  Choose  ",10,focus==A_CHOOSE||hover==A_CHOOSE,"Select launcher to use");
@@ -6160,6 +6172,14 @@ int main(int argc,char **argv)
     return 0;
   }
   if(open_mode){
+    /* Direct /OPEN must load the launcher tree before Create Association can
+       enter the Choose launcher picker.  BUILD.BAT compiles L36TMP.C for the
+       core executable, so keep this generated build source synchronized with
+       LAUNCH.C rather than relying on the canonical source alone. */
+    config_status=prepare_config();
+    if(!config_status){printf("Launch!: cannot recover %s\n",config_file);return 1;}
+    if(config_status==2)puts("Launch!: LAUNCH.MNU was invalid; restored LAUNCH.BAK.");
+    else if(config_status==3)puts("Launch!: no valid menu file was found; rebuilt the default menu.");
     video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 1;}
     cursor_hide();mouse_present=mouse_start();mouse_stop();
     result=collections_dialog();

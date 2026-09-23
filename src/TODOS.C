@@ -223,7 +223,7 @@ static void form_field(int x,int y,int labelw,const char *label,const char *valu
   if(cursor>=width)left=cursor-width+1;
   show=len-left;if(show>width)show=width;
   if(show>0)acc_text(x+labelw,y,value+left,active?ACC_SELECT:attr,show);
-  if(active&&cursor-left>=0&&cursor-left<width)acc_put(x+labelw+cursor-left,y,(cursor<len)?value[cursor]:' ',ACC_SELECT);
+  if(active&&cursor-left>=0&&cursor-left<width){acc_put(x+labelw+cursor-left,y,(cursor<len)?value[cursor]:' ',ACC_SELECT);acc_caret_set(x+labelw+cursor-left,y);}else if(active)acc_caret_hide();
 }
 
 static void note_area(int x,int y,const char *value,int active,int cursor)
@@ -236,7 +236,7 @@ static void note_area(int x,int y,const char *value,int active,int cursor)
   }
   if(active){
     row=0;col=0;for(i=0;i<cursor&&i<n;i++){if(value[i]=='\n'||col>=39){row++;col=0;}else col++;if(row>2){row=2;col=39;break;}}
-    if(row<3)acc_put(x+col,y+row,(cursor<n&&value[cursor]!='\n')?value[cursor]:' ',ACC_SELECT);
+    if(row<3){acc_put(x+col,y+row,(cursor<n&&value[cursor]!='\n')?value[cursor]:' ',ACC_SELECT);acc_caret_set(x+col,y+row);}else acc_caret_hide();
   }
 }
 

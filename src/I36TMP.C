@@ -519,7 +519,7 @@ static DAT_ENTRY dat_entry[40];
 static int accessory_member(const char *name)
 {
   static const char *files[]={
-    "CAL.ICS","PROFONT.FNT","PROFONTB.FNT","PROFONTI.FNT","!CAL.EXE","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE","!MKDOWN.EXE",
+    "CAL.ICS","!CAL.EXE","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE","!MKDOWN.EXE",
     "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!TODOS.EXE","!TYPO.EXE","TYPO.LVL",
     "!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE","!SNAKE.EXE",
     "!SOL.EXE","!WORDZ.EXE","WORDZ.LVL",0};
@@ -531,7 +531,7 @@ static int selected_member(const char *name,int shortcut_build,int accessories,c
   *dest_name=name;
   if(!stricmp(name,"!.EXE")||!stricmp(name,"!MNUGEN.EXE")||
      !stricmp(name,"AUTOGEN.DAT")||!stricmp(name,"PWROFF.BMP")||
-     !stricmp(name,"FONT.DAT")||!stricmp(name,"!SANS.FNT"))return 1;
+     !stricmp(name,"FONT.DAT"))return 1;
   if(!stricmp(name,"!KEY.COM")){
     if(shortcut_build!=0)return 0;*dest_name="!KEY.COM";return 1;
   }
@@ -592,6 +592,13 @@ static int extract_install_files(const char *archive,const char *install,int sho
   if(done!=extract_progress_total)return 0;
   sprintf(destination,"%s\\DATA",install);if(!make_directories(destination))return 0;
   sprintf(destination,"%s\\EXPORT",install);if(!make_directories(destination))return 0;
+  /* 3.65 consolidates all runtime display fonts into FONT.DAT.  Remove the
+     obsolete loose font files from upgrades so the installed directory also
+     reflects the new dependency model. */
+  sprintf(destination,"%s\\!SANS.FNT",install);remove(destination);
+  sprintf(destination,"%s\\PROFONT.FNT",install);remove(destination);
+  sprintf(destination,"%s\\PROFONTB.FNT",install);remove(destination);
+  sprintf(destination,"%s\\PROFONTI.FNT",install);remove(destination);
   return 1;
 }
 
@@ -628,7 +635,7 @@ int main(int argc,char **argv)
   else{puts("");shortcut_build=ask_yes("Are you installing in DOSBox?",0,0)?1:0;}
   puts("");accessories=ask_yes("Install games and accessories?",1,0);
   puts("\n Please wait while files are extracted and copied...");fflush(stdout);
-  extract_progress_done=0;extract_progress_total=accessories?31:7;draw_extract_progress();
+  extract_progress_done=0;extract_progress_total=accessories?27:6;draw_extract_progress();
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
   if(!exists(archive)){error_icon(0);printf("Cannot find %s\n",archive);return 1;}
   sprintf(launch_exe,"%s\\!.EXE",install);
