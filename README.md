@@ -4,9 +4,9 @@
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 
-**Requires:** DOS 3.3, 80286, EGA or better. 1.2MB free disk space for install.
+**Requires** DOS 3.3, 80286, EGA or better. 1.2MB free disk space for install.
 
-Works with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU. Compatible with third-party command interpreters such as 4DOS/NDOS.
+**Works with** MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU. Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="600" alt="The ! Menu" src="https://github.com/user-attachments/assets/6d1e7461-0498-4f7e-aa40-a8514c435247" />
 
@@ -29,12 +29,13 @@ Works with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machi
 - Built in executable explorer to quickly browse and run programs anywhere.
 - Built in file opener to create associations between files and launchers for easy open.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
-- 10 handy and optional text-mode only accessories and 7 games to go with Launch!
+- 10 handy and modern text-mode accessories
     - [Calendar](#!cal), [Calculator](#!calc), [Card Stack](#!stack), [Journal](#!journal), [Markdown](#!mkdown), [Note](#!note), [Pixel Draw](#!draw) , [System Info](#!sysinfo), [To-dos](#!todos), [Typo](#!typo)
+- 7 fun and addictive text-mode games
     - [Boxes](#!boxes), [Pop](#!pop), [Snake](#!snake), [Solitaire](#!sol), [FreeCell](#!fcell), [Plumb](#!plumb) and [Wordz](#!wordz)
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Various Command Prompt styles to choose from to uplift your C:\
-- Custom VGA display fonts to change the look of your whole DOS environment.
+- 30 Custom VGA display fonts to change the look of your whole DOS environment.
 - Maximum compatibility across DOS versions (back to DOS 3.3) on real or emulated hardware/virtual machines.
 - No libraries or dependencies including ANSI. Custom UI toolkit written in C. Fast and simple.
 - Extremely minimal memory footprint. All resident components can be disabled to have zero memory impact if desired. 
@@ -70,7 +71,7 @@ CTRL + ALT + .
 ```
 > The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display. This is not a multi-tasking application switcher!
 
-If you don't have `SHORTCUT.COM` loaded, the keyboard shortcut will not be available.<br/>
+If you don't have `!KEY.COM` loaded, the keyboard shortcut will not be available.<br/>
 To start Launch! without the keyboard shortcut, at the command prompt, simply enter:
 ```
 !
@@ -671,7 +672,7 @@ Words can be horizontal, diagonal down and up. Words will not be on the grid bac
 ## !KEY.COM - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
 
-If you don't load the keyboard shortcut tool, you'll regain 500 bytes of memory - although `LOADHIGH` is used with `SHORTCUT.COM` to move this to upper memory anyway.
+If you don't load the keyboard shortcut tool, you'll regain 500 bytes of memory - although `LOADHIGH` is used with `!KEY.COM` to move this to upper memory anyway.
 
 If chosen, it will be added to `AUTOEXEC.BAT/FDAUTO.BAT` by install so the shortcut is available after startup.
 The combination can be changed any time after install in Configuration.
@@ -691,8 +692,9 @@ Use `!KEY /?` for more information.
 To maintain system integrity and security, `!KEY.COM` validates an authentication key in `!.EXE` to ensure the shortcut key will only ever execute (a genuine) Launch! menu.
 
 Separate executables with the same functionality are provided to extend capability to specific architectures; `!KEYDB.COM` is for DOSBox users, `!KEY286.COM` is for 286 machines.
+This is to prevent one single keyboard utility becoming bloated in order to deal with different architectural requirements. There will likely be further `!KEY###.COM` builds in the future for more platforms where it is required.
 
-The installer automatically installs the correct version.
+The installer automatically installs the correct version. If manually installing, you'll need to rename the appropriate version to `!KEY.COM` yourself.
 
 ## !MNUGEN.EXE - an automatic menu generator
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
