@@ -669,7 +669,7 @@ If you don't load the keyboard shortcut tool, you'll regain 500 bytes of memory 
 If chosen, it will be added to `AUTOEXEC.BAT/FDAUTO.BAT` by install so the shortcut is available after startup.
 The combination can be changed any time after install in Configuration.
 
-You can change the keyboard shortcut used by manually adding the `/KEY=` parameter to `SHORTCUT.COM` with readable names or hexadecimal scan codes, e.g.Update README.md
+You can change the keyboard shortcut used by manually adding the `/KEY=` parameter to `!KEY.COM` with readable names or hexadecimal scan codes, e.g.
 ```
   !KEY /KEY=LWIN
   !KEY /KEY=CTRL+SPACE
@@ -684,6 +684,7 @@ Use `!KEY /?` for more information.
 To maintain system integrity and security, `!KEY.COM` validates an authentication key in `!.EXE` to ensure the shortcut key will only ever execute (a genuine) Launch! menu.
 
 Separate executables with the same functionality are provided to extend capability to specific architectures; `!KEYDB.COM` is for DOSBox users, `!KEY286.COM` is for 286 machines.
+
 The installer automatically installs the correct version.
 
 ## !MNUGEN.EXE - an automatic menu generator
