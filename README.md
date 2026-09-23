@@ -476,14 +476,11 @@ The grid can be toggled on/off.
 Your drawing is persisted and will be there when the program is re-opened.
 
 <img width="360" height="300" alt="Draw" src="https://github.com/user-attachments/assets/af350e87-e4fa-4629-9c8e-316bb29e34ce" />
+<img width="360" height="300" alt="Show" src="https://github.com/user-attachments/assets/fd5e02c8-e5cd-4c01-9ad7-d34cb8b8a742" />
+<img width="360" height="300" alt="Full-screen Draw" src="https://github.com/user-attachments/assets/96a259e4-1f04-4af3-9805-eb71fe373c43" />
 
 `Show` will render your drawing in large scale graphics mode.
-
-<img width="360" height="300" alt="Show" src="https://github.com/user-attachments/assets/fd5e02c8-e5cd-4c01-9ad7-d34cb8b8a742" />
-
 You can toggle full-screen editing with F11, or the Maximize icon in the titlebar.
-
-<img width="360" height="300" alt="Full-screen Draw" src="https://github.com/user-attachments/assets/96a259e4-1f04-4af3-9805-eb71fe373c43" />
 
 **Open files**
 `!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing.<br/>
@@ -506,19 +503,19 @@ A simple markdown editor with split-screen live preview, full-screen graphical p
 
 The `Split` button toggles between markdown entry only, split-screen preview, and preview only. 
 
-<img width="360" height="300" alt="Live Preview" src="https://github.com/user-attachments/assets/17c52b20-da1e-4969-8442-bdd75c1c9920" />
-
 `Show` displays a rendered full-screen graphical preview of the markdown - up/down/PgUp/PgDn scrolls, and Esc returns to the editor. 
-> Note the graphic preview requires a VGA display adapter.
 
+There's also a Focus mode for distraction free writing
+
+<img width="360" height="300" alt="Live Preview" src="https://github.com/user-attachments/assets/17c52b20-da1e-4969-8442-bdd75c1c9920" />
 <img width="360" height="300" alt="Graphical Preview" src="https://github.com/user-attachments/assets/f038ef00-ae08-4b02-90af-f3cbdbf8eef9" />
+<img width="360" height="300" alt="Focus Mode" src="https://github.com/user-attachments/assets/cb198856-6499-4c8c-9fd8-05c5266dc6e8" />
+
+> Note the graphic preview requires a VGA display adapter.
 
 You can open one or more markdown (`.MD`) files by adding as a parameter to `!MKDOWN.EXE`, e.g. `!MKDOWN C:\DOCS\REPORT.MD`
 
 Save and print the current page with the respective buttons.
-
-There's also a Focus mode for distraction free writing
-<img width="360" height="300" alt="Focus Mode" src="https://github.com/user-attachments/assets/cb198856-6499-4c8c-9fd8-05c5266dc6e8" />
 
 And you can press `F11` or the Maximize titlebar button to go full-screen.
 
