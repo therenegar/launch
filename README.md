@@ -455,8 +455,9 @@ Any data files for each program are stored in the `data` sub-directory of Launch
 ### !CAL.EXE - Calendar
 A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate months, `Home` returns to the current month.
 
-You can print the calendar out, it will create a full page calendar with big enough space to write. 
+You can print the calendar out, it will create a full page calendar with large enough space to write. 
 
+It is seems baaic, but it is deceptive. It's also a full blown iCalendar parser for DOS.
 The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specification) that is located beside `!CAL.EXE`
 
 **Open files**: You can also use add one or more `.ICS` files as a parameter, and the Calendar will show events from those files.<br/>
@@ -504,7 +505,7 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 
 <a id="!mkdown"></a>
 ### !MKDOWN.EXE - Markdown
-A simple markdown editor with split-screen live preview, full-screen graphical preview (font formatting and styles), and focus mode for a distraction free retro word processing experience.
+A simple but surprisingly powerful, markdown editor for DOS with split-screen live preview, full-screen graphical preview (font formatting and styles), and focus mode for a distraction free retro word processing experience.
 All markdown syntax [in this document](https://github.com/therenegar/launch/blob/main/res/SAMPLE.MD) is supported, and will be 'rendered' in the live preview or graphical preview (including tables!).
 
 <img width="360" height="300" alt="Markdown" src="https://github.com/user-attachments/assets/90dfdb60-1e91-4338-b138-4c67b08c17a8" />
