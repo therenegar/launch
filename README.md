@@ -362,7 +362,7 @@ You will be able to enter parameters before running the program.
 When **Change directory first** is selected, Launch! extracts the directory from the first command token when the launcher is run.<br/>
 E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, presses Enter, and then types the complete configured command. The Enter setting applies to that final complete command; the preliminary drive and CD commands must receive Enter. <br/>Commands without a path do not cause a directory change.
 
-If **Add to PATH for execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT/FDAUTO.BAT - which can get unwieldy. This allows you do away with that, and just add a program to PATH when launched from the menu.
+If **Add to PATH for execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT/FDAUTO.BAT - all competing for environment space in a tiny environment variable (*cough* including this one). This allows you do away with that, and just add a program to PATH as/when launched from the menu itself.
 
 <img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/9f596c4b-8f47-4ea0-9f93-da1ee0c199e9" />
 
