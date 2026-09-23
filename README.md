@@ -1,14 +1,13 @@
 <img width="1633" height="250" alt="Launch! for DOS" src="https://github.com/user-attachments/assets/1aa6eb8a-98f3-4e74-a1ef-479e4f7a04ef" />
 
-A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- and loads of goodies to uplift an old DOS machine.
+_A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- and loads of goodies to uplift an old DOS machine._
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 > You can download as either a .ZIP file or a 1.44MB floppy disk image .IMG. 
 
-Requires: DOS 3.3, 80286, EGA or better. 
-1.2MB free disk space for install.
+Requires: DOS 3.3, 80286, EGA or better. 1.2MB free disk space for install.
 
-Tested with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU.Compatible with third-party command interpreters such as 4DOS/NDOS.
+Works with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU. Compatible with third-party command interpreters such as 4DOS/NDOS.
 
 <img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/e15b3240-cbf4-4265-ba27-ae2c8c0fc210" />
 
@@ -22,8 +21,8 @@ EGA displays
 ## Contents
 
 - [Features](#features)
-- [Install](#install)
-- [The ! Menu](#the-menu)
+- [Installation](#install)
+- [Menu](#the-menu)
 - [Config](#config)
 - [Screen Savers](#screen-savers)
 - [Accessories](#accessories)
@@ -286,16 +285,32 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 
 > Note this feature is not available with an EGA display adapter.
 
-**Font Sources**
-- Launch! Sans was custom drawn by me, for Launch!
-- ISO is extracted from IBM PC-DOS 5.02 ISO.CPI
-- DOS-J is extracted from IBM PC-DOS for DOS/V
-- DOS-V is extracted from Microsoft MS-DOS/V
-- ELITE.F16, OAK8.F16, OAK9.F16 and SANSERIF.F16 were extracted directly from the Video BIOS ROM image for the IBM PS/2 model 30-286 Rev 0.
-- HOWARD.F16, OAKLEY.F16, OAKLYB.F16,. NEIL.F16, ITALIC.F16, OLDENG.F16 and CGA.F16 come from IBM's internally distributed HOWARD the FONT 3.61 archive by Alan E. Beelitz and contributors. 
-- Remaining come from https://github.com/viler-int10h/vga-text-mode-fonts
+**Font Choices**
 
-All font files have been edited to improve specific glyphs and appearance over originals.
+<img width="456" height="50" alt="LAUNCH" src="https://github.com/user-attachments/assets/bf7c725c-c644-4c8e-9e5d-c3a8348ef29f" />
+<img width="456" height="50" alt="BIG" src="https://github.com/user-attachments/assets/541640d9-7bff-424b-8ebd-cf4254d645dc" />
+<img width="456" height="50" alt="BOLD" src="https://github.com/user-attachments/assets/dd5714d2-3cf3-4a1d-8b73-c97df3402d26" />
+<img width="456" height="50" alt="BOLDALT" src="https://github.com/user-attachments/assets/ef418c8a-506a-4a34-b409-902c176b9188" />
+<img width="456" height="50" alt="CHUNKY" src="https://github.com/user-attachments/assets/ceeb7cb3-1dc5-4c8a-b6f7-dee2be662ee6" />
+<img width="456" height="50" alt="CLEAN" src="https://github.com/user-attachments/assets/188a18f4-67f4-43b3-989b-f40d91a6d716" />
+<img width="456" height="50" alt="ELERGON" src="https://github.com/user-attachments/assets/fbe407be-5569-4161-a569-22f482bc6524" />
+<img width="456" height="50" alt="ELITE" src="https://github.com/user-attachments/assets/a466dd82-b881-40f6-b99d-abc11ac82374" />
+<img width="456" height="50" alt="EXTRA" src="https://github.com/user-attachments/assets/9822d908-b454-4c0b-bc3b-dee61f2ad51e" />
+<img width="456" height="50" alt="HUMANIST" src="https://github.com/user-attachments/assets/568a3425-4808-44eb-b4f9-d468c776e0e4" />
+<img width="456" height="50" alt="ISO" src="https://github.com/user-attachments/assets/4429ca61-000c-45d2-a7b2-719d36c3edb2" />
+<img width="456" height="50" alt="ITALIC" src="https://github.com/user-attachments/assets/52072ead-4657-41b6-b271-d797249fd8fe" />
+<img width="456" height="50" alt="MAX" src="https://github.com/user-attachments/assets/b5df456a-45ef-4b90-bd18-6ebe74856b9c" />
+<img width="456" height="50" alt="MAXELITE" src="https://github.com/user-attachments/assets/92846791-3fb2-43cd-b556-2bdcff84269c" />
+<img width="456" height="50" alt="NEAT" src="https://github.com/user-attachments/assets/29d732a8-adaf-434b-a6ad-49c08e5b31be" />
+<img width="456" height="50" alt="NEATALT" src="https://github.com/user-attachments/assets/b4ad7047-188a-41fa-9696-21745cd269f4" />
+<img width="456" height="50" alt="OLDENG" src="https://github.com/user-attachments/assets/0d2e90a2-9c04-40eb-961c-964604d9b39b" />
+<img width="456" height="50" alt="PIXEL" src="https://github.com/user-attachments/assets/23159908-d319-4be8-80d9-881c6fd60847" />
+<img width="456" height="50" alt="PROFONT" src="https://github.com/user-attachments/assets/0d1dda69-25f5-408c-b43f-ab7479a19e20" />
+<img width="456" height="50" alt="PROFONT BOLD" src="https://github.com/user-attachments/assets/af4ac8de-0655-4c89-9760-c8687f730142" />
+<img width="456" height="50" alt="ROMAN" src="https://github.com/user-attachments/assets/47e7b176-8e0b-478a-8c8f-d4fa4922f6f2" />
+<img width="456" height="50" alt="SCRIBBLE" src="https://github.com/user-attachments/assets/1cc68f2e-d1b4-4a9f-acb7-44e9f2867c80" />
+<img width="456" height="50" alt="SCRIPT" src="https://github.com/user-attachments/assets/9015e22c-1d93-467a-88bb-7b913e6dd2f6" />
+<img width="456" height="50" alt="TALL" src="https://github.com/user-attachments/assets/7a7a6567-b933-468a-bc48-1cef33b64945" />
 
 
 ### Shortcut
@@ -635,7 +650,7 @@ Words can be horizontal, diagonal down and up. Words will not be on the grid bac
 <a id="tooling"></a>
 # <img width="1633" height="250" alt="Tooling" src="https://github.com/user-attachments/assets/dd935b02-2baa-4626-8c37-9cae052432f4" />
 
-## SHORTCUT.COM - keyboard shortcut tool
+## !KEY.COM - keyboard shortcut tool
 The keyboard shortcut is provided by a separate utility as it is not required to use `!.EXE` on its own. 
 
 If you don't load the keyboard shortcut tool, you'll regain 500 bytes of memory - although `LOADHIGH` is used with `SHORTCUT.COM` to move this to upper memory anyway.
@@ -645,36 +660,37 @@ The combination can be changed any time after install in Configuration.
 
 You can change the keyboard shortcut used by manually adding the `/KEY=` parameter to `SHORTCUT.COM` with readable names or hexadecimal scan codes, e.g.Update README.md
 ```
-  SHORTCUT /KEY=LWIN
-  SHORTCUT /KEY=CTRL+SPACE
-  SHORTCUT /KEY=CTRL+ALT+L
-  SHORTCUT /KEY=1D+38+34
+  !KEY /KEY=LWIN
+  !KEY /KEY=CTRL+SPACE
+  !KEY /KEY=CTRL+ALT+L
+  !KEY /KEY=1D+38+34
 ```
 Tokens are separated by `+`. CTRL, ALT, SHIFT, PERIOD, DOT, SPACE, F1-F12, the Windows key, letters, digits, common punctuation are accepted. You can also use scan codes.<br/>
 
-The shortcut utility can be removed from memory with `SHORTCUT /UNLOAD`.<br/>
-Use `SHORTCUT /?` for more information.
+The shortcut utility can be removed from memory with `!KEY /UNLOAD`.<br/>
+Use `!KEY /?` for more information.
 
-To maintain system integrity and security, `SHORTCUT.COM` validates an authentication key in `!.EXE` to ensure the shortcut key will only ever execute (a genuine) Launch! menu.
+To maintain system integrity and security, `!KEY.COM` validates an authentication key in `!.EXE` to ensure the shortcut key will only ever execute (a genuine) Launch! menu.
 
-A separate executable with the same functionality, `SHORTCDB.COM` is provided as a drop-in replacement for DOSBox users.
+Separate executables with the same functionality are provided to extend capability to specific architectures; `!KEYDB.COM` is for DOSBox users, `!KEY286.COM` is for 286 machines.
+The installer automatically installs the correct version.
 
-## AUTOGEN.EXE - an automatic menu generator
+## !MNUGEN.EXE - an automatic menu generator
 The menu generator will scan your C:\ for recognized programs in its internal database (over 1000 DOS programs up to 1995).
 
-This database has been extractss from [DirectAccess 5.19](https://winworldpc.com/product/direct-access/5x). 
+This database has been extracted from [DirectAccess 5.19](https://winworldpc.com/product/direct-access/5x). 
 
-<img width="360" height="300" alt="AUTOGEN" src="https://github.com/user-attachments/assets/8edbc6cb-a31b-4149-9c6f-6e4d39809a0c" />
+<img width="360" height="300" alt="!MNUGEN" src="https://github.com/user-attachments/assets/8edbc6cb-a31b-4149-9c6f-6e4d39809a0c" />
 
 
 You will be prompted to resolve any ambiguous items found.
 It will also detect your installed DOS version and build a DOS command menu.
 This menu will replace any existing `LAUNCH.MNU` file, saving the existing menu as `LAUNCH.BAK` first.
 
-`AUTOGEN` is run as part of the install process, but can be run at any time. 
+`!MNUGEN` is run as part of the install process, but can be run at any time. 
 
 You can use the `/LOOKIN=C,D,E` parameter to change the drives the tool will search for programs. By default, only C. One or more drives can be specified, separated by a comma.
-Use `AUTOGEN /?` for more information.
+Use `!MNUGEN /?` for more information.
 
 
 ## File safety
