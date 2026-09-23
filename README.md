@@ -533,15 +533,15 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 
 Words will wrap at the end of each line intelligently to the next, for natural typing.
 
-<img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/8f517335-65f0-457c-83b1-bf5a7e138de8" />
+<img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/a447c391-17c7-4a6b-9e52-1fe82083b958" />
 
-**Open Files**
+**Open Files: **
 You can add the filename/s (up to 10) of a text file after `!NOTE.EXE` and Note will open your external text file (in a tab labelled 'External' - one file per page). Any changes be saved (overwrite) with the Export button - which will save all opened files. Externally opened files are not persisted.
 e.g. `!NOTE C:\DOCS\CONTACTS.TXT C:\DOCS\BDAYS.TXT`
 
 Press `F11` or the Maximize titlebar button to go full-screen editing.
 
-<img width="360" height="300" alt="Note full screen editing" src="https://github.com/user-attachments/assets/9439c877-6cc1-4819-908f-faad39913f4b" />
+<img width="360" height="300" alt="Full screen editing" src="https://github.com/user-attachments/assets/9d2da201-f4c5-476b-9909-0c7287922385" />
 
 
 <a id="!stack"></a>
