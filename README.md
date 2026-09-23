@@ -497,7 +497,7 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 
 <a id="!mkdown"></a>
 ### !MKDOWN.EXE - Markdown
-A simple markdown editor with split-screen live preview, full-screen graphical preview (font sizes and styles), and focus mode for no-distraction blue-screening typing.
+A simple markdown editor with split-screen live preview, full-screen graphical preview (font formatting and styles), and focus mode for a distraction free retro word processing experience.
 
 <img width="360" height="300" alt="Markdown" src="https://github.com/user-attachments/assets/90dfdb60-1e91-4338-b138-4c67b08c17a8" />
 
@@ -505,7 +505,7 @@ The `Split` button toggles between markdown entry only, split-screen preview, an
 
 `Show` displays a rendered full-screen graphical preview of the markdown - up/down/PgUp/PgDn scrolls, and Esc returns to the editor. 
 
-There's also a Focus mode for distraction free writing
+There's also a Focus mode for distraction free writing.
 
 <img width="360" height="300" alt="Live Preview" src="https://github.com/user-attachments/assets/17c52b20-da1e-4969-8442-bdd75c1c9920" />
 <img width="360" height="300" alt="Graphical Preview" src="https://github.com/user-attachments/assets/f038ef00-ae08-4b02-90af-f3cbdbf8eef9" />
