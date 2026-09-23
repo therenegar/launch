@@ -11,13 +11,6 @@ Works with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machi
 
 <img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/ef2ee90f-d900-45ed-8593-44638053f546" />
 
-VGA displays
-
-<img width="640" height="350" alt="The Launch! Menu - EGA Resolution" src="https://github.com/user-attachments/assets/7208281b-b205-4c7d-af9c-9cf8ff8a047a" />
-
-EGA displays 
-
-
 ## Contents
 
 - [Features](#features)
@@ -28,7 +21,6 @@ EGA displays
 - [Accessories](#accessories)
 - [Games](#games)
 - [Tooling](#tooling)
-
 
 ## Features
 - Displays a hierarchical folder based menu, modally over the top of the existing console contents.
