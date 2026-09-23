@@ -292,11 +292,8 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 <img width="456" height="50" alt="EXTRA" src="https://github.com/user-attachments/assets/9822d908-b454-4c0b-bc3b-dee61f2ad51e" />
 <img width="456" height="50" alt="HUMANIST" src="https://github.com/user-attachments/assets/568a3425-4808-44eb-b4f9-d468c776e0e4" />
 <img width="456" height="50" alt="ISO" src="https://github.com/user-attachments/assets/4429ca61-000c-45d2-a7b2-719d36c3edb2" />
-<img width="456" height="50" alt="ITALIC" src="https://github.com/user-attachments/assets/52072ead-4657-41b6-b271-d797249fd8fe" />
 <img width="456" height="50" alt="MAX" src="https://github.com/user-attachments/assets/b5df456a-45ef-4b90-bd18-6ebe74856b9c" />
 <img width="456" height="50" alt="MAXELITE" src="https://github.com/user-attachments/assets/92846791-3fb2-43cd-b556-2bdcff84269c" />
-<img width="456" height="50" alt="NEAT" src="https://github.com/user-attachments/assets/29d732a8-adaf-434b-a6ad-49c08e5b31be" />
-<img width="456" height="50" alt="NEATALT" src="https://github.com/user-attachments/assets/b4ad7047-188a-41fa-9696-21745cd269f4" />
 <img width="456" height="50" alt="OLDENG" src="https://github.com/user-attachments/assets/0d2e90a2-9c04-40eb-961c-964604d9b39b" />
 <img width="456" height="50" alt="PIXEL" src="https://github.com/user-attachments/assets/23159908-d319-4be8-80d9-881c6fd60847" />
 <img width="456" height="50" alt="PROFONT" src="https://github.com/user-attachments/assets/0d1dda69-25f5-408c-b43f-ab7479a19e20" />
@@ -305,6 +302,17 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 <img width="456" height="50" alt="SCRIBBLE" src="https://github.com/user-attachments/assets/1cc68f2e-d1b4-4a9f-acb7-44e9f2867c80" />
 <img width="456" height="50" alt="SCRIPT" src="https://github.com/user-attachments/assets/9015e22c-1d93-467a-88bb-7b913e6dd2f6" />
 <img width="456" height="50" alt="TALL" src="https://github.com/user-attachments/assets/7a7a6567-b933-468a-bc48-1cef33b64945" />
+<img width="456" height="50" alt="TIMES" src="https://github.com/user-attachments/assets/4c386d0a-ee42-4ecc-b6dd-7ab9e8724252" />
+<img width="456" height="50" alt="SUPER" src="https://github.com/user-attachments/assets/f7edd545-3623-4eb2-9b27-773bc55f86d8" />
+<img width="456" height="50" alt="MODERN" src="https://github.com/user-attachments/assets/bcb78645-ab60-450d-86f1-4b157e34c840" />
+<img width="456" height="50" alt="ITALIC" src="https://github.com/user-attachments/assets/30755ad8-e8bb-4a01-b3f9-c22f105928cf" />
+<img width="456" height="50" alt="CURSIVE" src="https://github.com/user-attachments/assets/ed97d479-f8a0-4b5f-a513-fe4e683e0061" />
+<img width="456" height="50" alt="COURIER" src="https://github.com/user-attachments/assets/191d0193-2bde-4d97-85dd-9cf02c581d42" />
+<img width="456" height="50" alt="BROADWAY" src="https://github.com/user-attachments/assets/9171cd54-b064-4051-99f1-1406437429ef" />
+<img width="456" height="50" alt="BOLD ITALIC" src="https://github.com/user-attachments/assets/2ab32550-3eca-4dc8-8f1a-4f9f6f6f4a8e" />
+<img width="456" height="50" alt="BAUHAUS&#39;89" src="https://github.com/user-attachments/assets/d36cf47f-e6bb-4369-ae7c-5302135c2ef4" />
+
+
 
 ### Shortcut
 
