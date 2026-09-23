@@ -1,14 +1,16 @@
-/* Launch! 3.64 accessory runtime extension.
+/* Launch! 3.65 accessory runtime extension.
    This translation unit wraps the 3.5 ACCLIB implementation to add the
    Release 3.63 tooltip component without duplicating the shared UI runtime. */
 #define acc_begin acc36_begin_base
 #define acc_end acc36_end_base
 #define acc_end_screen acc36_end_screen_base
 #define acc_restore_screen acc36_restore_screen_base
+#define acc_restore_text_screen acc36_restore_text_screen_base
 #define acc_button acc36_button_base
 #define acc_box acc36_box_base
 #define acc_subbox acc36_subbox_base
 #define acc_mouse acc36_mouse_base
+#define acc_key_ready acc36_key_ready_base
 #define acc_wait acc36_wait_base
 #define acc_notice acc36_notice_base
 #define acc_help acc36_help_base
@@ -17,10 +19,12 @@
 #undef acc_end
 #undef acc_end_screen
 #undef acc_restore_screen
+#undef acc_restore_text_screen
 #undef acc_button
 #undef acc_box
 #undef acc_subbox
 #undef acc_mouse
+#undef acc_key_ready
 #undef acc_wait
 #undef acc_notice
 #undef acc_help
@@ -54,8 +58,24 @@ static int acc_dialog_x=-1,acc_dialog_y=-1,acc_dialog_w=0,acc_dialog_h=0;
 static int acc_focus_suppressed=0;
 static int note_hover_region=-1;
 static int acc_hover_button=-1,acc_hover_x=-1,acc_hover_y=-1,acc_hover_valid=0;
+static void glyph36_refresh(void);
+static void game_digits_refresh(void);
+static void tooltip_restore(void);
+static void tooltip_refresh_glyphs(void);
 static void (*acc_idle_hook)(void)=0;
+static unsigned char maximize_old[2][32];static int maximize_saved=0;
 void acc_set_idle_hook(void (*fn)(void)){acc_idle_hook=fn;}
+static void maximize_install(void){
+#ifndef ACCLIB_MIN_GLYPHS
+ if(!maximize_saved){acc_glyph_read(ACC_MAXIMIZE_L,maximize_old[0]);acc_glyph_read(ACC_MAXIMIZE_R,maximize_old[1]);maximize_saved=1;}
+ acc_glyph_library(59,ACC_MAXIMIZE_L);acc_glyph_library(60,ACC_MAXIMIZE_R);
+#endif
+}
+static void maximize_restore(void){
+#ifndef ACCLIB_MIN_GLYPHS
+ if(maximize_saved){acc_glyph_write(ACC_MAXIMIZE_L,maximize_old[0]);acc_glyph_write(ACC_MAXIMIZE_R,maximize_old[1]);maximize_saved=0;}
+#endif
+}
 /* Release 3.63 keeps the configured mouse pointer unchanged in !DRAW.
    The canvas itself now supplies hover feedback, so this legacy API is a no-op
    retained only for source compatibility with older 3.6x accessory sources. */
@@ -396,7 +416,7 @@ static void tooltip_uninstall(void)
 int acc_help(int argc,char **argv,const char *name,const char *description)
 {
   if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){
-    printf("%s - Launch! 3.64 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;
+    printf("%s - Launch! 3.65 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;
   }
   return 0;
 }
@@ -413,7 +433,7 @@ void acc_subbox(int x,int y,int w,int h,const char *title,int toolbar)
 int acc_begin(const char *argv0,const char *title,int graphics)
 {
   int ok;const char *p=argv0,*q;if((q=strrchr(argv0,'\\'))!=0)p=q+1;if((q=strrchr(p,'/'))!=0)p=q+1;strncpy(tooltip_app,p,sizeof(tooltip_app)-1);tooltip_app[sizeof(tooltip_app)-1]=0;strupr(tooltip_app);
-  ok=acc36_begin_base(argv0,title,graphics);if(ok){glyph36_refresh();game_digits_saved=0;game_digits_installed=0;game_digits_install();tooltip_load_setting();tooltip_install();tooltip_active=0;tooltip_region_count=0;acc_hover_button=-1;acc_hover_valid=0;acc_dialog_x=acc_dialog_y=-1;acc_dialog_w=acc_dialog_h=0;note_hover_region=-1;acc_focus_suppressed=0;tooltip_dismissed=0;}return ok;
+  ok=acc36_begin_base(argv0,title,graphics);if(ok){glyph36_refresh();maximize_install();game_digits_saved=0;game_digits_installed=0;game_digits_install();tooltip_load_setting();tooltip_install();tooltip_active=0;tooltip_region_count=0;acc_hover_button=-1;acc_hover_valid=0;acc_dialog_x=acc_dialog_y=-1;acc_dialog_w=acc_dialog_h=0;note_hover_region=-1;acc_focus_suppressed=0;tooltip_dismissed=0;}return ok;
 }
 
 void acc_end_screen(void)
@@ -425,11 +445,21 @@ void acc_end_screen(void)
   acc36_end_screen_base();
 }
 
+void acc_restore_text_screen(void)
+{
+  /* Text-only Focus/Maximize return path: preserve the active text mode and
+     custom font/glyph state. Only restore the saved text backing store. */
+  tooltip_restore();tooltip_active=0;
+  acc36_restore_text_screen_base();
+  acc_hover_button=-1;acc_hover_valid=0;
+}
+
 void acc_restore_screen(void)
 {
   tooltip_restore();tooltip_active=0;
   acc36_restore_screen_base();
   glyph36_refresh();
+  maximize_install();
   game_digits_refresh();
   tooltip_refresh_glyphs();
 }
@@ -439,6 +469,7 @@ void acc_end(void)
   tooltip_restore();tooltip_active=0;acc_hover_button=-1;acc_hover_valid=0;
   tooltip_uninstall();
   game_digits_restore();
+  maximize_restore();
   acc36_end_base();
 }
 
@@ -509,6 +540,8 @@ int acc_mouse(int *x,int *y,int *buttons)
   return r;
 }
 
+int acc_key_ready(void){return acc36_key_ready_base();}
+
 void acc_wait(int *key,int *x,int *y,unsigned *buttons)
 {
   union REGS r;int i,w,shown_here=0;
@@ -519,7 +552,7 @@ void acc_wait(int *key,int *x,int *y,unsigned *buttons)
   if(!acc_mouse_present)tooltip_sync(0,0,0);
   for(;;){
     if(acc_idle_hook)acc_idle_hook();
-    if(_bios_keybrd(_KEYBRD_READY)){*key=acc_key();if(*key==9||*key==271)acc_focus_suppressed=0;break;}
+    if(acc_key_ready()){*key=acc_key();if(*key==9||*key==271)acc_focus_suppressed=0;break;}
     if(acc_mouse_present){
       int nr=-1;
       r.x.ax=3;int86(0x33,&r,&r);mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;*x=r.x.cx/8;*y=r.x.dx/8;*buttons=(unsigned)(r.x.bx&~mouse_last_buttons);mouse_last_buttons=r.x.bx;

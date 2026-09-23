@@ -576,7 +576,7 @@ int main(int argc,char **argv)
     n=build_visible(map,filter,hide_done,sort_mode);if(n==0)sel=0;else if(sel>=n)sel=n-1;if(sel<top)top=sel;if(sel>=top+VIEW_ROWS)top=sel-VIEW_ROWS+1;if(top<0)top=0;
     if(dirty){draw_list(lx,ly,w-7,sel,top,expanded,filter,focus,hide_done,sort_mode);dirty=0;}
     hide_label[0]=' ';hide_label[1]=' ';hide_label[2]=(char)GLYPH_C_L;hide_label[3]=(char)GLYPH_C_R;hide_label[4]=' ';hide_label[5]=' ';hide_label[6]=0;
-    acc_button(x+3,y+h-3," Add ",focus==2);if(n){acc_button(x+10,y+h-3," Edit ",focus==3);acc_button(x+17,y+h-3," Delete ",focus==4);}else{acc_button_disabled(x+10,y+h-3," Edit ");acc_button_disabled(x+17,y+h-3," Delete ");}acc_button(x+25,y+h-3," Print ",focus==5);acc_put(x+33,y+h-3,179,ACC_BORDER);acc_button(x+35,y+h-3,hide_label,focus==6);acc_button(x+43,y+h-3,"  Sort  ",focus==7);acc_text(x+53,y+h-3,(sort_mode==1)?"Date":(sort_mode==2)?"Date":(sort_mode==3)?"Alph":(sort_mode==4)?"Alph":"None",ACC_LABEL,6);acc_button(x+w-10,y+h-3," Close ",focus==8);
+    acc_button(x+3,y+h-3," Add ",focus==2);if(n){acc_button(x+11,y+h-3," Edit ",focus==3);acc_button(x+19,y+h-3," Delete ",focus==4);}else{acc_button_disabled(x+11,y+h-3," Edit ");acc_button_disabled(x+19,y+h-3," Delete ");}acc_button(x+27,y+h-3," Print ",focus==5);acc_put(x+35,y+h-3,179,ACC_BORDER);acc_button(x+37,y+h-3,hide_label,focus==6);acc_button(x+45,y+h-3,"  Sort  ",focus==7);acc_text(x+55,y+h-3,(sort_mode==1)?"Date":(sort_mode==2)?"Date":(sort_mode==3)?"Alph":(sort_mode==4)?"Alph":"None",ACC_LABEL,6);acc_button(x+w-10,y+h-3," Close ",focus==8);
     acc_wait(&key,&mx,&my,&mb);
     if((mb&1)&&my>=ly&&my<ly+VIEW_ROWS&&mx>=lx&&mx<lx+w-7){
       static int last_click_idx=-1;static unsigned long last_click_tick=0;unsigned long now;int row=my-ly;
@@ -591,7 +591,7 @@ int main(int argc,char **argv)
       }key=0;continue;
     }
     if((mb&1)&&my==ly+VIEW_ROWS){nt=collect_tags(tags);if(mx>=lx+6&&mx<lx+9){filter[0]=0;tag_sel=0;}else{int p=9;for(i=0;i<nt;i++){p++;if(mx>=lx+p&&mx<lx+p+(int)strlen(tags[i])){strcpy(filter,tags[i]);tag_sel=i+1;break;}p+=(int)strlen(tags[i]);}}sel=top=0;focus=1;expanded=0;dirty=1;key=0;continue;}
-    if((mb&1)&&my==y+h-3){if(mx>=x+2&&mx<x+8)focus=2;else if(mx>=x+9&&mx<x+15)focus=3;else if(mx>=x+16&&mx<x+22)focus=4;else if(mx>=x+24&&mx<x+30)focus=5;else if(mx>=x+34&&mx<x+40)focus=6;else if(mx>=x+42&&mx<x+51)focus=7;else if(mx>=x+w-10&&mx<x+w-4)focus=8;key=13;}
+    if((mb&1)&&my==y+h-3){if(mx>=x+3&&mx<x+9)focus=2;else if(mx>=x+11&&mx<x+17)focus=3;else if(mx>=x+19&&mx<x+25)focus=4;else if(mx>=x+27&&mx<x+33)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+45&&mx<x+53)focus=7;else if(mx>=x+w-10&&mx<x+w-4)focus=8;key=13;}
     if(key==9||key==271){
       static int order[9]={1,0,2,3,4,5,6,7,8};int p,dir=(key==271)?-1:1;
       if(focus<0)focus=(key==271)?8:1;
@@ -620,7 +620,7 @@ int main(int argc,char **argv)
     if((key=='d'||key=='D')&&n>0){
       idx=map[sel];delete_selected(idx);if(sel>0)sel--;expanded=0;dirty=1;key=0;continue;
     }
-    if(key=='s'||key=='S'){sort_mode=(sort_mode+1)%5;sel=top=0;expanded=0;dirty=1;acc_text(x+53,y+h-3,(sort_mode==1)?"Date\031":(sort_mode==2)?"Date\030":(sort_mode==3)?"Alph\031":(sort_mode==4)?"Alph\030":"None",ACC_LABEL,6);key=0;continue;}
+    if(key=='s'||key=='S'){sort_mode=(sort_mode+1)%5;sel=top=0;expanded=0;dirty=1;acc_text(x+55,y+h-3,(sort_mode==1)?"Date\031":(sort_mode==2)?"Date\030":(sort_mode==3)?"Alph\031":(sort_mode==4)?"Alph\030":"None",ACC_LABEL,6);key=0;continue;}
     if(key=='h'||key=='H'){hide_done=!hide_done;sel=top=0;expanded=0;dirty=1;key=0;continue;}
 
     if(focus==0&&n>0){
@@ -642,7 +642,7 @@ int main(int argc,char **argv)
       else if(focus==4&&n>0){idx=map[sel];delete_selected(idx);if(sel>0)sel--;expanded=0;}
       else if(focus==5){if(!print_tasks(filter,hide_done,sort_mode))acc_notice("Print","Unable to print to LPT1");acc_box(x,y,w,h,"To-Dos");}
       else if(focus==6){hide_done=!hide_done;sel=top=0;expanded=0;}
-      else if(focus==7){sort_mode=(sort_mode+1)%5;sel=top=0;expanded=0;acc_text(x+53,y+h-3,(sort_mode==1)?"Date\031":(sort_mode==2)?"Date\030":(sort_mode==3)?"Alph\031":(sort_mode==4)?"Alph\030":"None",ACC_LABEL,6);}
+      else if(focus==7){sort_mode=(sort_mode+1)%5;sel=top=0;expanded=0;acc_text(x+55,y+h-3,(sort_mode==1)?"Date\031":(sort_mode==2)?"Date\030":(sort_mode==3)?"Alph\031":(sort_mode==4)?"Alph\030":"None",ACC_LABEL,6);}
       else if(focus==8)key=27;
       dirty=1;if(key!=27)key=0;continue;
     }

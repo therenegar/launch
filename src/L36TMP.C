@@ -55,8 +55,8 @@ typedef struct {
   unsigned char font_id,font_persist,mouse_cursor,prompt_inactivity,show_tooltips;
 } APPEARANCE;
 
-static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0,0};
-static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0,0};
+static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,1,0,0,0,0};
+static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,1,0,0,0,0};
 
 static void (interrupt far *setkey_old_int09)();
 static volatile unsigned char setkey_scan,setkey_e0,setkey_mods;
@@ -1316,7 +1316,7 @@ static void tooltip_glyph_restore(void)
   for(slot=0;slot<2;slot++){code=codes[slot];font=(unsigned char far *)MAKE_FP(0xA000,code*32);for(i=0;i<32;i++)font[i]=tooltip_old_glyph[slot][i];}
   font_plane_close(&old);tooltip_glyph_saved=0;
 }
-static const unsigned char launchui_codes[41]={16,17,30,31,169,170,173,174,175,181,182,183,184,185,186,187,188,189,190,198,199,200,201,202,224,204,205,206,207,208,209,210,211,212,213,214,215,216,220,244,245};
+static const unsigned char launchui_codes[41]={16,17,30,31,169,170,173,174,175,181,182,183,184,185,186,187,188,189,190,198,199,200,201,202,224,204,205,206,207,208,209,210,211,212,213,214,215,255,220,244,245};
 static int launchui_ega14(void)
 {
   unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);
@@ -1407,7 +1407,7 @@ static void launchui_install(void)
       ega14_glyph_write(launchui_codes[i],launch_glyph14[i]);
     for(i=0;i<6;i++)
       ega14_glyph_write(launchui_browser_codes[i],launch_glyph14[49+i]);
-    ega14_glyph_write(255,launch_glyph14[55]);
+    ega14_glyph_write(216,launch_glyph14[55]);
     launchui_active=1;
     return;
   }
@@ -1420,7 +1420,7 @@ static void launchui_install(void)
     font=(unsigned char far *)MAKE_FP(0xA000,launchui_browser_codes[i]*32);
     for(j=0;j<32;j++){launchui_browser_old[i][j]=font[j];font[j]=launch_glyph16[49+i][j];}
   }
-  font=(unsigned char far *)MAKE_FP(0xA000,255*32);
+  font=(unsigned char far *)MAKE_FP(0xA000,216*32);
   for(j=0;j<32;j++){launchui_divider_old[j]=font[j];font[j]=launch_glyph16[55][j];}
   font_plane_close(&old);
   launchui_active=1;
@@ -1436,7 +1436,7 @@ static void launchui_rebase(void)
       ega14_glyph_write(launchui_codes[i],launch_glyph14[i]);
     for(i=0;i<6;i++)
       ega14_glyph_write(launchui_browser_codes[i],launch_glyph14[49+i]);
-    ega14_glyph_write(255,launch_glyph14[55]);
+    ega14_glyph_write(216,launch_glyph14[55]);
     return;
   }
   font_plane_open(&old);
@@ -1448,7 +1448,7 @@ static void launchui_rebase(void)
     font=(unsigned char far *)MAKE_FP(0xA000,launchui_browser_codes[i]*32);
     for(j=0;j<32;j++){launchui_browser_old[i][j]=font[j];font[j]=launch_glyph16[49+i][j];}
   }
-  font=(unsigned char far *)MAKE_FP(0xA000,255*32);
+  font=(unsigned char far *)MAKE_FP(0xA000,216*32);
   for(j=0;j<32;j++)font[j]=launch_glyph16[55][j];
   font_plane_close(&old);
 }
@@ -1463,7 +1463,7 @@ static void launchui_restore(void)
     return;
   }
   font_plane_open(&old);
-  font=(unsigned char far *)MAKE_FP(0xA000,255*32);
+  font=(unsigned char far *)MAKE_FP(0xA000,216*32);
   for(j=0;j<32;j++)font[j]=launchui_divider_old[j];
   for(i=0;i<6;i++){
     font=(unsigned char far *)MAKE_FP(0xA000,launchui_browser_codes[i]*32);
@@ -2353,7 +2353,7 @@ static void sort_menu(int parent)
   for(i=0;i<n;i++) nodes[list[i]].order=(unsigned char)i;
 }
 
-static void toolbar_divider(int x,int y,int width){int i;cell(x,y,179,C_BORDER);for(i=1;i<width-1;i++)cell(x+i,y,255,C_BORDER);cell(x+width-1,y,179,C_BORDER);}
+static void toolbar_divider(int x,int y,int width){int i;cell(x,y,179,C_BORDER);for(i=1;i<width-1;i++)cell(x+i,y,216,C_BORDER);cell(x+width-1,y,179,C_BORDER);}
 
 static int button_icon(const char *label,int *a,int *b)
 {
@@ -2361,7 +2361,7 @@ static int button_icon(const char *label,int *a,int *b)
      word "Preview" itself begins with "Prev". */
   if(strstr(label,"Preview"))return 0;
   if(!strcmp(label,"  ?  ")){*a=174;*b=-1;return 1;}
-  if(strstr(label,"Prev")){*a=17;*b=-1;return 1;}if(strstr(label,"Next")){*a=16;*b=-1;return 1;}if(strstr(label,"Save")||strstr(label,"Yes")||strstr(label," OK ")){*a=198;*b=199;return 1;}if(strstr(label,"Cancel")||strstr(label,"No")||strstr(label,"Close")){*a=200;*b=201;return 1;}if(strstr(label,"Run")&&!strstr(label,"Preview")){*a=202;*b=224;return 2;}if(strstr(label,"Export")){*a=204;*b=181;return 1;}if(strstr(label,"Print")){*a=206;*b=207;return 1;}if(strstr(label,"Add")||strstr(label,"New")){*a=208;*b=187;return 1;}if(strstr(label,"Edit")){*a=210;*b=182;return 1;}if(strstr(label,"Delete")||strstr(label,"Remove")){*a=209;*b=188;return 1;}if(strstr(label,"Retry")||strstr(label,"Refresh")){*a=214;*b=216;return 1;}return 0;
+  if(strstr(label,"Prev")){*a=17;*b=-1;return 1;}if(strstr(label,"Next")){*a=16;*b=-1;return 1;}if(strstr(label,"Save")||strstr(label,"Yes")||strstr(label," OK ")){*a=198;*b=199;return 1;}if(strstr(label,"Cancel")||strstr(label,"No")||strstr(label,"Close")){*a=200;*b=201;return 1;}if(strstr(label,"Run")&&!strstr(label,"Preview")){*a=202;*b=224;return 2;}if(strstr(label,"Export")){*a=204;*b=181;return 1;}if(strstr(label,"Print")){*a=206;*b=207;return 1;}if(strstr(label,"Add")||strstr(label,"New")){*a=208;*b=187;return 1;}if(strstr(label,"Edit")){*a=210;*b=182;return 1;}if(strstr(label,"Delete")||strstr(label,"Remove")){*a=209;*b=188;return 1;}if(strstr(label,"Retry")||strstr(label,"Refresh")){*a=214;*b=255;return 1;}return 0;
 }
 #define CORE_TOOLTIP_MAX 42
 static int core_tt_active=0,core_tt_x=0,core_tt_y=0,core_tt_w=0;
@@ -3056,10 +3056,10 @@ static const char *saver_delay_names[4]={
 static const char *mouse_cursor_names[3]={"Pointer","Block","Up Arrow"};
 
 static const char *font_names[25]={
-  "Standard","!Launch Sans","ProFont","ProFont Bold","Bold Sans","Tall Sans","IBM ISO","CGAlike","Elite",
-  "Oakley","Oakley Big","Sans Serif","Howard","Neil","Italic",
-  "Olde Eng","DOS/V","MSDOS/V","Roman","Fatscii","Elergon",
-  "Police","Espy","Scribble","Script"
+  "Standard","Launch!","ISO","Neat","Neat Alt","Clean","Big","Tall","Bold",
+  "Bold Alt","Extra","Max","Chunky","Pixel","Humanist","Elite",
+  "Max Elite","Elergon","Roman","Olde Eng","Italic","Scribble","Script",
+  "ProFont","ProFont Bold"
 };
 
 static void cycle_control(int x,int y,const char *value,int focused)
@@ -3534,7 +3534,7 @@ static void config_about_box(void)
   bx=x+3;subdialog_box(x,y,w,h,"About Launch!");
   textout(x+3,y+2,"(C)Copyright 2026 Ben Renegar",C_INPUT_LABEL,34);
   textout(x+3,y+3,"www.benrenegar.com",C_INPUT_LABEL,34);
-  textout(x+3,y+6,"Version 3.64 - 2026-09-22",C_INPUT_LABEL,34);
+  textout(x+3,y+6,"Version 3.65 - 2026-09-23",C_INPUT_LABEL,34);
   for(;;){
     draw_button(bx,y+h-3,"  OK  ",6,focus==0);
     wait_input(&k,&mx,&my,&mb);
@@ -5924,7 +5924,7 @@ static int update_shortcut_key(const char *spec)
   out=fopen(temp,"wt");if(!out){fclose(in);return 0;}
   while(fgets(line,sizeof(line),in)){
     strcpy(output,line);p=output;while(*p==' ' || *p=='\t')p++;
-    hit=setkey_stristr(p,"SHORTCUT.COM");
+    hit=setkey_stristr(p,"!KEY.COM");
     if(!found && hit && strnicmp(p,"REM",3)!=0){
       key=setkey_stristr(hit,"/KEY=");
       if(key){end=key+5;while(*end && !isspace((unsigned char)*end))end++;
@@ -5987,7 +5987,7 @@ static void shortcut_refresh(void)
   if(f){
     while(fgets(line,sizeof(line),f)){
       p=line;while(*p==' '||*p=='\t')p++;
-      hit=setkey_stristr(p,"SHORTCUT.COM");
+      hit=setkey_stristr(p,"!KEY.COM");
       if(hit&&strnicmp(p,"REM",3)!=0){
         key=setkey_stristr(hit,"/KEY=");
         if(key){
@@ -6008,7 +6008,7 @@ static int shortcut_set_dialog(void)
   if(!capture_setkey_dialog(spec))return 0;
   result=update_shortcut_key(spec);
   if(result==0){
-    notice_box("Shortcut Error","No active SHORTCUT.COM entry exists in startup batch file.");
+    notice_box("Shortcut Error","No active !KEY.COM entry exists in startup batch file.");
     return 0;
   }
   if(result<0){
@@ -6026,7 +6026,7 @@ static int ensure_shortcut_autoexec(void)
   if(f){
     while(fgets(line,sizeof(line),f)){
       p=line;while(*p==' '||*p=='\t')p++;
-      if(strnicmp(p,"REM",3)!=0&&setkey_stristr(p,"SHORTCUT.COM")){
+      if(strnicmp(p,"REM",3)!=0&&setkey_stristr(p,"!KEY.COM")){
         fclose(f);return 1;
       }
     }
@@ -6036,7 +6036,7 @@ static int ensure_shortcut_autoexec(void)
   fseek(f,0L,SEEK_END);size=ftell(f);
   if(size>0){fseek(f,-1L,SEEK_END);last=fgetc(f);fseek(f,0L,SEEK_END);}
   if(size>0&&last!='\n'&&fputs("\r\n",f)==EOF){fclose(f);return 0;}
-  if(fprintf(f,"LOADHIGH %sSHORTCUT.COM\r\n",program_dir)<0){fclose(f);return 0;}
+  if(fprintf(f,"LOADHIGH %s!KEY.COM\r\n",program_dir)<0){fclose(f);return 0;}
   return fclose(f)==0;
 }
 
@@ -6052,7 +6052,7 @@ static int shortcut_activate(void)
 static int shortcut_unload(void)
 {
   char shortcut[MAX_CMD];int result,saved_out=-1,saved_err=-1;FILE *nullout;
-  strcpy(shortcut,program_dir);strcat(shortcut,"SHORTCUT.COM");
+  strcpy(shortcut,program_dir);strcat(shortcut,"!KEY.COM");
   mouse_stop();fflush(stdout);fflush(stderr);nullout=fopen("NUL","wt");
   if(nullout){
     saved_out=_dup(1);saved_err=_dup(2);
@@ -6064,7 +6064,7 @@ static int shortcut_unload(void)
   if(saved_out>=0){_dup2(saved_out,1);_close(saved_out);}
   if(saved_err>=0){_dup2(saved_err,2);_close(saved_err);}
   if(nullout)fclose(nullout);
-  if(result==-1){notice_box("Shortcut Error","SHORTCUT.COM could not be started.");return 0;}
+  if(result==-1){notice_box("Shortcut Error","!KEY.COM could not be started.");return 0;}
   shortcut_refresh();
   if(config_shortcut_active){notice_box("Shortcut Error","The resident shortcut could not be unloaded.");return 0;}
   return 1;
@@ -6085,7 +6085,7 @@ static void shortcut_idle_sync(void)
 
 static void show_help(void)
 {
-  puts("Launch! 3.64 - a lightweight command menu for DOS\n");
+  puts("Launch! 3.65 - a lightweight command menu for DOS\n");
   puts("Usage: ! [menu.mnu] [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");

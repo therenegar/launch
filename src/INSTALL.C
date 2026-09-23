@@ -446,7 +446,7 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
   FILE *f;static char path_line[256],load_line[256],menu_line[256];long size;
   static const char *lines[3];static int wanted[3];int i,last=0,missing=0;
   sprintf(path_line,"PATH %%PATH%%;%s",path);
-  sprintf(load_line,"LOADHIGH %s\\SHORTCUT.COM",path);
+  sprintf(load_line,"LOADHIGH %s\\!KEY.COM",path);
   if(add_shortcut && *key_spec){strcat(load_line," /KEY=");strcat(load_line,key_spec);}
   sprintf(menu_line,"%s\\!.EXE",path);
   lines[0]=path_line;lines[1]=load_line;lines[2]=menu_line;
@@ -515,17 +515,17 @@ static int accessory_member(const char *name)
 static int selected_member(const char *name,int shortcut_build,int accessories,const char **dest_name)
 {
   *dest_name=name;
-  if(!stricmp(name,"!.EXE")||!stricmp(name,"AUTOGEN.EXE")||
+  if(!stricmp(name,"!.EXE")||!stricmp(name,"!MNUGEN.EXE")||
      !stricmp(name,"AUTOGEN.DAT")||!stricmp(name,"PWROFF.BMP")||
      !stricmp(name,"FONT.DAT")||!stricmp(name,"!SANS.FNT"))return 1;
-  if(!stricmp(name,"SHORTCUT.COM")){
-    if(shortcut_build!=0)return 0;*dest_name="SHORTCUT.COM";return 1;
+  if(!stricmp(name,"!KEY.COM")){
+    if(shortcut_build!=0)return 0;*dest_name="!KEY.COM";return 1;
   }
-  if(!stricmp(name,"SHORTCDB.COM")){
-    if(shortcut_build!=1)return 0;*dest_name="SHORTCUT.COM";return 1;
+  if(!stricmp(name,"!KEYDB.COM")){
+    if(shortcut_build!=1)return 0;*dest_name="!KEY.COM";return 1;
   }
-  if(!stricmp(name,"SHORT286.COM")){
-    if(shortcut_build!=2)return 0;*dest_name="SHORTCUT.COM";return 1;
+  if(!stricmp(name,"!KEY286.COM")){
+    if(shortcut_build!=2)return 0;*dest_name="!KEY.COM";return 1;
   }
   if(accessories&&accessory_member(name))return 1;
   return 0;
@@ -592,7 +592,7 @@ int main(int argc,char **argv)
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 3.64 Installation");
+  puts("Launch! 3.65 Installation");
   puts("------------------------\n");
   cpu_ok=cpu_at_least_286();display_name=display_adapter(&display_ok);vga_display=!strncmp(display_name,"VGA",3);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
   question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");
@@ -644,7 +644,7 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- SHORTCUT 3.64 build: %s\n",shortcut_build==2?"80286-safe":(shortcut_build==1?"DOSBox":"386+ real/emulated BIOS"));
+  printf("- !KEY 3.65 build: %s\n",shortcut_build==2?"80286-safe":(shortcut_build==1?"DOSBox":"386+ real/emulated BIOS"));
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
   puts("- Created or updated the standard menu entries for this DOS installation.");

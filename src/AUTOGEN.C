@@ -505,10 +505,10 @@ static int write_menu(void)
 
 static void usage(void)
 {
-  puts("Usage: AUTOGEN [/LOOKIN=drives] [/?]");
+  puts("Usage: !MNUGEN [/LOOKIN=drives] [/?]");
   puts("\nDefault: /LOOKIN=C");
-  puts("Examples: AUTOGEN /LOOKIN=D");
-  puts("          AUTOGEN /LOOKIN=C,D,E\n");
+  puts("Examples: !MNUGEN /LOOKIN=D");
+  puts("          !MNUGEN /LOOKIN=C,D,E\n");
   puts("Also adds useful commands for the detected DOS family and version.");
 }
 
@@ -529,7 +529,7 @@ int main(int argc,char **argv)
 {
   char drives[26],answer[16];int parsed;
   puts("AutoGen 3.5 - Launch! Program Scanner\n");
-  parsed=parse_drives(argc,argv,drives);if(parsed==0)return 0;if(parsed<0){error_icon();puts("Invalid option. Use AUTOGEN /?");return 1;}
+  parsed=parse_drives(argc,argv,drives);if(parsed==0)return 0;if(parsed<0){error_icon();puts("Invalid option. Use !MNUGEN /?");return 1;}
   program_directory(argv[0],base_dir);
   if(strlen(base_dir)>PATH_SIZE-13){error_icon();puts("AutoGen's installation path is too long.");return 1;}
   sprintf(database_file,"%sAUTOGEN.DAT",base_dir);sprintf(menu_file,"%sLAUNCH.MNU",base_dir);

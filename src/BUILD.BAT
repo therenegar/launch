@@ -3,7 +3,7 @@ REM Launch! build script - Microsoft C/C++ 7.0
 REM BUILD with no parameter builds everything.
 REM BUILD ! builds only the core Launch! menu and appends its authentication trailer.
 REM BUILD !SNAKE (etc.) builds only that accessory.
-REM Release 3.64 generated *36TMP.C sources are supplied with this tree.
+REM Release 3.65 generated *36TMP.C sources are supplied with this tree.
 REM GEN36.C is a maintainer regeneration tool and is not run by BUILD.
 IF "%1"=="" GOTO ALL
 IF "%1"=="!" GOTO CORE
@@ -106,7 +106,7 @@ CL /AS /Os /Gs /W3 /Fe!TYPO.EXE TYPO.C ACCLIB36.C
 GOTO CHECK
 :CHECK
 IF ERRORLEVEL 1 GOTO FAIL
-IF "%L364FULL%"=="1" GOTO CHECKDONE
+IF "%L365FULL%"=="1" GOTO CHECKDONE
 REM Keep the installer synchronized after every focused component build.
 CL /AS /Os /Gs /W3 /FeINSTALL.EXE I36TMP.C
 IF ERRORLEVEL 1 GOTO FAIL
@@ -120,7 +120,7 @@ GOTO END
 ECHO Built %1
 GOTO END
 :ALL
-SET L364FULL=1
+SET L365FULL=1
 CL /AM /Os /Gs /W3 /Fe!.EXE L36TMP.C SAVERS.C
 IF ERRORLEVEL 1 GOTO FAIL
 COPY /B !.EXE+AUTH35.SIG !.$$$ >NUL
@@ -132,7 +132,7 @@ CL /AS /Os /Gs /W3 /FeINSTALL.EXE I36TMP.C
 IF ERRORLEVEL 1 GOTO FAIL
 CL /AS /Os /Gs /W3 PACKDAT.C
 IF ERRORLEVEL 1 GOTO FAIL
-CL /AS /Os /Gs /W3 AUTOGEN.C
+CL /AS /Os /Gs /W3 /Fe!MNUGEN.EXE AUTOGEN.C
 IF ERRORLEVEL 1 GOTO FAIL
 CALL BUILD !CAL
 IF ERRORLEVEL 1 GOTO FAIL
@@ -170,10 +170,10 @@ CALL BUILD !TYPO
 IF ERRORLEVEL 1 GOTO FAIL
 PACKDAT.EXE
 IF ERRORLEVEL 1 GOTO FAIL
-SET L364FULL=
+SET L365FULL=
 ECHO Built complete Launch! distribution
 GOTO END
 :FAIL
-SET L364FULL=
+SET L365FULL=
 ECHO Build failed.
 :END

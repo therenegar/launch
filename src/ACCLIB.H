@@ -6,6 +6,8 @@
 #define ACC_PATH 128
 #define ACC_MOUSE_MOVED 0x8000
 #define ACC_MOUSE_OUTSIDE 0x4000
+#define ACC_MAXIMIZE_L 248
+#define ACC_MAXIMIZE_R 249
 #define ACC_ATTR(bg,fg) (((bg)<<4)|(fg))
 
 typedef struct {
@@ -33,6 +35,7 @@ int acc_begin(const char *argv0,const char *title,int graphics);
 void acc_end_screen(void);
 void acc_end(void);
 void acc_restore_screen(void);
+void acc_restore_text_screen(void);
 void acc_clear(int attr);
 void acc_put(int x,int y,int ch,int attr);
 void acc_text(int x,int y,const char *text,int attr,int width);

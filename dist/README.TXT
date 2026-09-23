@@ -14,8 +14,8 @@ Launch! Installation
 If you already have Launch! installed, choose the same directory and an upgrade
 will be performed keeping your existing configuration and menu intact.
 
-DOSBox installs will be detected by the installer, and a different DOSBox
-compatible version of the shortcut key tool will be installed.
+A compatible version of the shortcut key tool will be chosen and installed
+for you automatically.
 
 
 More information and latest release available online at

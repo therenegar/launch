@@ -157,7 +157,7 @@ static int write_launch36(void)
       fputs("    if(my==y+13&&mx>=x+25&&mx<x+63)return CONFIG_CONTROL_BASE+8;\n",out);continue;
     }
     if(strstr(line,"/* Launch! 3.5 - modal command menu for DOS")){
-      fputs("/* Launch! 3.64 - modal command menu for DOS\n",out);continue;
+      fputs("/* Launch! 3.65 - modal command menu for DOS\n",out);continue;
     }
     if(strstr(line,"#define MAX_NODES 96")){
       emit_startup_batch_helpers(out);
@@ -291,7 +291,7 @@ static int write_install36(void)
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT file","startup batch file");
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT","startup batch file");
     if(strstr(line,"/* Launch! 3.5 installer")){
-      fputs("/* Launch! 3.64 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
+      fputs("/* Launch! 3.65 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
     }
     if(strstr(line,"#define PATH_SIZE 128")){
       emit_startup_batch_helpers(out);fputs(line,out);continue;
@@ -311,7 +311,7 @@ static int write_install36(void)
       fputs("    \"!BOXES.EXE\",\"!FCELL.EXE\",\"!PLUMB.EXE\",\"!POP.EXE\",\"!SNAKE.EXE\",\"!SOL.EXE\",\"!WORDZ.EXE\",0};\n",out);continue;
     }
     if(strstr(line,"puts(\"Launch! 3.5 Installation\");")){
-      fputs("  puts(\"Launch! 3.64 Installation\");\n",out);continue;
+      fputs("  puts(\"Launch! 3.65 Installation\");\n",out);continue;
     }
     fputs(line,out);
     if(in_status&&!strcmp(line,"}\n"))in_status=0;
@@ -338,35 +338,20 @@ static void emit_note_wrap(FILE *out)
   fputs("  softwrap[cy+1]=1;*pcy=cy+1;*pcx=len;\n}\n",out);
 }
 
+static int copy_generated_source(const char *src,const char *dst)
+{
+  FILE *in=fopen(src,"rt"),*out;char *line=gen_line;
+  if(!in)return 0;
+  out=fopen(dst,"wt");if(!out){fclose(in);return 0;}
+  while(fgets(line,GEN_LINE,in))fputs(line,out);
+  if(ferror(in)||fclose(out)!=0){fclose(in);remove(dst);return 0;}
+  fclose(in);return 1;
+}
+
 static int write_note36(void)
 {
-  FILE *in=fopen("NOTE.C","rt"),*out;char *line=gen_line;int changed=0,helper=0,ui=0,inmain=0;
-  if(!in){puts("GEN36: cannot open NOTE.C");return 0;}
-  out=fopen("N36TMP.C","wt");if(!out){fclose(in);puts("GEN36: cannot create N36TMP.C");return 0;}
-  while(fgets(line,GEN_LINE,in)){
-    if(replace_once(line,GEN_LINE,"static int input_name(char *out)","static int input_name(char *out,int edit)")>0)ui++;
-    replace_once(line,GEN_LINE,"unsigned b=0;out[0]=0;","unsigned b=0;if(!edit)out[0]=0;else pos=(int)strlen(out);");
-    replace_all(line,GEN_LINE,"acc_subbox(x,y,w,h,\"New tab\",1);","acc_subbox(x,y,w,h,edit?\"Edit tab\":\"New tab\",1);");
-    replace_all(line,GEN_LINE,"input_name(nm)","input_name(nm,0)");
-    if(strstr(line,"int main(int argc,char**argv)")){emit_note_wrap(out);emit_acc_tooltip_decl(out);helper=1;inmain=1;}
-    if(replace_once(line,GEN_LINE,"else if(cy<NL-1){cx=0;cy++;softwrap[cy]=1;}","else if(cy<NL-1)note_word_wrap(&cx,&cy);")>0)changed=1;
-    if(strstr(line,"acc_button(x+3,y+17,\"  Add  \""))replace_once(line,GEN_LINE,"  acc_button(x+3,y+17","  acc_tooltip_clear_regions();acc_button(x+3,y+17");
-    if(strstr(line,"  acc_wait(&key,&mx,&my,&mb);")){
-      strcpy(gen_temp,"  acc_tooltip_region(x+11,y+17,6,pages[ctab]>1?\"Delete current page\":\"Delete current tab\",note_can_delete());");
-      strcat(gen_temp,"{int ti,ttx=x+6,lastp=tab_last_visible(tabfirst);for(ti=tabfirst;ti<=lastp&&ti<ntab;ti++){");
-      strcat(gen_temp,"int tw=(int)strlen(tabs[ti])+4;acc_tooltip_region(ttx,y+2,tw,\"Right click to rename\",1);ttx+=tw+1;}");
-      strcat(gen_temp,"lastp=page_last_visible(pagefirst);if((int)pages[ctab]<MAXPAGES&&lastp-pagefirst+1<10)");
-      strcat(gen_temp,"acc_tooltip_region(x+65,ty+1+(lastp>=pagefirst?lastp-pagefirst+1:0),1,\"Add page\",1);}acc_wait(&key,&mx,&my,&mb);");
-      replace_once(line,GEN_LINE,"  acc_wait(&key,&mx,&my,&mb);",gen_temp);
-    }
-    if(inmain&&strstr(line,"  if(mb&1){")){
-      fputs("  if((mb&2)&&my==y+2){int ri,rx=x+6,rl=tab_last_visible(tabfirst);for(ri=tabfirst;ri<=rl&&ri<ntab;ri++){int rw=(int)strlen(tabs[ri])+4;if(mx>=rx&&mx<rx+rw){strcpy(nm,tabs[ri]);if(input_name(nm,1)){strcpy(tabs[ri],nm);meta_save();}acc_box(x,y,70,20,\"Note\");draw_tabs(x,y+2,tabfirst,0);view_draw(tx,ty,cx,cy,top);draw_pages(x+65,ty,pagefirst,0,psel);key=0;break;}rx+=rw+1;}if(ri<=rl)continue;}\n",out);ui++;
-    }
-    fputs(line,out);
-  }
-  if(!changed||!helper||ui<2){fclose(out);fclose(in);remove("N36TMP.C");puts("GEN36: NOTE.C 3.6 patch point not found");return 0;}
-  if(ferror(in)||fclose(out)!=0){fclose(in);remove("N36TMP.C");puts("GEN36: failed writing N36TMP.C");return 0;}
-  fclose(in);return 1;
+  if(!copy_generated_source("NOTE.C","N36TMP.C")){puts("GEN36: failed copying NOTE.C to N36TMP.C");return 0;}
+  return 1;
 }
 
 static void emit_journal_wrap(FILE *out)
@@ -385,17 +370,8 @@ static void emit_journal_wrap(FILE *out)
 
 static int write_journal36(void)
 {
-  FILE *in=fopen("JOURNAL.C","rt"),*out;char *line=gen_line;int changed=0,helper=0;
-  if(!in){puts("GEN36: cannot open JOURNAL.C");return 0;}
-  out=fopen("J36TMP.C","wt");if(!out){fclose(in);puts("GEN36: cannot create J36TMP.C");return 0;}
-  while(fgets(line,GEN_LINE,in)){
-    if(strstr(line,"int main(int argc,char**argv)")){emit_journal_wrap(out);helper=1;}
-    if(replace_once(line,GEN_LINE,"else if(cy<NL-1){cy++;cx=4;softwrap[cy]=1;}","else if(cy<NL-1)journal_word_wrap(&cx,&cy);")>0)changed=1;
-    fputs(line,out);
-  }
-  if(!changed||!helper){fclose(out);fclose(in);remove("J36TMP.C");puts("GEN36: JOURNAL.C soft-wrap patch point not found");return 0;}
-  if(ferror(in)||fclose(out)!=0){fclose(in);remove("J36TMP.C");puts("GEN36: failed writing J36TMP.C");return 0;}
-  fclose(in);return 1;
+  if(!copy_generated_source("JOURNAL.C","J36TMP.C")){puts("GEN36: failed copying JOURNAL.C to J36TMP.C");return 0;}
+  return 1;
 }
 
 static void emit_stack_wrap(FILE *out)
@@ -555,5 +531,5 @@ int main(void)
   if(!write_launch36()||!write_install36()||!write_note36()||
      !write_journal36()||!write_stack36()||!write_cal36()||!write_sysinfo36()||
      !write_snake36()||!write_pop36()||!write_sol36()||!write_boxes36())return 1;
-  puts("Generated Launch! 3.64 build sources.");return 0;
+  puts("Generated Launch! 3.65 build sources.");return 0;
 }

@@ -183,6 +183,8 @@ int main(int argc,char**argv){union REGS q;int x,y,tx,ty,cx=4,cy=2,top=2,key=0,m
  if((mb&1)&&mx>=tx&&mx<tx+NW&&my>=ty+2&&my<ty+2+NV){journal_selection_clear();cy=top+(my-(ty+2));if(cy<2)cy=2;cx=mx-tx;if(cx<4)cx=4;key=0;}
  else {int oldpos=journal_pos(cx,cy),shift=journal_shift_down();
   if(key==3){journal_copy_selection();key=0;}
+  else if(key==256+0x77){cy=2;cx=4;journal_selection_clear();}
+  else if(key==256+0x75){cy=last_text_line();cx=NW-1;while(cx>4&&note[cy*NW+cx-1]==' ')cx--;journal_selection_clear();}
   else if(key==24){journal_copy_selection();journal_delete_selection(&cx,&cy);oldtop=-1;key=0;}
   else if((key==22||key==16)){journal_paste(&cx,&cy,insert);oldtop=-1;key=0;}
   else if(key==256+75&&cx>4){cx--;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
