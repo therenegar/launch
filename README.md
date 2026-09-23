@@ -457,7 +457,7 @@ A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate mon
 
 You can print the calendar out, it will create a full page calendar with large enough space to write. 
 
-It is seems baaic, but it is deceptive. It's also a full blown iCalendar parser for DOS.
+It seems basic, but it is deceptive. It's also a full blown iCalendar parser for DOS.
 The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specification) that is located beside `!CAL.EXE`
 
 **Open files**: You can also use add one or more `.ICS` files as a parameter, and the Calendar will show events from those files.<br/>
