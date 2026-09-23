@@ -271,7 +271,7 @@ Styles using ANSI escape sequences will not show in the selector if an ANSI driv
 
 ###  Font
 
-You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
+You can change the VGA font used across the entire DOS session. `Standard` uses the system (built-in) VGA BIOS rom font. 
 
 <img width="360" height="300" alt="Config: Font" src="https://github.com/user-attachments/assets/b9968688-1705-4977-97cf-c64eb6241b8f" />
 
