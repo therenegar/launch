@@ -280,6 +280,7 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 > Note this feature is not available with an EGA display adapter.
 
 **Font Choices**
+There's a whopping 30 highly curated display fonts to choose from. Launch! is unsurprisingly the default.
 
 <img width="456" height="50" alt="LAUNCH" src="https://github.com/user-attachments/assets/bf7c725c-c644-4c8e-9e5d-c3a8348ef29f" />
 <img width="456" height="50" alt="BIG" src="https://github.com/user-attachments/assets/541640d9-7bff-424b-8ebd-cf4254d645dc" />
