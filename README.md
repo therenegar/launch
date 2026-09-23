@@ -9,10 +9,9 @@ Requires: DOS 3.3, 80286, EGA or better. 1.2MB free disk space for install.
 
 Works with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU. Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/ef2ee90f-d900-45ed-8593-44638053f546" />
+<img width="720" height="600" alt="The ! Menu" src="https://github.com/user-attachments/assets/6d1e7461-0498-4f7e-aa40-a8514c435247" />
 
 ## Contents
-
 - [Features](#features)
 - [Installation](#install)
 - [Menu](#the-menu)
@@ -32,8 +31,8 @@ Works with MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machi
 - Built in file opener to create associations between files and launchers for easy open.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 10 handy and optional text-mode only accessories and 7 games to go with Launch!
-    - Calculator, Calendar, Journal, Markdown, Note, Pixel Draw, Card Stack, System Info, To-Dos, Typo
-    - Boxes, Pop, Snake, Solitaire, FreeCell, Plumb and Wordz
+    - [Calendar](#!cal), [Calculator](#!calc), [Card Stack](#!stack), [Journal](#!journal), [Markdown](#!mkdown), [Note](#!note), [Pixel Draw](#!draw) , [System Info](#!sysinfo), [To-dos](#!todos), [Typo](#!typo)
+    - [Boxes](#!boxes), [Pop](#!pop), [Snake](#!snake), [Solitaire](#!sol), [FreeCell](#!fcell), [Plumb](#!plumb) and [Wordz](#!wordz)
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
 - Various Command Prompt styles to choose from to uplift your C:\
 - Custom VGA display fonts to change the look of your whole DOS environment.
@@ -444,6 +443,7 @@ Usable with either keyboard or mouse interaction.
 
 Any data files for each program are stored in the `data` sub-directory of Launch!. Exports will be placed in the `exports` sub-directory.
 
+<a id="!cal"></a>
 ### !CAL.EXE - Calendar
 A basic monthly calendar view. Use `Left` and `Right` arrow keys to navigate months, `Home` returns to the current month.
 
@@ -457,13 +457,13 @@ e.g. `!CAL C:\DOCS\HOLIDAYS.ICS C:\DOCS\BDAYS.ICS`
 <img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/9db4cf53-9938-4e35-8381-a7e1633a2cfa" />
 <img width="360" height="300" alt="Calendar - Day View" src="https://github.com/user-attachments/assets/d1dbe2c3-6d0a-48fd-9887-b3d2ed2f7f28" />
 
-
+<a id="!calc"></a>
 ### !CALC.EXE - Calculator
 A simple calculator, with nice large digits, pretty self explanatory!
 
 <img width="360" height="300" alt="Calculator" src="https://github.com/user-attachments/assets/3bb84bf7-383d-4f8e-b92b-0a7ada006c62" />
 
-
+<a id="!draw"></a>
 ### !DRAW.EXE - Pixel Draw
 You can create simple pixel images, they can be exported as a bitmap.<br/>
 The canvas is 96x96 pixels, the viewable area is 30x12 and can be scrolled.<br/>
@@ -485,6 +485,7 @@ You can toggle full-screen editing with F11, or the Maximize icon in the titleba
 **Open files**
 `!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing. e.g. `!DRAW C:\ICON.BMP`
 
+<a id="!journal"></a>
 ### !JOURNAL.EXE - Journal
 A simple and flexible daily journal. Easily navigate between days or go to a specific date.
 
@@ -494,7 +495,7 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 
 <img width="360" height="300" alt="Journal" src="https://github.com/user-attachments/assets/2d4f1a47-4cd7-43e9-b4e0-567b5c2768f2" />
 
-
+<a id="!mkdown"></a>
 ### !MKDOWN.EXE - Markdown
 A simple markdown editor with split-screen live preview, full-screen graphical preview (font sizes and styles), and focus mode for no-distraction blue-screening typing.
 
@@ -520,7 +521,7 @@ And you can press `F11` or the Maximize titlebar button to go full-screen.
 
 <img width="360" height="300" alt="Full-screen Editing" src="https://github.com/user-attachments/assets/051c91cb-c9ee-456b-8fc0-f0f31dbbf441" />
 
-
+<a id="!note"></a>
 ### !NOTE.EXE - Note
 Simple notepad. You can click and type anywhere!
 
@@ -543,7 +544,7 @@ Press `F11` or the Maximize titlebar button to go full-screen editing.
 
 <img width="360" height="300" alt="Full-screen Editing" src="https://github.com/user-attachments/assets/267f268b-5284-4130-9c5e-494cfcebebf6" />
 
-
+<a id="!stack"></a>
 ### !STACK.EXE - Card Stack
 A stack of index cards. Each card has a title and text, and you can navigate between them. Clicking a card title brings that card to the front of the stack for viewing/editing.
 
@@ -554,7 +555,7 @@ Entries are automatically saved, everything is persisted, and all cards will be 
 
 <img width="360" height="300" alt="Card Stack" src="https://github.com/user-attachments/assets/4f73850e-c67d-4a56-9b0b-b01001673bdd" />
 
-
+<a id="!sysinfo"></a>
 ### !SYSINFO.EXE - System Information
 View useful information about your system, including free memory and disk space.
 
@@ -562,7 +563,7 @@ The system information report can be printed for reference.
 
 <img width="360" height="300" alt="System Information" src="https://github.com/user-attachments/assets/258f9b7c-bc72-4bbb-8743-ad280804bb4a" />
 
-
+<a id="!todos"></a>
 ### !TODOS.EXE - To-dos
 A simple and flexible To-Do list supporting grouping, due dates (with natural language like "tomorrow", "next Friday", extended description, and tags.
 
@@ -575,7 +576,7 @@ Some secret hotkeys<br/>
 
 <img width="360" height="300" alt="To-Dos" src="https://github.com/user-attachments/assets/4ec01403-7f3a-4391-9a39-98283af626d1" />
 
-
+<a id="!typo"></a>
 ### !TYPO.EXE - Typo
 Level up on your words-per-minute and put that retro mechanical keyboard to good use, practicing your typing.
 
@@ -594,7 +595,7 @@ Launch! comes with 7 addictive games to kill some time. My attempt at creating a
 
 If selected during the Install program, there will be a **Games** menu created for you in Launch! providing quick access.
 
-
+<a id="!boxes"></a>
 ### !BOXES.EXE - Boxes
 A Sokoban style puzzle game with 250 different challenges.
 
@@ -606,19 +607,19 @@ Puzzles 1-200 can be played out for you by choosing `Solve`. Levels 200-250, you
 
 Puzzles are from Microban collections designed by [David W. Skinner](http://www.abelmartin.com/rj/sokobanJS/Skinner/David%20W.%20Skinner%20-%20Sokoban.htm)
 
-
+<a id="!fcell"></a>
 ### !FCELL.EXE - FreeCell
 Play the FreeCell card game. Same interaction and interface as Solitaire.
 
 <img width="360" height="300" alt="FreeCell" src="https://github.com/user-attachments/assets/f2f4f0c3-b7c0-42c8-8dd5-a2e8efc701b1" />
 
-
+<a id="!plumb"></a>
 ### !PLUMB.EXE - Plumb
 Lay some pipe and stop the leaking slime before it's too late!
 
 <img width="360" height="300" alt="Plumb" src="https://github.com/user-attachments/assets/e32affd0-d03f-42fc-9801-483495a66dc1" />
 
-
+<a id="!pop"></a>
 ### !POP.EXE - Pop
 An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
 
@@ -626,7 +627,7 @@ An implementation of the classic SameGame/CHAIN SHOT tile-matching game.
 
 <img width="360" height="300" alt="Pop" src="https://github.com/user-attachments/assets/03730b5e-1da7-476a-9f76-e80f5dc50de2" />
 
-
+<a id="!snake"></a>
 ### !SNAKE.EXE - Snake
 Eat the fruit before the timer runs out!
 Watch out for walls and don't run into yourself
@@ -635,7 +636,7 @@ Watch out for walls and don't run into yourself
 
 Levels 1-10 come from the Microsoft QBasic NIBBLES.BAS sample program. Beyond level 10 playfields are randomly generated (and might be crazy).
 
-
+<a id="!sol"></a>
 ### !SOL.EXE - Solitaire
 Play draw three Solitaire completely in text mode!
 
@@ -643,7 +644,7 @@ Click a card (it will show as selected), then click the destination (valid desti
 
 <img width="360" height="300" alt="Solitaire" src="https://github.com/user-attachments/assets/68daf4d3-1f61-41a8-876b-31d71b65d558" />
 
-
+<a id="!wordz"></a>
 ### !WORDZ.EXE - Wordz
 
 Over 200 word-find style challenges.
