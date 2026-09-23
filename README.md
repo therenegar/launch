@@ -483,8 +483,7 @@ Your drawing is persisted and will be there when the program is re-opened.
 You can toggle full-screen editing with F11, or the Maximize icon in the titlebar.
 
 **Open files**
-`!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing.<br/>
-e.g. `!DRAW C:\ICON.BMP`
+`!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing. e.g. `!DRAW C:\ICON.BMP`
 
 ### !JOURNAL.EXE - Journal
 A simple and flexible daily journal. Easily navigate between days or go to a specific date.
