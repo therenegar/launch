@@ -449,7 +449,7 @@ You can print the calendar out, it will create a full page calendar with big eno
 
 The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specification) that is located beside `!CAL.EXE`
 
-You can also use add one or more `.ICS` files as a parameter, and the Calendar will show events from those files.<br/>
+**Open files**: You can also use add one or more `.ICS` files as a parameter, and the Calendar will show events from those files.<br/>
 e.g. `!CAL C:\DOCS\HOLIDAYS.ICS C:\DOCS\BDAYS.ICS`
 
 <img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/9db4cf53-9938-4e35-8381-a7e1633a2cfa" />
@@ -480,8 +480,7 @@ Your drawing is persisted and will be there when the program is re-opened.
 `Show` will render your drawing in large scale graphics mode.
 You can toggle full-screen editing with F11, or the Maximize icon in the titlebar.
 
-**Open files**
-`!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing. e.g. `!DRAW C:\ICON.BMP`
+**Open files**: `!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing. e.g. `!DRAW C:\ICON.BMP`
 
 <a id="!journal"></a>
 ### !JOURNAL.EXE - Journal
@@ -512,7 +511,7 @@ There's also a Focus mode for distraction free writing.
 
 > Note the graphic preview requires a VGA display adapter.
 
-You can open one or more markdown (`.MD`) files by adding as a parameter to `!MKDOWN.EXE`, e.g. `!MKDOWN C:\DOCS\REPORT.MD`
+**Open files**: You can open one or more markdown (`.MD`) files by adding as a parameter to `!MKDOWN.EXE`, e.g. `!MKDOWN C:\DOCS\REPORT.MD`
 
 Save and print the current page with the respective buttons.
 
@@ -535,8 +534,7 @@ Words will wrap at the end of each line intelligently to the next, for natural t
 
 <img width="360" height="300" alt="Note" src="https://github.com/user-attachments/assets/a447c391-17c7-4a6b-9e52-1fe82083b958" />
 
-**Open Files: **
-You can add the filename/s (up to 10) of a text file after `!NOTE.EXE` and Note will open your external text file (in a tab labelled 'External' - one file per page). Any changes be saved (overwrite) with the Export button - which will save all opened files. Externally opened files are not persisted.
+**Open Files**: You can add the filename/s (up to 10) of a text file after `!NOTE.EXE` and Note will open your external text file (in a tab labelled 'External' - one file per page). Any changes be saved (overwrite) with the Export button - which will save all opened files. Externally opened files are not persisted.
 e.g. `!NOTE C:\DOCS\CONTACTS.TXT C:\DOCS\BDAYS.TXT`
 
 Press `F11` or the Maximize titlebar button to go full-screen editing.
