@@ -156,15 +156,15 @@ As an example, this can allow you to browse and open images with a launcher for 
 
 There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
 
-<img width="720" height="600" alt="Open File" src="https://github.com/user-attachments/assets/9e3acdbb-8f0c-445d-a39a-66eaf8fead6b" />
+<img width="360" height="300" alt="Open File" src="https://github.com/user-attachments/assets/9e3acdbb-8f0c-445d-a39a-66eaf8fead6b" />
 
 An association consists of one or more file extensions, and a selected launcher from your menu.
 
-<img width="720" height="600" alt="Create association" src="https://github.com/user-attachments/assets/3bc0d834-9157-4497-b0f5-dc678666e6b0" />
+<img width="360" height="300" alt="Create association" src="https://github.com/user-attachments/assets/3bc0d834-9157-4497-b0f5-dc678666e6b0" />
 
 You can also open files with further parameters if required.
 
-<img width="720" height="600" alt="Open file with parameters" src="https://github.com/user-attachments/assets/718202b0-bf7b-4725-a002-df009b827725" />
+<img width="360" height="300" alt="Open file with parameters" src="https://github.com/user-attachments/assets/718202b0-bf7b-4725-a002-df009b827725" />
 
 The `Open File` dialog can also be shown on its own, without the menu, by running `! /OPEN`.
 
@@ -177,11 +177,11 @@ The drive bar shows the available disk drives, and allows you to switch between 
 
 The path bar shows a preview of the command line that will be executed when `Run` is chosen.
 
-<img width="720" height="600" alt="Explore" src="https://github.com/user-attachments/assets/558f8ff2-dbae-435a-a7f9-139f8f740f79" />
+<img width="360" height="300" alt="Explore" src="https://github.com/user-attachments/assets/558f8ff2-dbae-435a-a7f9-139f8f740f79" />
 
 Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
 
-<img width="720" height="600" alt="Run with parameters" src="https://github.com/user-attachments/assets/60b7f23a-5b96-40cc-8ae9-72864a925c10" />
+<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/60b7f23a-5b96-40cc-8ae9-72864a925c10" />
 
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)<br/>
 
@@ -193,7 +193,7 @@ The `Shutdown...` menu item is also fixed at the bottom of the menu, and when se
 
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="720" height="600" alt="Shutdown..." src="https://github.com/user-attachments/assets/55a8a298-83e7-4010-afdf-4f2f5d96ae4c" />
+<img width="360" height="300" alt="Shutdown..." src="https://github.com/user-attachments/assets/55a8a298-83e7-4010-afdf-4f2f5d96ae4c" />
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`). <BR/>
 The dialog can also be shown on its own, without the menu, by running `! /BYE`.
@@ -218,13 +218,13 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="720" height="600" alt="Config: Menu" src="https://github.com/user-attachments/assets/908ca5e2-248e-4d4c-b4e4-e6dbe80fa203" />
+<img width="360" height="300" alt="Config: Menu" src="https://github.com/user-attachments/assets/908ca5e2-248e-4d4c-b4e4-e6dbe80fa203" />
 
 Contextual help (tooltips) can be turned on (off by default). They will appear throughout Launch! with keyboard focus or mouse-over.
 
 The SysBar (off by default) shows an information bar, top-right of screen every time the menu is opened with some handy system status information.
 
-<img width="720" height="600" alt="SysBar" src="https://github.com/user-attachments/assets/bd4bb85c-87a3-4da7-910e-8f776f99d824" />
+<img width="360" height="300" alt="SysBar" src="https://github.com/user-attachments/assets/bd4bb85c-87a3-4da7-910e-8f776f99d824" />
 
 The SysBar shows (left to right): 
 - Largest executable program size (free lower memory)
@@ -244,7 +244,7 @@ There are 9 pre-defined color schemes to choose from, or you can change the colo
 
 If using a monochrome display, use the 'Mono' scheme for best results.
 
-<img width="720" height="600" alt="Config: Colors" src="https://github.com/user-attachments/assets/1b53c115-8717-49a7-9d26-6cdb2c566d2e" />
+<img width="360" height="300" alt="Config: Colors" src="https://github.com/user-attachments/assets/1b53c115-8717-49a7-9d26-6cdb2c566d2e" />
 
 <img width="360" height="300" alt="Color Schemes" src="https://github.com/user-attachments/assets/189807a7-5fd1-4b88-98e5-b120dc750bcc" />
 
@@ -255,7 +255,7 @@ You can select which screensaver to show, choose `None` to disable this function
 You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).<br/>
 Click `Preview` for an instant preview of the currently selected screensaver.
 
-<img width="720" height="600" alt="Config: ScreenSavers" src="https://github.com/user-attachments/assets/60c45c31-fc64-4f8a-8357-f2d15d9816a8" />
+<img width="360" height="300" alt="Config: ScreenSavers" src="https://github.com/user-attachments/assets/60c45c31-fc64-4f8a-8357-f2d15d9816a8" />
 
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
@@ -270,13 +270,13 @@ Choosing `SET` applies the selected prompt style immediately, and also updates a
 
 Styles using ANSI escape sequences will not show in the selector if an ANSI driver is not detected.
 
-<img width="720" height="600" alt="Config: Prompt" src="https://github.com/user-attachments/assets/0808a681-5930-4af9-a405-37919ae95bd7" />
+<img width="360" height="300" alt="Config: Prompt" src="https://github.com/user-attachments/assets/0808a681-5930-4af9-a405-37919ae95bd7" />
 
 ###  Font
 
 You can change the VGA font used across the entire DOS session. There's 22 different fonts to choose from. `Standard` uses the system VGA BIOS rom font. 
 
-<img width="720" height="600" alt="Config: Font" src="https://github.com/user-attachments/assets/b9968688-1705-4977-97cf-c64eb6241b8f" />
+<img width="360" height="300" alt="Config: Font" src="https://github.com/user-attachments/assets/b9968688-1705-4977-97cf-c64eb6241b8f" />
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
@@ -316,7 +316,7 @@ If the shortcut is active, you can unload it - removing all traces of the TSR fr
 If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT/FDAUTO.BAT` and reboot.<br/>
 Note that changing the key combination also requires a reboot to apply.
 
-<img width="720" height="600" alt="Config: Shortcut" src="https://github.com/user-attachments/assets/93d6ccf2-262a-46cc-be95-2b2fe05af8a9" />
+<img width="360" height="300" alt="Config: Shortcut" src="https://github.com/user-attachments/assets/93d6ccf2-262a-46cc-be95-2b2fe05af8a9" />
 
 
 ### Reset
@@ -325,7 +325,7 @@ If you mess up your Launch! installation you can reset the configuration, the me
 
 This will return things to the defaults, and rebuild a default menu as well.
 
-<img width="720" height="600" alt="Config: Reset" src="https://github.com/user-attachments/assets/0b432c76-2841-4ca3-a326-4078efba75fc" />
+<img width="360" height="300" alt="Config: Reset" src="https://github.com/user-attachments/assets/0b432c76-2841-4ca3-a326-4078efba75fc" />
 
 
 ## Live menu management
@@ -335,17 +335,17 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="720" height="600" alt="Add item" src="https://github.com/user-attachments/assets/feaf075d-39a6-4a57-bf7d-5a388474904a" />
+<img width="360" height="300" alt="Add item" src="https://github.com/user-attachments/assets/feaf075d-39a6-4a57-bf7d-5a388474904a" />
 
 `CTRL+D` will remove the selected item from the menu (with confirmation first).
 
-<img width="720" height="600" alt="Remote item" src="https://github.com/user-attachments/assets/1daef798-e7be-4cc8-b41e-2de77e4aa70e" />
+<img width="360" height="300" alt="Remote item" src="https://github.com/user-attachments/assets/1daef798-e7be-4cc8-b41e-2de77e4aa70e" />
 
 You can move selected items up and down with `CTRL+↑/↓`.
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="720" height="600" alt="Edit item" src="https://github.com/user-attachments/assets/d609be98-e703-4f89-98ee-f1694bac0176" />
+<img width="360" height="300" alt="Edit item" src="https://github.com/user-attachments/assets/d609be98-e703-4f89-98ee-f1694bac0176" />
 
 If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
 You will be able to enter parameters before running the program.
@@ -357,7 +357,7 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 
 If **Add to PATH for execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT/FDAUTO.BAT - which can get unwieldy. This allows you do away with that, and just add a program to PATH when launched from the menu.
 
-<img width="720" height="600" alt="Run with parameters" src="https://github.com/user-attachments/assets/9f596c4b-8f47-4ea0-9f93-da1ee0c199e9" />
+<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/9f596c4b-8f47-4ea0-9f93-da1ee0c199e9" />
 
 
 ### Manual menu configuration
@@ -461,7 +461,7 @@ e.g. `!CAL C:\DOCS\HOLIDAYS.ICS C:\DOCS\BDAYS.ICS`
 ### !CALC.EXE - Calculator
 A simple calculator, with nice large digits, pretty self explanatory!
 
-<img width="720" height="600" alt="Calculator" src="https://github.com/user-attachments/assets/3bb84bf7-383d-4f8e-b92b-0a7ada006c62" />
+<img width="360" height="300" alt="Calculator" src="https://github.com/user-attachments/assets/3bb84bf7-383d-4f8e-b92b-0a7ada006c62" />
 
 
 ### !DRAW.EXE - Pixel Draw
@@ -475,15 +475,15 @@ The grid can be toggled on/off.
 
 Your drawing is persisted and will be there when the program is re-opened.
 
-<img width="720" height="600" alt="Draw" src="https://github.com/user-attachments/assets/af350e87-e4fa-4629-9c8e-316bb29e34ce" />
+<img width="360" height="300" alt="Draw" src="https://github.com/user-attachments/assets/af350e87-e4fa-4629-9c8e-316bb29e34ce" />
 
 `Show` will render your drawing in large scale graphics mode.
 
-<img width="720" height="600" alt="Show" src="https://github.com/user-attachments/assets/fd5e02c8-e5cd-4c01-9ad7-d34cb8b8a742" />
+<img width="360" height="300" alt="Show" src="https://github.com/user-attachments/assets/fd5e02c8-e5cd-4c01-9ad7-d34cb8b8a742" />
 
 You can toggle full-screen editing with F11, or the Maximize icon in the titlebar.
 
-<img width="720" height="600" alt="Full-screen Draw" src="https://github.com/user-attachments/assets/96a259e4-1f04-4af3-9805-eb71fe373c43" />
+<img width="360" height="300" alt="Full-screen Draw" src="https://github.com/user-attachments/assets/96a259e4-1f04-4af3-9805-eb71fe373c43" />
 
 **Open files**
 `!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing.<br/>
