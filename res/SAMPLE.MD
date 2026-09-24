@@ -1,439 +1,176 @@
-# An h1 header
+# Launch! Markdown Sample
 
-Paragraphs are separated by a blank line.
+This document is both a test file for !MKDOWN and a compact syntax reference.
+It intentionally exercises the Markdown features understood by Launch!.
 
-2nd paragraph. *Italic*, **bold**, {{underline}} and `monospace`.
-That underline is custom for Launch! because underline is useful in DOS.
-Itemized lists look like:
+## Paragraphs and inline styles
 
-  * this one
-  * that one
-  * the other one
+This is a normal paragraph of dummy text. Lorem ipsum dolor sit amet,
+consectetur adipiscing elit. Integer vel neque sit amet lorem malesuada
+fringilla. Suspendisse potenti. Curabitur vitae justo at erat luctus posuere.
 
-Note that --- not considering the asterisk --- the actual text
-content starts at 4-columns in.
+Plain text can contain *italic text*, _italic text_, **bold text**,
+***bold italic text***, and `inline code`.
 
-> Block quotes are
-> written like so.
->
-> They can span multiple paragraphs,
-> if you like.
+Launch! also supports ~~strikethrough~~ and <del>HTML-style strike</del>.
+Underline can be written as <u>HTML underline</u> or with the Launch!
+extension {{double-brace underline}}.
 
-## An h2 header
+Superscript uses HTML tags, for example E = mc<sup>2</sup>.
+Subscript works too, for example H<sub>2</sub>O.
 
-Here's a numbered list:
+Styles can be combined: ***bold italic***, **bold with `code` nearby**,
+and {{underlined **bold** text}}.
 
- 1. first item
- 2. second item
- 3. third item
+Escaped Markdown characters can be shown literally: \*stars\* and \# hash.
 
-Note again how the actual text starts at 4 columns in (4 characters
-from the left side). Here's a code sample:
-```
-    # Let me re-iterate ...
-    for i in 1 .. 10 { do-something(i) }
-```
-As you probably guessed, indented 4 spaces. By the way, instead of
-indenting the block, you can use delimited blocks, if you like:
+## Heading levels
 
-```
-define foobar() {
-    print "Welcome to flavor country!";
-}
-```
+# Heading 1
+## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+###### Heading 6
 
-(which makes copying & pasting easier). Syntax highlighting will come one day, 
-and when it does it will use this to determine code type:
+## Block quotes
 
-```python
-import time
-# Quick, count to ten!
-for i in range(10):
-    # (but not *too* quick)
-    time.sleep(0.5)
-    print i
-```
-### An h3 header
+> This is a block quote. It should be visually distinct from ordinary body
+> text and is useful for quotations, notes, and callouts.
 
-Now a nested list:
+> A second quoted paragraph provides enough text to test wrapping and
+> continuation across the preview width.
 
- 1. First, get these ingredients:
+## Unordered lists
 
-      - carrots
-      - celery
-      - lentils
+- First item
+- Second item
+  - Nested item A
+  - Nested item B
+- Third item
 
- 2. Boil some water.
+* Asterisk list marker
++ Plus list marker
 
- 3. Dump everything in the pot and follow
-    this algorithm:
+## Ordered lists
 
-        1. find wooden spoon
-        2. uncover pot
-        3. stir
-        4. cover pot
-        5. balance wooden spoon precariously on pot handle
-        6. wait 10 minutes
-        7. goto first step (or shut off burner when done)
+1. First numbered item
+2. Second numbered item
+3. Third numbered item
+   1. Nested numbered item
+   2. Another nested item
 
-> Do not bump wooden spoon or it will fall!
+## Task lists
 
-Notice again how text always lines up on 4-space indents (including
-that last line which continues item 3 above).
+[ ] An unfinished task
+[x] A completed task
+[X] Completed with an upper-case X
 
-Here's a link to [a website](http://foo.bar), to a [local
-doc](local-doc.html), and to a [section heading in the current
-doc](#an-h2-header). 
+## Definition list
 
-Here's a footnote [^1].
+Launch!
+: A text-mode launcher and accessory suite for DOS.
 
-#### A level 4 Heading
+Markdown
+: A lightweight markup language used for formatted plain-text documents.
 
-Tables can look like this:
-
-| Tables   |      Are      |  Cool |
-|----------|:-------------:|------:|
-| col 1 is |  left-aligned | $1600 |
-| col 2 is |    centered   |   $12 |
-| col 3 is | right-aligned |    $1 |
-
-
-| heading                   | heading | heading                               | heading | this heading  wraps |
-|---------------------------|---------|---------------------------------------|---------|---------------------|
-| This is a multi line cell | x       | x                                     |         | $                   |
-|                           |         | This cell wraps  over multiple  lines |         | $                   |
-|                           |         |                                       |         | $                   |
-
-A horizontal rule follows.
+## Horizontal rules
 
 ---
 
-##### Finally H5
+Text between horizontal rules.
 
-We're getting to the end of our sample document.
+***
 
-Here's a definition list:
+## Links
 
-apples
-  : Good for making applesauce.
-oranges
-  : Citrus!
-tomatoes
-  : There's no "e" in tomatoe.
+This is an [inline link](https://example.com/launch).
 
-Again, text is indented 4 spaces. (Put a blank line between each
-term/definition pair to spread things out more.)
+Launch! also recognizes an automatic URL such as
+<https://example.com/documentation>.
 
+## Pipe table
 
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Headings | Yes | Levels 1 through 6 |
+| Lists | Yes | Ordered and unordered |
+| Tables | Yes | Rendered with box drawing |
+| Code | Yes | Inline and fenced |
+| Quotes | Yes | Styled block quotes |
 
-[^1]: Footnote text goes here.
+## Plain-column table
 
+Name          Type          Example
+------------  ------------  ----------------
+Alpha         Text          Ordinary content
+Beta          Number        12345
+Gamma         Mixed         DOS / VGA / EGA
 
+## Fenced code block
 
+```c
+#include <stdio.h>
 
+int main(void)
+{
+    printf("Hello from DOS!\n");
+    return 0;
+}
+```
 
+~~~text
+A tilde fence is supported too.
+This block should be rendered in the code style.
+~~~
 
+## Indented code
 
+    REM This is an indented code block
+    ECHO Launch! Markdown sample
+    DIR C:\DOCS
 
+## Images and media placeholders
 
+Images are not rendered as raster graphics, but their Markdown syntax is
+recognized and represented by a media placeholder:
 
+![Example image](example.bmp "Example image")
 
+Raw HTML media tags are also recognized as placeholders:
 
+<img src="portrait.bmp" alt="Portrait">
+<video src="demo.avi" title="Demo video"></video>
+<audio src="sample.wav" title="Sample audio"></audio>
+<iframe src="example.html" title="Embedded page"></iframe>
 
+## Footnote-style markers
 
+Launch! recognizes footnote-style markers in graphical output.[^1]
 
+[^1]: This line is useful for testing the small footnote-style rendering.
 
+## Long wrapping paragraph
 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque sed
+diam vitae lacus suscipit aliquam. Morbi feugiat, sem at placerat faucibus,
+erat justo condimentum velit, non tempor magna lectus vitae metus. Praesent
+fermentum, mauris vitae feugiat malesuada, libero erat sollicitudin sapien,
+vitae tincidunt justo magna sit amet ligula. This paragraph is deliberately
+long enough to exercise soft wrapping in the editor, text preview, Focus
+mode, maximized view, graphical Show mode, printing, and exported output.
 
+## Character and punctuation test
 
+ASCII punctuation:
+! " # $ % & ' ( ) * + , - . / : ; < = > ? @ [ \ ] ^ _ ` { | } ~
 
+Numbers:
+0123456789
 
+Common DOS text:
+C:\LAUNCH\!MKDOWN.EXE SAMPLE.MD
 
+---
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+End of Launch! Markdown sample.
