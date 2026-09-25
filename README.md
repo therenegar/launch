@@ -540,11 +540,13 @@ You can toggle full-screen editing with F11, or the Maximize icon in the titleba
 ### !JOURNAL.EXE - Journal
 A simple and flexible daily journal. Easily navigate between days or go to a specific date.
 
-Export and Print your journal too.
+Export your whole journal, or Print the current page.
 
 Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copied (`CTRL+C`) or Pasted (`CTRL+V`) anywhere on the page.
 
 <img width="360" height="300" alt="Journal" src="https://github.com/user-attachments/assets/2d4f1a47-4cd7-43e9-b4e0-567b5c2768f2" />
+
+Adding the `/PRINT` parameter is a tiny thing with huge consequences. Journal becomes a typewriter, sending output to a connected printer character at a time, as you type. Backspacing will redact, only on the current line. But there's no deleting. So thoughtful typing is the goal.
 
 <a id="!mkdown"></a>
 ### !MKDOWN.EXE - Markdown
