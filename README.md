@@ -8,7 +8,7 @@
 
 **Works with** MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU. Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/bd122c4f-27f6-4a08-9853-824695a0667d" />
+<img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/7e928087-c592-4ce9-9cd5-2ba3f794cdbe" />
 
 ## Contents
 - [Features](#features)
