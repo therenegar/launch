@@ -619,19 +619,20 @@ installer:
     cmp bx,0x5343
     je already_installed
 
-    /* Build and authenticate the sibling !.EXE first.  Once authenticated,
-     * retain only the original one-character "!" resident macro.  Launch!'s
-     * installer places its directory on PATH; command resolution belongs to
-     * the user's command processor rather than this TSR. */
+    /* Build and authenticate the sibling !.EXE first.  The normal 386+ build
+     * later reduces this to the original one-character "!" macro; the 286
+     * build deliberately retains the full sibling path for reliability. */
     call build_launch_path
     jc path_error
     call verify_launch_file
     jc invalid_launch
-    /* The sibling image has now been authenticated.  Preserve Launch!'s
-     * original interaction design: the resident hotkey injects only "!".
-     * INSTALL places the Launch! directory on PATH, and typing the full path
-     * here is measurably slower on period DOS hardware. */
+    /* The sibling image has now been authenticated.  The normal 386+ build
+     * keeps the compact "!" macro.  The 286-safe build retains the complete
+     * sibling path already constructed above: this removes any dependency on
+     * PATH while debugging/using the conservative real-AT keyboard path. */
+.ifndef CPU286_BUILD
     call build_short_path
+.endif
 
     mov ax,word ptr cs:[0x16]         /* parent command processor PSP */
     mov word ptr [shell_psp],ax
@@ -640,10 +641,18 @@ installer:
     int 0x21
     mov word ptr [old09],bx
     mov word ptr [old09+2],es
+.ifndef CPU286_BUILD
+    /* The 286-safe build deliberately does not hook INT 15h/AH=4F.  Some
+     * period AT BIOSes use subtly different keyboard-intercept return paths;
+     * chaining our INT 15h filter there can leave the controller/BIOS state
+     * wedged after the hotkey.  The post-BIOS INT 09h path below is sufficient
+     * on real 286 hardware: it lets the original BIOS service the keyboard,
+     * then removes the matched hotkey from the BIOS ring buffer. */
     mov ax,0x3515
     int 0x21
     mov word ptr [old15],bx
     mov word ptr [old15+2],es
+.endif
     mov ax,0x3516
     int 0x21
     mov word ptr [old16],bx
@@ -667,9 +676,11 @@ installer:
     mov dx,offset int09_handler
     mov ax,0x2509
     int 0x21
+.ifndef CPU286_BUILD
     mov dx,offset int15_handler
     mov ax,0x2515
     int 0x21
+.endif
     mov dx,offset int16_handler
     mov ax,0x2516
     int 0x21
@@ -946,10 +957,12 @@ unload_shortcut:
     int 0x21
     call check_09
     jc unload_unsafe
+.ifndef CPU286_BUILD
     mov ax,0x3515
     int 0x21
     call check_15
     jc unload_unsafe
+.endif
     mov ax,0x3516
     int 0x21
     call check_16
@@ -970,9 +983,11 @@ unload_shortcut:
     mov al,0x09
     mov bx,offset old09
     call restore_vector
+.ifndef CPU286_BUILD
     mov al,0x15
     mov bx,offset old15
     call restore_vector
+.endif
     mov al,0x16
     mov bx,offset old16
     call restore_vector

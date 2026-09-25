@@ -127,9 +127,10 @@ static int compress_file(FILE *in,FILE *out,unsigned long *usize,unsigned long *
 
 int main(void)
 {
-  FILE *in,*out;char name[13],source[40];unsigned long offsets[40],csizes[40],usizes[40],data_start,total_raw=0,total_cmp=0;
+  FILE *in,*out;char name[13],source[40];unsigned long offsets[64],csizes[64],usizes[64],data_start,total_raw=0,total_cmp=0;
   int i,count=0,ok=1;
   while(files[count])count++;
+  if(count>64){puts("PACKDAT: too many archive members");return 1;}
   out=fopen("INSTALL.DAT","w+b");
   if(!out){puts("PACKDAT: cannot create INSTALL.DAT");return 1;}
 

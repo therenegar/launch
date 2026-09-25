@@ -4,8 +4,8 @@ Launch! Installation
   * Run A:\INSTALL.EXE
   
   * You'll be prompted for a directory to place Launch!
-  * You can choose whether to install accessories
-  * The necessary files will be copied and you will be prompted for all
+  * You can select/deselect components for installation
+  * Only the necessary files will be copied and you will be prompted for all
     changes to AUTOEXEC.BAT/FDAUTO.BAT
   * The keyboard shortcut can be chosen
   * Your drive can be scanned and an initial menu built.

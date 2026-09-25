@@ -290,7 +290,10 @@ static int read_key_immediate(void)
 }
 static void cursor_pos(unsigned *row,unsigned *col)
 {
-  union REGS r;memset(&r,0,sizeof(r));r.h.ah=3;r.h.bh=0;int86(0x10,&r,&r);*row=r.h.dh;*col=r.h.dl;
+  union REGS r;unsigned page;
+  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);page=r.h.bh;
+  memset(&r,0,sizeof(r));r.h.ah=3;r.h.bh=(unsigned char)page;int86(0x10,&r,&r);
+  *row=r.h.dh;*col=r.h.dl;
 }
 static void component_icon(int digit)
 {
@@ -298,9 +301,19 @@ static void component_icon(int digit)
 }
 static void screen_text_at(unsigned row,unsigned col,const char *text)
 {
-  union REGS r;unsigned mode,cols,seg,i;unsigned short far *video;if(!_isatty(_fileno(stdout)))return;
-  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);mode=r.h.al;cols=r.h.ah?r.h.ah:80;seg=(mode==7)?0xB000:0xB800;video=(unsigned short far *)((unsigned long)seg<<16);
-  for(i=0;text[i];i++)video[row*cols+col+i]=(unsigned char)text[i]|0x0700;
+  union REGS r;unsigned page,oldrow,oldcol,i;
+  if(!_isatty(_fileno(stdout)))return;
+  /* Use BIOS text services instead of direct B800/B000 writes.  This follows
+     the active display page and works consistently on VGA/EGA, mono adapters,
+     DOSBox/DOSBox-X and BIOS implementations with nonstandard page layout. */
+  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);page=r.h.bh;
+  memset(&r,0,sizeof(r));r.h.ah=3;r.h.bh=(unsigned char)page;int86(0x10,&r,&r);
+  oldrow=r.h.dh;oldcol=r.h.dl;
+  for(i=0;text[i];i++){
+    memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;r.h.dh=(unsigned char)row;r.h.dl=(unsigned char)(col+i);int86(0x10,&r,&r);
+    memset(&r,0,sizeof(r));r.h.ah=9;r.h.al=(unsigned char)text[i];r.h.bh=(unsigned char)page;r.h.bl=7;r.x.cx=1;int86(0x10,&r,&r);
+  }
+  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;r.h.dh=(unsigned char)oldrow;r.h.dl=(unsigned char)oldcol;int86(0x10,&r,&r);
 }
 static void error_icon(int indent){status_icon(indent,4,'!');}
 static void success_icon(int indent){status_icon(indent,2,3);}
@@ -498,6 +511,23 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
   return 1;
 }
 
+static int apply_component_config(const char *install,int screensavers,int fonts)
+{
+  char path[PATH_SIZE];FILE *f;int ok=1;
+  if(screensavers&&fonts)return 1;
+  sprintf(path,"%s\\LAUNCH.CFG",install);
+  f=fopen(path,"at");if(!f)return 0;
+  /* Last value wins in Launch!'s config parser.  Appending avoids rewriting
+     a user's existing configuration while still making deselection safe on
+     both fresh installs and upgrades. */
+  if(!screensavers&&fputs("SCREENSAVER=0\n",f)==EOF)ok=0;
+  if(!fonts){
+    if(fputs("FONT_ID=0\n",f)==EOF)ok=0;
+    if(fputs("FONT_PERSIST=0\n",f)==EOF)ok=0;
+  }
+  if(fclose(f)!=0)ok=0;return ok;
+}
+
 static int extract_progress_done=0,extract_progress_total=1;
 
 static void draw_extract_progress(void)
@@ -533,7 +563,7 @@ typedef struct {
   unsigned long offset,csize,usize;
 } DAT_ENTRY;
 
-static DAT_ENTRY dat_entry[40];
+static DAT_ENTRY dat_entry[64];
 
 static int component_member(const char *name,int component)
 {
@@ -601,7 +631,7 @@ static int extract_install_files(const char *archive,const char *install,int sho
   unsigned count,i;int selected,done=0,ok;
   in=fopen(archive,"rb");if(!in)return 0;
   if(fread(magic,1,8,in)!=8||memcmp(magic,DAT_MAGIC,8)){fclose(in);return 0;}
-  count=read_u16(in);if(!count||count>40){fclose(in);return 0;}
+  count=read_u16(in);if(!count||count>64){fclose(in);return 0;}
   for(i=0;i<count;i++){
     if(fread(dat_entry[i].name,1,13,in)!=13){fclose(in);return 0;}
     dat_entry[i].name[12]=0;
@@ -684,8 +714,19 @@ int main(int argc,char **argv)
     flags[0]=&accessories;flags[1]=&games;flags[2]=&screensavers;flags[3]=&fonts;flags[4]=&menu_generator;flags[5]=&shortcut_key;
     accessories=games=screensavers=fonts=menu_generator=shortcut_key=1;
     puts("\nChoose which components to install.\n");
-    for(i=0;i<6;i++){component_icon(i+1);printf("%s : ",labels[i]);cursor_pos(&yr[i],&yc[i]);printf("Yes\n");}
+    for(i=0;i<6;i++){
+      component_icon(i+1);printf("%s : ",labels[i]);
+      /* stdio may be buffered even on a DOS console.  Flush before asking
+         BIOS where the value starts, otherwise every saved coordinate can
+         refer to an older cursor position (seen under DOSBox). */
+      fflush(stdout);cursor_pos(&yr[i],&yc[i]);printf("Yes\n");fflush(stdout);
+    }
     puts("\nChoose a number to change, or Enter to continue with selection.");
+    /* Commit the complete component selector before switching from stdio
+       output to BIOS INT 16h immediate keyboard input.  Without this flush,
+       Microsoft C under DOSBox can leave the selector buffered and appear
+       to hang at a blank blinking cursor after the directory question. */
+    fflush(stdout);
     while(!done){k=read_key_immediate();if(k==13)done=1;else if(k>='1'&&k<='6'){i=k-'1';*flags[i]=!*flags[i];screen_text_at(yr[i],yc[i],*flags[i]?"Yes":"No ");}}
   }
   if(shortcut_key){
@@ -701,9 +742,8 @@ int main(int argc,char **argv)
   if(!extract_install_files(archive,install,shortcut_build,accessories,games,fonts,menu_generator))return 1;
   remove_unselected_components(install,accessories,games,fonts,menu_generator,shortcut_key);
   if(!upgrade&&!write_initial_font_config(install,(fonts&&vga_display)?1:0)){error_icon(0);puts("Files were copied, but the initial font configuration could not be created.");return 1;}
-  if(!upgrade&&!screensavers){
-    FILE *cf;sprintf(destination,"%s\\LAUNCH.CFG",install);cf=fopen(destination,"at");
-    if(cf){fputs("SCREENSAVER=0\n",cf);fclose(cf);}
+  if(!apply_component_config(install,screensavers,fonts)){
+    error_icon(0);puts("Files were copied, but the selected component configuration could not be applied.");return 1;
   }
   menu_result=spawnl(P_WAIT,launch_exe,"!.EXE","/INITMENU",NULL);
   if(menu_result!=0){error_icon(0);puts("Files were copied, but the standard Launch! menu could not be created or updated.");return 1;}
