@@ -292,6 +292,43 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 **Font Choices**
 There's a whopping 30 highly curated display fonts to choose from. Launch! is the default at install.
 
+<img width="420" height="51" alt="STANDARD" src="https://github.com/user-attachments/assets/fe18cc07-e7be-464b-8a8d-58b94116401e" />
+<img width="420" height="51" alt="LAUNCH" src="https://github.com/user-attachments/assets/7db43847-5298-4344-adc3-c02f9b815486" />
+<img width="420" height="51" alt="BAUHAUS 89" src="https://github.com/user-attachments/assets/afcfdafb-1253-4e92-903a-cc963a0bec06" />
+<img width="420" height="51" alt="BIG" src="https://github.com/user-attachments/assets/6ba1f6b5-a57a-4164-960b-44b97e04c624" />
+<img width="420" height="51" alt="BOLD ALT" src="https://github.com/user-attachments/assets/01241765-21d0-46dd-ab7a-4c4f7fdaff55" />
+<img width="420" height="51" alt="BOLD ITALIC" src="https://github.com/user-attachments/assets/afcd44ab-142d-4b77-8cc0-747b5cac01c7" />
+<img width="420" height="51" alt="BOLD" src="https://github.com/user-attachments/assets/376bfce2-9683-44bc-a1d9-5d8f27543a6d" />
+<img width="420" height="51" alt="BROADWAY" src="https://github.com/user-attachments/assets/7b2f7a4e-1eb7-475d-b84b-252b7cd51ef6" />
+<img width="420" height="51" alt="CHUNKY" src="https://github.com/user-attachments/assets/217c5cc7-df8e-40b6-a636-e1cfa432e3a4" />
+<img width="420" height="51" alt="CLEAN" src="https://github.com/user-attachments/assets/39ca8b99-30de-4f35-b479-46622632c6b3" />
+<img width="420" height="51" alt="COURIER" src="https://github.com/user-attachments/assets/50dbc736-5a99-4601-ab67-2a0133e24f0b" />
+<img width="420" height="51" alt="ELERGON" src="https://github.com/user-attachments/assets/e1edadb5-a260-4442-b548-db45d391559c" />
+<img width="420" height="51" alt="ELITE" src="https://github.com/user-attachments/assets/dc85b64a-9a94-4acc-8a1c-2aeaf3a117a5" />
+<img width="420" height="51" alt="EXTRA" src="https://github.com/user-attachments/assets/f03921f0-3214-436c-a586-35b691254869" />
+<img width="420" height="51" alt="GOTHIC" src="https://github.com/user-attachments/assets/bd06a3ac-de43-4ab4-8c71-c16165479b48" />
+<img width="420" height="51" alt="HAND" src="https://github.com/user-attachments/assets/24c4be62-534b-45cc-9921-d170d822396b" />
+<img width="420" height="51" alt="HUMANIST" src="https://github.com/user-attachments/assets/51905661-6341-4408-bcdd-7106201c1812" />
+<img width="420" height="51" alt="ISO" src="https://github.com/user-attachments/assets/9f99e144-7c9a-4bf1-885e-879a8037849a" />
+<img width="420" height="51" alt="ITALIC" src="https://github.com/user-attachments/assets/13598f8c-8080-4be3-a098-bf1ee5ce5e55" />
+<img width="420" height="51" alt="MAX ELITE" src="https://github.com/user-attachments/assets/3bfb286e-557b-4249-b5bc-40df67f2e910" />
+<img width="420" height="51" alt="MAX" src="https://github.com/user-attachments/assets/12cfd4f9-0ea1-4e7e-9104-284e2f5f2e3c" />
+<img width="420" height="51" alt="MODERN" src="https://github.com/user-attachments/assets/021974d9-75c0-4a88-b4be-b8f2a941f94a" />
+<img width="420" height="51" alt="NEWS" src="https://github.com/user-attachments/assets/d5116f3f-92e7-499f-b6dc-9c394b940a6b" />
+<img width="420" height="51" alt="NUTSO" src="https://github.com/user-attachments/assets/2e29e472-9f46-42ba-837e-03aec5d9f1d7" />
+<img width="420" height="51" alt="PIXEL" src="https://github.com/user-attachments/assets/17504990-9119-4abe-9ae8-b1cfc6aef8ad" />
+<img width="420" height="51" alt="POSTER" src="https://github.com/user-attachments/assets/595a17d4-1500-471c-8c5b-7bcfaa7b000e" />
+<img width="420" height="51" alt="PROFONT BOLD" src="https://github.com/user-attachments/assets/569378bf-8e60-4cf9-afa2-74b42bccd78f" />
+<img width="420" height="51" alt="PROFONT" src="https://github.com/user-attachments/assets/37bd8b29-fc99-4191-99ce-2b9de7cd852d" />
+<img width="420" height="51" alt="SCRIBBLE" src="https://github.com/user-attachments/assets/016f566c-6441-4673-839e-455ae0566e77" />
+<img width="420" height="51" alt="SCRIPT" src="https://github.com/user-attachments/assets/9323c45e-fe6e-4cb5-84b5-5a85b4bbad87" />
+<img width="420" height="51" alt="SERIF" src="https://github.com/user-attachments/assets/33b2d245-b3a9-4bc3-a27f-8b9ffcd892ae" />
+<img width="420" height="51" alt="SUPER" src="https://github.com/user-attachments/assets/a9c10b08-514e-4f3f-a0c0-20a71706d8d6" />
+<img width="420" height="51" alt="TALL" src="https://github.com/user-attachments/assets/6cbfdb8b-b79b-4481-ad2c-2951d9173b14" />
+<img width="420" height="51" alt="TIMES" src="https://github.com/user-attachments/assets/d09b015a-3d48-4403-b9b4-9ed2a219f4d4" />
+<img width="420" height="51" alt="TINY" src="https://github.com/user-attachments/assets/3048a21f-b224-4a3e-bdac-7d617a0e4734" />
+
+
 ### Shortcut
 
 You can view the current status of the shortcut utility, current key combination, and set a new combination.<br/>
