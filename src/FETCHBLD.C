@@ -51,11 +51,88 @@ static const char *processor(void)
 #endif
 }
 
-static const char *dos_vendor(unsigned oem)
+#define DF_DOS_MS    1
+#define DF_DOS_PC    2
+#define DF_DOS_DR    3
+#define DF_DOS_FREE  4
+
+typedef struct {
+  int family;
+  int major;
+  int minor;
+  unsigned oem;
+  unsigned revision;
+} DF_DOS_INFO;
+
+static int df_contains_ci(const char *text,const char *wanted)
 {
-  if(oem==0)return "PC DOS";
-  if(oem==0xFD)return "FreeDOS";
-  if(oem==0xEE)return "DR-DOS";
+  char copy[96];int i;
+  if(!text)return 0;
+  strncpy(copy,text,sizeof(copy)-1);copy[sizeof(copy)-1]=0;
+  for(i=0;copy[i];i++)copy[i]=(char)toupper((unsigned char)copy[i]);
+  return strstr(copy,wanted)!=0;
+}
+
+static int df_dr_version_id(void)
+{
+  unsigned result=0,found=0;
+#ifndef __GNUC__
+  _asm {
+    mov ax,4452h
+    stc
+    int 21h
+    jc df_dr_done
+    mov result,ax
+    mov found,1
+  df_dr_done:
+  }
+#else
+  (void)result;
+#endif
+  return found?(int)(result&0x00FFU):-1;
+}
+
+static void df_detect_dos(DF_DOS_INFO *info)
+{
+  union REGS inregs,outregs;char *os,*comspec;
+  int dr_id,is_dr,is_free,is_pc;
+  memset(&inregs,0,sizeof(inregs));inregs.h.ah=0x30;inregs.h.al=0;
+  intdos(&inregs,&outregs);
+  info->major=outregs.h.al;info->minor=outregs.h.ah;
+  info->oem=outregs.h.bh;info->revision=outregs.h.bl;
+  os=getenv("OS");comspec=getenv("COMSPEC");
+
+  is_free=(info->oem==0xFD)||df_contains_ci(os,"FREEDOS")||
+          df_contains_ci(comspec,"FREECOM")||getenv("FREEDOS")!=0;
+  dr_id=df_dr_version_id();
+  is_dr=(dr_id>=0||info->oem==0xEE||info->oem==0xEF);
+  is_pc=(info->oem==0);
+
+  if(!is_dr && info->major>=5){
+    memset(&inregs,0,sizeof(inregs));inregs.x.ax=0x3306;intdos(&inregs,&outregs);
+    if(outregs.h.bl>=5 && outregs.h.bl<100){
+      info->major=outregs.h.bl;info->minor=outregs.h.bh;
+    }
+  }
+
+  if(is_dr && dr_id>=0){
+    if(dr_id==0x65){info->major=5;info->minor=0;}
+    else if(dr_id>=0x66&&dr_id<=0x71){info->major=6;info->minor=0;}
+    else if(dr_id>=0x72){info->major=7;info->minor=0;}
+    else {info->major=3;info->minor=0;}
+  }
+
+  if(is_free)info->family=DF_DOS_FREE;
+  else if(is_dr)info->family=DF_DOS_DR;
+  else if(is_pc)info->family=DF_DOS_PC;
+  else info->family=DF_DOS_MS;
+}
+
+static const char *dos_vendor(int family)
+{
+  if(family==DF_DOS_PC)return "PC DOS";
+  if(family==DF_DOS_DR)return "DR-DOS";
+  if(family==DF_DOS_FREE)return "FreeDOS";
   return "MS-DOS";
 }
 
@@ -283,20 +360,20 @@ static void draw_dos_word(int x,int y,const char **l,int first_row)
   }
 }
 
-static void draw_logo(int x,int y,unsigned oem)
+static void draw_logo(int x,int y,int family)
 {
   int r;
-  if(oem==0){ /* IBM PC DOS */
+  if(family==DF_DOS_PC){ /* IBM PC DOS */
     for(r=0;r<3;r++)logo_text(x,y+r,logo_pc[r],9);
     for(r=3;r<7;r++){
       char d[7],o[7],ss[8];strncpy(d,logo_pc[r],6);d[6]=0;strncpy(o,logo_pc[r]+6,6);o[6]=0;strncpy(ss,logo_pc[r]+12,7);ss[7]=0;
       logo_text(x,y+r,d,11);logo_text(x+6,y+r,o,14);logo_text(x+12,y+r,ss,12);
     }
     logo_text(x,y+7,logo_pc[7],14);
-  } else if(oem==0xEE){ /* DR-DOS */
+  } else if(family==DF_DOS_DR){ /* DR-DOS */
     for(r=0;r<3;r++){logo_text(x,y+r,logo_dr[r],9);logo_text(x+9,y+r,logo_dr[r]+9,12);}
     for(r=4;r<8;r++)logo_text(x,y+r,logo_dr[r],12);
-  } else if(oem==0xFD){ /* FreeDOS */
+  } else if(family==DF_DOS_FREE){ /* FreeDOS */
     for(r=0;r<3;r++)logo_text(x,y+r,logo_free[r],2);
     for(r=4;r<8;r++){char d[7],o[7],ss[8];strncpy(d,logo_free[r],6);d[6]=0;strncpy(o,logo_free[r]+6,6);o[6]=0;strncpy(ss,logo_free[r]+12,7);ss[7]=0;logo_text(x,y+r,d,10);logo_text(x+6,y+r,o,10);logo_text(x+12,y+r,ss,10);}
   } else { /* MS-DOS */
@@ -325,11 +402,11 @@ static int print_info(void)
   fputc('\f',f);fclose(f);return 1;
 }
 
-static const char *kernel_name(unsigned oem)
+static const char *kernel_name(int family)
 {
-  if(oem==0)return "IBMBIO.COM";
-  if(oem==0xFD)return "KERNEL.SYS";
-  if(oem==0xEE)return "DRBIO.SYS";
+  if(family==DF_DOS_PC)return "IBMBIO.COM";
+  if(family==DF_DOS_FREE)return "KERNEL.SYS";
+  if(family==DF_DOS_DR)return "DRBIO.SYS";
   return "IO.SYS";
 }
 
@@ -369,9 +446,9 @@ int main(int argc,char **argv)
   union REGS r;char s[80],floppy_s[24],cd_s[16];
   char drive_letter[MAX_DRIVES];unsigned drive_percent[MAX_DRIVES];
   unsigned long drive_total[MAX_DRIVES],drive_free[MAX_DRIVES];
-  unsigned eq,total,avail,oem,country;unsigned long physical,tk,fk;
+  unsigned eq,total,avail,country;unsigned long physical,tk,fk;DF_DOS_INFO dos;
   int x=2,y=2,w=75,h=21,row,d,drive_count=0,i;
-  int serial,parallel,game,netint,flops,maj,min,cd;
+  int serial,parallel,game,netint,flops,cd;
   const char *cs,*blaster;
 
   if(acc_help(argc,argv,"!DFETCH","DOS Fetch - a FastFetch-style view of DOS hardware and system information."))return 0;
@@ -389,18 +466,21 @@ int main(int argc,char **argv)
     }
   }
 
-  memset(&r,0,sizeof(r));r.x.ax=0x3000;int86(0x21,&r,&r);
-  maj=r.h.al;min=r.h.ah;oem=r.h.bh;
+  df_detect_dos(&dos);
 
   acc_box(x,y,w,h,"DOS Fetch");
   /* DFETCH has no toolbar: remove acc_box()'s standard toolbar divider. */
   acc_fill(x+1,y+h-4,w-2,1,' ',ACC_BG);
   acc_put(x,y+h-4,179,ACC_BORDER);acc_put(x+w-1,y+h-4,179,ACC_BORDER);
-  draw_logo(x+3,y+2,oem);
+  draw_logo(x+3,y+2,dos.family);
   row=y+2;
-  sprintf(s,"%s %d.%02d REV %u",dos_vendor(oem),maj,min,(unsigned)r.h.bl);fetch_item(x+24,row++,"OS",s);
+  if(dos.family==DF_DOS_DR)
+    sprintf(s,"%s %d.%02d",dos_vendor(dos.family),dos.major,dos.minor);
+  else
+    sprintf(s,"%s %d.%02d REV %u",dos_vendor(dos.family),dos.major,dos.minor,dos.revision);
+  fetch_item(x+24,row++,"OS",s);
   fetch_item(x+24,row++,"Host",computer_type());
-  fetch_item(x+24,row++,"Kernel",kernel_name(oem));
+  fetch_item(x+24,row++,"Kernel",kernel_name(dos.family));
   cs=getenv("COMSPEC");fetch_item(x+24,row++,"Shell",basename_dos(cs));
   fetch_item(x+24,row++,"Display",video_name());
   country=dos_country();if(country){sprintf(s,"%03u - %s",country,country_name(country));fetch_item(x+24,row++,"Locale",s);}else fetch_item(x+24,row++,"Locale","Unknown");

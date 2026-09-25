@@ -1111,32 +1111,32 @@ show_installed_message:
     test byte ptr [hot_mods],0x02
     jz 1f
     mov si,offset display_ctrl
-    call print_green
+    call print_shortcut
 1:  test byte ptr [hot_mods],0x04
     jz 2f
     mov si,offset display_alt
-    call print_green
+    call print_shortcut
 2:  test byte ptr [hot_mods],0x01
     jz 3f
     mov si,offset display_shift
-    call print_green
+    call print_shortcut
 3:  cmp byte ptr [hot_extended],0
     je display_normal_key
     mov al,byte ptr [hot_scan]
     cmp al,0x5b
     jne display_check_rwin
     mov si,offset display_lwin
-    call print_green
+    call print_shortcut
     jmp 7f
 display_check_rwin:
     cmp al,0x5c
     jne display_check_menu
     mov si,offset display_rwin
-    call print_green
+    call print_shortcut
     jmp 7f
 display_check_menu:
     mov si,offset display_menu
-    call print_green
+    call print_shortcut
     jmp 7f
 display_normal_key:
     mov al,byte ptr [hot_scan]
@@ -1172,13 +1172,13 @@ display_function_two_digits:
     mov byte ptr [display_function+3],0
 display_function_ready:
     mov si,offset display_function
-    call print_green
+    call print_shortcut
     jmp 7f
 display_not_function:
     cmp al,0x39
     jne 4f
     mov si,offset display_space
-    call print_green
+    call print_shortcut
     jmp 7f
 4:  mov bx,offset character_table
 5:  cmp byte ptr [bx],0
@@ -1191,7 +1191,7 @@ display_character_key:
     mov al,byte ptr [bx]
     mov byte ptr [display_key],al
     mov si,offset display_key
-    call print_green
+    call print_shortcut
     jmp 7f
 6:  mov byte ptr [display_scan],'S'
     mov byte ptr [display_scan+1],'C'
@@ -1210,14 +1210,19 @@ display_character_key:
     xlat
     mov byte ptr [display_scan+3],al
     mov si,offset display_scan
-    call print_green
-7:  mov dx,offset msg_open_menu
+    call print_shortcut
+7:  mov dx,offset msg_open_prefix
+    mov ah,9
+    int 0x21
+    mov si,offset display_launch
+    call print_launch_red
+    mov dx,offset msg_open_suffix
     mov ah,9
     int 0x21
     ret
 
-/* Print DS:SI ASCIIZ in bright green while retaining each cell's background. */
-print_green:
+/* Print DS:SI ASCIIZ as Bright White on Cyan. */
+print_shortcut:
     push ax
     push bx
     push cx
@@ -1234,9 +1239,7 @@ print_green:
     mov ah,0x08
     xor bh,bh
     int 0x10
-    mov bl,ah
-    and bl,0xf0
-    or bl,0x0a
+    mov bl,0x3f                       /* cyan background, bright white */
     pop dx
     pop ax
     mov ah,0x09
@@ -1249,6 +1252,45 @@ print_green:
     int 0x10
     jmp 8b
 9:  pop si
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+
+/* Print DS:SI ASCIIZ in Bright Red while retaining the existing background. */
+print_launch_red:
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+10: lodsb
+    or al,al
+    jz 11f
+    push ax
+    mov ah,0x03
+    xor bh,bh
+    int 0x10
+    push dx
+    mov ah,0x08
+    xor bh,bh
+    int 0x10
+    mov bl,ah
+    and bl,0xf0
+    or bl,0x0c                       /* bright red foreground */
+    pop dx
+    pop ax
+    mov ah,0x09
+    xor bh,bh
+    mov cx,1
+    int 0x10
+    inc dl
+    mov ah,0x02
+    xor bh,bh
+    int 0x10
+    jmp 10b
+11: pop si
     pop dx
     pop cx
     pop bx
@@ -1686,8 +1728,12 @@ msg_already:
 .endif
 msg_press:
     .ascii "Press $"
-msg_open_menu:
-    .ascii " to open the LAUNCH! menu.\r\n$"
+msg_open_prefix:
+    .ascii " to open the $"
+display_launch:
+    .asciz "Launch!"
+msg_open_suffix:
+    .ascii " menu.\r\n$"
 msg_syntax:
 .ifdef DOSBOX_BUILD
     .ascii "!KEYDB: invalid option. Use !KEYDB /?\r\n$"

@@ -718,49 +718,49 @@ int main(int argc,char **argv)
   if(!make_directories(install)){error_icon(0);printf("Cannot create or access %s\n",install);return 1;}
   sprintf(destination,"%s\\LAUNCH.MNU",install);upgrade=exists(destination);
   if(!upgrade){sprintf(destination,"%s\\LAUNCH.CFG",install);upgrade=exists(destination);}
-  if(upgrade)puts("\nExisting Launch! installation detected.\nExisting menu/configuration will be retained; missing standard menu entries will be added.");
+  if(upgrade)puts("\nExisting Launch! installation detected.\nAn upgrade will be performed, and existing configuration retained.");
   {
-    int done=0,k,i;unsigned yr[6],yc[6],base_row,base_col,value_col;int *flags[6];
-    char value[4];
+    char choose[32];int i,first_omit=1;
+    int *flags[6];
     const char *labels[6]={"Accessories","Games","Screensavers","Fonts","Menu Generator","Keyboard Shortcut"};
     flags[0]=&accessories;flags[1]=&games;flags[2]=&screensavers;flags[3]=&fonts;flags[4]=&menu_generator;flags[5]=&shortcut_key;
     accessories=games=screensavers=fonts=menu_generator=shortcut_key=1;
 
-    /*
-     * Draw the selector with BIOS screen services from one captured origin.
-     * Do not mix buffered stdio cursor tracking with BIOS coordinates: under
-     * DOSBox that caused every in-place Yes/No update to land on the line
-     * below the instructions.  The list is now completely deterministic.
-     */
-    puts("\nChoose which components to install.\n");fflush(stdout);
-    cursor_pos(&base_row,&base_col);
-    (void)base_col;
+    puts("\nThe following components will be installed:\n");
     for(i=0;i<6;i++){
-      yr[i]=base_row+(unsigned)i;
-      screen_text_attr_at(yr[i],0," ",7);
-      value[0]=' ';value[1]=(char)('1'+i);value[2]=' ';value[3]=0;
-      screen_text_attr_at(yr[i],1,value,0x3F);
-      screen_text_attr_at(yr[i],4," ",7);
-      screen_text_at(yr[i],5,labels[i]);
-      value_col=5+(unsigned)strlen(labels[i]);
-      screen_text_at(yr[i],value_col," : ");
-      yc[i]=value_col+3;
-      screen_text_at(yr[i],yc[i],"Yes");
+      component_icon(i+1);
+      printf("%s\n",labels[i]);
     }
-    screen_text_at(base_row+7,0,"Choose a number to change, or Enter to continue with selection.");
-    screen_cursor_at(base_row+8,0);
 
-    while(!done){
-      k=read_key_immediate();
-      if(k==13)done=1;
-      else if(k>='1'&&k<='6'){
-        i=k-'1';*flags[i]=!*flags[i];
-        screen_text_at(yr[i],yc[i],*flags[i]?"Yes":"No ");
-        screen_cursor_at(base_row+8,0);
+    fputs("\nPress ",stdout);putchar(17);putchar(217);
+    fputs(" to continue install, or\n",stdout);
+    fputs("type the number/s for components you don't want installed, and press ",stdout);
+    putchar(17);putchar(217);puts(".");
+    question_icon(0);fputs("Omit component number/s: ",stdout);fflush(stdout);
+
+    if(!fgets(choose,sizeof(choose),stdin)){
+      error_icon(0);puts("Unable to read component selection.");return 1;
+    }
+    strip_line(choose);
+    for(i=0;choose[i];i++){
+      if(choose[i]>='1'&&choose[i]<='6')
+        *flags[choose[i]-'1']=0;
+      else if(choose[i]!=' '&&choose[i]!=','&&choose[i]!=';'){
+        error_icon(0);puts("Invalid component selection. Use only numbers 1 through 6.");return 1;
       }
     }
-    /* Resume ordinary DOS output beneath the selector. */
-    screen_cursor_at(base_row+8,0);
+
+    if(!choose[0]){
+      puts("\nAll components selected for install.");
+    }else{
+      fputs("\nNot installing: ",stdout);
+      for(i=0;i<6;i++)if(!*flags[i]){
+        if(!first_omit)fputs(", ",stdout);
+        fputs(labels[i],stdout);
+        first_omit=0;
+      }
+      puts("");
+    }
   }
   if(shortcut_key){
     is286=cpu_is_286();dosbox_detected=running_in_dosbox();
@@ -801,21 +801,10 @@ int main(int argc,char **argv)
       autoexec_changed=1;
     }
   }
-  printf("\n- Installed LAUNCH! to %s\n",install);
-  if(shortcut_key)printf("- !KEY 3.7 build: %s\n",shortcut_build==2?"80286-safe":(shortcut_build==1?"DOSBox":"386+ real/emulated BIOS"));
-  else puts("- Shortcut Key not installed.");
-  if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
-  else printf("- %s was not changed.\n",autoexec);
-  puts("- Created or updated the standard menu entries for this DOS installation.");
-  if(accessories)puts("- Installed Launch! accessories.");
-  if(games)puts("- Installed Launch! games.");
-  if(screensavers)puts("- Screensavers enabled.");else puts("- Screensavers disabled in the initial configuration.");
-  if(fonts)puts("- Installed Launch! fonts.");else puts("- Fonts not installed; Standard BIOS font selected.");
-  if(menu_generator)puts("- Installed Menu Generator.");
-  puts("");
+  printf("\nInstalled Launch! to %s\n\n",install);
   success_icon(0);
   if(autoexec_changed)puts("Install is complete. Reboot to activate the selected startup options.");
   else puts("Install is complete.");
-  puts("Press Enter to exit.");
+  fputs("\nPress ",stdout);putchar(17);putchar(217);puts(" to exit.");
   getchar();return 0;
 }
