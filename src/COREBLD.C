@@ -1,4 +1,4 @@
-/* Launch! 3.7 - modal command menu for DOS
+/* Launch! 3.71 - modal command menu for DOS
  * Microsoft C/C++ 7.0, medium model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -129,6 +129,9 @@ static int node_count;
 static int screen_cols, screen_rows;
 static unsigned short far *video;
 static unsigned short far *saved;
+static unsigned short far *render_buffer;
+static unsigned short far *render_real;
+static int render_active;
 static unsigned char cursor_start,cursor_end,cursor_x,cursor_y;
 static int run_node;
 static char run_command[MAX_CMD];
@@ -153,6 +156,7 @@ static void launchui_rebase(void);
 static void launchui_restore(void);
 static void shortcut_refresh(void);
 static int shortcut_set_dialog(void);
+static int shortcut_loadhigh_supported(void);
 static int shortcut_unload(void);
 static int shortcut_activate(void);
 static void shortcut_idle_sync(void);
@@ -199,6 +203,7 @@ static void cursor_restore(void);
 static void mouse_stop(void);
 static void mouse_pointer_restore(void);
 static unsigned mouse_poll(int *column,int *row);
+void wait_vertical_retrace(void);
 
 static void video_init(void)
 {
@@ -218,12 +223,25 @@ static int save_screen(void)
   saved=(unsigned short far *)_fmalloc(n*2U);
   if(!saved)return 0;
   for (i=0; i<n; ++i) saved[i] = video[i];
+  render_buffer=(unsigned short far *)_fmalloc(n*2U);render_real=0;render_active=0;
   return 1;
+}
+
+static void render_begin(void)
+{
+  unsigned i,n;if(render_active||!render_buffer)return;n=(unsigned)(screen_cols*screen_rows);
+  render_real=video;for(i=0;i<n;i++)render_buffer[i]=render_real[i];video=render_buffer;render_active=1;
+}
+static void render_end(void)
+{
+  unsigned i,n;unsigned short far *desired,*real;if(!render_active)return;
+  desired=video;real=render_real;video=real;render_active=0;render_real=0;n=(unsigned)(screen_cols*screen_rows);
+  wait_vertical_retrace();for(i=0;i<n;i++)if(real[i]!=desired[i])real[i]=desired[i];
 }
 
 static void restore_screen(void)
 {
-  int i, n = screen_cols * screen_rows;
+  int i, n = screen_cols * screen_rows;if(render_active)render_end();
   if(!saved)return;
   for (i=0; i<n; ++i) video[i] = saved[i];
 }
@@ -234,13 +252,18 @@ static void close_menu(void)
   launchui_restore();
   restore_screen();
   cursor_restore();
+  if(render_buffer){_ffree(render_buffer);render_buffer=0;}
   _ffree(saved);saved=0;
 }
 
 static void cell(int x,int y,int ch,int at)
 {
-  if (x>=0 && x<screen_cols && y>=0 && y<screen_rows)
-    video[y*screen_cols+x] = (unsigned short)((at<<8)|(ch&255));
+  unsigned short value;
+  if (x<0 || x>=screen_cols || y<0 || y>=screen_rows) return;
+  /* Match the Accessories/Games renderer: repeated dialog paints are common,
+     but unchanged text cells must not be written back to video memory. */
+  value=(unsigned short)(((unsigned short)(at&255)<<8)|(unsigned char)ch);
+  if(video[y*screen_cols+x]!=value)video[y*screen_cols+x]=value;
 }
 
 void wait_vertical_retrace(void)
@@ -257,7 +280,8 @@ static void row_attribute(int x,int y,int width,int at)
   if(y<0 || y>=screen_rows)return;
   for(i=0;i<width && x+i<screen_cols;i++)if(x+i>=0){
     value=video[y*screen_cols+x+i];
-    video[y*screen_cols+x+i]=(unsigned short)((value&255)|(at<<8));
+    if((unsigned char)(value>>8)!=(unsigned char)at)
+      video[y*screen_cols+x+i]=(unsigned short)((value&255)|((unsigned short)(at&255)<<8));
   }
 }
 
@@ -1252,7 +1276,7 @@ static void font_plane_close(const FONT_REGS *old)
 }
 
 static const unsigned char launchui_codes[41]={16,17,30,31,169,170,173,174,175,181,182,183,184,185,186,187,188,189,190,198,225,200,201,202,224,204,205,234,229,208,209,210,211,212,213,235,215,255,220,244,245};
-/* Release 3.7 icon runtime slots.  Left halves marked with * in the source
+/* Release 3.71 icon runtime slots.  Left halves marked with * in the source
    glyph map stay in C0h-DFh so VGA supplies the ninth-column extension. */
 #define UI_OPEN_L    199
 #define UI_OPEN_R    230
@@ -2946,7 +2970,7 @@ static const char *mouse_cursor_names[3]={"Pointer","Block","Up Arrow"};
 static const char *font_names[36]={
   "Standard","Launch!","ISO","Clean","Big","Tall","Bold","Bold Alt",
   "Extra","Max","Chunky","Pixel","Humanist","Elite","Max Elite","Elergon",
-  "News","Gothic","Hand","Scribble","Script","ProFont","ProFont Bold",
+  "Neat","Gothic","Hand","Scribble","Script","ProFont","ProFont Bold",
   "Bauhaus '89","Bold Italic","Broadway","Courier","Italic","Modern","Nutso",
   "Super","Times","Tiny","Serif","Poster","News"
 };
@@ -3308,7 +3332,7 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
     textout(x+5,y+4,"Menu position:",C_INPUT_LABEL,18);
     cycle_control(x+25,y+4,appearance.menu_top?"Top":"Bottom",f==0||h==0);
     textout(x+5,y+6,"System menu items:",C_INPUT_LABEL,18);
-    check_line(x+25,y+6,"Show 'Open File'",appearance.show_collections,f==1||h==1);
+    check_line(x+25,y+6,"Show 'File Open'",appearance.show_collections,f==1||h==1);
     check_line(x+25,y+7,"Show 'Explore & Run'",appearance.show_explore,f==2||h==2);
     check_line(x+25,y+8,"Show 'Shutdown...'",appearance.show_power,f==3||h==3);
     check_line(x+25,y+9,"Show time",appearance.show_time,f==4||h==4);
@@ -3421,7 +3445,7 @@ static void config_about_box(void)
   bx=x+3;subdialog_box(x,y,w,h,"About Launch!");
   textout(x+3,y+2,"(C)Copyright 2026 Ben Renegar",C_INPUT_LABEL,34);
   textout(x+3,y+3,"www.benrenegar.com",C_INPUT_LABEL,34);
-  textout(x+3,y+6,"Version 3.7 - 2026-09-24",C_INPUT_LABEL,34);
+  textout(x+3,y+6,"Version 3.71 - 2026-09-25",C_INPUT_LABEL,34);
   for(;;){
     draw_button(bx,y+h-3,"  OK  ",6,focus==0);
     wait_input(&k,&mx,&my,&mb);
@@ -3477,7 +3501,7 @@ static int configure_appearance(void)
   config_shortcut_changed=0;shortcut_refresh();prompt_load_styles();prompt_ansi=ansi_installed();if(!prompt_ansi&&prompt_needs_ansi[prompt_style])prompt_style=prompt_next_style(prompt_style,1);
   x=(screen_cols-66)/2;y=(screen_rows-20)/2;
   for(;;){
-    wait_vertical_retrace();if(redraw){draw_config_page(x,y,tab,focus,hover,redraw==2);redraw=0;}
+    wait_vertical_retrace();if(redraw){render_begin();draw_config_page(x,y,tab,focus,hover,redraw==2);render_end();redraw=0;}
     wait_input(&k,&mx,&my,&mb);hit=config_hit(x,y,tab,mx,my);
     if(mb&MOUSE_MOVED){if(hover!=hit){hover=hit;redraw=1;}continue;}
     if(mb&1){
@@ -4189,7 +4213,7 @@ static int explore_dialog(void)
     if(selected>=explore_count)selected=explore_count?explore_count-1:-1;
     if(selected>=0 && selected<top)top=(selected/page)*page;
     if(selected>=0 && selected>=top+page)top=(selected/page)*page;
-    if(redraw){dialog_box(x,y,76,21,"Launch! Explore & Run");textout(x+3,y,"Launch!",ATTR(appearance.titlebar_bg,appearance.main_title),7);
+    if(redraw){render_begin();dialog_box(x,y,76,21,"Launch! Explore & Run");textout(x+3,y,"Launch!",ATTR(appearance.titlebar_bg,appearance.main_title),7);
     explore_selection_field(x+2,y+2,path,selected);
     cell(x,y+3,195,C_BORDER);cell(x+75,y+3,180,C_BORDER);
     for(i=1;i<75;i++)cell(x+i,y+3,196,C_BORDER);
@@ -4207,7 +4231,7 @@ static int explore_dialog(void)
     cell(x+73,y+16,top+page<explore_count?31:' ',C_BUTTON);
     if(!explore_count)textout(x+2,y+6,"No executable files or directories",C_EMPTY,38);
     draw_explore_buttons(x,y,focus,hover_control,selected>=0&&selected<explore_count&&!explore_entries[selected].directory);
-    redraw=0;}
+    render_end();redraw=0;}
     wait_input(&k,&mx,&my,&mb);
     if(mb&MOUSE_MOVED){
       int next_hover=-1,next_control=-1;
@@ -4777,7 +4801,7 @@ static void openfile_entry_fullpath(int index,const char *browser_path,char *out
 static int openfile_command(const char *path,int selected,int collection,char *out)
 {
   int i,count=0,needed;char full[MAX_CMD];
-  if(selected<0||selected>=explore_count||explore_entries[selected].directory){notice_box("Open File","Select a file first.");return 0;}
+  if(selected<0||selected>=explore_count||explore_entries[selected].directory){notice_box("File Open","Select a file first.");return 0;}
   strcpy(out,nodes[collections[collection].launcher].command);
   for(i=0;i<explore_count;i++)if(openfile_mark[i]&&!explore_entries[i].directory)count++;
   if(!count)openfile_mark[selected]=1;
@@ -4890,7 +4914,7 @@ static int collections_dialog(void)
   if(collection_count){openfile_load(path,collections[0].ext);selected=explore_count?0:-1;}else explore_count=0;
   for(;;){
     page=openfile_result_mode?EXPLORE_ROWS:EXPLORE_ROWS*3;
-    if(redraw){if(redraw==1){dialog_box(x,y,78,21,"Launch! Open File");textout(x+3,y,"Launch!",ATTR(appearance.titlebar_bg,appearance.main_title),7);}
+    if(redraw){render_begin();if(redraw==1){dialog_box(x,y,78,21,"Launch! File Open");textout(x+3,y,"Launch!",ATTR(appearance.titlebar_bg,appearance.main_title),7);}
       draw_button(x+2,y+2,"  Add  ",8,focus==10||hover_control==10);
       /* File Types is a 13-row scrolling pane.  The selected type carries a
          right-pointing marker in the final label cell to associate it with
@@ -4921,9 +4945,10 @@ static int collections_dialog(void)
           for(row=0;row<EXPLORE_ROWS;row++){
             index=top+row;
             if(index<explore_count){
+              int marked=openfile_mark[index]!=0;
               int active=((index==selected&&pane==1&&focus==0)||index==hover_entry);
-              int fat=active?C_SELECTED:(openfile_mark[index]?C_TITLE:C_ITEM);
-              int pat=active?C_SELECTED:C_FOLDER;
+              int fat=(marked||active)?C_SELECTED:C_ITEM;
+              int pat=(marked||active)?C_SELECTED:C_FOLDER;
               char rp[COLLECTION_PATH],rn[13];
               if(active)textout(x+rx,y+6+row,"",C_SELECTED,52);
               cell(x+rx,y+6+row,launchui_browser_codes[0],fat);
@@ -4939,7 +4964,7 @@ static int collections_dialog(void)
           for(column=0;column<3;column++)for(row=0;row<EXPLORE_ROWS;row++){
             index=top+column*EXPLORE_ROWS+row;
             if(index<explore_count){
-              int at=((index==selected&&pane==1&&focus==0)||index==hover_entry)?C_SELECTED:(openfile_mark[index]?C_TITLE:explore_entry_attribute(index,0));
+              int at=openfile_mark[index]?C_SELECTED:(((index==selected&&pane==1&&focus==0)||index==hover_entry)?C_SELECTED:explore_entry_attribute(index,0));
               draw_browser_entry(x+rx+column*18,y+6+row,index,at,16,0);
               if(openfile_mark[index])cell(x+rx+column*18+15,y+6+row,251,at);
             }else textout(x+rx+column*18,y+6+row,"",C_MENU_BACKGROUND,16);
@@ -4951,14 +4976,14 @@ static int collections_dialog(void)
       } else {
         textout(x+rx,y+4,"Select a file association to browse...",C_EMPTY,rw);
       }
-      {int file_ok=collection_count&&selected>=0&&selected<explore_count&&!explore_entries[selected].directory;if(file_ok){draw_button(x+3,y+18,"  Open  ",9,focus==1||hover_control==1);draw_button(x+14,y+18,"  Params  ",10,focus==2||hover_control==2);draw_button(x+26,y+18,"  Locate  ",10,focus==3||hover_control==3);}else{draw_button_disabled(x+3,y+18,"  Open  ",9);draw_button_disabled(x+14,y+18,"  Params  ",10);draw_button_disabled(x+26,y+18,"  Locate  ",10);}draw_button(x+38,y+18," Search ",8,focus==11||hover_control==11);draw_button(x+68,y+18,"  Exit  ",9,focus==4||hover_control==4);}redraw=0;}
+      {int file_ok=collection_count&&selected>=0&&selected<explore_count&&!explore_entries[selected].directory;if(file_ok){draw_button(x+3,y+18,"  Open  ",9,focus==1||hover_control==1);draw_button(x+14,y+18,"  Params  ",10,focus==2||hover_control==2);draw_button(x+26,y+18,"  Locate  ",10,focus==3||hover_control==3);}else{draw_button_disabled(x+3,y+18,"  Open  ",9);draw_button_disabled(x+14,y+18,"  Params  ",10);draw_button_disabled(x+26,y+18,"  Locate  ",10);}draw_button(x+38,y+18," Search ",8,focus==11||hover_control==11);draw_button(x+68,y+18,"  Exit  ",9,focus==4||hover_control==4);}render_end();redraw=0;}
     wait_input(&k,&mx,&my,&mb);
     if(mb&MOUSE_MOVED){
       int h=-1,next_hover=-1;
       if(collection_count&&my>=y+6&&my<y+17&&mx>=x+rx&&mx<x+75){
         if(openfile_result_mode){row=my-(y+6);index=(row>=0)?top+row:-1;}
         else {column=(mx-(x+rx))/18;row=my-(y+6);index=top+column*EXPLORE_ROWS+row;}
-        if(index>=0&&index<explore_count)next_hover=index;
+        if(index>=0&&index<explore_count&&!openfile_mark[index])next_hover=index;
       }
       if(my==y+2&&mx>=x+2&&mx<x+10)h=10;
       else if(my==y+18&&mx>=x+3&&mx<x+12)h=1;
@@ -4973,7 +4998,8 @@ static int collections_dialog(void)
         if(old_hover>=0){
           int rel=old_hover-top,rr=rel%EXPLORE_ROWS,cc=rel/EXPLORE_ROWS;
           if(rel>=0&&rel<page)draw_browser_entry(x+rx+cc*18,y+6+rr,old_hover,
-            explore_entry_attribute(old_hover,old_hover==selected&&pane==1&&focus==0),16,0);
+            openfile_mark[old_hover]?C_SELECTED:explore_entry_attribute(old_hover,old_hover==selected&&pane==1&&focus==0),16,0);
+          if(rel>=0&&rel<page&&openfile_mark[old_hover])cell(x+rx+cc*18+15,y+6+rr,251,C_SELECTED);
         }
         hover_entry=next_hover;
         if(hover_entry>=0){
@@ -5009,8 +5035,12 @@ static int collections_dialog(void)
         if(index>=0&&index<explore_count){
           pane=1;focus=0;hover_entry=-1;
           tick=*(unsigned long far *)MAKE_FP(0x40,0x6C);
+          if(!explore_entries[index].directory&&openfile_mark[index]){
+            openfile_mark[index]=0;selected=index;last_click=-1;redraw=1;continue;
+          }
           if(core_ctrl_down()&&!explore_entries[index].directory){
-            openfile_mark[index]=!openfile_mark[index];selected=index;last_click=-1;redraw=1;continue;
+            if(selected>=0&&selected<explore_count&&selected!=index&&!explore_entries[selected].directory&&!openfile_mark[selected])openfile_mark[selected]=1;
+            openfile_mark[index]=1;selected=index;last_click=-1;redraw=1;continue;
           }
           if(index==last_click && tick>=last_click_tick && tick-last_click_tick<=9UL){
             if(explore_entries[index].directory){
@@ -5046,7 +5076,7 @@ static int collections_dialog(void)
       char q[64];sprintf(q,"Remove association %s?",collections[selc].name);
       if(confirm_box("Remove Association",q)){memmove(&collections[selc],&collections[selc+1],(collection_count-selc-1)*sizeof(COLLECTION));collection_count--;if(selc>=collection_count)selc=collection_count-1;if(selc<0)selc=0;if(selc<ctop)ctop=selc;if(ctop>0&&ctop>=collection_count)ctop=((collection_count-1)/13)*13;collections_save();if(collection_count){openfile_load(path,collections[selc].ext);selected=explore_count?0:-1;}else{explore_count=0;selected=-1;}top=0;}redraw=1;continue;
     }
-    /* Open File is a two-pane browser. Tab/Shift-Tab changes pane; browser
+    /* File Open is a two-pane browser. Tab/Shift-Tab changes pane; browser
        navigation otherwise follows Explore & Run, including column movement. */
     if(k==9||k==0x0F00){
       int back=(k==0x0F00),d;
@@ -5262,7 +5292,7 @@ static int menu(const char *open_to)
             int sx;for(sx=1;sx<MENU_WIDTH-1;sx++)cell(x+sx,item_y-1,196,C_BORDER);
           }
           if(node==BUILTIN_COLLECTIONS){
-            textout(x+1,item_y,"Open File",(j==sel[i])?C_SELECTED:C_ITEM,18);
+            textout(x+1,item_y,"File Open",(j==sel[i])?C_SELECTED:C_ITEM,18);
           } else if(node==BUILTIN_EXPLORE){
 	    textout(x+1,item_y,"Explore & Run",(j==sel[i])?C_SELECTED:C_ITEM,18);
           } else if(node==BUILTIN_POWER){
@@ -5923,6 +5953,7 @@ static int update_shortcut_key(const char *spec)
       if(key){end=key+5;while(*end && !isspace((unsigned char)*end))end++;
         memmove(key,end,strlen(end)+1);
       }
+      if(!shortcut_loadhigh_supported()){char *lh=output;while(*lh==' '||*lh=='\t')lh++;if(!strnicmp(lh,"LOADHIGH",8)&&isspace((unsigned char)lh[8]))memmove(lh,lh+9,strlen(lh+9)+1);}
       end=output+strlen(output);while(end>output && (end[-1]=='\r'||end[-1]=='\n'))end--;
       *end=0;if(end>output && !isspace((unsigned char)end[-1]))strcat(output," ");
       strcat(output,"/KEY=");strcat(output,spec);strcat(output,"\n");found=1;
@@ -6010,6 +6041,18 @@ static int shortcut_set_dialog(void)
   return 1;
 }
 
+
+static int shortcut_loadhigh_supported(void)
+{
+  char bat[MAX_CMD],ok[MAX_CMD],cmd[MAX_CMD*2],*comspec;FILE *f;int found;
+  comspec=getenv("COMSPEC");if(!comspec||!*comspec||!program_dir[0])return 0;
+  strcpy(bat,program_dir);strcat(bat,"LHTEST.BAT");strcpy(ok,program_dir);strcat(ok,"LHTEST.$$$");
+  remove(bat);remove(ok);f=fopen(bat,"wt");if(!f)return 0;
+  fprintf(f,"@ECHO OFF\nECHO Y>%s\n",ok);if(fclose(f)!=0){remove(bat);return 0;}
+  sprintf(cmd,"LOADHIGH %s /C %s >NUL",comspec,bat);system(cmd);remove(bat);
+  f=fopen(ok,"rb");found=f!=0;if(f)fclose(f);remove(ok);return found;
+}
+
 static int ensure_shortcut_autoexec(void)
 {
   char autoexec[20],line[256],*p,*comspec;FILE *f;long size;int last=0;
@@ -6029,7 +6072,7 @@ static int ensure_shortcut_autoexec(void)
   fseek(f,0L,SEEK_END);size=ftell(f);
   if(size>0){fseek(f,-1L,SEEK_END);last=fgetc(f);fseek(f,0L,SEEK_END);}
   if(size>0&&last!='\n'&&fputs("\r\n",f)==EOF){fclose(f);return 0;}
-  if(fprintf(f,"LOADHIGH %s!KEY.COM\r\n",program_dir)<0){fclose(f);return 0;}
+  if(fprintf(f,"%s%s!KEY.COM\r\n",shortcut_loadhigh_supported()?"LOADHIGH ":"",program_dir)<0){fclose(f);return 0;}
   return fclose(f)==0;
 }
 
@@ -6078,7 +6121,7 @@ static void shortcut_idle_sync(void)
 
 static void show_help(void)
 {
-  puts("Launch! 3.7 - a lightweight command menu for DOS\n");
+  puts("Launch! 3.71 - a lightweight command menu for DOS\n");
   puts("Usage: ! [menu.mnu] [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
@@ -6089,7 +6132,7 @@ static void show_help(void)
   puts("Command-line parameters:");
   puts("  /CONFIG       Configure menu appearance and options");
   puts("  /EXPLORE      Open Explore & Run directly");
-  puts("  /OPEN         Open Open File directly");
+  puts("  /OPEN         Open the File Open dialog");
   puts("  /BYE          Open Shutdown... directly");
   puts("  /NOW          Start the selected screensaver immediately");
   puts("  menu.mnu      Use another menu file beside !.EXE (or a full path)");
@@ -6153,12 +6196,12 @@ int main(int argc,char **argv)
     return 0;
   }
   if(open_mode){
-    /* /OPEN needs the launcher tree just as much as Open File launched from
+    /* /OPEN needs the launcher tree just as much as File Open launched from
        the main menu does.  The normal menu path calls prepare_config() before
-       entering Open File, but the direct /OPEN path used to bypass that load.
+       entering File Open, but the direct /OPEN path used to bypass that load.
        As a result node_count stayed empty and Create Association > Choose had
        no launcher nodes to display.  Load/recover LAUNCH.MNU here before the
-       Open File dialog is created. */
+       File Open dialog is created. */
     config_status=prepare_config();
     if(!config_status){printf("Launch!: cannot recover %s\n",config_file);return 1;}
     if(config_status==2)puts("Launch!: LAUNCH.MNU was invalid; restored LAUNCH.BAK.");

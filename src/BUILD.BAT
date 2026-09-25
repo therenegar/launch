@@ -3,7 +3,7 @@ REM Launch! build script - Microsoft C/C++ 7.0
 REM BUILD with no parameter builds everything.
 REM BUILD ! builds only the core Launch! menu and appends its authentication trailer.
 REM BUILD !SNAKE (etc.) builds only that accessory.
-REM Release 3.7 generated build sources sources are supplied with this tree.
+REM Release 3.71 generated build sources are supplied with this tree.
 REM GENBUILD.C is a maintainer regeneration tool and is not run by BUILD.
 IF "%1"=="" GOTO ALL
 IF "%1"=="!" GOTO CORE
@@ -106,7 +106,7 @@ CL /AS /Os /Gs /W3 /Fe!TYPO.EXE TYPO.C ACCLIBX.C
 GOTO CHECK
 :CHECK
 IF ERRORLEVEL 1 GOTO FAIL
-IF "%L370FULL%"=="1" GOTO CHECKDONE
+IF "%L371FULL%"=="1" GOTO CHECKDONE
 REM Keep the installer synchronized after every focused component build.
 CL /AS /Os /Gs /W3 /FeINSTALL.EXE INSTBLD.C
 IF ERRORLEVEL 1 GOTO FAIL
@@ -120,7 +120,7 @@ GOTO END
 ECHO Built %1
 GOTO END
 :ALL
-SET L370FULL=1
+SET L371FULL=1
 CL /AM /Os /Gs /W3 /Fe!.EXE COREBLD.C SAVERS.C
 IF ERRORLEVEL 1 GOTO FAIL
 COPY /B !.EXE+AUTH35.SIG !.$$$ >NUL
@@ -170,10 +170,10 @@ CALL BUILD !TYPO
 IF ERRORLEVEL 1 GOTO FAIL
 PACKDAT.EXE
 IF ERRORLEVEL 1 GOTO FAIL
-SET L370FULL=
+SET L371FULL=
 ECHO Built complete Launch! distribution
 GOTO END
 :FAIL
-SET L370FULL=
+SET L371FULL=
 ECHO Build failed.
 :END

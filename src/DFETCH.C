@@ -396,7 +396,7 @@ static int print_info(void)
 {
   FILE *f;int i;
   f=fopen("LPT1","wb");if(!f)return 0;
-  fputs("DOS Fetch - Launch! 3.7\r\n",f);
+  fputs("DOS Fetch - Launch! 3.71\r\n",f);
   fputs("========================\r\n\r\n",f);
   for(i=0;i<report_count;i++){fputs(report_lines[i],f);fputs("\r\n",f);}
   fputc('\f',f);fclose(f);return 1;

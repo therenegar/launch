@@ -15,6 +15,8 @@
 #define LINES 450
 #define OLD_LINES 60
 #define COLS 68
+#define DOC_COLS 80
+#define FULL_COLS 79
 #define VIEW 7
 #define FULL_VIEW 15
 #define DLG_W 74
@@ -47,45 +49,72 @@
 #define MD_CODE ACC_ATTR(0,15)
 #define MD_MEDIA ACC_ATTR(7,12)
 
-typedef char MDLINE[COLS];
+typedef char MDLINE[DOC_COLS];
 static MDLINE far *page[PAGES];
 static char paths[PAGES][ACC_PATH];
 static unsigned char external[PAGES];
 static unsigned char softwrap[PAGES][LINES];
-#define CLIP_MAX (LINES*(COLS+2)+1)
-static char far clip[CLIP_MAX];static int clip_len=0;
+static unsigned char wrap_width[PAGES];
+static unsigned char reflow_soft[LINES];
+#define CLIP_MAX (LINES*(DOC_COLS+2L)+1L)
+static char far clip[CLIP_MAX];static unsigned clip_len=0;
 /* view_mode: 0=editor+preview, 1=editor only, 2=preview only. */
-static int current=0,count=1,cx=0,cy=0,top=0,view_mode=0,insert_mode=1,sel_anchor=-1,sel_caret=-1;
+static int current=0,count=1,cx=0,cy=0,top=0,view_mode=0,insert_mode=1;
+static long sel_anchor=-1L,sel_caret=-1L;
 static unsigned char dirty[PAGES];
 
-static int ensure_page(int p){if(page[p])return 1;page[p]=(MDLINE far *)_fmalloc((unsigned)(LINES*COLS));if(!page[p])return 0;_fmemset(page[p],' ',(unsigned)(LINES*COLS));return 1;}
-static int init_pages(void){memset(page,0,sizeof(page));return ensure_page(0);}
+static int edit_width(void){int w=wrap_width[current];return w?w:COLS;}
+static void clear_selection(void);
+static int ensure_page(int p){if(!wrap_width[p])wrap_width[p]=COLS;if(page[p])return 1;page[p]=(MDLINE far *)_fmalloc((unsigned)(LINES*(unsigned)DOC_COLS));if(!page[p])return 0;_fmemset(page[p],' ',(unsigned)(LINES*(unsigned)DOC_COLS));return 1;}
+static int init_pages(void){memset(page,0,sizeof(page));memset(wrap_width,0,sizeof(wrap_width));return ensure_page(0);}
 static void free_pages(void){int i;for(i=0;i<PAGES;i++)if(page[i]){_ffree(page[i]);page[i]=0;}}
-static void blank_page(int p){if(ensure_page(p))_fmemset(page[p],' ',(unsigned)LINES*COLS);}
-static int used(int p,int y){int n=COLS;while(n&&page[p][y][n-1]==' ')n--;return n;}
+static void blank_page(int p){if(ensure_page(p))_fmemset(page[p],' ',(unsigned)(LINES*(unsigned)DOC_COLS));}
+static int used(int p,int y){int n=DOC_COLS;while(n&&page[p][y][n-1]==' ')n--;return n;}
+static int row_used_width(MDLINE far *pg,int y,int width){int n=width;while(n&&pg[y][n-1]==' ')n--;return n;}
 static void persistent_path(char *out){acc_path(out,"DATA","MKDOWN.DAT");}
-static void persist_load(void){char p[ACC_PATH],b[COLS],magic[4];FILE*f;int i,y,j,last=0,modern=0,nonblank;blank_page(0);memset(softwrap,0,sizeof(softwrap));persistent_path(p);f=fopen(p,"rb");if(f){if(fread(magic,1,4,f)==4&&!memcmp(magic,"MKD2",4))modern=1;else rewind(f);for(i=0;i<PAGES;i++)for(y=0;y<(modern?LINES:OLD_LINES);y++){if(fread(b,1,COLS,f)!=COLS)goto loaded;nonblank=0;for(j=0;j<COLS;j++)if(b[j]!=' '){nonblank=1;break;}if(nonblank&&ensure_page(i)){_fmemcpy(page[i][y],b,COLS);last=i;}}if(modern)fread(softwrap,1,sizeof(softwrap),f);loaded:fclose(f);}count=last+1;if(count<1)count=1;}
+static void persist_load(void){char p[ACC_PATH],b[COLS],magic[4];FILE*f;int i,y,j,last=0,modern=0,nonblank;blank_page(0);memset(softwrap,0,sizeof(softwrap));persistent_path(p);f=fopen(p,"rb");if(f){if(fread(magic,1,4,f)==4&&!memcmp(magic,"MKD2",4))modern=1;else rewind(f);for(i=0;i<PAGES;i++)for(y=0;y<(modern?LINES:OLD_LINES);y++){if(fread(b,1,COLS,f)!=COLS)goto loaded;nonblank=0;for(j=0;j<COLS;j++)if(b[j]!=' '){nonblank=1;break;}if(nonblank&&ensure_page(i)){_fmemcpy(page[i][y],b,COLS);last=i;}}if(modern)fread(softwrap,1,sizeof(softwrap),f);loaded:fclose(f);}count=last+1;if(count<1)count=1;for(i=0;i<count;i++)wrap_width[i]=COLS;}
 static void persist_save(void){char p[ACC_PATH],b[COLS];FILE*f;int i,y;persistent_path(p);f=fopen(p,"wb");if(f){fwrite("MKD2",1,4,f);for(i=0;i<PAGES;i++)for(y=0;y<LINES;y++){if(page[i])_fmemcpy(b,page[i][y],COLS);else memset(b,' ',COLS);fwrite(b,1,COLS,f);}fwrite(softwrap,1,sizeof(softwrap),f);fclose(f);}}
 static void force_md(char *p){char *dot,*slash=strrchr(p,'\\'),*other=strrchr(p,'/');if(other&&(!slash||other>slash))slash=other;dot=strrchr(p,'.');if(!dot||(slash&&dot<slash)){if(strlen(p)+3<ACC_PATH)strcat(p,".MD");}else strcpy(dot,".MD");}
-static int load_file(int pg,const char *name){FILE*f;char line[512];int row=0,pos,n,left,cut;if(!ensure_page(pg))return 0;blank_page(pg);memset(softwrap[pg],0,LINES);f=fopen(name,"r");if(!f)return 0;while(fgets(line,sizeof(line),f)&&row<LINES){n=(int)strlen(line);while(n&&(line[n-1]=='\r'||line[n-1]=='\n'))line[--n]=0;pos=0;softwrap[pg][row]=0;if(!n){row++;continue;}while(pos<n&&row<LINES){left=n-pos;cut=left<COLS?left:COLS;if(left>COLS){while(cut>0&&line[pos+cut]!=' ')cut--;if(!cut)cut=COLS;}_fmemcpy(page[pg][row],line+pos,cut);pos+=cut;while(pos<n&&line[pos]==' ')pos++;row++;if(pos<n&&row<LINES)softwrap[pg][row]=1;}}fclose(f);strncpy(paths[pg],name,ACC_PATH-1);paths[pg][ACC_PATH-1]=0;force_md(paths[pg]);external[pg]=1;return 1;}
-static int write_file(int pg,const char *name){FILE*f=fopen(name,"w");char b[COLS];int y,n,next;if(!f)return 0;for(y=0;y<LINES;y++){n=used(pg,y);if(n){_fmemcpy(b,page[pg][y],n);fwrite(b,1,n,f);}next=y+1<LINES&&softwrap[pg][y+1];if(next){if(n&&used(pg,y+1))fputc(' ',f);}else fputc('\n',f);}if(fclose(f))return 0;strncpy(paths[pg],name,ACC_PATH-1);paths[pg][ACC_PATH-1]=0;external[pg]=1;dirty[pg]=0;return 1;}
+static int load_file(int pg,const char *name){FILE*f;char line[512];int row=0,pos,n,left,cut,w=COLS;if(!ensure_page(pg))return 0;wrap_width[pg]=(unsigned char)w;blank_page(pg);memset(softwrap[pg],0,LINES);f=fopen(name,"r");if(!f)return 0;while(fgets(line,sizeof(line),f)&&row<LINES){n=(int)strlen(line);while(n&&(line[n-1]=='\r'||line[n-1]=='\n'))line[--n]=0;pos=0;softwrap[pg][row]=0;if(!n){row++;continue;}while(pos<n&&row<LINES){left=n-pos;cut=left<w?left:w;if(left>w){while(cut>0&&line[pos+cut]!=' ')cut--;if(!cut)cut=w;}_fmemcpy(page[pg][row],line+pos,cut);pos+=cut;while(pos<n&&line[pos]==' ')pos++;row++;if(pos<n&&row<LINES)softwrap[pg][row]=1;}}fclose(f);strncpy(paths[pg],name,ACC_PATH-1);paths[pg][ACC_PATH-1]=0;force_md(paths[pg]);external[pg]=1;return 1;}
+static int write_file(int pg,const char *name){FILE*f=fopen(name,"w");char b[DOC_COLS];int y,n,next;if(!f)return 0;for(y=0;y<LINES;y++){n=used(pg,y);if(n){_fmemcpy(b,page[pg][y],n);fwrite(b,1,n,f);}next=y+1<LINES&&softwrap[pg][y+1];if(next){if(n&&used(pg,y+1))fputc(' ',f);}else fputc('\n',f);}if(fclose(f))return 0;strncpy(paths[pg],name,ACC_PATH-1);paths[pg][ACC_PATH-1]=0;external[pg]=1;dirty[pg]=0;return 1;}
+
+static int reflow_emit(MDLINE far *dst,int *outrow,const char *b,int n,int continuation,int width)
+{if(*outrow>=LINES)return 0;if(n>width)n=width;if(n>0)_fmemcpy(dst[*outrow],b,n);reflow_soft[*outrow]=(unsigned char)(continuation?1:0);(*outrow)++;return 1;}
+static int reflow_page(int p,int new_width)
+{
+ MDLINE far *tmp;char pending[DOC_COLS*2+2];int old_width,y,r,e,last,n,nextn,i,k,plen=0,cut,drop,outrow=0,cont,emitted;
+ int cursor_line=0,cursor_start=0,target_row=0,hard=0,sep;long cursor_off=0,off;
+ if(new_width<COLS)new_width=COLS;if(new_width>DOC_COLS)new_width=DOC_COLS;old_width=wrap_width[p]?wrap_width[p]:COLS;if(old_width==new_width)return 1;
+ if(p==current){cursor_start=cy;while(cursor_start>0&&softwrap[p][cursor_start])cursor_start--;for(r=1;r<=cursor_start;r++)if(!softwrap[p][r])cursor_line++;for(r=cursor_start;r<cy;r++){n=used(p,r);cursor_off+=n;if(r+1<LINES&&softwrap[p][r+1]&&n&&used(p,r+1))cursor_off++;}n=used(p,cy);cursor_off+=cx<n?cx:n;}
+ tmp=(MDLINE far *)_fmalloc((unsigned)(LINES*(unsigned)DOC_COLS));if(!tmp)return 0;_fmemset(tmp,' ',(unsigned)(LINES*(unsigned)DOC_COLS));memset(reflow_soft,0,sizeof(reflow_soft));
+ last=LINES-1;while(last>0&&used(p,last)==0&&!softwrap[p][last])last--;
+ y=0;while(y<=last){e=y;while(e+1<=last&&softwrap[p][e+1])e++;plen=0;cont=0;emitted=0;
+  for(r=y;r<=e;r++){n=used(p,r);for(i=0;i<n;i++){pending[plen++]=page[p][r][i];if(plen>new_width){cut=0;for(k=new_width;k>0;k--)if(pending[k]==' '){cut=k;break;}drop=cut?1:0;if(!cut)cut=new_width;if(!reflow_emit(tmp,&outrow,pending,cut,cont,new_width)){_ffree(tmp);return 0;}emitted=1;cont=1;memmove(pending,pending+cut+drop,plen-cut-drop);plen-=cut+drop;}}
+   if(r<e&&n&&(nextn=used(p,r+1))&&n<old_width){pending[plen++]=' ';if(plen>new_width){cut=0;for(k=new_width;k>0;k--)if(pending[k]==' '){cut=k;break;}drop=cut?1:0;if(!cut)cut=new_width;if(!reflow_emit(tmp,&outrow,pending,cut,cont,new_width)){_ffree(tmp);return 0;}emitted=1;cont=1;memmove(pending,pending+cut+drop,plen-cut-drop);plen-=cut+drop;}}
+  }
+  if(plen||!emitted){if(!reflow_emit(tmp,&outrow,pending,plen,cont,new_width)){_ffree(tmp);return 0;}}
+  y=e+1;
+ }
+ if(p==current){if(cursor_line==0)target_row=0;else{hard=0;for(r=1;r<outrow;r++)if(!reflow_soft[r]){hard++;if(hard==cursor_line){target_row=r;break;}}}off=cursor_off;r=target_row;for(;;){n=row_used_width(tmp,r,new_width);if(r+1<outrow&&reflow_soft[r+1]){nextn=row_used_width(tmp,r+1,new_width);sep=(n&&nextn)?1:0;if(off<=n)break;off-=n+sep;r++;continue;}break;}cy=r;cx=(int)off;if(cx>n)cx=n;if(cx>=new_width)cx=new_width-1;if(cx<0)cx=0;}
+ _ffree(page[p]);page[p]=tmp;memcpy(softwrap[p],reflow_soft,LINES);wrap_width[p]=(unsigned char)new_width;clear_selection();return 1;
+}
 
 static int has_selection(void){return sel_anchor>=0&&sel_caret>=0&&sel_anchor!=sel_caret;}
-static int sel_low(void){return sel_anchor<sel_caret?sel_anchor:sel_caret;}
-static int sel_high(void){return sel_anchor>sel_caret?sel_anchor:sel_caret;}
-static void clear_selection(void){sel_anchor=sel_caret=-1;}
+static long sel_low(void){return sel_anchor<sel_caret?sel_anchor:sel_caret;}
+static long sel_high(void){return sel_anchor>sel_caret?sel_anchor:sel_caret;}
+static void clear_selection(void){sel_anchor=sel_caret=-1L;}
 static int shift_down(void){return (*(unsigned char far *)(((unsigned long)0x40<<16)|0x17)&3)!=0;}
-static void selection_move(int oldpos,int newpos,int shift){if(shift){if(sel_anchor<0)sel_anchor=oldpos;sel_caret=newpos;if(sel_caret==sel_anchor)clear_selection();}else clear_selection();}
-static void copy_selection(void){int lo,hi,p,row,lastrow,n=0;if(!has_selection())return;lo=sel_low();hi=sel_high();lastrow=(hi-1)/COLS;for(p=lo;p<hi&&n<CLIP_MAX-3;p++){row=p/COLS;clip[n++]=page[current][row][p%COLS];if(p+1<hi&&(p+1)%COLS==0&&row<lastrow&&!softwrap[current][row+1]){clip[n++]='\r';clip[n++]='\n';}}clip_len=n;}
-static void delete_selection(void){int lo,hi,fr,lr,r,start,end,n;if(!has_selection())return;lo=sel_low();hi=sel_high();fr=lo/COLS;lr=(hi-1)/COLS;for(r=fr;r<=lr;r++){start=r==fr?lo%COLS:0;end=r==lr?((hi-1)%COLS)+1:COLS;n=end-start;if(n>0){_fmemmove(page[current][r]+start,page[current][r]+end,COLS-end);_fmemset(page[current][r]+COLS-n,' ',n);}}cy=fr;cx=lo%COLS;clear_selection();dirty[current]=1;}
-static void word_wrap(void){int start=COLS-1,len,i,can=1;if(cy>=LINES-1)return;if(page[current][cy][COLS-1]==' '){cy++;cx=0;softwrap[current][cy]=1;return;}while(start>0&&page[current][cy][start-1]!=' ')start--;if(start<=0){cy++;cx=0;softwrap[current][cy]=1;return;}len=COLS-start;for(i=COLS-len;i<COLS;i++)if(page[current][cy+1][i]!=' ')can=0;if(!can){cy++;cx=0;softwrap[current][cy]=1;return;}_fmemmove(page[current][cy+1]+len,page[current][cy+1],COLS-len);_fmemcpy(page[current][cy+1],page[current][cy]+start,len);_fmemset(page[current][cy]+start,' ',COLS-start);cy++;cx=len;softwrap[current][cy]=1;}
-static void insert_one(int ch){if(insert_mode&&cx<COLS-1)_fmemmove(page[current][cy]+cx+1,page[current][cy]+cx,COLS-cx-1);page[current][cy][cx]=(char)ch;if(cx<COLS-1)cx++;else word_wrap();dirty[current]=1;}
-static void paste_clip(void){int i,c;if(has_selection())delete_selection();for(i=0;i<clip_len&&cy<LINES;i++){c=(unsigned char)clip[i];if(c=='\r')continue;if(c=='\n'){if(cy<LINES-1){cy++;cx=0;softwrap[current][cy]=0;}continue;}insert_one(c);}clear_selection();}
-static void remove_row(int row){int r;for(r=row;r<LINES-1;r++){_fmemcpy(page[current][r],page[current][r+1],COLS);softwrap[current][r]=softwrap[current][r+1];}_fmemset(page[current][LINES-1],' ',COLS);softwrap[current][LINES-1]=0;}
-static void join_next_line(void){int n2,take,room;if(cy>=LINES-1)return;n2=used(current,cy+1);room=COLS-cx;if(room<0)room=0;take=n2<room?n2:room;if(take)_fmemcpy(page[current][cy]+cx,page[current][cy+1],take);if(take>=n2)remove_row(cy+1);else{_fmemmove(page[current][cy+1],page[current][cy+1]+take,COLS-take);_fmemset(page[current][cy+1]+COLS-take,' ',take);}dirty[current]=1;}
-static void join_previous_line(void){int prev,n,take,room;if(cy<=0)return;prev=used(current,cy-1);n=used(current,cy);room=COLS-prev;if(room<=0){cy--;cx=COLS-1;return;}take=n<room?n:room;if(take)_fmemcpy(page[current][cy-1]+prev,page[current][cy],take);if(take>=n)remove_row(cy);else{_fmemmove(page[current][cy],page[current][cy]+take,COLS-take);_fmemset(page[current][cy]+COLS-take,' ',take);}cy--;cx=prev;dirty[current]=1;}
-static void split_line(void){int r,n,tail,indent=0;if(cy>=LINES-1)return;while(indent<COLS&&page[current][cy][indent]==' ')indent++;if(indent>=COLS)indent=0;for(r=LINES-1;r>cy+1;r--){_fmemcpy(page[current][r],page[current][r-1],COLS);softwrap[current][r]=softwrap[current][r-1];}_fmemset(page[current][cy+1],' ',COLS);n=used(current,cy);tail=n>cx?n-cx:0;if(tail>COLS-indent)tail=COLS-indent;if(tail)_fmemcpy(page[current][cy+1]+indent,page[current][cy]+cx,tail);_fmemset(page[current][cy]+cx,' ',COLS-cx);softwrap[current][cy+1]=0;cy++;cx=indent;dirty[current]=1;}
-static int editor_key(int key,int rows){int oldpos=cy*COLS+cx,shift=shift_down();if(key==3){copy_selection();return 1;}if(key==24){copy_selection();delete_selection();return 1;}if(key==22||key==16){paste_clip();return 1;}if(key==256+0x77){cy=0;cx=0;}else if(key==256+0x75){cy=LINES-1;while(cy>0&&!used(current,cy))cy--;cx=used(current,cy);if(cx>=COLS)cx=COLS-1;}else if(key==256+75&&cx>0)cx--;else if(key==256+77&&cx<COLS-1)cx++;else if(key==256+72&&cy>0)cy--;else if(key==256+80&&cy<LINES-1)cy++;else if(key==256+71)cx=0;else if(key==256+79){cx=COLS-1;while(cx>0&&page[current][cy][cx]==' ')cx--;if(page[current][cy][cx]!=' '&&cx<COLS-1)cx++;}else if(key==256+73){cy-=rows;if(cy<0)cy=0;}else if(key==256+81){cy+=rows;if(cy>=LINES)cy=LINES-1;}else if(key==256+82){clear_selection();insert_mode=!insert_mode;return 1;}else if(key==256+83){if(has_selection())delete_selection();else if(cx>=used(current,cy))join_next_line();else{_fmemmove(page[current][cy]+cx,page[current][cy]+cx+1,COLS-cx-1);page[current][cy][COLS-1]=' ';dirty[current]=1;}return 1;}else if(key==8){if(has_selection())delete_selection();else if(cx>0){cx--;_fmemmove(page[current][cy]+cx,page[current][cy]+cx+1,COLS-cx-1);page[current][cy][COLS-1]=' ';dirty[current]=1;}else join_previous_line();return 1;}else if(key==13&&cy<LINES-1){if(has_selection())delete_selection();split_line();clear_selection();return 1;}else if((key>=32&&key<=255)||(key>=513&&key<=767)){if(has_selection())delete_selection();insert_one(key>=512?key-512:key);clear_selection();return 1;}else return 0;selection_move(oldpos,cy*COLS+cx,shift);return 1;}
+static void selection_move(long oldpos,long newpos,int shift){if(shift){if(sel_anchor<0)sel_anchor=oldpos;sel_caret=newpos;if(sel_caret==sel_anchor)clear_selection();}else clear_selection();}
+static void copy_selection(void){long lo,hi,p;int row,lastrow,w=edit_width();unsigned n=0;if(!has_selection())return;lo=sel_low();hi=sel_high();lastrow=(int)((hi-1L)/w);for(p=lo;p<hi&&n<CLIP_MAX-3U;p++){row=(int)(p/w);clip[n++]=page[current][row][(int)(p%w)];if(p+1L<hi&&(p+1L)%w==0&&row<lastrow&&!softwrap[current][row+1]){clip[n++]='\r';clip[n++]='\n';}}clip_len=n;}
+static void delete_selection(void){long lo,hi;int fr,lr,r,start,end,n,w=edit_width();if(!has_selection())return;lo=sel_low();hi=sel_high();fr=(int)(lo/w);lr=(int)((hi-1L)/w);for(r=fr;r<=lr;r++){start=r==fr?(int)(lo%w):0;end=r==lr?(int)(((hi-1L)%w)+1L):w;n=end-start;if(n>0){_fmemmove(page[current][r]+start,page[current][r]+end,w-end);_fmemset(page[current][r]+w-n,' ',n);}}cy=fr;cx=(int)(lo%w);clear_selection();dirty[current]=1;}
+static void word_wrap(void){int w=edit_width(),start=w-1,len,i,can=1;if(cy>=LINES-1)return;if(page[current][cy][w-1]==' '){cy++;cx=0;softwrap[current][cy]=1;return;}while(start>0&&page[current][cy][start-1]!=' ')start--;if(start<=0){cy++;cx=0;softwrap[current][cy]=1;return;}len=w-start;for(i=w-len;i<w;i++)if(page[current][cy+1][i]!=' ')can=0;if(!can){cy++;cx=0;softwrap[current][cy]=1;return;}_fmemmove(page[current][cy+1]+len,page[current][cy+1],w-len);_fmemcpy(page[current][cy+1],page[current][cy]+start,len);_fmemset(page[current][cy]+start,' ',w-start);cy++;cx=len;softwrap[current][cy]=1;}
+static void insert_one(int ch){int w=edit_width();if(insert_mode&&cx<w-1)_fmemmove(page[current][cy]+cx+1,page[current][cy]+cx,w-cx-1);page[current][cy][cx]=(char)ch;if(cx<w-1)cx++;else word_wrap();dirty[current]=1;}
+static void paste_clip(void){unsigned i;int c;if(has_selection())delete_selection();for(i=0;i<clip_len&&cy<LINES;i++){c=(unsigned char)clip[i];if(c=='\r')continue;if(c=='\n'){if(cy<LINES-1){cy++;cx=0;softwrap[current][cy]=0;}continue;}insert_one(c);}clear_selection();}
+static void remove_row(int row){int r;for(r=row;r<LINES-1;r++){_fmemcpy(page[current][r],page[current][r+1],DOC_COLS);softwrap[current][r]=softwrap[current][r+1];}_fmemset(page[current][LINES-1],' ',DOC_COLS);softwrap[current][LINES-1]=0;}
+static void join_next_line(void){int w=edit_width(),n2,take,room;if(cy>=LINES-1)return;n2=used(current,cy+1);room=w-cx;if(room<0)room=0;take=n2<room?n2:room;if(take)_fmemcpy(page[current][cy]+cx,page[current][cy+1],take);if(take>=n2)remove_row(cy+1);else{_fmemmove(page[current][cy+1],page[current][cy+1]+take,w-take);_fmemset(page[current][cy+1]+w-take,' ',take);}dirty[current]=1;}
+static void join_previous_line(void){int w=edit_width(),prev,n,take,room;if(cy<=0)return;prev=used(current,cy-1);n=used(current,cy);room=w-prev;if(room<=0){cy--;cx=w-1;return;}take=n<room?n:room;if(take)_fmemcpy(page[current][cy-1]+prev,page[current][cy],take);if(take>=n)remove_row(cy);else{_fmemmove(page[current][cy],page[current][cy]+take,w-take);_fmemset(page[current][cy]+w-take,' ',take);}cy--;cx=prev;dirty[current]=1;}
+static void split_line(void){int w=edit_width(),r,n,tail,indent=0;if(cy>=LINES-1)return;while(indent<w&&page[current][cy][indent]==' ')indent++;if(indent>=w)indent=0;for(r=LINES-1;r>cy+1;r--){_fmemcpy(page[current][r],page[current][r-1],DOC_COLS);softwrap[current][r]=softwrap[current][r-1];}_fmemset(page[current][cy+1],' ',DOC_COLS);n=used(current,cy);tail=n>cx?n-cx:0;if(tail>w-indent)tail=w-indent;if(tail)_fmemcpy(page[current][cy+1]+indent,page[current][cy]+cx,tail);_fmemset(page[current][cy]+cx,' ',w-cx);softwrap[current][cy+1]=0;cy++;cx=indent;dirty[current]=1;}
+static int editor_key(int key,int rows){int w=edit_width(),shift=shift_down();long oldpos=(long)cy*w+cx;if(key==3){copy_selection();return 1;}if(key==24){copy_selection();delete_selection();return 1;}if(key==22||key==16){paste_clip();return 1;}if(key==256+0x77){cy=0;cx=0;}else if(key==256+0x75){cy=LINES-1;while(cy>0&&!used(current,cy))cy--;cx=used(current,cy);if(cx>=w)cx=w-1;}else if(key==256+75&&cx>0)cx--;else if(key==256+77&&cx<w-1)cx++;else if(key==256+72&&cy>0)cy--;else if(key==256+80&&cy<LINES-1)cy++;else if(key==256+71)cx=0;else if(key==256+79){cx=w-1;while(cx>0&&page[current][cy][cx]==' ')cx--;if(page[current][cy][cx]!=' '&&cx<w-1)cx++;}else if(key==256+73){cy-=rows;if(cy<0)cy=0;}else if(key==256+81){cy+=rows;if(cy>=LINES)cy=LINES-1;}else if(key==256+82){clear_selection();insert_mode=!insert_mode;return 1;}else if(key==256+83){if(has_selection())delete_selection();else if(cx>=used(current,cy))join_next_line();else{_fmemmove(page[current][cy]+cx,page[current][cy]+cx+1,w-cx-1);page[current][cy][w-1]=' ';dirty[current]=1;}return 1;}else if(key==8){if(has_selection())delete_selection();else if(cx>0){cx--;_fmemmove(page[current][cy]+cx,page[current][cy]+cx+1,w-cx-1);page[current][cy][w-1]=' ';dirty[current]=1;}else join_previous_line();return 1;}else if(key==13&&cy<LINES-1){if(has_selection())delete_selection();split_line();clear_selection();return 1;}else if((key>=32&&key<=255)||(key>=513&&key<=767)){if(has_selection())delete_selection();insert_one(key>=512?key-512:key);clear_selection();return 1;}else return 0;selection_move(oldpos,(long)cy*w+cx,shift);return 1;}
 
 static void plain_line(int p,int row,char *out,int *style)
 {
@@ -99,43 +128,46 @@ static void plain_line(int p,int row,char *out,int *style)
   while(j<COLS)out[j++]=' ';out[COLS]=0;if(bold&&!*style)*style=8;
 }
 static int heading_attr(int h){if(h<=1)return MD_HEADING1;if(h==2)return MD_HEADING2;if(h==3)return MD_HEADING3;if(h==4)return MD_HEADING4;return MD_HEADING5;}
-static void draw_source(int x,int y,int rows,int cursor)
-{int r,c,pos,lo=has_selection()?sel_low():-1,hi=has_selection()?sel_high():-1;char b[COLS+1];for(r=0;r<rows;r++){int line=top+r;if(line<LINES){_fmemcpy(b,page[current][line],COLS);b[COLS]=0;}else memset(b,' ',COLS),b[COLS]=0;acc_text(x,y+r,b,ACC_CONTROL,COLS);if(lo>=0)for(c=0;c<COLS;c++){pos=line*COLS+c;if(pos>=lo&&pos<hi)acc_put(x+c,y+r,b[c],ACC_SELECT);}}if(cursor&&cy>=top&&cy<top+rows){acc_caret_set(x+cx,y+cy-top);}else if(!cursor)acc_caret_hide();}
+static void draw_source(int x,int y,int rows,int cursor,int width)
+{int r,c;long pos,lo=has_selection()?sel_low():-1L,hi=has_selection()?sel_high():-1L;char b[DOC_COLS+1];if(width<COLS)width=COLS;if(width>DOC_COLS)width=DOC_COLS;for(r=0;r<rows;r++){int line=top+r;if(line<LINES){_fmemcpy(b,page[current][line],width);b[width]=0;}else memset(b,' ',width),b[width]=0;acc_text(x,y+r,b,ACC_CONTROL,width);if(lo>=0)for(c=0;c<width;c++){pos=(long)line*width+c;if(pos>=lo&&pos<hi)acc_put(x+c,y+r,b[c],ACC_SELECT);}}if(cursor&&cy>=top&&cy<top+rows){acc_caret_set(x+cx,y+cy-top);}else if(!cursor)acc_caret_hide();}
 
-/* Markdown block helpers.  These deliberately operate on the editor's fixed
-   68-column rows so Preview and Show make the same structural decisions. */
+/* Markdown block helpers follow the page's active soft-wrap width.  Normal
+   editing uses 68 columns; full-screen uses 79 text columns with the
+   scrollbar occupying the screen-edge column. */
 #define MD_TCOLS 8
 #define MD_LOGICAL 512
 typedef struct {int cols,pipe;int start[MD_TCOLS],width[MD_TCOLS];int logical,lstart,slot;} MDTABLE;
 static void md_line(int p,int row,char *s,int *n)
-{if(row<0||row>=LINES){s[0]=0;*n=0;return;}_fmemcpy(s,page[p][row],COLS);s[COLS]=0;*n=COLS;while(*n&&s[*n-1]==' ')(*n)--;s[*n]=0;}
+{int w=wrap_width[p]?wrap_width[p]:COLS;if(row<0||row>=LINES){s[0]=0;*n=0;return;}_fmemcpy(s,page[p][row],w);s[w]=0;*n=w;while(*n&&s[*n-1]==' ')(*n)--;s[*n]=0;}
 static int md_lead(const char *s,int n){int i=0;while(i<n&&s[i]==' ')i++;return i;}
+static int md_soft_quote_column(int p,int row)
+{int r,n,i;char s[DOC_COLS+1];if(row<=0||!softwrap[p][row])return-1;r=row;while(r>0&&softwrap[p][r])r--;md_line(p,r,s,&n);i=md_lead(s,n);return(i<n&&s[i]=='>')?i:-1;}
 static int md_log_start(int p,int row){if(row<0)return 0;if(row>=LINES)row=LINES-1;while(row>0&&softwrap[p][row])row--;return row;}
 static int md_log_end(int p,int row){row=md_log_start(p,row);while(row+1<LINES&&softwrap[p][row+1])row++;return row;}
 static int md_log_next(int p,int row){int e=md_log_end(p,row);return e+1<LINES?e+1:-1;}
 static int md_log_prev(int p,int row){int s=md_log_start(p,row);return s>0?md_log_start(p,s-1):-1;}
 static void md_log_line(int p,int row,char *s,int *n)
-{int r,e,k=0,u,prev=COLS;row=md_log_start(p,row);e=md_log_end(p,row);for(r=row;r<=e&&k<MD_LOGICAL;r++){u=used(p,r);/* load_file only discards a separator space when the previous chunk
-   ended before column 68.  A full 68-column chunk is a hard split and must
-   be rejoined without inventing a space (important for long table rules). */if(r>row&&k<MD_LOGICAL&&u&&prev<COLS)s[k++]=' ';if(u>MD_LOGICAL-k)u=MD_LOGICAL-k;if(u){_fmemcpy(s+k,page[p][r],u);k+=u;}prev=used(p,r);}s[k]=0;*n=k;}
+{int r,e,k=0,u,w=wrap_width[p]?wrap_width[p]:COLS,prev;prev=w;row=md_log_start(p,row);e=md_log_end(p,row);for(r=row;r<=e&&k<MD_LOGICAL;r++){u=used(p,r);/* A soft wrap only represents a discarded separator space when the
+   previous chunk ended before the active editor width.  A completely full
+   chunk is a hard split and is rejoined without inventing a space. */if(r>row&&k<MD_LOGICAL&&u&&prev<w)s[k++]=' ';if(u>MD_LOGICAL-k)u=MD_LOGICAL-k;if(u){_fmemcpy(s+k,page[p][r],u);k+=u;}prev=used(p,r);}s[k]=0;*n=k;}
 static int md_blank(int p,int row){return row<0||row>=LINES||used(p,row)==0;}
 static int md_list_marker(const char *s,int n,int pos,int *after,int *ordered)
 {int k;if(pos+1<n&&(s[pos]=='-'||s[pos]=='*'||s[pos]=='+')&&s[pos+1]==' '){*after=pos+2;*ordered=0;return 1;}if(pos<n&&isdigit((unsigned char)s[pos])){k=pos;while(k<n&&isdigit((unsigned char)s[k]))k++;if(k+1<n&&s[k]=='.'&&s[k+1]==' '){*after=k+2;*ordered=1;return 1;}}return 0;}
 static int md_fence_text(const char *s,int n)
 {int i=md_lead(s,n),j;char c;if(i>3||i>=n)return 0;c=s[i];if(c!='`'&&c!='~')return 0;j=i;while(j<n&&s[j]==c)j++;return j-i>=3?(int)(unsigned char)c:0;}
-static int line_fence_kind(int p,int row){char s[COLS+1];int n;md_line(p,row,s,&n);return md_fence_text(s,n);}
+static int line_fence_kind(int p,int row){char s[DOC_COLS+1];int n;md_line(p,row,s,&n);return md_fence_text(s,n);}
 static int line_fence(int p,int row){return line_fence_kind(p,row)!=0;}
 static int code_fence_before(int p,int row)
 {int i,k=0,f;for(i=0;i<row;i++){f=line_fence_kind(p,i);if(f&&(!k||f==k))k=k?0:f;}return k;}
 static int code_before(int p,int row){return code_fence_before(p,row)!=0;}
 static int md_enclosing_list_indent(int p,int row,int lead)
-{char s[COLS+1];int n,l,after,ordered,r;for(r=row-1;r>=0&&r>=row-32;r--){md_line(p,r,s,&n);if(!n)continue;l=md_lead(s,n);after=ordered=0;if(l<lead&&md_list_marker(s,n,l,&after,&ordered))return l;if(l<lead)return -1;}return -1;}
+{char s[DOC_COLS+1];int n,l,after,ordered,r;for(r=row-1;r>=0&&r>=row-32;r--){md_line(p,r,s,&n);if(!n)continue;l=md_lead(s,n);after=ordered=0;if(l<lead&&md_list_marker(s,n,l,&after,&ordered))return l;if(l<lead)return -1;}return -1;}
 static int md_indented_code_raw(int p,int row)
-{char s[COLS+1];int n,lead,after=0,ordered=0,li;md_line(p,row,s,&n);lead=md_lead(s,n);if(lead<4||lead>=n)return 0;if(md_list_marker(s,n,lead,&after,&ordered))return 0;li=md_enclosing_list_indent(p,row,lead);if(li>=0&&lead<li+8)return 0;return 1;}
+{char s[DOC_COLS+1];int n,lead,after=0,ordered=0,li;md_line(p,row,s,&n);lead=md_lead(s,n);if(lead<4||lead>=n)return 0;if(md_list_marker(s,n,lead,&after,&ordered))return 0;li=md_enclosing_list_indent(p,row,lead);if(li>=0&&lead<li+8)return 0;return 1;}
 static int md_indented_code(int p,int row)
 {int r=row;if(row<0||row>=LINES)return 0;while(r>0&&softwrap[p][r])r--;return md_indented_code_raw(p,r);}
 static int md_definition_line(int p,int row,int *textpos)
-{char s[COLS+1];int n,i;md_line(p,row,s,&n);i=md_lead(s,n);if(i<n&&s[i]==':'&&i+1<n&&(s[i+1]==' '||s[i+1]=='\t')){i+=2;while(i<n&&s[i]==' ')i++;if(textpos)*textpos=i;return 1;}return 0;}
+{char s[DOC_COLS+1];int n,i;md_line(p,row,s,&n);i=md_lead(s,n);if(i<n&&s[i]==':'&&i+1<n&&(s[i+1]==' '||s[i+1]=='\t')){i+=2;while(i<n&&s[i]==' ')i++;if(textpos)*textpos=i;return 1;}return 0;}
 static int md_definition_term(int p,int row)
 {int dummy;if(row<0||row+1>=LINES||used(p,row)==0)return 0;return md_definition_line(p,row+1,&dummy);}
 static int md_pure_dash_rule(const char *s,int n)
@@ -150,11 +182,11 @@ static int md_table_sep_text(const char *s,int n,MDTABLE *t)
  }
  if(c<2)return 0;t->cols=c;t->pipe=haspipe;return 1;}
 static int md_table_sep_at(int p,int row,MDTABLE *t)
-{char s[COLS+1],a[COLS+1];int n,an;md_line(p,row,s,&n);if(md_table_sep_text(s,n,t))return 1;if(!md_pure_dash_rule(s,n))return 0;if(row>0){md_line(p,row-1,a,&an);if(md_table_header_text(a,an,t))return 1;}if(row+1<LINES){md_line(p,row+1,a,&an);if(md_table_header_text(a,an,t))return 1;}return 0;}
+{char s[DOC_COLS+1],a[DOC_COLS+1];int n,an;md_line(p,row,s,&n);if(md_table_sep_text(s,n,t))return 1;if(!md_pure_dash_rule(s,n))return 0;if(row>0){md_line(p,row-1,a,&an);if(md_table_header_text(a,an,t))return 1;}if(row+1<LINES){md_line(p,row+1,a,&an);if(md_table_header_text(a,an,t))return 1;}return 0;}
 static int md_table_same(const MDTABLE *a,const MDTABLE *b)
 {int i;if(a->cols!=b->cols)return 0;for(i=0;i<a->cols;i++)if(a->width[i]!=b->width[i]&&a->start[i]!=b->start[i])return 0;return 1;}
 static int md_table_rowish(int p,int row,const MDTABLE *t)
-{char s[COLS+1];int n,i,non=0;md_line(p,row,s,&n);if(!n)return 0;i=md_lead(s,n);if(i>=n)return 0;if(!strnicmp(s+i,"Table:",6)||s[i]=='#'||s[i]=='>')return 0;if(t->pipe){for(i=0;i<n;i++)if(s[i]=='|')return 1;return 0;}for(i=0;i<t->cols;i++){int st=t->start[i],en=(i+1<t->cols)?t->start[i+1]:n,j;if(st>=n)continue;if(en>n)en=n;for(j=st;j<en;j++)if(s[j]!=' '){non++;break;}}return non>=1;}
+{char s[DOC_COLS+1];int n,i,non=0;md_line(p,row,s,&n);if(!n)return 0;i=md_lead(s,n);if(i>=n)return 0;if(!strnicmp(s+i,"Table:",6)||s[i]=='#'||s[i]=='>')return 0;if(t->pipe){for(i=0;i<n;i++)if(s[i]=='|')return 1;return 0;}for(i=0;i<t->cols;i++){int st=t->start[i],en=(i+1<t->cols)?t->start[i+1]:n,j;if(st>=n)continue;if(en>n)en=n;for(j=st;j<en;j++)if(s[j]!=' '){non++;break;}}return non>=1;}
 static void md_table_fit(MDTABLE *t)
 {int i,sum=0,avail=COLS-(t->cols+1),best;if(avail<t->cols*3)avail=t->cols*3;for(i=0;i<t->cols;i++){if(t->width[i]<3)t->width[i]=3;sum+=t->width[i];}while(sum>avail){best=-1;for(i=0;i<t->cols;i++)if(t->width[i]>3&&(best<0||t->width[i]>t->width[best]))best=i;if(best<0)break;t->width[best]--;sum--;}}
 static int md_pipe_sep_log_at(int p,int row,MDTABLE *t)
@@ -250,17 +282,18 @@ static int inline_attr(int bold,int italic,int underline,int strike,int code,int
 {if(code)return MD_CODE;if(strike)return MD_STRIKE;if(underline)return MD_UNDERLINE;if(super)return MD_SUPER;if(sub)return MD_SUB;if(bold&&italic)return MD_BOLDITALIC;if(italic)return MD_ITALIC;if(bold)return MD_BOLD;return MD_TEXT;}
 static void preview_line(int x,int y,int p,int row,int in_code)
 {
- char s[COLS+1],tb[COLS+1],mdesc[COLS+1];MDTABLE tt;MDMEDIA media;int n,i=0,o=0,h=0,bold=0,italic=0,underline=0,strike=0,code=in_code,super=0,sub=0,quote=0,a,k;
- int tctx,tborder=0,lead,after=0,ordered=0,defpos=0;char c;
+ char s[DOC_COLS+1],tb[DOC_COLS+1],mdesc[DOC_COLS+1];MDTABLE tt;MDMEDIA media;int n,i=0,o=0,h=0,bold=0,italic=0,underline=0,strike=0,code=in_code,super=0,sub=0,quote=0,a,k;
+ int tctx,tborder=0,lead,after=0,ordered=0,defpos=0,qcol;char c;
  md_line(p,row,s,&n);acc_fill(x,y,COLS,1,' ',in_code?MD_CODE:MD_TEXT);
  if(line_fence(p,row))return;
  if(in_code){while(i<n&&o<COLS)acc_put(x+o++,y,s[i++],MD_CODE);return;}
  if(md_media_parse(s,n,&media)){int dl;md_media_desc(&media,mdesc,COLS-3);dl=(int)strlen(mdesc);acc_put(x,y,179,MD_MEDIA);acc_put(x+1,y,' ',MD_MEDIA);for(i=0;i<dl&&i<COLS-4;i++)acc_put(x+2+i,y,(unsigned char)mdesc[i],MD_MEDIA);for(;i<COLS-4;i++)acc_put(x+2+i,y,' ',MD_MEDIA);acc_put(x+COLS-2,y,' ',MD_MEDIA);acc_put(x+COLS-1,y,179,MD_MEDIA);return;}
  tctx=md_table_context(p,row,&tt,&tborder);if(tctx){n=md_table_make_row(p,row,&tt,tctx==2?tborder:0,tb);for(i=0;i<n&&i<COLS;i++)acc_put(x+i,y,(unsigned char)tb[i],MD_TEXT);return;}
  if(md_indented_code(p,row)){i=4;while(i<n&&o<COLS)acc_put(x+o++,y,s[i++],MD_CODE);return;}
- lead=md_lead(s,n);
- if(md_definition_term(p,row)){i=lead;while(i<n&&o<COLS)acc_put(x+o++,y,s[i++],MD_BOLD);return;}
- if(md_definition_line(p,row,&defpos)){o=4;i=defpos;}
+ lead=md_lead(s,n);qcol=md_soft_quote_column(p,row);
+ if(qcol>=0){quote=1;i=lead;o=qcol;if(o<COLS)acc_put(x+o++,y,179,MD_QUOTE);if(o<COLS)acc_put(x+o++,y,' ',MD_TEXT);}
+ else if(md_definition_term(p,row)){i=lead;while(i<n&&o<COLS)acc_put(x+o++,y,s[i++],MD_BOLD);return;}
+ else if(md_definition_line(p,row,&defpos)){o=4;i=defpos;}
  else {
   i=lead;o=lead;if(o>COLS)o=COLS;
   if(lead<=3&&i<n&&s[i]=='#'){while(i<n&&s[i]=='#'&&h<6){h++;i++;}while(i<n&&s[i]==' ')i++;a=heading_attr(h);o=0;while(i<n&&o<COLS)acc_put(x+o++,y,s[i++],a);return;}
@@ -292,9 +325,9 @@ static void preview_line(int x,int y,int p,int row,int in_code)
 static void draw_preview(int x,int y,int rows)
 {int r,line,fence=code_fence_before(current,top),fk;for(r=0;r<rows;r++){line=top+r;if(line<LINES){fk=line_fence_kind(current,line);if(fk){preview_line(x,y+r,current,line,fence!=0);if(!fence)fence=fk;else if(fence==fk)fence=0;}else preview_line(x,y+r,current,line,fence!=0);}else acc_fill(x,y+r,COLS,1,' ',MD_TEXT);acc_put(x+COLS,y+r,' ',MD_TEXT);}}
 static void draw_panes(int x,int y,int focus)
-{int i,rows=view_mode==0?VIEW:FULL_VIEW,line_attr=ACC_ATTR(acc_appearance.background,acc_appearance.border);if(view_mode==0){draw_source(x+2,y+2,VIEW,focus==0);for(i=0;i<DLG_W-2;i++)acc_put(x+1+i,y+9,196,line_attr);draw_preview(x+2,y+10,VIEW);}else if(view_mode==1)draw_source(x+2,y+2,FULL_VIEW,focus==0);else draw_preview(x+2,y+2,FULL_VIEW);acc_scrollbar(x+70,y+2,rows,top,LINES,rows);}
+{int i,rows=view_mode==0?VIEW:FULL_VIEW,line_attr=ACC_ATTR(acc_appearance.background,acc_appearance.border);if(view_mode==0){draw_source(x+2,y+2,VIEW,focus==0,COLS);for(i=0;i<DLG_W-2;i++)acc_put(x+1+i,y+9,196,line_attr);draw_preview(x+2,y+10,VIEW);}else if(view_mode==1)draw_source(x+2,y+2,FULL_VIEW,focus==0,COLS);else draw_preview(x+2,y+2,FULL_VIEW);acc_scrollbar(x+70,y+2,rows,top,LINES,rows);}
 static void draw_edit_refresh(int x,int y,int rows,int key,int oldtop)
-{int on;if(top!=oldtop||key==8||key==13||key==24||key==22||key==16||key==256+83){draw_panes(x,y,0);return;}draw_source(x+2,y+2,rows,1);if(view_mode==0&&((key>=32&&key<=255)||(key>=513&&key<=767))&&cy>=top&&cy<top+VIEW){on=code_before(current,cy);preview_line(x+2,y+10+cy-top,current,cy,on);}acc_scrollbar(x+70,y+2,rows,top,LINES,rows);}
+{int on;if(top!=oldtop||key==8||key==13||key==24||key==22||key==16||key==256+83){draw_panes(x,y,0);return;}draw_source(x+2,y+2,rows,1,COLS);if(view_mode==0&&((key>=32&&key<=255)||(key>=513&&key<=767))&&cy>=top&&cy<top+VIEW){on=code_before(current,cy);preview_line(x+2,y+10+cy-top,current,cy,on);}acc_scrollbar(x+70,y+2,rows,top,LINES,rows);}
 static int page_token_x(int x,int pg){int i,xx=x;char s[6];for(i=0;i<pg;i++){sprintf(s," %d ",i+1);xx+=(int)strlen(s)+1;}return xx;}
 static void page_bar(int x,int y)
 {int i,xx=x,n,a,w,max;char s[6],shown[30],*base;acc_fill(x,y,COLS+1,1,' ',ACC_BG);for(i=0;i<count;i++){sprintf(s," %d ",i+1);w=(int)strlen(s);a=i==current?ACC_CONTROL:ACC_ATTR(acc_appearance.background,acc_appearance.titlebar_fg);acc_text(xx,y,s,a,w);xx+=w+1;}if(count<PAGES)acc_put(xx,y,'+',ACC_ATTR(acc_appearance.background,acc_appearance.titlebar_fg));if(external[current]&&paths[current][0]){base=strrchr(paths[current],'\\');if(!base)base=strrchr(paths[current],'/');base=base?base+1:paths[current];max=dirty[current]?27:28;n=(int)strlen(base);if(n>max){base+=n-max;n=max;}memcpy(shown,base,n);if(dirty[current])shown[n++]='*';shown[n]=0;acc_text(x+COLS-n,y,shown,dirty[current]?ACC_TITLE:ACC_HEADING,n);}else acc_text(x+COLS-7,y,"Unsaved",ACC_TITLE,7);}
@@ -341,7 +374,7 @@ typedef struct {int x0,y0,x1,y1;char target[48];} GLINK;
 static GLINK graph_links[GLINK_MAX];static int graph_link_count=0;
 static void graph_link_add(int x0,int y0,int x1,int y1,const char*t){int n;if(graph_link_count>=GLINK_MAX||!t||*t!='#')return;n=(int)strlen(t);if(n>47)n=47;graph_links[graph_link_count].x0=x0;graph_links[graph_link_count].y0=y0;graph_links[graph_link_count].x1=x1;graph_links[graph_link_count].y1=y1;memcpy(graph_links[graph_link_count].target,t,n);graph_links[graph_link_count].target[n]=0;graph_link_count++;}
 static void md_slug(const char*s,char*out,int max){int i=0,o=0,dash=0;while(s[i]&&o<max-1){unsigned char c=(unsigned char)s[i++];if(isalnum(c)){out[o++]=(char)tolower(c);dash=0;}else if((c==' '||c=='-'||c=='_')&&o&&!dash){out[o++]='-';dash=1;}}while(o&&out[o-1]=='-')o--;out[o]=0;}
-static int graph_find_anchor(int p,const char*target){int r,n,i,h;char b[COLS+1],slug[64];const char*t=target&&*target=='#'?target+1:target;if(!t||!*t)return -1;for(r=0;r<LINES;r++){md_line(p,r,b,&n);i=md_lead(b,n);h=0;if(i<n&&b[i]=='#'){while(i<n&&b[i]=='#'&&h<6){h++;i++;}while(i<n&&b[i]==' ')i++;md_slug(b+i,slug,sizeof(slug));if(!stricmp(slug,t))return r;}}return -1;}
+static int graph_find_anchor(int p,const char*target){int r,n,i,h;char b[DOC_COLS+1],slug[64];const char*t=target&&*target=='#'?target+1:target;if(!t||!*t)return -1;for(r=0;r<LINES;r++){md_line(p,r,b,&n);i=md_lead(b,n);h=0;if(i<n&&b[i]=='#'){while(i<n&&b[i]=='#'&&h<6){h++;i++;}while(i<n&&b[i]==' ')i++;md_slug(b+i,slug,sizeof(slug));if(!stricmp(slug,t))return r;}}return -1;}
 static unsigned char far *helvfont[4];static unsigned char helvh[4],helvfirst[4],helvlast[4];static int helv_loaded=0;
 static void graph_fonts_free(void){int i;for(i=0;i<GF_COUNT;i++){if(graph_fonts[i]&&graph_font_owned[i])_ffree(graph_fonts[i]);graph_fonts[i]=0;graph_font_owned[i]=0;}}
 static int graph_fonts_load(void)
@@ -414,11 +447,11 @@ static void graph_frame(int x0,int y0,int x1,int y1,int colour)
 static int graph_media_placeholder(const MDMEDIA*m,int ypos)
 {char d[64];int i,x=GP_TEXT_L+8;md_media_desc(m,d,sizeof(d));graph_frame(GP_TEXT_L,ypos-3,GP_TEXT_R,ypos+20,12);graph_role=GF_BODY;for(i=0;d[i]&&x+8<GP_TEXT_R-8;i++){gchar(x,ypos,(unsigned char)d[i],1,12,0);x+=8;}return 28;}
 static int graph_quote_line(int p,int row,int *skipmark)
-{char b[COLS+1];int n,i,r;if(skipmark)*skipmark=0;md_line(p,row,b,&n);i=md_lead(b,n);if(i<n&&b[i]=='>'){if(skipmark)*skipmark=1;return 1;}if(n<=i||row<=0)return 0;/* Markdown permits lazy continuation lines inside a blockquote paragraph.  Walk back to the nearest blank or explicit quote marker. */for(r=row-1;r>=0;r--){md_line(p,r,b,&n);i=md_lead(b,n);if(n<=i)return 0;if(i<n&&b[i]=='>')return 1;if(i<n&&(b[i]=='#'||(b[i]=='`'&&i+2<n&&b[i+1]=='`'&&b[i+2]=='`')))return 0;}return 0;}
+{char b[DOC_COLS+1];int n,i,r;if(skipmark)*skipmark=0;md_line(p,row,b,&n);i=md_lead(b,n);if(i<n&&b[i]=='>'){if(skipmark)*skipmark=1;return 1;}if(n<=i||row<=0)return 0;/* Markdown permits lazy continuation lines inside a blockquote paragraph.  Walk back to the nearest blank or explicit quote marker. */for(r=row-1;r>=0;r--){md_line(p,r,b,&n);i=md_lead(b,n);if(n<=i)return 0;if(i<n&&b[i]=='>')return 1;if(i<n&&(b[i]=='#'||(b[i]=='`'&&i+2<n&&b[i+1]=='`'&&b[i+2]=='`')))return 0;}return 0;}
 static int graph_rows_consumed=1;
 static int graph_plain_candidate(int p,int row)
 {
- char b[COLS+1];int n,i,after=0,ordered=0,dp=0;MDTABLE tt;MDMEDIA mm;
+ char b[DOC_COLS+1];int n,i,after=0,ordered=0,dp=0;MDTABLE tt;MDMEDIA mm;
  if(row<0||row>=LINES)return 0;md_line(p,row,b,&n);i=md_lead(b,n);if(i>=n)return 0;
  if(i+2<n&&b[i]=='`'&&b[i+1]=='`'&&b[i+2]=='`')return 0;
  if(b[i]=='#'||b[i]=='>'||md_list_marker(b,n,i,&after,&ordered))return 0;
@@ -428,7 +461,7 @@ static int graph_plain_candidate(int p,int row)
 }
 static int graph_line(int p,int row,int ypos,int in_fence)
 {
- static char s[1024];char tb[COLS+1],jb[COLS+1];MDTABLE tt;MDMEDIA media;int n,i=0,x=GP_TEXT_L,h=0,scale=1,hstrike=1,height=16,ystart=ypos;
+ static char s[1024];char tb[DOC_COLS+1],jb[DOC_COLS+1];MDTABLE tt;MDMEDIA media;int n,i=0,x=GP_TEXT_L,h=0,scale=1,hstrike=1,height=16,ystart=ypos;
  int bold=0,italic=0,underline=0,strike=0,super=0,sub=0,quote=0,inline_code=0,k,style,w,base_x,lines=1,wordw,base_role=GF_BODY;
  int lead,after=0,ordered=0,defpos=0,tctx,tborder=0,indent_code,block_code,qskip=0;
  md_line(p,row,s,&n);graph_rows_consumed=1;
@@ -492,7 +525,7 @@ static int graph_line(int p,int row,int ypos,int in_fence)
  if(h==2){graph_rule(ypos+height+1,1);return lines*height+(lines-1)*4+6;}
  return lines*height+(lines-1)*4+(quote?5:4);
 }
-static int graph_last_row(int p){int r,n;char b[COLS+1];for(r=LINES-1;r>=0;r--){md_line(p,r,b,&n);if(n>0)return r;}return 0;}
+static int graph_last_row(int p){int r,n;char b[DOC_COLS+1];for(r=LINES-1;r>=0;r--){md_line(p,r,b,&n);if(n>0)return r;}return 0;}
 static void graph_render(int p,int first)
 {int row,ypos=GP_T+12,last=first+23,fence=code_fence_before(p,first),fk,endrow=graph_last_row(p),x;if(last>LINES)last=LINES;graph_link_count=0;graph_page();for(row=first;row<last&&ypos<GP_B-14;row++){fk=line_fence_kind(p,row);if(fk){if(!fence)fence=fk;else if(fence==fk)fence=0;ypos+=3;continue;}ypos+=graph_line(p,row,ypos,fence!=0);if(graph_rows_consumed>1)row+=graph_rows_consumed-1;if(row>=endrow){if(ypos<GP_B){for(x=GP_L;x<=GP_R;x++)gpixel(x,ypos,0);if(ypos+1<=GP_B){graph_box(0,ypos+1,639,479,8);graph_frame(GP_L-1,GP_T-1,GP_R+1,ypos,0);}}break;}}}
 static void graph_redraw(int p,int first)
@@ -569,7 +602,7 @@ static void pr_media_box(FILE*f,PRSTATE*s,const MDMEDIA*m)
 {char d[COLS-3];int i,n,w=COLS-2;md_media_desc(m,d,sizeof(d));n=(int)strlen(d);if(n>w-2)n=w-2;pr_style(f,s,PR_COURIER,0,0,0,0,-1);fputc(218,f);for(i=0;i<w;i++)fputc(196,f);fputc(191,f);pr_crlf(f);fputc(179,f);fputc(' ',f);for(i=0;i<n;i++)fputc((unsigned char)d[i],f);for(;i<w-2;i++)fputc(' ',f);fputc(' ',f);fputc(179,f);pr_crlf(f);fputc(192,f);for(i=0;i<w;i++)fputc(196,f);fputc(217,f);pr_crlf(f);}
 static void pr_markdown_line(FILE*f,PRSTATE*s,int p,int row,int in_fence)
 {
- char line[COLS+1],tb[COLS+1];MDTABLE tt;MDMEDIA media;int n,i,h=0,lead,after=0,ordered=0,defpos=0,tctx,tborder=0,k;
+ char line[DOC_COLS+1],tb[DOC_COLS+1];MDTABLE tt;MDMEDIA media;int n,i,h=0,lead,after=0,ordered=0,defpos=0,tctx,tborder=0,k;
  md_line(p,row,line,&n);
  if(in_fence){pr_code_line(f,s,line,n,0);return;}
  if(md_media_parse(line,n,&media)){pr_media_box(f,s,&media);return;}
@@ -625,18 +658,44 @@ static void print_current(void)
 }
 static void document_stats(unsigned long *chars,unsigned long *words)
 {int y,i,n,inword=0;char c;*chars=*words=0;for(y=0;y<LINES;y++){n=used(current,y);*chars+=(unsigned long)n;if(n&&y+1<LINES)(*chars)++;for(i=0;i<n;i++){c=page[current][y][i];if(isalnum((unsigned char)c)){if(!inword){(*words)++;inword=1;}}else inword=0;}inword=0;}}
+static int focus_progress(void)
+{int y,last=-1,n;unsigned long before=0,total=0,pos;for(y=LINES-1;y>=0;y--)if(used(current,y)){last=y;break;}if(last<0)return 0;for(y=0;y<=last;y++){n=used(current,y);if(y<cy)before+=(unsigned long)n+1UL;total+=(unsigned long)n+(y<last?1UL:0UL);}if(cy>last)return 1000;pos=before+(unsigned long)(cx<used(current,cy)?cx:used(current,cy));if(!total)return 0;if(pos>=total)return 1000;return(int)((pos*1000UL)/total);}
 static void focus_draw(void)
-{char b[COLS+1],s[42];int r,c,line,pos,left=(acc_cols-COLS)/2,lo=has_selection()?sel_low():-1,hi=has_selection()?sel_high():-1,panel=ACC_ATTR(acc_appearance.background,acc_appearance.labels),status=ACC_ATTR(acc_appearance.labels,acc_appearance.background);unsigned long chars,words;for(r=0;r<24;r++){line=top+r;if(line<LINES){_fmemcpy(b,page[current][line],COLS);b[COLS]=0;acc_text(left,r,b,panel,COLS);if(lo>=0)for(c=0;c<COLS;c++){pos=line*COLS+c;if(pos>=lo&&pos<hi)acc_put(left+c,r,b[c],ACC_SELECT);}}}if(cy>=top&&cy<top+24){acc_caret_set(left+cx,cy-top);}else acc_caret_hide();document_stats(&chars,&words);sprintf(s," Chars: %lu   Words: %lu",chars,words);acc_fill(0,24,acc_cols,1,' ',status);acc_text(0,24,s,status,(int)strlen(s));}
+{char b[COLS+1],s[42],bar[15];int r,c,line,left=(acc_cols-COLS)/2,panel=ACC_ATTR(acc_appearance.background,acc_appearance.labels),status=ACC_CONTROL,fill,prog;long pos,lo=has_selection()?sel_low():-1L,hi=has_selection()?sel_high():-1L;unsigned long chars,words;for(r=0;r<24;r++){line=top+r;if(line<LINES){_fmemcpy(b,page[current][line],COLS);b[COLS]=0;acc_text(left,r,b,panel,COLS);if(lo>=0)for(c=0;c<COLS;c++){pos=(long)line*COLS+c;if(pos>=lo&&pos<hi)acc_put(left+c,r,b[c],ACC_SELECT);}}}if(cy>=top&&cy<top+24){acc_caret_set(left+cx,cy-top);}else acc_caret_hide();document_stats(&chars,&words);sprintf(s,"Chars: %lu   Words: %lu",chars,words);prog=focus_progress();fill=(prog*12+999)/1000;if(prog==0)fill=0;bar[0]='[';for(c=0;c<12;c++)bar[c+1]=(char)(c<fill?219:176);bar[13]=']';bar[14]=0;acc_fill(0,24,acc_cols,1,' ',status);acc_text(0,24,bar,status,14);acc_text(acc_cols-(int)strlen(s),24,s,status,(int)strlen(s));}
 static void focus_mode(void)
 {int key=0,mx,my;unsigned mb;acc_clear(ACC_ATTR(acc_appearance.background,acc_appearance.labels));focus_draw();while(key!=27){acc_wait(&key,&mx,&my,&mb);if(key!=27)editor_key(key,24);if(cy<top)top=cy;if(cy>=top+24)top=cy-23;if(key!=27)focus_draw();}acc_caret_hide();acc_restore_text_screen();acc_mouse_display(1);key=0;}
 static void maximize_page_bar(void)
 {int i,xx=0,n,a,w,max;char s[6],shown[30],*base;acc_fill(0,24,80,1,' ',ACC_BG);for(i=0;i<count;i++){sprintf(s," %d ",i+1);w=(int)strlen(s);a=i==current?ACC_CONTROL:ACC_ATTR(acc_appearance.background,acc_appearance.titlebar_fg);acc_text(xx,24,s,a,w);xx+=w+1;}if(count<PAGES)acc_put(xx,24,'+',ACC_ATTR(acc_appearance.background,acc_appearance.titlebar_fg));if(external[current]&&paths[current][0]){base=strrchr(paths[current],'\\');if(!base)base=strrchr(paths[current],'/');base=base?base+1:paths[current];max=dirty[current]?79:80;n=(int)strlen(base);if(n>max){base+=n-max;n=max;}memcpy(shown,base,n);if(dirty[current])shown[n++]='*';shown[n]=0;acc_text(80-n,24,shown,dirty[current]?ACC_TITLE:ACC_HEADING,n);}else acc_text(73,24,"Unsaved",ACC_TITLE,7);}
 static void maximize_draw(void)
-{int i,r,rows=view_mode==0?12:24,line_attr=ACC_ATTR(7,acc_appearance.border);acc_clear(ACC_BG);if(view_mode==0){draw_source(0,0,12,1);for(r=0;r<12;r++)acc_fill(COLS,r,11,1,' ',ACC_CONTROL);for(i=0;i<80;i++)acc_put(i,12,196,line_attr);draw_preview(0,13,11);for(r=13;r<24;r++)acc_fill(COLS+1,r,11,1,' ',MD_TEXT);}else if(view_mode==1){draw_source(0,0,24,1);for(r=0;r<24;r++)acc_fill(COLS,r,11,1,' ',ACC_CONTROL);}else{draw_preview(0,0,24);for(r=0;r<24;r++)acc_fill(COLS+1,r,10,1,' ',MD_TEXT);}acc_scrollbar(79,0,rows,top,LINES,rows);maximize_page_bar();}
+{
+ int i,r,rows=view_mode==0?12:24,line_attr=ACC_ATTR(7,acc_appearance.border);acc_clear(ACC_BG);
+ if(view_mode==0){draw_source(0,0,12,1,FULL_COLS);for(i=0;i<80;i++)acc_put(i,12,196,line_attr);draw_preview(0,13,11);for(r=13;r<24;r++)acc_fill(COLS+1,r,79-COLS,1,' ',MD_TEXT);}
+ else if(view_mode==1)draw_source(0,0,24,1,FULL_COLS);
+ else{draw_preview(0,0,24);for(r=0;r<24;r++)acc_fill(COLS+1,r,79-COLS,1,' ',MD_TEXT);}
+ acc_scrollbar(79,0,rows,top,LINES,rows);maximize_page_bar();
+}
 static void maximize_refresh(int key,int oldtop)
-{int on,rows=view_mode==0?12:24;if(top!=oldtop||key==8||key==13||key==24||key==22||key==16||key==256+83){if(view_mode==0){draw_source(0,0,12,1);draw_preview(0,13,11);}else if(view_mode==1)draw_source(0,0,24,1);else draw_preview(0,0,24);acc_scrollbar(79,0,rows,top,LINES,rows);maximize_page_bar();return;}if(view_mode!=2)draw_source(0,0,rows,1);if(view_mode==0&&((key>=32&&key<=255)||(key>=513&&key<=767))&&cy>=top&&cy<top+12){on=code_before(current,cy);preview_line(0,13+cy-top,current,cy,on);}acc_scrollbar(79,0,rows,top,LINES,rows);maximize_page_bar();}
+{
+ int on,rows=view_mode==0?12:24;
+ if(top!=oldtop||key==8||key==13||key==24||key==22||key==16||key==256+83){if(view_mode==0){draw_source(0,0,12,1,FULL_COLS);draw_preview(0,13,11);}else if(view_mode==1)draw_source(0,0,24,1,FULL_COLS);else draw_preview(0,0,24);acc_scrollbar(79,0,rows,top,LINES,rows);maximize_page_bar();return;}
+ if(view_mode!=2)draw_source(0,0,rows,1,FULL_COLS);if(view_mode==0&&((key>=32&&key<=255)||(key>=513&&key<=767))&&cy>=top&&cy<top+12){on=code_before(current,cy);preview_line(0,13+cy-top,current,cy,on);}acc_scrollbar(79,0,rows,top,LINES,rows);maximize_page_bar();
+}
 static void maximize_mode(void)
-{int key=0,mx=0,my=0,rows,oldtop,editkey;unsigned mb=0;clear_selection();maximize_draw();while(key!=27&&key!=256+0x85&&key!=256+0x57){acc_wait(&key,&mx,&my,&mb);rows=view_mode==0?12:24;if((mb&1)&&view_mode!=2&&mx>=0&&mx<COLS&&((view_mode==0&&my>=0&&my<12)||(view_mode==1&&my>=0&&my<24))){cx=mx;cy=top+my;clear_selection();if(view_mode==0)draw_source(0,0,12,1);else draw_source(0,0,24,1);key=0;continue;}if((mb&1)&&my==24){int pg,xx=0;for(pg=0;pg<count;pg++){char ps[6];int pw;sprintf(ps," %d ",pg+1);pw=(int)strlen(ps);if(mx>=xx&&mx<xx+pw)break;xx+=pw+1;}if(pg<count){current=pg;cx=cy=top=0;clear_selection();maximize_draw();}else if(count<PAGES&&mx==xx){if(!ensure_page(count)){acc_notice("Markdown","Not enough memory for another page.");maximize_draw();key=0;continue;}current=count++;blank_page(current);memset(softwrap[current],0,LINES);paths[current][0]=0;external[current]=0;cx=cy=top=0;clear_selection();maximize_draw();}key=0;continue;}if((mb&1)&&mx==79&&my>=0&&my<rows){if(my==0&&top>0)top--;else if(my==rows-1&&top<LINES-rows)top++;else if(my>0&&my<rows-1)top=(my-1)*(LINES-rows)/(rows-2);if(cy<top)cy=top;if(cy>=top+rows)cy=top+rows-1;maximize_draw();key=0;continue;}editkey=key;oldtop=top;if(view_mode==2){if(key!=27&&key!=256+0x85&&key!=256+0x57)key=0;}else if(key!=27&&key!=256+0x85&&key!=256+0x57&&!editor_key(key,rows))key=0;if(cy<top)top=cy;if(cy>=top+rows)top=cy-rows+1;if(key!=27&&key!=256+0x85&&key!=256+0x57)maximize_refresh(editkey,oldtop);}acc_caret_hide();acc_restore_text_screen();acc_mouse_display(1);}
+{
+ int key=0,mx=0,my=0,rows,oldtop,editkey,oldpage;unsigned mb=0;clear_selection();
+ if(view_mode!=2&&!reflow_page(current,FULL_COLS)){acc_notice("Markdown","Not enough memory to expand the full-screen editor.");return;}
+ if(cy<top)top=cy;rows=view_mode==0?12:24;if(cy>=top+rows)top=cy-rows+1;maximize_draw();
+ while(key!=27&&key!=256+0x85&&key!=256+0x57){
+  acc_wait(&key,&mx,&my,&mb);rows=view_mode==0?12:24;
+  if((mb&1)&&view_mode!=2&&mx>=0&&mx<FULL_COLS&&((view_mode==0&&my>=0&&my<12)||(view_mode==1&&my>=0&&my<24))){cx=mx;cy=top+my;clear_selection();if(view_mode==0)draw_source(0,0,12,1,FULL_COLS);else draw_source(0,0,24,1,FULL_COLS);key=0;continue;}
+  if((mb&1)&&my==24){int pg,xx=0;for(pg=0;pg<count;pg++){char ps[6];int pw;sprintf(ps," %d ",pg+1);pw=(int)strlen(ps);if(mx>=xx&&mx<xx+pw)break;xx+=pw+1;}if(pg<count){oldpage=current;if(view_mode!=2)reflow_page(oldpage,COLS);current=pg;cx=cy=top=0;clear_selection();if(view_mode!=2&&!reflow_page(current,FULL_COLS)){current=oldpage;reflow_page(current,FULL_COLS);acc_notice("Markdown","Not enough memory to expand that page.");}maximize_draw();}else if(count<PAGES&&mx==xx){if(!ensure_page(count)){acc_notice("Markdown","Not enough memory for another page.");maximize_draw();key=0;continue;}oldpage=current;if(view_mode!=2)reflow_page(oldpage,COLS);current=count++;blank_page(current);memset(softwrap[current],0,LINES);wrap_width[current]=COLS;paths[current][0]=0;external[current]=0;cx=cy=top=0;clear_selection();if(view_mode!=2&&!reflow_page(current,FULL_COLS)){current=oldpage;count--;reflow_page(current,FULL_COLS);acc_notice("Markdown","Not enough memory to expand the new page.");}maximize_draw();}key=0;continue;}
+  if((mb&1)&&mx==79&&my>=0&&my<rows){if(my==0&&top>0)top--;else if(my==rows-1&&top<LINES-rows)top++;else if(my>0&&my<rows-1)top=(my-1)*(LINES-rows)/(rows-2);if(cy<top)cy=top;if(cy>=top+rows)cy=top+rows-1;maximize_draw();key=0;continue;}
+  editkey=key;oldtop=top;if(view_mode==2){if(key!=27&&key!=256+0x85&&key!=256+0x57)key=0;}else if(key!=27&&key!=256+0x85&&key!=256+0x57&&!editor_key(key,rows))key=0;
+  if(cy<top)top=cy;if(cy>=top+rows)top=cy-rows+1;if(key!=27&&key!=256+0x85&&key!=256+0x57)maximize_refresh(editkey,oldtop);
+ }
+ if(view_mode!=2)reflow_page(current,COLS);if(cy<top)top=cy;rows=view_mode==0?VIEW:FULL_VIEW;if(cy>=top+rows)top=cy-rows+1;
+ acc_caret_hide();acc_restore_text_screen();acc_mouse_display(1);
+}
 
 int main(int argc,char **argv)
 {
@@ -649,7 +708,7 @@ int main(int argc,char **argv)
   while(!done){acc_wait(&key,&mx,&my,&mb);rows=view_mode==0?VIEW:FULL_VIEW;
     if(key==27){if(!any_dirty()){done=1;break;}choice=confirm_close();if(choice==1){discarded=1;done=1;break;}if(choice==2&&save_all_dirty(!argn)){done=1;break;}draw_ui(x,y,focus);key=0;continue;}
     if((key==256+0x85||key==256+0x57)||((mb&1)&&my==y&&mx>=x+DLG_W-8&&mx<x+DLG_W-6)){maximize_mode();draw_ui(x,y,focus);key=0;continue;}
-    if(view_mode!=2&&(mb&1)&&my>=y+2&&my<y+2+rows&&mx>=x+2&&mx<x+2+COLS){focus=0;clear_selection();cx=mx-(x+2);cy=top+my-(y+2);draw_source(x+2,y+2,rows,1);key=0;continue;}
+    if(view_mode!=2&&(mb&1)&&my>=y+2&&my<y+2+rows&&mx>=x+2&&mx<x+2+COLS){focus=0;clear_selection();cx=mx-(x+2);cy=top+my-(y+2);draw_source(x+2,y+2,rows,1,COLS);key=0;continue;}
     if((mb&1)&&my==y+17){int pg,xx=x+3;for(pg=0;pg<count;pg++){char ps[6];int pw;sprintf(ps," %d ",pg+1);pw=(int)strlen(ps);if(mx>=xx&&mx<xx+pw)break;xx+=pw+1;}if(pg<count){current=pg;cx=cy=top=0;clear_selection();focus=0;draw_ui(x,y,focus);key=0;continue;}if(count<PAGES&&mx==xx){if(!ensure_page(count)){acc_notice("Markdown","Not enough memory for another page.");draw_ui(x,y,focus);key=0;continue;}current=count++;blank_page(current);memset(softwrap[current],0,LINES);paths[current][0]=0;external[current]=0;cx=cy=top=0;clear_selection();focus=0;draw_ui(x,y,focus);key=0;continue;}}
     if((mb&1)&&mx==x+70&&my>=y+2&&my<y+2+rows){if(my==y+2&&top>0)top--;else if(my==y+1+rows&&top<LINES-rows)top++;else if(my>y+2&&my<y+1+rows)top=(my-y-3)*(LINES-rows)/(rows-2);if(top<0)top=0;if(top>LINES-rows)top=LINES-rows;if(cy<top)cy=top;if(cy>=top+rows)cy=top+rows-1;draw_ui(x,y,focus);key=0;continue;}
     if((mb&1)&&my==y+19){int hit=mx-(x+3);if(hit>=0&&hit<6)focus=BTN_SAVE;else if(hit>=8&&hit<14)focus=BTN_PRINT;else if(hit>=18&&hit<25)focus=BTN_SPLIT;else if(hit>=27&&hit<34)focus=BTN_FOCUS;else if(hit>=36&&hit<42)focus=BTN_SHOW;else if(hit>=45&&hit<52)focus=BTN_CHARS;else if(hit>=61&&hit<67)focus=BTN_CLOSE;else{key=0;continue;}key=13;}

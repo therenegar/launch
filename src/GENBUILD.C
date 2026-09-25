@@ -1,5 +1,5 @@
-/* Launch! 3.7 build-time source generator.
-   Keeps the large Release 3.7 canonical sources while generating Release 3.7
+/* Launch! 3.71 build-time source generator.
+   Keeps the large Release 3.71 canonical sources while generating Release 3.71
    build intermediates for core/installer changes and intelligent editor word
    wrapping.  Generated files are build intermediates, not distribution files.
    Microsoft C/C++ 7.0, DOS small model. */
@@ -92,193 +92,15 @@ static void emit_tooltip_glyph(FILE *out)
   fputs("  for(i=0;i<32;i++)font[i]=tooltip_old_glyph[i];font_plane_close(&old);tooltip_glyph_saved=0;\n}\n",out);
 }
 
+static int copy_generated_source(const char *src,const char *dst);
+
 static int write_launch36(void)
 {
-  FILE *in=fopen("LAUNCH.C","rt"),*out;char *line=gen_line;int in_close=0,startup_hits=0;
-  if(!in){puts("GENBUILD: cannot open LAUNCH.C");return 0;}
-  out=fopen("COREBLD.C","wt");if(!out){fclose(in);puts("GENBUILD: cannot create COREBLD.C");return 0;}
-  while(fgets(line,GEN_LINE,in)){
-    if(replace_once(line,GEN_LINE,"strcpy(autoexec+1,\":\\\\AUTOEXEC.BAT\")","strcpy(autoexec+1,startup_batch_suffix())")>0)startup_hits++;
-    replace_all(line,GEN_LINE,"AUTOEXEC.BAT file","startup batch file");
-    replace_all(line,GEN_LINE,"AUTOEXEC.BAT","startup batch file");
-    replace_once(line,GEN_LINE,
-      "Usage: ! [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /USE=file.mnu | /OPENTO=folder | /?]",
-      "Usage: ! [menu.mnu] [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /OPENTO=folder | /?]");
-    replace_once(line,GEN_LINE,
-      "  /USE=file.mnu Use another menu file beside !.EXE (or a full path)",
-      "  menu.mnu      Use another menu file beside !.EXE (or a full path)");
-    /* 3.6 tooltip preference is part of the persisted appearance.  It is
-       appended to the structure so older LAUNCH.CFG files remain valid and
-       default to disabled. */
-    replace_once(line,GEN_LINE,
-      "unsigned char font_id,font_persist,mouse_cursor,prompt_inactivity;",
-      "unsigned char font_id,font_persist,mouse_cursor,prompt_inactivity,show_tooltips;");
-    replace_once(line,GEN_LINE,
-      "static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0};",
-      "static const APPEARANCE default_appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0,0};");
-    replace_once(line,GEN_LINE,
-      "static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0};",
-      "static APPEARANCE appearance={1,11,15,7,12,14,15,10,15,3,0,7,7,0,1,1,1,1,0,1,10,0,1,0,0,0,0,0};");
-    replace_once(line,GEN_LINE,
-      "else if(!stricmp(key,\"SHOW_SYSBAR\")){field=&a->show_sysbar;limit=1;}",
-      "else if(!stricmp(key,\"SHOW_SYSBAR\")){field=&a->show_sysbar;limit=1;}\n  else if(!stricmp(key,\"SHOW_TOOLTIPS\")){field=&a->show_tooltips;limit=1;}");
-    replace_once(line,GEN_LINE,
-      "\"SHOW_POWER=%u\\nSHOW_TIME=%u\\nSHOW_SYSBAR=%u\\nFONT_ID=%u\\nFONT_PERSIST=%u\\n\"",
-      "\"SHOW_POWER=%u\\nSHOW_TIME=%u\\nSHOW_SYSBAR=%u\\nSHOW_TOOLTIPS=%u\\nFONT_ID=%u\\nFONT_PERSIST=%u\\n\"");
-    replace_once(line,GEN_LINE,
-      "appearance.show_time,appearance.show_sysbar,appearance.font_id,appearance.font_persist,",
-      "appearance.show_time,appearance.show_sysbar,appearance.show_tooltips,appearance.font_id,appearance.font_persist,");
-    replace_once(line,GEN_LINE,"if(tab==0)return 8; /* Menu */","if(tab==0)return 9; /* Menu */");
-    replace_once(line,GEN_LINE,
-      "if(item==7){*limit=2;return &appearance.mouse_cursor;}",
-      "if(item==7){*limit=2;return &appearance.mouse_cursor;}\n    if(item==8){*limit=1;return &appearance.show_tooltips;}");
-
-    /* Menu-tab relayout from CONFIG.ASC. */
-    if(strstr(line,"check_line(x+25,y+9,\"Show the time\"")){
-      fputs("    check_line(x+25,y+9,\"Show the time\",appearance.show_time,f==4||h==4);\n",out);
-      fputs("    cycle_control(x+49,y+9,appearance.hour_12?\"12-hour\":\"24-hour\",f==6||h==6);\n",out);continue;
-    }
-    if(strstr(line,"textout(x+5,y+10,\"Time format:\""))continue;
-    if(strstr(line,"cycle_control(x+25,y+10,appearance.hour_12"))continue;
-    if(strstr(line,"textout(x+5,y+12,\"Mouse cursor:\"")){fputs("    textout(x+5,y+11,\"Mouse cursor:\",C_INPUT_LABEL,18);\n",out);continue;}
-    if(strstr(line,"cycle_control(x+25,y+12,mouse_cursor_names")){fputs("    cycle_control(x+25,y+11,mouse_cursor_names[appearance.mouse_cursor],f==7||h==7);\n",out);continue;}
-    if(strstr(line,"textout(x+5,y+14,\"SysBar:\"")){
-      fputs("    textout(x+5,y+13,\"Help tooltips:\",C_INPUT_LABEL,18);\n",out);
-      fputs("    check_line(x+25,y+13,\"Display contextual help\",appearance.show_tooltips,f==8||h==8);\n",out);
-      fputs("    textout(x+5,y+15,\"SysBar:\",C_INPUT_LABEL,18);\n",out);continue;
-    }
-    if(strstr(line,"check_line(x+25,y+14,\"Show on menu open\"")){fputs("    check_line(x+25,y+15,\"Show on menu open\",appearance.show_sysbar,f==5||h==5);\n",out);continue;}
-
-    /* Menu-tab mouse hit map follows the same rows. */
-    if(strstr(line,"if(my==y+14&&mx>=x+25&&mx<x+63)return CONFIG_CONTROL_BASE+5;")){fputs("    if(my==y+15&&mx>=x+25&&mx<x+63)return CONFIG_CONTROL_BASE+5;\n",out);continue;}
-    if(strstr(line,"if(my==y+10&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE+6;")){fputs("    if(my==y+9&&mx>=x+49&&mx<x+64)return CONFIG_CONTROL_BASE+6;\n",out);continue;}
-    if(strstr(line,"if(my==y+12&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE+7;")){
-      fputs("    if(my==y+11&&mx>=x+25&&mx<x+40)return CONFIG_CONTROL_BASE+7;\n",out);
-      fputs("    if(my==y+13&&mx>=x+25&&mx<x+63)return CONFIG_CONTROL_BASE+8;\n",out);continue;
-    }
-    if(strstr(line,"/* Launch! 3.5 - modal command menu for DOS")){
-      fputs("/* Launch! 3.7 - modal command menu for DOS\n",out);continue;
-    }
-    if(strstr(line,"#define MAX_NODES 96")){
-      emit_startup_batch_helpers(out);
-      fputs("#define CORE_TOOLTIP_GLYPH 126\n",out);
-      fputs(line,out);continue;
-    }
-    if(strstr(line,"static void launchui_restore(void);")){
-      fputs(line,out);
-      fputs("static void tooltip_glyph_install(void);\n",out);
-      fputs("static void tooltip_glyph_restore(void);\n",out);
-      fputs("static void core_tooltip_restore(void);\n",out);
-      continue;
-    }
-    if(strstr(line,"static void close_menu(void)"))in_close=1;
-    if(in_close&&strstr(line,"  launchui_restore();")){
-      fputs("  core_tooltip_restore();\n",out);
-      fputs("  tooltip_glyph_restore();\n",out);fputs(line,out);continue;
-    }
-    if(in_close&&!strcmp(line,"}\n")){fputs(line,out);in_close=0;continue;}
-    if(strstr(line,"  launchui_install();")){
-      fputs(line,out);fputs("  tooltip_glyph_install();\n",out);continue;
-    }
-    if(strstr(line,"  else launchui_rebase();")){
-      fputs(line,out);fputs("  tooltip_glyph_install();\n",out);continue;
-    }
-    if(strstr(line,"if(tab==4 && item==0){mouse_pointer_restore();font_preview(appearance.font_id);mouse_pointer_install();}")){
-      fputs("  if(tab==4 && item==0){mouse_pointer_restore();font_preview(appearance.font_id);tooltip_glyph_install();mouse_pointer_install();}\n",out);continue;
-    }
-    if(strstr(line,"  box(x,y,w,h,title,C_TITLE,appearance.titlebar_bg,appearance.titlebar_fg);")){
-      fputs("  core_tooltip_restore();\n",out);fputs(line,out);continue;
-    }
-    if(strstr(line,"static void sort_default_folder_alpha(int parent,int *changed)")){
-      fputs("static int children(int parent,int *list);\n",out);
-      fputs(line,out);continue;
-    }
-    if(strstr(line,"static void draw_button_state(int x,int y,const char *label,int width,int focused,int enabled)")){
-      emit_tooltip_ui(out);fputs(line,out);continue;
-    }
-    if(strstr(line,"static void draw_button(int x,int y,const char *label,int width,int focused){draw_button_state")){
-      fputs("static void draw_button(int x,int y,const char *label,int width,int focused)\n{\n",out);
-      fputs("  draw_button_state(x,y,label,width,focused,1);\n",out);
-      fputs("  if(appearance.show_tooltips&&focused&&core_tooltip_icon(label))core_tooltip_show(x,y,label);\n",out);
-      fputs("  else if(core_tt_active&&core_tt_owner_x==x&&core_tt_owner_y==y)core_tooltip_restore();\n",out);
-      fputs("}\n",out);
-      fputs("static void draw_button_tip(int x,int y,const char *label,int width,int focused,const char *tip)\n{\n",out);
-      fputs("  draw_button_state(x,y,label,width,focused,1);if(appearance.show_tooltips&&focused)core_tooltip_show(x,y,tip);\n",out);
-      fputs("  else if(core_tt_active&&core_tt_owner_x==x&&core_tt_owner_y==y)core_tooltip_restore();\n}\n",out);
-      fputs("static void core_tooltip_region(int x,int y,int active,const char *tip)\n{\n",out);
-      fputs("  if(appearance.show_tooltips&&active)core_tooltip_show(x,y,tip);else if(core_tt_active&&core_tt_owner_x==x&&core_tt_owner_y==y)core_tooltip_restore();\n}\n",out);
-      continue;
-    }
-    if(strstr(line,"static const unsigned char launchui_codes[41]=")){
-      emit_tooltip_glyph(out);fputs(line,out);continue;
-    }
-    if(strstr(line,"     sibling_exists(\"!DFETCH.EXE\")||sibling_exists(\"!TODOS.EXE\")){")){
-      fputs("     sibling_exists(\"!DFETCH.EXE\")||sibling_exists(\"!TODOS.EXE\")||sibling_exists(\"!TYPO.EXE\")){\n",out);continue;
-    }
-    if(strstr(line,"     sibling_exists(\"!SNAKE.EXE\")||sibling_exists(\"!SOL.EXE\")){")){
-      fputs("     sibling_exists(\"!SNAKE.EXE\")||sibling_exists(\"!SOL.EXE\")||sibling_exists(\"!PLUMB.EXE\")||sibling_exists(\"!WORDZ.EXE\")){\n",out);continue;
-    }
-
-    replace_all(line,GEN_LINE,
-      "int fa=ATTR(appearance.controls_bg,(appearance.controls_fg&7)|8)",
-      "int fa=ATTR(appearance.controls_bg,appearance.controls_fg)");
-
-    /* Context-specific core tooltips. */
-    replace_all(line,GEN_LINE,
-      "draw_button(x+58,y+17,\"  ?  \",5,focus==23||hover==23)",
-      "draw_button_tip(x+58,y+17,\"  ?  \",5,focus==23||hover==23,\"About Launch!\")");
-    replace_once(line,GEN_LINE,
-      "check_line(x+25,y+6,\"Persist\",appearance.font_persist,f==1||h==1);draw_character_preview",
-      "check_line(x+25,y+6,\"Persist\",appearance.font_persist,f==1||h==1);core_tooltip_region(x+25,y+6,f==1||h==1,\"Make it stick no matter what\");draw_character_preview");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+2,y+2,\"  Add  \",8,focus==10||hover_control==10)",
-      "draw_button_tip(x+2,y+2,\"  Add  \",8,focus==10||hover_control==10,\"Create association\")");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+3,y+18,\"  Open  \",9,focus==1||hover_control==1)",
-      "draw_button_tip(x+3,y+18,\"  Open  \",9,focus==1||hover_control==1,\"Open selected file\")");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+14,y+18,\"  Params  \",10,focus==2||hover_control==2)",
-      "draw_button_tip(x+14,y+18,\"  Params  \",10,focus==2||hover_control==2,\"Open file with parameters\")");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+26,y+18,\"  Locate  \",10,focus==3||hover_control==3)",
-      "draw_button_tip(x+26,y+18,\"  Locate  \",10,focus==3||hover_control==3,\"Navigate to file\")");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+3,y+18,\"  Run  \",9,focus==1||hover==1)",
-      "draw_button_tip(x+3,y+18,\"  Run  \",9,focus==1||hover==1,\"Run selected executable\")");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+14,y+18,\"  Params  \",10,focus==2||hover==2)",
-      "draw_button_tip(x+14,y+18,\"  Params  \",10,focus==2||hover==2,\"Run with parameters\")");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+3,y+6,\"  Run  \",9,focus==1||hover==1)",
-      "draw_button_tip(x+3,y+6,\"  Run  \",9,focus==1||hover==1,\"Run now\")");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+29,y+7,\"  Choose  \",10,focus==A_CHOOSE||hover==A_CHOOSE)",
-      "draw_button_tip(x+29,y+7,\"  Choose  \",10,focus==A_CHOOSE||hover==A_CHOOSE,\"Select launcher to use\")");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+13,y+11,\"  Cancel  \",10,focus==A_CANCEL||hover==A_CANCEL)",
-      "draw_button(x+12,y+11,\"  Cancel  \",10,focus==A_CANCEL||hover==A_CANCEL)");
-    replace_all(line,GEN_LINE,"x+13,y+11,\"  Cancel  \",10","x+12,y+11,\"  Cancel  \",10");
-    replace_all(line,GEN_LINE,"my==y+11&&mx>=x+13&&mx<x+23","my==y+11&&mx>=x+12&&mx<x+22");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+3,y+5,\"  Power Off  \",13,choice==0)",
-      "draw_button_tip(x+3,y+5,\"  Power Off  \",13,choice==0,\"Attempt APM power off\")");
-    replace_all(line,GEN_LINE,
-      "draw_button(x+18,y+5,\"  Reboot  \",10,choice==1)",
-      "draw_button_tip(x+18,y+5,\"  Reboot  \",10,choice==1,\"Perform cold boot\")");
-    replace_once(line,GEN_LINE,
-      "cell(x+57,y+6,' ',C_MENU_BACKGROUND);",
-      "cell(x+57,y+6,' ',C_MENU_BACKGROUND);core_tooltip_region(x+47,y+6,focus==3||hover==3,\"Ask each launch\");");
-    fputs(line,out);
-    if(strstr(line,"if(sibling_exists(\"!TODOS.EXE\")&&!ensure_launcher(folder,\"To-Dos\",\"!TODOS\",1,changed))return 0;"))
-      fputs("    if(sibling_exists(\"!TYPO.EXE\")&&!ensure_launcher(folder,\"Typo\",\"!TYPO\",1,changed))return 0;\n",out);
-    if(strstr(line,"if(sibling_exists(\"!FCELL.EXE\")&&!ensure_launcher(folder,\"FreeCell\",\"!FCELL\",1,changed))return 0;"))
-      fputs("    if(sibling_exists(\"!PLUMB.EXE\")&&!ensure_launcher(folder,\"Plumb\",\"!PLUMB\",1,changed))return 0;\n",out);
-    if(strstr(line,"if(sibling_exists(\"!SOL.EXE\")&&!ensure_launcher(folder,\"Solitaire\",\"!SOL\",1,changed))return 0;"))
-      fputs("    if(sibling_exists(\"!WORDZ.EXE\")&&!ensure_launcher(folder,\"Wordz\",\"!WORDZ\",1,changed))return 0;\n",out);
-  }
-  if(startup_hits<4){fclose(out);fclose(in);remove("COREBLD.C");puts("GENBUILD: expected startup batch references were not found in LAUNCH.C");return 0;}
-  if(ferror(in)||fclose(out)!=0){fclose(in);remove("COREBLD.C");puts("GENBUILD: failed writing COREBLD.C");return 0;}
-  fclose(in);return 1;
+  /* 3.71 keeps the final 3.7 core source authoritative.  The historical
+     transform pass is no longer needed and could reapply already-merged UI
+     patches, so regeneration copies it verbatim. */
+  if(!copy_generated_source("LAUNCH.C","COREBLD.C")){puts("GENBUILD: failed copying LAUNCH.C to COREBLD.C");return 0;}
+  return 1;
 }
 
 static int write_install36(void)
@@ -291,7 +113,7 @@ static int write_install36(void)
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT file","startup batch file");
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT","startup batch file");
     if(strstr(line,"/* Launch! 3.5 installer")){
-      fputs("/* Launch! 3.7 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
+      fputs("/* Launch! 3.71 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
     }
     if(strstr(line,"#define PATH_SIZE 128")){
       emit_startup_batch_helpers(out);fputs(line,out);continue;
@@ -511,8 +333,10 @@ static int write_boxes36(void)
 
 int main(void)
 {
-  if(!write_launch36()||!write_install36()||!write_note36()||
-     !write_journal36()||!write_stack36()||!write_cal36()||!write_dfetch36()||
-     !write_snake36()||!write_pop36()||!write_sol36()||!write_boxes36())return 1;
-  puts("Generated Launch! 3.7 build sources.");return 0;
+  /* Release 3.71 changes only generated Core, Installer and Journal sources.
+     Leave the already-qualified 3.7 intermediates for all other components
+     untouched: several older transformation routines are historical and are
+     not idempotent once their fixes have already been merged. */
+  if(!write_launch36()||!write_install36()||!write_journal36())return 1;
+  puts("Generated Launch! 3.71 Core, Installer and Journal build sources.");return 0;
 }

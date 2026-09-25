@@ -11,6 +11,15 @@ static char note[NW*NL];static unsigned char softwrap[NL];static int jy,jm,jd;
 #define JOURNAL_CLIP_MAX (JW*(NL-2)+NL*2+1)
 static int journal_sel_anchor=-1,journal_sel_caret=-1,journal_clip_len=0,journal_sel_repaint=0;
 static char far journal_clip[JOURNAL_CLIP_MAX];
+/* /PRINT is a typewriter/line-printer mode.  Redaction attributes are session-only;
+   the journal text itself remains append-only while the physical printout is crossed out with X. */
+static int journal_print_mode=0;
+static FILE *journal_line_printer=0;
+static unsigned char journal_redacted[(NW*NL+7)/8];
+static int journal_tw_pos[80],journal_tw_count=0,journal_tw_redact=0;
+static int journal_tw_end_cx=4,journal_tw_end_cy=2,journal_tw_full=0;
+static int journal_is_redacted(int p){return(journal_redacted[p>>3]&(1<<(p&7)))!=0;}
+static void journal_set_redacted(int p){journal_redacted[p>>3]|=(unsigned char)(1<<(p&7));}
 static int leap(int y){return y%4==0&&(y%100!=0||y%400==0);}static int mdays(int m,int y){static int d[12]={31,28,31,30,31,30,31,31,30,31,30,31};return m==2&&leap(y)?29:d[m-1];}
 static void stepday(int d){jd+=d;if(jd<1){if(--jm<1){jm=12;jy--;}jd=mdays(jm,jy);}else if(jd>mdays(jm,jy)){jd=1;if(++jm>12){jm=1;jy++;}}}
 static int jweekday(int y,int m,int d){int t[12]={0,3,2,5,0,3,5,1,4,6,2,4};if(m<3)y--;return(y+y/4-y/100+y/400+t[m-1]+d)%7;}
@@ -23,7 +32,7 @@ static int journal_sel_high(void){return journal_sel_anchor>journal_sel_caret?jo
 static int journal_has_selection(void){return journal_sel_anchor>=0&&journal_sel_caret>=0&&journal_sel_anchor!=journal_sel_caret;}
 static void journal_selection_clear(void){journal_sel_anchor=journal_sel_caret=-1;}
 static int journal_selected(int line,int col){int p=(line-2)*JW+(col-4);return line>=2&&col>=4&&journal_has_selection()&&p>=journal_sel_low()&&p<journal_sel_high();}
-static void jrow(int x,int y,int line,int top){int c;if(line>=top&&line<top+NV){acc_text(x,y+2+line-top,note+line*NW,ACC_CONTROL,NW);for(c=4;c<NW;c++)if(journal_selected(line,c))acc_put(x+c,y+2+line-top,note[line*NW+c],ACC_SELECT);}}
+static void jrow(int x,int y,int line,int top){int c,inv=ACC_ATTR(acc_appearance.controls_fg,acc_appearance.controls_bg);if(line>=top&&line<top+NV){acc_text(x,y+2+line-top,note+line*NW,ACC_CONTROL,NW);for(c=4;c<NW;c++){if(journal_print_mode&&journal_is_redacted(line*NW+c))acc_put(x+c,y+2+line-top,note[line*NW+c],inv);else if(journal_selected(line,c))acc_put(x+c,y+2+line-top,note[line*NW+c],ACC_SELECT);}}}
 static void jscroll(int x,int y,int top){int last=last_text_line();acc_fill(x+NW,y,1,NV+2,' ',ACC_CONTROL);if(top>2)acc_put(x+NW,y+2,30,ACC_CONTROL);if(top+NV<=last)acc_put(x+NW,y+NV+1,31,ACC_CONTROL);}
 static int journal_editor_focus=0;
 static void view(int x,int y,int cx,int cy,int top){int r;char b[64];static char*m[]={"","January","February","March","April","May","June","July","August","September","October","November","December"};static char*w[]={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};sprintf(b,"%s, %s %d %d",w[jweekday(jy,jm,jd)],m[jm],jd,jy);
@@ -169,40 +178,138 @@ static void journal_remove_row(int row){int r;for(r=row;r<NL-1;r++){memcpy(note+
 static void journal_join_next(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,n,take,room;if(cy>=NL-1)return;n=journal_used(cy+1);room=NW-cx;take=n<room?n:room;if(take)memcpy(note+cy*NW+cx,note+(cy+1)*NW+4,take);if(take>=n)journal_remove_row(cy+1);else{memmove(note+(cy+1)*NW+4,note+(cy+1)*NW+4+take,JW-take);memset(note+(cy+1)*NW+NW-take,' ',take);}}
 static void journal_join_previous(int *pcx,int *pcy){int cy=*pcy,prev,n,take,room;if(cy<=2)return;prev=journal_used(cy-1);n=journal_used(cy);room=JW-prev;if(room<=0){*pcy=cy-1;*pcx=NW-1;return;}take=n<room?n:room;if(take)memcpy(note+(cy-1)*NW+4+prev,note+cy*NW+4,take);if(take>=n)journal_remove_row(cy);else{memmove(note+cy*NW+4,note+cy*NW+4+take,JW-take);memset(note+cy*NW+NW-take,' ',take);}*pcy=cy-1;*pcx=4+prev;}
 static void journal_split_line(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,r,n,tail,indent=4;if(cy>=NL-1)return;while(indent<NW&&note[cy*NW+indent]==' ')indent++;if(indent>=NW)indent=4;for(r=NL-1;r>cy+1;r--){memcpy(note+r*NW+4,note+(r-1)*NW+4,JW);softwrap[r]=softwrap[r-1];}memset(note+(cy+1)*NW+4,' ',JW);n=journal_used(cy);tail=n>cx-4?n-(cx-4):0;if(tail>NW-indent)tail=NW-indent;if(tail)memcpy(note+(cy+1)*NW+indent,note+cy*NW+cx,tail);memset(note+cy*NW+cx,' ',NW-cx);softwrap[cy+1]=0;*pcy=cy+1;*pcx=indent;}
-int main(int argc,char**argv){union REGS q;int x,y,tx,ty,cx=4,cy=2,top=2,key=0,mx=0,my=0,focus=-1,ch,base,insert=1,oldcy,oldtop;unsigned mb=0;char exp[ACC_PATH],msg[ACC_PATH+24];if(acc_help(argc,argv,"!JOURNAL","Daily journal with date navigation."))return 0;if(!acc_begin(argv[0],"Journal",0))return 1;q.h.ah=0x2A;int86(0x21,&q,&q);jy=q.x.cx;jm=q.h.dh;jd=q.h.dl;x=(acc_cols-70)/2;y=(acc_rows-20)/2;tx=x+3;ty=y+2;load();acc_box(x,y,70,20,"Journal");view(tx,ty,cx,cy,top);while(key!=27){
- /* Toolbar: one-cell gap between buttons; separator immediately after Go To. */
- acc_button(x+3,y+17,"  \021  ",focus==1);acc_button(x+10,y+17,"  \020  ",focus==2);acc_button(x+17,y+17,"  Go To  ",focus==3);acc_put(x+28,y+17,179,ACC_BORDER);acc_button(x+30,y+17,"  Chars  ",focus==4);acc_button(x+41,y+17,"  Export  ",focus==5);acc_button(x+49,y+17,"  Print  ",focus==6);acc_button(x+60,y+17,"  Exit  ",focus==7);acc_wait(&key,&mx,&my,&mb);
- /* Mouse toolbar activation mirrors keyboard activation. */
- if(mb&1){if(my==y+17){journal_selection_clear();if(mx>=x+2&&mx<x+7){focus=1;key=13;}else if(mx>=x+9&&mx<x+14){focus=2;key=13;}else if(mx>=x+16&&mx<x+25){focus=3;key=13;}else if(mx>=x+29&&mx<x+38){focus=4;key=13;}else if(mx>=x+40&&mx<x+46){focus=5;key=13;}else if(mx>=x+48&&mx<x+54){focus=6;key=13;}else if(mx>=x+60&&mx<x+66){focus=7;key=13;}}}
- if(key==9||key==271){if(focus<0)focus=(key==271)?7:0;else focus=(key==271)?(focus+7)%8:(focus+1)%8;journal_editor_focus=(focus==0);if(focus!=0)journal_selection_clear();view(tx,ty,cx,cy,top);key=0;continue;}
- if(key==13&&focus>0){if(focus==1||focus==2){save();journal_selection_clear();stepday(focus==1?-1:1);load();cx=4;cy=2;top=2;}else if(focus==3){save();journal_selection_clear();if(calpick())load();acc_box(x,y,70,20,"Journal");}else if(focus==4){ch=character_palette();acc_box(x,y,70,20,"Journal");if(ch>=0){if(journal_has_selection())journal_delete_selection(&cx,&cy);note[cy*NW+cx]=(char)ch;if(cx<NW-1)cx++;journal_selection_clear();}}else if(focus==5){save();if(export_all(exp)){sprintf(msg,"Journal exported to\n%s",exp);acc_notice("Export",msg);}}else if(focus==6){FILE*f=fopen("LPT1","wb");int r,q2;if(f){for(r=0;r<NL;r++){q2=NW;while(q2&&note[r*NW+q2-1]==' ')q2--;fwrite(note+r*NW,1,q2,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);}}else key=27;view(tx,ty,cx,cy,top);if(key!=27)key=0;continue;}
- if((mb&1)&&mx>=tx&&mx<=tx+NW&&my>=ty+2&&my<ty+2+NV){focus=0;journal_editor_focus=1;}
- if(focus!=0){if(key!=27)key=0;continue;}
- oldcy=cy;oldtop=top;
- if((mb&1)&&mx==tx+NW&&my>=ty+2&&my<ty+2+NV){int last=last_text_line();if(my==ty+2&&top>2)top--;else if(my==ty+NV+1&&top+NV<=last)top++;cy=top;cx=4;view(tx,ty,cx,cy,top);key=0;continue;}
- if((mb&1)&&mx>=tx&&mx<tx+NW&&my>=ty+2&&my<ty+2+NV){journal_selection_clear();cy=top+(my-(ty+2));if(cy<2)cy=2;cx=mx-tx;if(cx<4)cx=4;key=0;}
- else {int oldpos=journal_pos(cx,cy),shift=journal_shift_down();
-  if(key==3){journal_copy_selection();key=0;}
-  else if(key==256+0x77){cy=2;cx=4;journal_selection_clear();}
-  else if(key==256+0x75){cy=last_text_line();cx=NW-1;while(cx>4&&note[cy*NW+cx-1]==' ')cx--;journal_selection_clear();}
-  else if(key==24){journal_copy_selection();journal_delete_selection(&cx,&cy);oldtop=-1;key=0;}
-  else if((key==22||key==16)){journal_paste(&cx,&cy,insert);oldtop=-1;key=0;}
-  else if(key==256+75&&cx>4){cx--;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
-  else if(key==256+77&&cx<NW-1){cx++;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
-  else if(key==256+72&&cy>2){cy--;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
-  else if(key==256+80&&cy<NL-1){cy++;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
-  else if(key==256+71){cx=4;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
-  else if(key==256+79){cx=NW-1;while(cx>4&&note[cy*NW+cx-1]==' ')cx--;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
-  else if(key==256+73){cy-=NV;if(cy<2)cy=2;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
-  else if(key==256+81){cy+=NV;if(cy>=NL)cy=NL-1;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
-  else if(key==256+82){journal_selection_clear();insert=!insert;}
-  else if(key==256+83&&editable(cy)){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}else if(cx-4>=journal_used(cy))journal_join_next(&cx,&cy);else{base=cy*NW+cx;memmove(note+base,note+base+1,NW-cx-1);note[cy*NW+NW-1]=' ';}}
-  else if(key==8){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}else if(cx>4){cx--;base=cy*NW+cx;memmove(note+base,note+base+1,NW-cx-1);note[cy*NW+NW-1]=' ';}else journal_join_previous(&cx,&cy);}
-  else if(key==13&&cy<NL-1){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}journal_split_line(&cx,&cy);journal_selection_clear();}
-  else if(key>=32&&key<=255&&editable(cy)){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}journal_insert_one(&cx,&cy,key,insert);journal_selection_clear();}
-  else if(key==27)break;else key=0;
+static void journal_date_string(char *b)
+{
+ static char*m[]={"","January","February","March","April","May","June","July","August","September","October","November","December"};
+ static char*w[]={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+ sprintf(b,"%s, %s %d %d",w[jweekday(jy,jm,jd)],m[jm],jd,jy);
+}
+static int journal_line_print_begin(void)
+{
+ char b[64];int i;journal_line_printer=fopen("LPT1","wb");if(!journal_line_printer)return 0;
+ journal_date_string(b);fputs(b,journal_line_printer);fputs("\r\n",journal_line_printer);
+ for(i=0;i<80;i++)fputc('=',journal_line_printer);fputs("\r\n",journal_line_printer);fflush(journal_line_printer);return 1;
+}
+static void journal_line_print_close(void)
+{if(journal_line_printer){fflush(journal_line_printer);fclose(journal_line_printer);journal_line_printer=0;}}
+static void journal_typewriter_start(int *pcx,int *pcy)
+{
+ int row=last_text_line();memset(journal_redacted,0,sizeof(journal_redacted));journal_tw_count=journal_tw_redact=0;
+ if(journal_used(row)>0&&row<NL-1){row++;softwrap[row]=0;}else if(row<2)row=2;
+ journal_tw_end_cy=row;journal_tw_end_cx=4;journal_tw_full=(row>=NL);*pcy=row;*pcx=4;journal_selection_clear();
+}
+static void journal_typewriter_printer_char(int ch,int pos)
+{
+ if(journal_line_printer){fputc(ch,journal_line_printer);fflush(journal_line_printer);}
+ if(journal_tw_count<80)journal_tw_pos[journal_tw_count++]=pos;
+ if(journal_tw_count>=80){if(journal_line_printer){fputs("\r\n",journal_line_printer);fflush(journal_line_printer);}journal_tw_count=0;journal_tw_redact=0;}
+}
+static void journal_typewriter_put(int ch,int *pcx,int *pcy)
+{
+ int pos;if(journal_tw_full||journal_tw_end_cy>=NL)return;
+ /* A key after one or more Backspaces resumes at the immutable end of the typed text. */
+ journal_tw_redact=0;*pcx=journal_tw_end_cx;*pcy=journal_tw_end_cy;
+ pos=journal_tw_end_cy*NW+journal_tw_end_cx;note[pos]=(char)ch;journal_typewriter_printer_char(ch,pos);
+ if(journal_tw_end_cx<NW-1)journal_tw_end_cx++;
+ else if(journal_tw_end_cy<NL-1){journal_tw_end_cy++;journal_tw_end_cx=4;softwrap[journal_tw_end_cy]=1;}
+ else journal_tw_full=1;
+ *pcx=journal_tw_end_cx;*pcy=journal_tw_end_cy;
+}
+static void journal_typewriter_return(int *pcx,int *pcy)
+{
+ if(journal_line_printer){fputs("\r\n",journal_line_printer);fflush(journal_line_printer);}journal_tw_count=journal_tw_redact=0;
+ /* If screen wrapping has already positioned the caret on an empty continuation row,
+    Return turns that row into the next hard line instead of inserting an extra blank line. */
+ if(journal_tw_end_cx==4&&journal_tw_end_cy>2&&softwrap[journal_tw_end_cy]&&journal_used(journal_tw_end_cy)==0)softwrap[journal_tw_end_cy]=0;
+ else if(journal_tw_end_cy<NL-1){journal_tw_end_cy++;journal_tw_end_cx=4;softwrap[journal_tw_end_cy]=0;}
+ else journal_tw_full=1;
+ *pcx=journal_tw_end_cx;*pcy=journal_tw_end_cy;
+}
+static void journal_typewriter_backspace(int *pcx,int *pcy)
+{
+ int i,pos;if(journal_tw_count<=journal_tw_redact)return;journal_tw_redact++;
+ pos=journal_tw_pos[journal_tw_count-journal_tw_redact];journal_set_redacted(pos);
+ /* Reprint the complete current redaction run, leaving the print head back at the
+    immutable end of the line exactly as a typewriter correction would. */
+ if(journal_line_printer){for(i=0;i<journal_tw_redact;i++)fputc('\b',journal_line_printer);for(i=0;i<journal_tw_redact;i++)fputc('X',journal_line_printer);fflush(journal_line_printer);}
+ *pcy=pos/NW;*pcx=pos%NW;
+}
+static void journal_print_button(int x,int y,int focus)
+{
+ int a;acc_button(x,y,"  Print  ",focus);if(!journal_print_mode)return;
+ a=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.launchers);acc_put(x+2,y,206,a);acc_put(x+3,y,229,a);
+}
+int main(int argc,char**argv)
+{
+ union REGS q;int x,y,tx,ty,cx=4,cy=2,top=2,key=0,mx=0,my=0,focus=-1,ch,base,insert=1,oldcy,oldtop,i;unsigned mb=0;char exp[ACC_PATH],msg[ACC_PATH+24];
+ if(acc_help(argc,argv,"!JOURNAL","Daily journal with date navigation.  /PRINT enables typewriter line printing to LPT1."))return 0;
+ for(i=1;i<argc;i++)if(!stricmp(argv[i],"/PRINT")||!stricmp(argv[i],"-PRINT"))journal_print_mode=1;
+ if(!acc_begin(argv[0],"Journal",0))return 1;
+ q.h.ah=0x2A;int86(0x21,&q,&q);jy=q.x.cx;jm=q.h.dh;jd=q.h.dl;
+ x=(acc_cols-70)/2;y=(acc_rows-20)/2;tx=x+3;ty=y+2;load();
+ if(journal_print_mode){if(!journal_line_print_begin()){acc_notice("Print","Unable to open LPT1; Journal will continue in normal editing mode.");journal_print_mode=0;}else journal_typewriter_start(&cx,&cy);}
+ acc_box(x,y,70,20,"Journal");view(tx,ty,cx,cy,top);
+ while(key!=27){
+  /* In /PRINT mode date navigation is read-only for the active typewriter sheet. */
+  if(journal_print_mode){acc_button_disabled(x+3,y+17,"  \021  ");acc_button_disabled(x+10,y+17,"  \020  ");acc_button_disabled(x+17,y+17,"  Go To  ");}
+  else{acc_button(x+3,y+17,"  \021  ",focus==1);acc_button(x+10,y+17,"  \020  ",focus==2);acc_button(x+17,y+17,"  Go To  ",focus==3);}
+  acc_put(x+28,y+17,179,ACC_BORDER);acc_button(x+30,y+17,"  Chars  ",focus==4);acc_button(x+41,y+17,"  Export  ",focus==5);journal_print_button(x+49,y+17,focus==6);acc_button(x+60,y+17,"  Exit  ",focus==7);acc_wait(&key,&mx,&my,&mb);
+  /* Mouse toolbar activation mirrors keyboard activation.  Disabled date buttons
+     do not move the typewriter to another journal page. */
+  if(mb&1){if(my==y+17){journal_selection_clear();if(!journal_print_mode&&mx>=x+2&&mx<x+7){focus=1;key=13;}else if(!journal_print_mode&&mx>=x+9&&mx<x+14){focus=2;key=13;}else if(!journal_print_mode&&mx>=x+16&&mx<x+25){focus=3;key=13;}else if(mx>=x+29&&mx<x+38){focus=4;key=13;}else if(mx>=x+40&&mx<x+46){focus=5;key=13;}else if(mx>=x+48&&mx<x+54){focus=6;key=13;}else if(mx>=x+60&&mx<x+66){focus=7;key=13;}}}
+  if(key==9||key==271){
+   if(journal_print_mode){static int pfwd[5]={0,4,5,6,7};int pi=-1,k;for(k=0;k<5;k++)if(pfwd[k]==focus){pi=k;break;}if(pi<0)pi=(key==271)?4:0;else pi=(pi+(key==271?4:1))%5;focus=pfwd[pi];}
+   else if(focus<0)focus=(key==271)?7:0;else focus=(key==271)?(focus+7)%8:(focus+1)%8;
+   journal_editor_focus=(focus==0);if(focus!=0)journal_selection_clear();view(tx,ty,cx,cy,top);key=0;continue;
+  }
+  if(key==13&&focus>0){
+   if(!journal_print_mode&&(focus==1||focus==2)){save();journal_selection_clear();stepday(focus==1?-1:1);load();cx=4;cy=2;top=2;}
+   else if(!journal_print_mode&&focus==3){save();journal_selection_clear();if(calpick())load();acc_box(x,y,70,20,"Journal");}
+   else if(focus==4){ch=character_palette();acc_box(x,y,70,20,"Journal");if(ch>=0){if(journal_print_mode)journal_typewriter_put(ch,&cx,&cy);else{if(journal_has_selection())journal_delete_selection(&cx,&cy);note[cy*NW+cx]=(char)ch;if(cx<NW-1)cx++;journal_selection_clear();}}}
+   else if(focus==5){save();if(export_all(exp)){sprintf(msg,"Journal exported to\n%s",exp);acc_notice("Export",msg);}}
+   else if(focus==6){if(!journal_print_mode){FILE*f=fopen("LPT1","wb");int r,q2;if(f){for(r=0;r<NL;r++){q2=NW;while(q2&&note[r*NW+q2-1]==' ')q2--;fwrite(note+r*NW,1,q2,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);}}}
+   else key=27;view(tx,ty,cx,cy,top);if(key!=27)key=0;continue;
+  }
+  /* Clicking the paper can focus /PRINT mode but never relocates its insertion point. */
+  if((mb&1)&&mx>=tx&&mx<=tx+NW&&my>=ty+2&&my<ty+2+NV){focus=0;journal_editor_focus=1;}
+  if(focus!=0){if(key!=27)key=0;continue;}
+  oldcy=cy;oldtop=top;
+  if((mb&1)&&mx==tx+NW&&my>=ty+2&&my<ty+2+NV){int last=last_text_line();if(my==ty+2&&top>2)top--;else if(my==ty+NV+1&&top+NV<=last)top++;if(!journal_print_mode){cy=top;cx=4;}view(tx,ty,cx,cy,top);key=0;continue;}
+  if((mb&1)&&mx>=tx&&mx<tx+NW&&my>=ty+2&&my<ty+2+NV){
+   if(!journal_print_mode){journal_selection_clear();cy=top+(my-(ty+2));if(cy<2)cy=2;cx=mx-tx;if(cx<4)cx=4;}key=0;
+  }
+  else if(journal_print_mode){
+   if(key==8)journal_typewriter_backspace(&cx,&cy);
+   else if(key==13)journal_typewriter_return(&cx,&cy);
+   else if(key>=32&&key<=255)journal_typewriter_put(key,&cx,&cy);
+   else if(key==27)break;else key=0;
+  }
+  else {int oldpos=journal_pos(cx,cy),shift=journal_shift_down();
+   if(key==3){journal_copy_selection();key=0;}
+   else if(key==256+0x77){cy=2;cx=4;journal_selection_clear();}
+   else if(key==256+0x75){cy=last_text_line();cx=NW-1;while(cx>4&&note[cy*NW+cx-1]==' ')cx--;journal_selection_clear();}
+   else if(key==24){journal_copy_selection();journal_delete_selection(&cx,&cy);oldtop=-1;key=0;}
+   else if((key==22||key==16)){journal_paste(&cx,&cy,insert);oldtop=-1;key=0;}
+   else if(key==256+75&&cx>4){cx--;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
+   else if(key==256+77&&cx<NW-1){cx++;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
+   else if(key==256+72&&cy>2){cy--;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
+   else if(key==256+80&&cy<NL-1){cy++;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
+   else if(key==256+71){cx=4;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
+   else if(key==256+79){cx=NW-1;while(cx>4&&note[cy*NW+cx-1]==' ')cx--;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
+   else if(key==256+73){cy-=NV;if(cy<2)cy=2;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
+   else if(key==256+81){cy+=NV;if(cy>=NL)cy=NL-1;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
+   else if(key==256+82){journal_selection_clear();insert=!insert;}
+   else if(key==256+83&&editable(cy)){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}else if(cx-4>=journal_used(cy))journal_join_next(&cx,&cy);else{base=cy*NW+cx;memmove(note+base,note+base+1,NW-cx-1);note[cy*NW+NW-1]=' ';}}
+   else if(key==8){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}else if(cx>4){cx--;base=cy*NW+cx;memmove(note+base,note+base+1,NW-cx-1);note[cy*NW+NW-1]=' ';}else journal_join_previous(&cx,&cy);}
+   else if(key==13&&cy<NL-1){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}journal_split_line(&cx,&cy);journal_selection_clear();}
+   else if(key>=32&&key<=255&&editable(cy)){if(journal_has_selection()){journal_delete_selection(&cx,&cy);oldtop=-1;}journal_insert_one(&cx,&cy,key,insert);journal_selection_clear();}
+   else if(key==27)break;else key=0;
+  }
+  if(journal_sel_repaint){oldtop=-1;journal_sel_repaint=0;}
+  if(cy>=top+NV)top=cy-NV+1;if(cy<top)top=cy;if(top<2)top=2;{int last=last_text_line();int max=last-NV+1;if(max<2)max=2;if(top>max&&!journal_print_mode)top=max;}
+  /* Normal editing and /PRINT typewriter entry are incremental to avoid visible flashing. */
+  if(top!=oldtop)view(tx,ty,cx,cy,top);else{jrow(tx,ty,oldcy,top);if(cy!=oldcy)jrow(tx,ty,cy,top);if(cy>=top&&cy<top+NV){acc_caret_set(tx+cx,ty+2+cy-top);}jscroll(tx,ty,top);}key=0;
  }
- if(journal_sel_repaint){oldtop=-1;journal_sel_repaint=0;}
- if(cy>=top+NV)top=cy-NV+1;if(cy<top)top=cy;if(top<2)top=2;{int last=last_text_line();int max=last-NV+1;if(max<2)max=2;if(top>max)top=max;}
- /* Normal editing is incremental to avoid the visible full-page flash. */
- if(top!=oldtop)view(tx,ty,cx,cy,top);else{jrow(tx,ty,oldcy,top);if(cy!=oldcy)jrow(tx,ty,cy,top);if(cy>=top&&cy<top+NV){acc_caret_set(tx+cx,ty+2+cy-top);}jscroll(tx,ty,top);}key=0;}save();acc_end();return 0;}
+ save();journal_line_print_close();acc_end();return 0;
+}
+

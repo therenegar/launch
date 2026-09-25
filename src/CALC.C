@@ -23,6 +23,8 @@ typedef struct {char value[24];char op;} TAPE_REC;
 static TAPE_REC tape[TAPE_MAX];
 static int tape_count=0;
 static int tape_view=0; /* 0 = newest page; positive = rows scrolled toward older entries */
+static int print_mode=0;
+static FILE *print_file=0;
 
 static unsigned char calc_old_glyphs[11][32];
 static unsigned char calc_old_lower_half[32];
@@ -91,6 +93,22 @@ static int move_key(int focus,int key)
  for(i=0;i<18;i++){if(i==focus)continue;ix=kx[i]+kw[i]/2;iy=ky[i];dx=ix-fx;dy=iy-fy;if((key==256+75&&dx>=0)||(key==256+77&&dx<=0)||(key==256+72&&dy>=0)||(key==256+80&&dy<=0))continue;score=(key==256+75||key==256+77)?(abs(dx)*100+abs(dy)):(abs(dy)*100+abs(dx));if(score<bestscore){bestscore=score;best=i;}}
  return best;
 }
+static void tape_print(const TAPE_REC *r)
+{
+ char line[22],left[24],right[24],*dot;int ln,start,i;
+ if(!print_file)return;memset(line,' ',21);line[21]=0;
+ if((unsigned char)r->op==196){for(i=2;i<19;i++)line[i]='-';}
+ else {
+  dot=strchr(r->value,'.');
+  if(dot){ln=(int)(dot-r->value);if(ln>22)ln=22;memcpy(left,r->value,ln);left[ln]=0;strncpy(right,dot,22);right[22]=0;}
+  else{strncpy(left,r->value,22);left[22]=0;right[0]=0;}
+  start=15-(int)strlen(left);if(start<0)start=0;for(i=0;left[i]&&start+i<21;i++)line[start+i]=left[i];
+  for(i=0;right[i]&&15+i<21;i++)line[15+i]=right[i];
+  if(r->op)line[19]=r->op;
+ }
+ fwrite(line,1,21,print_file);fputs("\r\n",print_file);fflush(print_file);
+}
+
 static void tape_add(const char *entry,double value,char op)
 {
  int i;char s[24];
@@ -98,6 +116,7 @@ static void tape_add(const char *entry,double value,char op)
  if(tape_count<TAPE_MAX)i=tape_count++;
  else{for(i=1;i<TAPE_MAX;i++)tape[i-1]=tape[i];i=TAPE_MAX-1;}
  strncpy(tape[i].value,s,23);tape[i].value[23]=0;tape[i].op=op;
+ tape_print(&tape[i]);
  tape_view=0;
 }
 static void tape_clear(void)
@@ -185,8 +204,10 @@ static void calc_action(const char *s,double *value,char *entry,char *op)
 int main(int argc,char **argv)
 {
  double value=0;char entry[24]="",op=0,t[2];int bx,by,x,y,tx,ty,i,focus=-1,key=0,mx=0,my=0,ki;unsigned mb=0;
- if(acc_help(argc,argv,"!CALC","A simple four-function desktop calculator."))return 0;
+ if(acc_help(argc,argv,"!CALC","A simple four-function desktop calculator.  /PRINT sends each tape line to LPT1."))return 0;
+ for(i=1;i<argc;i++)if(!stricmp(argv[i],"/PRINT")||!stricmp(argv[i],"-PRINT"))print_mode=1;
  if(!acc_begin(argv[0],"Calculator",0))return 1;
+ if(print_mode){print_file=fopen("LPT1","wb");if(!print_file){acc_notice("Print","Unable to open LPT1; calculator will continue without printing.");print_mode=0;}}
  calc_segments_install();
  /* CALC2.ASC is the authoritative 80x25 layout.  Keep these coordinates
     relative to an 80x25 canvas so the overlap is exact. */
@@ -225,5 +246,6 @@ int main(int argc,char **argv)
     ki=key_index(key);t[0]=(char)((key=='r'||key=='R')?'R':key);t[1]=0;flash_key(x,y,ki,focus);calc_action(t,&value,entry,&op);key=0;
   }else if(key!=27)key=0;
  }
+ if(print_file){fflush(print_file);fclose(print_file);print_file=0;}
  acc_end_screen();calc_segments_restore();acc_end();return 0;
 }

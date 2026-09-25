@@ -1,4 +1,4 @@
-/* Launch! 3.5 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 3.71 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -313,6 +313,48 @@ static void screen_text_at(unsigned row,unsigned col,const char *text)
 {
   screen_text_attr_at(row,col,text,7);
 }
+
+static unsigned screen_columns(void)
+{
+  union REGS r;
+  if(!_isatty(_fileno(stdout)))return 80;
+  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);
+  return r.h.ah?r.h.ah:80;
+}
+
+static unsigned screen_rows(void)
+{
+  union REGS r;
+  if(!_isatty(_fileno(stdout)))return 25;
+  memset(&r,0,sizeof(r));r.x.ax=0x1130;r.h.bh=0;int86(0x10,&r,&r);
+  if(r.h.dl>=24 && r.h.dl<100)return (unsigned)r.h.dl+1;
+  return 25;
+}
+
+static void installer_clear_screen(void)
+{
+  union REGS r;unsigned cols,rows,page;
+  if(!_isatty(_fileno(stdout)))return;
+  cols=screen_columns();rows=screen_rows();
+  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);page=r.h.bh;
+  memset(&r,0,sizeof(r));r.h.ah=0x06;r.h.al=0;r.h.bh=7;r.x.cx=0;
+  r.h.dh=(unsigned char)(rows-1);r.h.dl=(unsigned char)(cols-1);int86(0x10,&r,&r);
+  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;r.h.dh=0;r.h.dl=0;int86(0x10,&r,&r);
+}
+
+static void installer_title_rule(void)
+{
+  union REGS r;unsigned cols,row,col,page;
+  if(!_isatty(_fileno(stdout))){puts("--------------------------------------------------------------------------------");return;}
+  cols=screen_columns();
+  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);page=r.h.bh;
+  memset(&r,0,sizeof(r));r.h.ah=3;r.h.bh=(unsigned char)page;int86(0x10,&r,&r);row=r.h.dh;
+  for(col=0;col<cols;col++){
+    memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;r.h.dh=(unsigned char)row;r.h.dl=(unsigned char)col;int86(0x10,&r,&r);
+    memset(&r,0,sizeof(r));r.h.ah=9;r.h.al=196;r.h.bh=(unsigned char)page;r.h.bl=7;r.x.cx=1;int86(0x10,&r,&r);
+  }
+  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;r.h.dh=(unsigned char)(row+1);r.h.dl=0;int86(0x10,&r,&r);
+}
 static void error_icon(int indent){status_icon(indent,4,'!');}
 static void success_icon(int indent){status_icon(indent,2,3);}
 static void choice_default(int default_yes)
@@ -484,13 +526,25 @@ static int capture_shortcut(char *spec)
   }
 }
 
+
+static int loadhigh_supported(const char *probe_dir)
+{
+  char bat[PATH_SIZE],ok[PATH_SIZE],cmd[PATH_SIZE*3],*comspec;FILE *f;int found;
+  comspec=getenv("COMSPEC");if(!comspec||!*comspec||!probe_dir||!*probe_dir)return 0;
+  sprintf(bat,"%s\\LHTEST.BAT",probe_dir);sprintf(ok,"%s\\LHTEST.$$$",probe_dir);
+  remove(bat);remove(ok);f=fopen(bat,"wt");if(!f)return 0;
+  fprintf(f,"@ECHO OFF\nECHO Y>%s\n",ok);if(fclose(f)!=0){remove(bat);return 0;}
+  sprintf(cmd,"LOADHIGH %s /C %s >NUL",comspec,bat);system(cmd);remove(bat);
+  f=fopen(ok,"rb");found=f!=0;if(f)fclose(f);remove(ok);return found;
+}
+
 static int append_autoexec(const char *filename,const char *path,int add_path,
                            int add_shortcut,const char *key_spec,int show_menu)
 {
   FILE *f;static char path_line[256],load_line[256],menu_line[256];long size;
   static const char *lines[3];static int wanted[3];int i,last=0,missing=0;
   sprintf(path_line,"PATH %%PATH%%;%s",path);
-  sprintf(load_line,"LOADHIGH %s\\!KEY.COM",path);
+  sprintf(load_line,"%s%s\\!KEY.COM",loadhigh_supported(path)?"LOADHIGH ":"",path);
   if(add_shortcut && *key_spec){strcat(load_line," /KEY=");strcat(load_line,key_spec);}
   sprintf(menu_line,"%s\\!.EXE",path);
   lines[0]=path_line;lines[1]=load_line;lines[2]=menu_line;
@@ -689,9 +743,11 @@ int main(int argc,char **argv)
   const char *display_name;
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
+  installer_clear_screen();
   puts("\n");
-  puts("Launch! 3.7 Installation");
-  puts("------------------------\n");
+  puts("Launch! 3.71 Installation");
+  installer_title_rule();
+  puts("");
   cpu_ok=cpu_at_least_286();display_name=display_adapter(&display_ok);vga_display=!strncmp(display_name,"VGA",3);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
   question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");
   if(!fgets(install,sizeof(install),stdin))return 1;
@@ -721,9 +777,10 @@ int main(int argc,char **argv)
 
     fputs("\nPress ",stdout);putchar(17);putchar(217);
     fputs(" to continue install, or\n",stdout);
-    fputs("type the number/s for components you don't want installed, and press ",stdout);
+    fputs("type the number/s for components you want excluded, and press ",stdout);
     putchar(17);putchar(217);puts(".");
-    question_icon(0);fputs("Omit component number/s: ",stdout);fflush(stdout);
+    puts("");
+    question_icon(0);fputs("Exclude number/s: ",stdout);fflush(stdout);
 
     if(!fgets(choose,sizeof(choose),stdin)){
       error_icon(0);puts("Unable to read component selection.");return 1;
