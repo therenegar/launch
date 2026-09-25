@@ -1,0 +1,6 @@
+Launch! build font reference
+============================
+This directory contains individual .FNT copies of every active font in FONT.DAT.
+The removed duplicate Roman font (FONT.DAT legacy slot 15) is intentionally omitted.
+!MKDOWN private heading resources (H1.F24, H2.F19, H3.F19, H4.F19, H5.F16 and BODY.FNT)
+remain here as build resources as well.

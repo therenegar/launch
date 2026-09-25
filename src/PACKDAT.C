@@ -1,4 +1,4 @@
-/* Builds the compressed Launch! 3.65 INSTALL.DAT distribution archive.
+/* Builds the compressed Launch! 3.7 INSTALL.DAT distribution archive.
    Per-file LZSS compression: 4K history window, 3..18 byte matches.
    Microsoft C/C++ 7.0 / DOS small model. */
 #include <stdio.h>
@@ -15,10 +15,21 @@
 static const char *files[]={
   "!.EXE","!KEY.COM","!KEYDB.COM","!KEY286.COM","!MNUGEN.EXE","AUTOGEN.DAT",
   "PWROFF.BMP","FONT.DAT","PROMPTS.CFG","CAL.ICS","!CAL.EXE","!CALC.EXE",
-  "!DRAW.EXE","!JOURNAL.EXE","!MKDOWN.EXE","!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE",
+  "!DRAW.EXE","!JOURNAL.EXE","!MKDOWN.EXE","!NOTE.EXE","!STACK.EXE","!DFETCH.EXE",
   "!TODOS.EXE","!TYPO.EXE","TYPO.LVL","!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE",
   "!SNAKE.EXE","!SOL.EXE","!WORDZ.EXE","WORDZ.LVL",0
 };
+
+
+static void source_path(const char *name,char *out)
+{
+  const char *dot=strrchr(name,'.');
+  if(!stricmp(name,"PWROFF.BMP")){sprintf(out,"res\\%s",name);return;}
+  if(!stricmp(name,"PROMPTS.CFG")){sprintf(out,"conf\\%s",name);return;}
+  if(!stricmp(name,"CAL.ICS")){sprintf(out,"samples\\%s",name);return;}
+  if(dot&&!stricmp(dot,".LVL")){sprintf(out,"appdata\\%s",name);return;}
+  strcpy(out,name);
+}
 
 static unsigned char window_buf[WINDOW];
 static unsigned short hash_head[HASHES],hash_prev[WINDOW];
@@ -116,7 +127,7 @@ static int compress_file(FILE *in,FILE *out,unsigned long *usize,unsigned long *
 
 int main(void)
 {
-  FILE *in,*out;char name[13];unsigned long offsets[40],csizes[40],usizes[40],data_start,total_raw=0,total_cmp=0;
+  FILE *in,*out;char name[13],source[40];unsigned long offsets[40],csizes[40],usizes[40],data_start,total_raw=0,total_cmp=0;
   int i,count=0,ok=1;
   while(files[count])count++;
   out=fopen("INSTALL.DAT","w+b");
@@ -131,8 +142,8 @@ int main(void)
   if((unsigned long)ftell(out)!=data_start){fclose(out);remove("INSTALL.DAT");puts("PACKDAT: header size error");return 1;}
 
   for(i=0;i<count&&ok;i++){
-    in=fopen(files[i],"rb");
-    if(!in){printf("PACKDAT: cannot open %s\n",files[i]);ok=0;break;}
+    source_path(files[i],source);in=fopen(source,"rb");
+    if(!in){printf("PACKDAT: cannot open %s (%s)\n",files[i],source);ok=0;break;}
     offsets[i]=(unsigned long)ftell(out);
     if(!compress_file(in,out,&usizes[i],&csizes[i]))ok=0;
     fclose(in);total_raw+=usizes[i];total_cmp+=csizes[i];

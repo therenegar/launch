@@ -185,7 +185,7 @@ static void snake_buttons(int x,int y,int w,int h,int focus)
 {
   acc_button(x+3,y+h-3," Refresh ",focus==1);
   acc_button(x+10,y+h-3," Next ",focus==2);
-  acc_button(x+w-10,y+h-3," Close ",focus==3);
+  acc_button(x+w-10,y+h-3," Exit ",focus==3);
 }
 
 int main(int argc,char **argv)

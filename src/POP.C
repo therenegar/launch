@@ -192,7 +192,7 @@ int main(int argc,char **argv)
   pop_font(1);x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;bx=x+6;by=y+6;acc_box(x,y,DLG_W,DLG_H,"Pop");new_game();mouse_show(1);
   while(key!=27){
     now=acc_ticks();elapsed=now-last_tick;if(elapsed){last_tick=now;if(time_left>(long)elapsed)time_left-=(long)elapsed;else time_left=0;draw_status(x,y);}
-    if(full){acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);draw_status(x,y);draw_board(bx,by);draw_level(x,y);acc_button(x+3,y+18,"  Retry  ",focus==1);acc_button(x+11,y+18,"  Prev  ",focus==2);acc_button(x+18,y+18,"  Next  ",focus==3);acc_button(x+DLG_W-10,y+18,"  Close  ",focus==4);full=0;}
+    if(full){acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);draw_status(x,y);draw_board(bx,by);draw_level(x,y);acc_button(x+3,y+18,"  Retry  ",focus==1);acc_button(x+11,y+18,"  Prev  ",focus==2);acc_button(x+18,y+18,"  Next  ",focus==3);acc_button(x+DLG_W-10,y+18,"  Exit  ",focus==4);full=0;}
     if(time_left<=0||!any_moves()){
       mouse_show(0);if(time_left<=0){pop_ui_glyphs(1);pop_result_notice(1,score);pop_ui_glyphs(0);new_game();}else{if(remaining()==0){score+=1000;score+=(long)((time_left>0?time_left:0)/TICKS_PER_SEC)*10L;}pop_ui_glyphs(1);pop_result_notice(0,score);pop_ui_glyphs(0);if(level<10)level++;new_game();}full=1;mouse_show(1);continue;
     }
@@ -202,10 +202,10 @@ int main(int argc,char **argv)
         else         if(my==y+18&&mx>=x+3&&mx<x+9){acc_press_button(x+3,y+18,"  Retry  ");new_game();full=1;}
         else if(my==y+18&&mx>=x+11&&mx<x+16){acc_press_button(x+11,y+18,"  Prev  ");if(--level<1)level=10;new_game();full=1;}
         else if(my==y+18&&mx>=x+18&&mx<x+23){acc_press_button(x+18,y+18,"  Next  ");if(++level>10)level=1;new_game();full=1;}
-        else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4){acc_press_button(x+DLG_W-10,y+18,"  Close  ");key=27;}
+        else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4){acc_press_button(x+DLG_W-10,y+18,"  Exit  ");key=27;}
         else if(mx>=bx&&mx<bx+BW*2&&my>=by&&my<by+BH){tx=(mx-bx)/2;ty=my-by;if(sel_count>=2&&mark[ty][tx]){pop_selected(bx,by);draw_board(bx,by);draw_status(x,y);}else{select_at(tx,ty);draw_board(bx,by);}focus=0;}
       }last_buttons=buttons;
-      hover=-1;if(my==y+18&&mx>=x+3&&mx<x+9)hover=1;else if(my==y+18&&mx>=x+11&&mx<x+16)hover=2;else if(my==y+18&&mx>=x+18&&mx<x+23)hover=3;else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4)hover=4;if(hover!=oldhover){acc_button(x+3,y+18,"  Retry  ",focus==1||hover==1);acc_button(x+11,y+18,"  Prev  ",focus==2||hover==2);acc_button(x+18,y+18,"  Next  ",focus==3||hover==3);acc_button(x+DLG_W-10,y+18,"  Close  ",focus==4||hover==4);oldhover=hover;}
+      hover=-1;if(my==y+18&&mx>=x+3&&mx<x+9)hover=1;else if(my==y+18&&mx>=x+11&&mx<x+16)hover=2;else if(my==y+18&&mx>=x+18&&mx<x+23)hover=3;else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4)hover=4;if(hover!=oldhover){acc_button(x+3,y+18,"  Retry  ",focus==1||hover==1);acc_button(x+11,y+18,"  Prev  ",focus==2||hover==2);acc_button(x+18,y+18,"  Next  ",focus==3||hover==3);acc_button(x+DLG_W-10,y+18,"  Exit  ",focus==4||hover==4);oldhover=hover;}
     }
     if(key==9||key==271){if(focus<0)focus=(key==271)?4:0;else if(key==271){focus--;if(focus<0)focus=4;}else{focus++;if(focus>4)focus=0;}full=1;}
     else if(key==13&&focus==1){new_game();full=1;}

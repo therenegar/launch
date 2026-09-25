@@ -376,7 +376,7 @@ static void draw_buttons(int x,int y)
   acc_button(x+20,y+DLG_H-3," Next ",focus==BTN_NEXT);
   acc_button(x+28,y+DLG_H-3,"  Go To  ",focus==BTN_GOTO);
   sprintf(s,"Puzzle %d/%d",puzzle_no+1,puzzle_total);acc_text(x+39,y+DLG_H-3,s,ACC_HEADING,22);
-  acc_button(x+DLG_W-10,y+DLG_H-3," Close ",focus==BTN_CLOSE);
+  acc_button(x+DLG_W-10,y+DLG_H-3," Exit ",focus==BTN_CLOSE);
 }
 static void draw_all(int x,int y,int bx,int by)
 {

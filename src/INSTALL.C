@@ -269,6 +269,31 @@ static void status_icon(int indent,int colour,int symbol)
   putchar(' ');
 }
 static void question_icon(int indent){status_icon(indent,1,'?');}
+
+static int read_key_immediate(void)
+{
+  union REGS r;memset(&r,0,sizeof(r));r.h.ah=0;int86(0x16,&r,&r);return r.h.al?r.h.al:(256+r.h.ah);
+}
+
+static void cursor_pos(unsigned *row,unsigned *col)
+{
+  union REGS r;memset(&r,0,sizeof(r));r.h.ah=3;r.h.bh=0;int86(0x10,&r,&r);*row=r.h.dh;*col=r.h.dl;
+}
+
+static void component_icon(int digit)
+{
+  char b[4];b[0]=' ';b[1]=(char)('0'+digit);b[2]=' ';b[3]=0;
+  putchar(' ');colour_text(b,0x3F);putchar(' ');
+}
+
+static void screen_text_at(unsigned row,unsigned col,const char *text)
+{
+  union REGS r;unsigned mode,cols,seg,i;unsigned short far *video;
+  if(!_isatty(_fileno(stdout)))return;
+  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);mode=r.h.al;cols=r.h.ah?r.h.ah:80;seg=(mode==7)?0xB000:0xB800;
+  video=(unsigned short far *)((unsigned long)seg<<16);
+  for(i=0;text[i];i++)video[row*cols+col+i]=(unsigned char)text[i]|0x0700;
+}
 static void error_icon(int indent){status_icon(indent,4,'!');}
 static void success_icon(int indent){status_icon(indent,2,3);}
 static void choice_default(int default_yes)
@@ -502,22 +527,41 @@ typedef struct {
 
 static DAT_ENTRY dat_entry[40];
 
-static int accessory_member(const char *name)
+static int component_member(const char *name,int component)
 {
-  static const char *files[]={
+  static const char *accessories[]={
     "CAL.ICS","!CAL.EXE","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE","!MKDOWN.EXE",
-    "!NOTE.EXE","!STACK.EXE","!SYSINFO.EXE","!TODOS.EXE","!TYPO.EXE","TYPO.LVL",
-    "!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE","!SNAKE.EXE",
-    "!SOL.EXE","!WORDZ.EXE","WORDZ.LVL",0};
-  int i;for(i=0;files[i];i++)if(!stricmp(name,files[i]))return 1;return 0;
+    "!NOTE.EXE","!STACK.EXE","!DFETCH.EXE","!TODOS.EXE",0};
+  static const char *games[]={
+    "!TYPO.EXE","TYPO.LVL","!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE",
+    "!POP.EXE","!SNAKE.EXE","!SOL.EXE","!WORDZ.EXE","WORDZ.LVL",0};
+  const char **files;int i;
+  files=component==1?accessories:games;
+  for(i=0;files[i];i++)if(!stricmp(name,files[i]))return 1;
+  return 0;
 }
 
-static int selected_member(const char *name,int shortcut_build,int accessories,const char **dest_name)
+static void remove_named(const char *install,const char *name)
+{
+  char p[PATH_SIZE];sprintf(p,"%s\\%s",install,name);remove(p);
+}
+static void remove_unselected_components(const char *install,int accessories,int games,int fonts,int menu_generator,int shortcut_key)
+{
+  static const char *acc[]={"CAL.ICS","!CAL.EXE","!CALC.EXE","!DRAW.EXE","!JOURNAL.EXE","!MKDOWN.EXE","!NOTE.EXE","!STACK.EXE","!DFETCH.EXE","!TODOS.EXE",0};
+  static const char *gm[]={"!TYPO.EXE","TYPO.LVL","!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE","!SNAKE.EXE","!SOL.EXE","!WORDZ.EXE","WORDZ.LVL",0};
+  int i;if(!accessories)for(i=0;acc[i];i++)remove_named(install,acc[i]);if(!games)for(i=0;gm[i];i++)remove_named(install,gm[i]);if(!fonts)remove_named(install,"FONT.DAT");if(!menu_generator){remove_named(install,"!MNUGEN.EXE");remove_named(install,"AUTOGEN.DAT");}if(!shortcut_key)remove_named(install,"!KEY.COM");
+}
+
+static int selected_member(const char *name,int shortcut_build,int accessories,
+                           int games,int fonts,int menu_generator,const char **dest_name)
 {
   *dest_name=name;
-  if(!stricmp(name,"!.EXE")||!stricmp(name,"!MNUGEN.EXE")||
-     !stricmp(name,"AUTOGEN.DAT")||!stricmp(name,"PWROFF.BMP")||
-     !stricmp(name,"FONT.DAT"))return 1;
+  if(!stricmp(name,"!.EXE")||!stricmp(name,"PROMPTS.CFG")||!stricmp(name,"PWROFF.BMP"))return 1;
+  if(fonts&&!stricmp(name,"FONT.DAT"))return 1;
+  if(menu_generator&&(!stricmp(name,"!MNUGEN.EXE")||!stricmp(name,"AUTOGEN.DAT")))return 1;
+  if(accessories&&component_member(name,1))return 1;
+  if(games&&component_member(name,2))return 1;
+  if(shortcut_build<0)return 0;
   if(!stricmp(name,"!KEY.COM")){
     if(shortcut_build!=0)return 0;*dest_name="!KEY.COM";return 1;
   }
@@ -527,7 +571,6 @@ static int selected_member(const char *name,int shortcut_build,int accessories,c
   if(!stricmp(name,"!KEY286.COM")){
     if(shortcut_build!=2)return 0;*dest_name="!KEY.COM";return 1;
   }
-  if(accessories&&accessory_member(name))return 1;
   return 0;
 }
 
@@ -543,7 +586,8 @@ static int skip_compressed(FILE *in,unsigned long size)
 
 /* Read INSTALL.DAT once, then walk its payloads sequentially.  This avoids
    repeatedly reopening and seeking around a floppy for every installed file. */
-static int extract_install_files(const char *archive,const char *install,int shortcut_build,int accessories)
+static int extract_install_files(const char *archive,const char *install,int shortcut_build,
+                                 int accessories,int games,int fonts,int menu_generator)
 {
   FILE *in,*out;char magic[8],destination[PATH_SIZE];const char *dest_name;
   unsigned count,i;int selected,done=0,ok;
@@ -557,10 +601,16 @@ static int extract_install_files(const char *archive,const char *install,int sho
     dat_entry[i].csize=read_u32(in);
     dat_entry[i].usize=read_u32(in);
   }
+  extract_progress_total=0;
+  for(i=0;i<count;i++)
+    if(selected_member(dat_entry[i].name,shortcut_build,accessories,games,fonts,menu_generator,&dest_name))
+      extract_progress_total++;
+  if(!extract_progress_total)extract_progress_total=1;
+  extract_progress_done=0;draw_extract_progress();
   if(fseek(in,(long)dat_entry[0].offset,SEEK_SET)){fclose(in);return 0;}
 
   for(i=0;i<count;i++){
-    selected=selected_member(dat_entry[i].name,shortcut_build,accessories,&dest_name);
+    selected=selected_member(dat_entry[i].name,shortcut_build,accessories,games,fonts,menu_generator,&dest_name);
     if(selected){
       sprintf(destination,"%s\\%s",install,dest_name);
       out=fopen(destination,"wb");
@@ -576,8 +626,10 @@ static int extract_install_files(const char *archive,const char *install,int sho
   }
   fclose(in);
   if(done!=extract_progress_total)return 0;
-  sprintf(destination,"%s\\DATA",install);if(!make_directories(destination))return 0;
-  sprintf(destination,"%s\\EXPORT",install);if(!make_directories(destination))return 0;
+  if(accessories||games){
+    sprintf(destination,"%s\\DATA",install);if(!make_directories(destination))return 0;
+    sprintf(destination,"%s\\EXPORT",install);if(!make_directories(destination))return 0;
+  }
   /* 3.65 consolidates all runtime display fonts into FONT.DAT.  Remove the
      obsolete loose font files from upgrades so the installed directory also
      reflects the new dependency model. */
@@ -585,6 +637,7 @@ static int extract_install_files(const char *archive,const char *install,int sho
   sprintf(destination,"%s\\PROFONT.FNT",install);remove(destination);
   sprintf(destination,"%s\\PROFONTB.FNT",install);remove(destination);
   sprintf(destination,"%s\\PROFONTI.FNT",install);remove(destination);
+  sprintf(destination,"%s\\!SYSINFO.EXE",install);remove(destination);
   return 1;
 }
 
@@ -594,12 +647,14 @@ int main(int argc,char **argv)
   static char install[PATH_SIZE],source_dir[PATH_SIZE],archive[PATH_SIZE];
   static char destination[PATH_SIZE],launch_exe[PATH_SIZE],autoexec[16],key_spec[64];
   char *comspec;
-  int n,dosbox_detected,shortcut_build,is286,update_autoexec=0,upgrade=0,accessories=0,cpu_ok,display_ok,vga_display,menu_result;
+  int n,dosbox_detected,shortcut_build=-1,is286,update_autoexec=0,upgrade=0;
+  int accessories=0,games=0,screensavers=0,fonts=0,menu_generator=0,shortcut_key=0;
+  int cpu_ok,display_ok,vga_display,menu_result;
   const char *display_name;
   int add_path=0,add_shortcut=0,show_menu=0,autoexec_changed=0;
   (void)argc;
   puts("\n");
-  puts("Launch! 3.65 Installation");
+  puts("Launch! 3.7 Installation");
   puts("------------------------\n");
   cpu_ok=cpu_at_least_286();display_name=display_adapter(&display_ok);vga_display=!strncmp(display_name,"VGA",3);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
   question_icon(0);printf("Install to directory [");colour_text("C:\\LAUNCH",10);printf("]: ");
@@ -615,18 +670,39 @@ int main(int argc,char **argv)
   sprintf(destination,"%s\\LAUNCH.MNU",install);upgrade=exists(destination);
   if(!upgrade){sprintf(destination,"%s\\LAUNCH.CFG",install);upgrade=exists(destination);}
   if(upgrade)puts("\nExisting Launch! installation detected.\nExisting menu/configuration will be retained; missing standard menu entries will be added.");
-  is286=cpu_is_286();dosbox_detected=running_in_dosbox();
-  if(is286){puts("\n80286-class CPU detected; the 286-safe shortcut will be installed.");shortcut_build=2;}
-  else if(dosbox_detected){puts("");shortcut_build=ask_yes("It looks like you're running in DOSBox, is that correct?",1,0)?1:0;}
-  else{puts("");shortcut_build=ask_yes("Are you installing in DOSBox?",0,0)?1:0;}
-  puts("");accessories=ask_yes("Install games and accessories?",1,0);
+  {
+    int done=0,k,i;unsigned yr[6],yc[6];int *flags[6];
+    const char *labels[6]={"Accessories","Games","Screensavers","Fonts","Menu Generator","Keyboard Shortcut"};
+    flags[0]=&accessories;flags[1]=&games;flags[2]=&screensavers;flags[3]=&fonts;flags[4]=&menu_generator;flags[5]=&shortcut_key;
+    accessories=games=screensavers=fonts=menu_generator=shortcut_key=1;
+    puts("\nChoose which components to install.\n");
+    for(i=0;i<6;i++){
+      component_icon(i+1);printf("%s : ",labels[i]);cursor_pos(&yr[i],&yc[i]);printf("Yes\n");
+    }
+    puts("\nChoose a number to change, or Enter to continue with selection.");
+    while(!done){
+      k=read_key_immediate();
+      if(k==13)done=1;
+      else if(k>='1'&&k<='6'){i=k-'1';*flags[i]=!*flags[i];screen_text_at(yr[i],yc[i],*flags[i]?"Yes":"No ");}
+    }
+  }
+  if(shortcut_key){
+    is286=cpu_is_286();dosbox_detected=running_in_dosbox();
+    if(is286){puts("\n80286-class CPU detected; the 286-safe shortcut will be installed.");shortcut_build=2;}
+    else if(dosbox_detected)shortcut_build=1;
+    else shortcut_build=0;
+  }
   puts("\n Please wait while files are extracted and copied...");fflush(stdout);
-  extract_progress_done=0;extract_progress_total=accessories?27:6;draw_extract_progress();
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);
   if(!exists(archive)){error_icon(0);printf("Cannot find %s\n",archive);return 1;}
   sprintf(launch_exe,"%s\\!.EXE",install);
-  if(!extract_install_files(archive,install,shortcut_build,accessories))return 1;
-  if(!upgrade&&!write_initial_font_config(install,vga_display?1:0)){error_icon(0);puts("Files were copied, but the initial font configuration could not be created.");return 1;}
+  if(!extract_install_files(archive,install,shortcut_build,accessories,games,fonts,menu_generator))return 1;
+  remove_unselected_components(install,accessories,games,fonts,menu_generator,shortcut_key);
+  if(!upgrade&&!write_initial_font_config(install,(fonts&&vga_display)?1:0)){error_icon(0);puts("Files were copied, but the initial font configuration could not be created.");return 1;}
+  if(!upgrade&&!screensavers){
+    FILE *cf;sprintf(destination,"%s\\LAUNCH.CFG",install);cf=fopen(destination,"at");
+    if(cf){fputs("SCREENSAVER=0\n",cf);fclose(cf);}
+  }
   menu_result=spawnl(P_WAIT,launch_exe,"!.EXE","/INITMENU",NULL);
   if(menu_result!=0){error_icon(0);puts("Files were copied, but the standard Launch! menu could not be created or updated.");return 1;}
   comspec=getenv("COMSPEC");
@@ -637,7 +713,7 @@ int main(int argc,char **argv)
   update_autoexec=!upgrade&&ask_yes("Do you want to update your AUTOEXEC.BAT file?",1,0);
   if(update_autoexec){
     puts("");add_path=ask_yes("Add Launch! to PATH?",1,5);
-    puts("");add_shortcut=ask_yes("Enable keyboard shortcut?",1,5);
+    puts("");add_shortcut=shortcut_key?ask_yes("Enable keyboard shortcut?",1,5):0;
     if(add_shortcut){
       printf("\n     The keyboard shortcut is set to ");colour_text("CTRL+ALT+.",10);puts("");
       puts("");if(ask_yes("Change the shortcut key/s?",0,5))capture_shortcut(key_spec);
@@ -651,11 +727,16 @@ int main(int argc,char **argv)
     }
   }
   printf("\n- Installed LAUNCH! to %s\n",install);
-  printf("- !KEY 3.65 build: %s\n",shortcut_build==2?"80286-safe":(shortcut_build==1?"DOSBox":"386+ real/emulated BIOS"));
+  if(shortcut_key)printf("- !KEY 3.7 build: %s\n",shortcut_build==2?"80286-safe":(shortcut_build==1?"DOSBox":"386+ real/emulated BIOS"));
+  else puts("- Shortcut Key not installed.");
   if(autoexec_changed)printf("- Updated %s with the selected startup options.\n",autoexec);
   else printf("- %s was not changed.\n",autoexec);
   puts("- Created or updated the standard menu entries for this DOS installation.");
-  if(accessories)puts("- Installed Launch! games and accessories.");
+  if(accessories)puts("- Installed Launch! accessories.");
+  if(games)puts("- Installed Launch! games.");
+  if(screensavers)puts("- Screensavers enabled.");else puts("- Screensavers disabled in the initial configuration.");
+  if(fonts)puts("- Installed Launch! fonts.");else puts("- Fonts not installed; Standard BIOS font selected.");
+  if(menu_generator)puts("- Installed Menu Generator.");
   puts("");
   success_icon(0);
   if(autoexec_changed)puts("Install is complete. Reboot to activate the selected startup options.");

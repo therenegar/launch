@@ -12,7 +12,7 @@
 #define DATE_LEN 10
 #define DATE_INPUT_LEN 31
 #define NOTE_LEN 120
-#define VIEW_ROWS 15
+#define MAX_VIEW_ROWS 22
 #define MAX_TAGS 8
 
 #define GLYPH_U_L 212
@@ -30,8 +30,10 @@ typedef struct {
 
 static TODO_ITEM items[MAX_ITEMS];
 static int item_count=0;
-static int row_map[VIEW_ROWS];
-static unsigned char row_detail[VIEW_ROWS];
+static int row_map[MAX_VIEW_ROWS];
+static unsigned char row_detail[MAX_VIEW_ROWS];
+static int todos_view_rows=14;
+static int date_tab=0;
 static void install_glyphs(void){}
 static void restore_glyphs(void){}
 
@@ -223,7 +225,7 @@ static void form_field(int x,int y,int labelw,const char *label,const char *valu
   if(cursor>=width)left=cursor-width+1;
   show=len-left;if(show>width)show=width;
   if(show>0)acc_text(x+labelw,y,value+left,active?ACC_SELECT:attr,show);
-  if(active&&cursor-left>=0&&cursor-left<width){acc_put(x+labelw+cursor-left,y,(cursor<len)?value[cursor]:' ',ACC_SELECT);acc_caret_set(x+labelw+cursor-left,y);}else if(active)acc_caret_hide();
+  if(active&&cursor-left>=0&&cursor-left<width){acc_caret_set(x+labelw+cursor-left,y);}else if(active)acc_caret_hide();
 }
 
 static void note_area(int x,int y,const char *value,int active,int cursor)
@@ -236,7 +238,7 @@ static void note_area(int x,int y,const char *value,int active,int cursor)
   }
   if(active){
     row=0;col=0;for(i=0;i<cursor&&i<n;i++){if(value[i]=='\n'||col>=39){row++;col=0;}else col++;if(row>2){row=2;col=39;break;}}
-    if(row<3){acc_put(x+col,y+row,(cursor<n&&value[cursor]!='\n')?value[cursor]:' ',ACC_SELECT);acc_caret_set(x+col,y+row);}else acc_caret_hide();
+    if(row<3){acc_caret_set(x+col,y+row);}else acc_caret_hide();
   }
 }
 
@@ -269,8 +271,8 @@ static void redraw_task_field(int x,int y,int field,const TODO_ITEM *tmp,const c
   else if(field==2)form_field(x+3,y+9,13,"Tag",tmp->tag,18,1,pos);
   else if(field==3){draw_priority(x+16,y+11,1,tmp->priority);draw_priority_preview(x+24,y+11,tmp->priority);}
   else if(field==4)note_area(x+16,y+13,tmp->note,1,pos);
-  else if(field==5)acc_button(x+2,y+16,"  OK  ",1);
-  else if(field==6)acc_button(x+10,y+16," Cancel ",1);
+  else if(field==5)acc_button(x+2,y+17,"  OK  ",1);
+  else if(field==6)acc_button(x+10,y+17," Cancel ",1);
 }
 
 static void redraw_task_field_off(int x,int y,int field,const TODO_ITEM *tmp,const char *datebuf,int pos)
@@ -303,7 +305,7 @@ static int edit_task(TODO_ITEM *t,const char *group)
   draw_task_form(x,y,w,h,&tmp,datebuf,field,pos,group);
   while(key!=27){
     acc_wait(&key,&mx,&my,&mb);
-    if(key==27)return 0;
+    if(key==27){acc_caret_hide();return 0;}
     oldfield=field;
     if((mb&1)){
       if(my==y+4&&mx>=x+16&&mx<x+56){field=0;pos=(int)strlen(tmp.title);}
@@ -323,8 +325,8 @@ static int edit_task(TODO_ITEM *t,const char *group)
     if(field==4&&key==13){len=(int)strlen(tmp.note);if(len<NOTE_LEN){memmove(tmp.note+pos+1,tmp.note+pos,len-pos+1);tmp.note[pos++]='\n';redraw_task_field(x,y,field,&tmp,datebuf,pos);}key=0;continue;}
     if(key==13){
       if(field<0){key=0;continue;}
-      if(field==5){if(datebuf[0]&&!parse_date_text(datebuf,parsed)){acc_notice("Date","Date not understood. Try tomorrow, next Wednesday, 15 Sep or 15/09.");draw_task_form(x,y,w,h,&tmp,datebuf,field,pos,group);key=0;continue;}if(datebuf[0])strcpy(tmp.due,parsed);else tmp.due[0]=0;*t=tmp;return 1;}
-      if(field==6)return 0;redraw_task_field_off(x,y,field,&tmp,datebuf,pos);field++;if(field>6)field=0;pos=0;if(field==0)pos=(int)strlen(tmp.title);else if(field==1)pos=(int)strlen(datebuf);else if(field==2)pos=(int)strlen(tmp.tag);else if(field==4)pos=(int)strlen(tmp.note);redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;
+      if(field==5){if(datebuf[0]&&!parse_date_text(datebuf,parsed)){acc_notice("Date","Date not understood. Try tomorrow, next Wednesday, 15 Sep or 15/09.");draw_task_form(x,y,w,h,&tmp,datebuf,field,pos,group);key=0;continue;}if(datebuf[0])strcpy(tmp.due,parsed);else tmp.due[0]=0;*t=tmp;acc_caret_hide();return 1;}
+      if(field==6){acc_caret_hide();return 0;}redraw_task_field_off(x,y,field,&tmp,datebuf,pos);field++;if(field>6)field=0;pos=0;if(field==0)pos=(int)strlen(tmp.title);else if(field==1)pos=(int)strlen(datebuf);else if(field==2)pos=(int)strlen(tmp.tag);else if(field==4)pos=(int)strlen(tmp.note);redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;
     }
     if(field==0&&field_key(tmp.title,TITLE_LEN,key,&pos)){redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;}
     if(field==1&&field_key(datebuf,DATE_INPUT_LEN,key,&pos)){redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;}
@@ -332,7 +334,7 @@ static int edit_task(TODO_ITEM *t,const char *group)
     if(field==4&&field_key(tmp.note,NOTE_LEN,key,&pos)){redraw_task_field(x,y,field,&tmp,datebuf,pos);key=0;continue;}
     key=0;
   }
-  return 0;
+  acc_caret_hide();return 0;
 }
 
 static int edit_heading(TODO_ITEM *t)
@@ -362,12 +364,42 @@ static int task_under_collapsed_heading(int index)
   return 0;
 }
 
+static int date_tab_match(const TODO_ITEM *t)
+{
+  struct dosdate_t now;char today[DATE_LEN+1];int y,m,d;long z,td,dd;
+  if(date_tab==0)return 1;
+  if(!t->due[0])return 0;
+  _dos_getdate(&now);sprintf(today,"%04u-%02u-%02u",now.year,now.month,now.day);
+  td=date_serial(now.year,now.month,now.day);
+  if(sscanf(t->due,"%d-%d-%d",&y,&m,&d)!=3)return 0;dd=date_serial(y,m,d);
+  if(date_tab==1)return dd==td;
+  if(date_tab==2)return dd==td+1;
+  if(date_tab==3)return dd>=td&&dd<=td+7;
+  if(date_tab==4)return dd<td;
+  return 1;
+}
+
+static void draw_date_tabs(int x,int y,int width)
+{
+  static const char *name[5]={"All","Today","Tomorrow","This Week","Overdue"};
+  int i,xx=x;
+  acc_fill(x,y,width,1,' ',ACC_BG);
+  for(i=0;i<5;i++){int tw=(int)strlen(name[i])+4,a=(i==date_tab)?ACC_CONTROL:ACC_SELECT;acc_fill(xx,y,tw,1,' ',a);acc_text(xx+2,y,name[i],a,(int)strlen(name[i]));xx+=tw+1;}
+}
+
+static int date_tab_at(int x,int mx)
+{
+  static const char *name[5]={"All","Today","Tomorrow","This Week","Overdue"};int i,xx=x;
+  for(i=0;i<5;i++){int tw=(int)strlen(name[i])+4;if(mx>=xx&&mx<xx+tw)return i;xx+=tw+1;}return -1;
+}
+
 static int visible(int index,const char *filter,int hide_done)
 {
   if(index<0||index>=item_count)return 0;
   if(items[index].type==0)return 1;
   if(task_under_collapsed_heading(index))return 0;
   if(hide_done&&items[index].done)return 0;
+  if(!date_tab_match(&items[index]))return 0;
   if(!filter[0])return 1;
   return !stricmp(items[index].tag,filter);
 }
@@ -450,8 +482,8 @@ static void make_task_title(char *out,const char *title,int maxw)
 static void draw_list(int x,int y,int w,int sel,int top,int expanded,const char *filter,int focus,int hide_done,int sort_mode)
 {
   int map[MAX_ITEMS],n=build_visible(map,filter,hide_done,sort_mode),r,idx,yy=0,used=0;char due[16],tags[MAX_TAGS][TAG_LEN+1],bar[70],title[64];int nt,i,pos,selected,base=ACC_ATTR(acc_appearance.controls_bg,0),hattr,tattr,cattr,titlew;
-  acc_fill(x,y,w,VIEW_ROWS,' ',base);for(i=0;i<VIEW_ROWS;i++){row_map[i]=-1;row_detail[i]=0;}
-  for(r=top;r<n&&used<VIEW_ROWS;r++){
+  acc_fill(x,y,w,todos_view_rows,' ',base);for(i=0;i<todos_view_rows;i++){row_map[i]=-1;row_detail[i]=0;}
+  for(r=top;r<n&&used<todos_view_rows;r++){
     idx=map[r];yy=y+used;selected=(r==sel&&focus==0);
     if(items[idx].type==0){
       row_map[used]=r;hattr=selected?ACC_SELECT:ACC_ATTR(acc_appearance.controls_bg,acc_appearance.titles);
@@ -465,16 +497,16 @@ static void draw_list(int x,int y,int w,int sel,int top,int expanded,const char 
       acc_text(x+5,yy,title,tattr,titlew);
       if(items[idx].due[0])acc_text(x+w-10,yy,due,tattr,10);
       used++;
-      if(r==sel&&expanded&&used<VIEW_ROWS){
+      if(r==sel&&expanded&&used<todos_view_rows){
         if(items[idx].tag[0]){row_map[used]=r;row_detail[used]=1;sprintf(bar,"Tag: %s",items[idx].tag);acc_fill(x,y+used,w,1,' ',base);acc_text(x+4,y+used,bar,base,w-5);used++;}
-        if(used<VIEW_ROWS&&items[idx].note[0]){row_map[used]=r;row_detail[used]=1;if(used+1<VIEW_ROWS){row_map[used+1]=r;row_detail[used+1]=1;}draw_note_lines(x+4,y+used,items[idx].note,w-5,0);used+=2;}
+        if(used<todos_view_rows&&items[idx].note[0]){row_map[used]=r;row_detail[used]=1;if(used+1<todos_view_rows){row_map[used+1]=r;row_detail[used+1]=1;}draw_note_lines(x+4,y+used,items[idx].note,w-5,0);used+=2;}
       }
     }
   }
-  acc_scrollbar(x+w,y,VIEW_ROWS,top,n,VIEW_ROWS);
-  nt=collect_tags(tags);pos=0;acc_fill(x,y+VIEW_ROWS,w,1,' ',ACC_BG);acc_text(x,y+VIEW_ROWS,"Tags:",ACC_LABEL,5);pos=6;
-  acc_text(x+pos,y+VIEW_ROWS,"All",(!filter[0]&&focus==1)?ACC_SELECT:ACC_TEXT,3);pos+=3;
-  for(i=0;i<nt&&pos<w-TAG_LEN-2;i++){acc_text(x+pos,y+VIEW_ROWS,"|",ACC_LABEL,1);pos++;acc_text(x+pos,y+VIEW_ROWS,tags[i],(!stricmp(filter,tags[i])&&focus==1)?ACC_SELECT:ACC_TEXT,(int)strlen(tags[i]));pos+=(int)strlen(tags[i]);}
+  acc_scrollbar(x+w,y,todos_view_rows,top,n,todos_view_rows);
+  nt=collect_tags(tags);pos=0;acc_fill(x,y+todos_view_rows,w,1,' ',ACC_BG);acc_text(x,y+todos_view_rows,"Tags:",ACC_LABEL,5);pos=6;
+  acc_text(x+pos,y+todos_view_rows,"All",(!filter[0]&&focus==1)?ACC_SELECT:ACC_TEXT,3);pos+=3;
+  for(i=0;i<nt&&pos<w-TAG_LEN-2;i++){acc_text(x+pos,y+todos_view_rows,"|",ACC_LABEL,1);pos++;acc_text(x+pos,y+todos_view_rows,tags[i],(!stricmp(filter,tags[i])&&focus==1)?ACC_SELECT:ACC_TEXT,(int)strlen(tags[i]));pos+=(int)strlen(tags[i]);}
 }
 
 static void swap_range(int a0,int a1,int b0,int b1)
@@ -566,32 +598,36 @@ static int add_type_popup(int bx,int by)
 
 int main(int argc,char **argv)
 {
-  int w=74,h=22,x,y,lx,ly,key=0,mx=0,my=0,focus=-1,sel=0,top=0,expanded=0,map[MAX_ITEMS],n,idx,i,dirty=1,nt,tag_sel=0,newidx,sort_mode=0,hide_done=0;unsigned mb=0;
+  int w=74,h=22,x,y,lx,ly,listw,key=0,mx=0,my=0,focus=-1,sel=0,top=0,expanded=0,map[MAX_ITEMS],n,idx,i,dirty=1,nt,tag_sel=0,newidx,sort_mode=0,hide_done=0,maximized=0;unsigned mb=0;
   char filter[TAG_LEN+1]="",tags[MAX_TAGS][TAG_LEN+1],hide_label[18];TODO_ITEM t;
   if(acc_help(argc,argv,"!TODOS","A persistent group-and-task to-do list with tags, dates and priorities."))return 0;
-  if(!acc_begin(argv[0],"To-Dos",0))return 1;install_glyphs();load_items();x=(acc_cols-w)/2;y=(acc_rows-h)/2;lx=x+3;ly=y+2;acc_box(x,y,w,h,"To-Dos");
+  if(!acc_begin(argv[0],"To-Dos",0))return 1;install_glyphs();load_items();x=(acc_cols-w)/2;y=(acc_rows-h)/2;lx=x+3;ly=y+3;listw=w-7;if(!maximized)acc_box(x,y,w,h,"To-Dos");
   n=build_visible(map,filter,hide_done,sort_mode);
   for(i=0;i<n;i++)if(items[map[i]].type){sel=i;break;}
   while(key!=27){
-    n=build_visible(map,filter,hide_done,sort_mode);if(n==0)sel=0;else if(sel>=n)sel=n-1;if(sel<top)top=sel;if(sel>=top+VIEW_ROWS)top=sel-VIEW_ROWS+1;if(top<0)top=0;
-    if(dirty){draw_list(lx,ly,w-7,sel,top,expanded,filter,focus,hide_done,sort_mode);dirty=0;}
+    if(maximized){lx=0;ly=1;listw=79;todos_view_rows=23;}else{lx=x+3;ly=y+3;listw=w-7;todos_view_rows=14;}
+    n=build_visible(map,filter,hide_done,sort_mode);if(n==0)sel=0;else if(sel>=n)sel=n-1;if(sel<top)top=sel;if(sel>=top+todos_view_rows)top=sel-todos_view_rows+1;if(top<0)top=0;
+    if(dirty){draw_date_tabs(lx,maximized?0:y+2,listw);draw_list(lx,ly,listw,sel,top,expanded,filter,focus,hide_done,sort_mode);dirty=0;}
     hide_label[0]=' ';hide_label[1]=' ';hide_label[2]=(char)GLYPH_C_L;hide_label[3]=(char)GLYPH_C_R;hide_label[4]=' ';hide_label[5]=' ';hide_label[6]=0;
-    acc_button(x+3,y+h-3," Add ",focus==2);if(n){acc_button(x+11,y+h-3," Edit ",focus==3);acc_button(x+19,y+h-3," Delete ",focus==4);}else{acc_button_disabled(x+11,y+h-3," Edit ");acc_button_disabled(x+19,y+h-3," Delete ");}acc_button(x+27,y+h-3," Print ",focus==5);acc_put(x+35,y+h-3,179,ACC_BORDER);acc_button(x+37,y+h-3,hide_label,focus==6);acc_button(x+45,y+h-3,"  Sort  ",focus==7);acc_text(x+55,y+h-3,(sort_mode==1)?"Date":(sort_mode==2)?"Date":(sort_mode==3)?"Alph":(sort_mode==4)?"Alph":"None",ACC_LABEL,6);acc_button(x+w-10,y+h-3," Close ",focus==8);
+    if(!maximized){acc_button(x+3,y+h-3," Add ",focus==2);if(n){acc_button(x+11,y+h-3," Edit ",focus==3);acc_button(x+19,y+h-3," Delete ",focus==4);}else{acc_button_disabled(x+11,y+h-3," Edit ");acc_button_disabled(x+19,y+h-3," Delete ");}acc_button(x+27,y+h-3," Print ",focus==5);acc_put(x+35,y+h-3,179,ACC_BORDER);acc_button(x+37,y+h-3,hide_label,focus==6);acc_button(x+45,y+h-3,"  Sort  ",focus==7);acc_text(x+55,y+h-3,(sort_mode==1)?"Date":(sort_mode==2)?"Date":(sort_mode==3)?"Alph":(sort_mode==4)?"Alph":"None",ACC_LABEL,6);acc_button(x+w-10,y+h-3," Exit ",focus==8);}
     acc_wait(&key,&mx,&my,&mb);
-    if((mb&1)&&my>=ly&&my<ly+VIEW_ROWS&&mx>=lx&&mx<lx+w-7){
+    if(key==256+0x85||key==256+0x57||((mb&1)&&!maximized&&my==y&&mx>=x+w-8&&mx<x+w-6)){maximized=!maximized;acc_clear(ACC_BG);if(!maximized)acc_box(x,y,w,h,"To-Dos");focus=0;top=0;dirty=1;key=0;continue;}
+    if((mb&1)&&my==(maximized?0:y+2)){int dt=date_tab_at(lx,mx);if(dt>=0){date_tab=dt;sel=top=0;expanded=0;focus=9;dirty=1;key=0;continue;}}
+    if(focus==9&&(key==256+75||key==256+77)){if(key==256+75&&date_tab>0)date_tab--;if(key==256+77&&date_tab<4)date_tab++;sel=top=0;expanded=0;dirty=1;key=0;continue;}
+    if((mb&1)&&my>=ly&&my<ly+todos_view_rows&&mx>=lx&&mx<lx+listw){
       static int last_click_idx=-1;static unsigned long last_click_tick=0;unsigned long now;int row=my-ly;
       if(row_map[row]>=0&&row_map[row]<n){
         sel=row_map[row];idx=map[sel];focus=0;now=acc_ticks();
         if(row_detail[row]){dirty=1;key=0;continue;}
         if(items[idx].type){
           if(mx>=lx+2&&mx<=lx+3){items[idx].done=!items[idx].done;expanded=0;last_click_idx=-1;}
-          else if(mx>=lx+5){if(last_click_idx==idx&&(unsigned long)(now-last_click_tick)<=9UL){edit_task(&items[idx],task_group_name(idx));acc_box(x,y,w,h,"To-Dos");last_click_idx=-1;}else{expanded=!expanded;last_click_idx=idx;last_click_tick=now;}}
+          else if(mx>=lx+5){if(last_click_idx==idx&&(unsigned long)(now-last_click_tick)<=9UL){edit_task(&items[idx],task_group_name(idx));if(!maximized)acc_box(x,y,w,h,"To-Dos");last_click_idx=-1;}else{expanded=!expanded;last_click_idx=idx;last_click_tick=now;}}
         } else {items[idx].done=!items[idx].done;expanded=0;last_click_idx=-1;}
         dirty=1;
       }key=0;continue;
     }
-    if((mb&1)&&my==ly+VIEW_ROWS){nt=collect_tags(tags);if(mx>=lx+6&&mx<lx+9){filter[0]=0;tag_sel=0;}else{int p=9;for(i=0;i<nt;i++){p++;if(mx>=lx+p&&mx<lx+p+(int)strlen(tags[i])){strcpy(filter,tags[i]);tag_sel=i+1;break;}p+=(int)strlen(tags[i]);}}sel=top=0;focus=1;expanded=0;dirty=1;key=0;continue;}
-    if((mb&1)&&my==y+h-3){if(mx>=x+3&&mx<x+9)focus=2;else if(mx>=x+11&&mx<x+17)focus=3;else if(mx>=x+19&&mx<x+25)focus=4;else if(mx>=x+27&&mx<x+33)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+45&&mx<x+53)focus=7;else if(mx>=x+w-10&&mx<x+w-4)focus=8;key=13;}
+    if((mb&1)&&my==ly+todos_view_rows){nt=collect_tags(tags);if(mx>=lx+6&&mx<lx+9){filter[0]=0;tag_sel=0;}else{int p=9;for(i=0;i<nt;i++){p++;if(mx>=lx+p&&mx<lx+p+(int)strlen(tags[i])){strcpy(filter,tags[i]);tag_sel=i+1;break;}p+=(int)strlen(tags[i]);}}sel=top=0;focus=1;expanded=0;dirty=1;key=0;continue;}
+    if(!maximized&&(mb&1)&&my==y+h-3){if(mx>=x+3&&mx<x+9)focus=2;else if(mx>=x+11&&mx<x+17)focus=3;else if(mx>=x+19&&mx<x+25)focus=4;else if(mx>=x+27&&mx<x+33)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+45&&mx<x+53)focus=7;else if(mx>=x+w-10&&mx<x+w-4)focus=8;key=13;}
     if(key==9||key==271){
       static int order[9]={1,0,2,3,4,5,6,7,8};int p,dir=(key==271)?-1:1;
       if(focus<0)focus=(key==271)?8:1;
@@ -602,20 +638,20 @@ int main(int argc,char **argv)
     /* Global keyboard shortcuts. */
     if(key=='a'||key=='A'){
       int kind=add_type_popup(x+3,y+h-3);
-      acc_box(x,y,w,h,"To-Dos");
+      if(!maximized)acc_box(x,y,w,h,"To-Dos");
       /* The popup is painted over the task viewport.  Repaint the viewport
          even when Escape dismisses it without choosing an item. */
       dirty=1;
-      if(kind==1&&item_count<MAX_ITEMS){int g=(n>0)?task_group_index(map[sel]):-1,at=(g>=0)?group_end(g)+1:0;memset(&t,0,sizeof(t));t.used=1;t.type=1;t.priority=0;if(edit_task(&t,g>=0?items[g].title:"(none)")){newidx=insert_task_after(at,&t);filter[0]=0;sort_mode=0;sel=visible_pos_for_index(newidx,filter,hide_done,sort_mode);top=sel>VIEW_ROWS-1?sel-VIEW_ROWS+1:0;}acc_box(x,y,w,h,"To-Dos");dirty=1;}
-      else if(kind==2&&item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=0;strcpy(t.title,"New group");if(edit_heading(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;}acc_box(x,y,w,h,"To-Dos");dirty=1;}
+      if(kind==1&&item_count<MAX_ITEMS){int g=(n>0)?task_group_index(map[sel]):-1,at=(g>=0)?group_end(g)+1:0;memset(&t,0,sizeof(t));t.used=1;t.type=1;t.priority=0;if(edit_task(&t,g>=0?items[g].title:"(none)")){newidx=insert_task_after(at,&t);filter[0]=0;sort_mode=0;sel=visible_pos_for_index(newidx,filter,hide_done,sort_mode);top=sel>todos_view_rows-1?sel-todos_view_rows+1:0;}if(!maximized)acc_box(x,y,w,h,"To-Dos");dirty=1;}
+      else if(kind==2&&item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=0;strcpy(t.title,"New group");if(edit_heading(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;}if(!maximized)acc_box(x,y,w,h,"To-Dos");dirty=1;}
       key=0;continue;
     }
     if(key=='g'||key=='G'){
-      if(item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=0;strcpy(t.title,"New group");if(edit_heading(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;}acc_box(x,y,w,h,"To-Dos");dirty=1;}
+      if(item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=0;strcpy(t.title,"New group");if(edit_heading(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;}if(!maximized)acc_box(x,y,w,h,"To-Dos");dirty=1;}
       key=0;continue;
     }
     if((key=='e'||key=='E')&&n>0){
-      idx=map[sel];if(items[idx].type)edit_task(&items[idx],task_group_name(idx));else edit_heading(&items[idx]);acc_box(x,y,w,h,"To-Dos");dirty=1;key=0;continue;
+      idx=map[sel];if(items[idx].type)edit_task(&items[idx],task_group_name(idx));else edit_heading(&items[idx]);if(!maximized)acc_box(x,y,w,h,"To-Dos");dirty=1;key=0;continue;
     }
     if((key=='d'||key=='D')&&n>0){
       idx=map[sel];delete_selected(idx);if(sel>0)sel--;expanded=0;dirty=1;key=0;continue;
@@ -628,7 +664,7 @@ int main(int argc,char **argv)
       if(key==256+141||key==256+145||(ctrl_down()&&(key==256+72||key==256+80))){
         int dir=(key==256+141||key==256+72)?-1:1;
         if(items[idx].type==0)newidx=move_heading_group(idx,dir);else newidx=move_task(idx,dir);
-        sort_mode=0;sel=visible_pos_for_index(newidx,filter,hide_done,sort_mode);if(sel<top)top=sel;if(sel>=top+VIEW_ROWS)top=sel-VIEW_ROWS+1;dirty=1;key=0;continue;
+        sort_mode=0;sel=visible_pos_for_index(newidx,filter,hide_done,sort_mode);if(sel<top)top=sel;if(sel>=top+todos_view_rows)top=sel-todos_view_rows+1;dirty=1;key=0;continue;
       }
       if(key==256+72&&sel>0){sel--;expanded=0;dirty=1;key=0;continue;}
       if(key==256+80&&sel<n-1){sel++;expanded=0;dirty=1;key=0;continue;}
@@ -637,10 +673,10 @@ int main(int argc,char **argv)
     }
     if(focus==1){nt=collect_tags(tags);if(key==256+75&&tag_sel>0)tag_sel--;else if(key==256+77&&tag_sel<nt)tag_sel++;else if(key==13){if(tag_sel==0)filter[0]=0;else strcpy(filter,tags[tag_sel-1]);sel=top=0;expanded=0;}dirty=1;key=0;continue;}
     if(key==13&&focus>=2){
-      if(focus==2){int kind=add_type_popup(x+3,y+h-3);acc_box(x,y,w,h,"To-Dos");if(kind==1&&item_count<MAX_ITEMS){int g=(n>0)?task_group_index(map[sel]):-1,at=(g>=0)?group_end(g)+1:0;memset(&t,0,sizeof(t));t.used=1;t.type=1;t.priority=0;if(edit_task(&t,g>=0?items[g].title:"(none)")){newidx=insert_task_after(at,&t);filter[0]=0;sort_mode=0;sel=visible_pos_for_index(newidx,filter,hide_done,sort_mode);top=sel>VIEW_ROWS-1?sel-VIEW_ROWS+1:0;}acc_box(x,y,w,h,"To-Dos");}else if(kind==2&&item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=0;strcpy(t.title,"New group");if(edit_heading(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;}acc_box(x,y,w,h,"To-Dos");}}
-      else if(focus==3&&n>0){idx=map[sel];if(items[idx].type)edit_task(&items[idx],task_group_name(idx));else edit_heading(&items[idx]);acc_box(x,y,w,h,"To-Dos");}
+      if(focus==2){int kind=add_type_popup(x+3,y+h-3);if(!maximized)acc_box(x,y,w,h,"To-Dos");if(kind==1&&item_count<MAX_ITEMS){int g=(n>0)?task_group_index(map[sel]):-1,at=(g>=0)?group_end(g)+1:0;memset(&t,0,sizeof(t));t.used=1;t.type=1;t.priority=0;if(edit_task(&t,g>=0?items[g].title:"(none)")){newidx=insert_task_after(at,&t);filter[0]=0;sort_mode=0;sel=visible_pos_for_index(newidx,filter,hide_done,sort_mode);top=sel>todos_view_rows-1?sel-todos_view_rows+1:0;}if(!maximized)acc_box(x,y,w,h,"To-Dos");}else if(kind==2&&item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=0;strcpy(t.title,"New group");if(edit_heading(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;}if(!maximized)acc_box(x,y,w,h,"To-Dos");}}
+      else if(focus==3&&n>0){idx=map[sel];if(items[idx].type)edit_task(&items[idx],task_group_name(idx));else edit_heading(&items[idx]);if(!maximized)acc_box(x,y,w,h,"To-Dos");}
       else if(focus==4&&n>0){idx=map[sel];delete_selected(idx);if(sel>0)sel--;expanded=0;}
-      else if(focus==5){if(!print_tasks(filter,hide_done,sort_mode))acc_notice("Print","Unable to print to LPT1");acc_box(x,y,w,h,"To-Dos");}
+      else if(focus==5){if(!print_tasks(filter,hide_done,sort_mode))acc_notice("Print","Unable to print to LPT1");if(!maximized)acc_box(x,y,w,h,"To-Dos");}
       else if(focus==6){hide_done=!hide_done;sel=top=0;expanded=0;}
       else if(focus==7){sort_mode=(sort_mode+1)%5;sel=top=0;expanded=0;acc_text(x+55,y+h-3,(sort_mode==1)?"Date\031":(sort_mode==2)?"Date\030":(sort_mode==3)?"Alph\031":(sort_mode==4)?"Alph\030":"None",ACC_LABEL,6);}
       else if(focus==8)key=27;

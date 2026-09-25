@@ -319,7 +319,7 @@ static void draw_buttons(int x,int y,int focus_now)
   acc_button(x+3,y+DLG_H-3," Retry ",focus_now==1);
   acc_button(x+12,y+DLG_H-3,"  Flow!  ",focus_now==2);
   acc_button(x+23,y+DLG_H-3,paused?"  Resume  ":"  Pause  ",focus_now==3);
-  acc_button(x+DLG_W-10,y+DLG_H-3," Close ",focus_now==4);
+  acc_button(x+DLG_W-10,y+DLG_H-3," Exit ",focus_now==4);
 }
 
 static void draw_all(int x,int y,int bx,int by)
