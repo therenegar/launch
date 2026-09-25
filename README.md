@@ -568,11 +568,11 @@ You can click internal document links to navigate to heading sections.
 <img width="360" height="300" alt="Graphical Preview 2" src="https://github.com/user-attachments/assets/61bd767d-c156-4786-b6c7-42ea7540fec1" />
 <img width="360" height="300" alt="Graphical Preview 3" src="https://github.com/user-attachments/assets/41b717c6-569d-456e-9504-83aa76abdf97" />
 
+> Note the 'Show' graphical preview requires a VGA display adapter.
+
 There's also a Focus mode for distraction free writing.
 
 <img width="360" height="300" alt="Focus Mode" src="https://github.com/user-attachments/assets/e80f942b-fdbb-46f9-a7cb-763bafec6ec7" />
-
-> Note the 'Show' graphical preview requires a VGA display adapter.
 
 **Open files**: You can open one or more markdown (`.MD`) files by adding as a parameter to `!MKDOWN.EXE`, e.g. `!MKDOWN C:\DOCS\REPORT.MD`
 
