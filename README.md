@@ -73,7 +73,7 @@ At the **command prompt**, display your menu by pressing the keyboard shortcut w
 CTRL + ALT + .
 ```
 
-<img width="720" height="600" alt="Default boot" src="https://github.com/user-attachments/assets/63e0cc06-1f64-47e7-9534-fa58e7bfb4eb" />
+<img width="360" height="300" alt="Menu at boot" src="https://github.com/user-attachments/assets/0cfafc7f-26f3-481c-9130-cd2211b5ed76" />
 
 > [!IMPORTANT]
 > The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display.<br/>This is not a multi-tasking application switcher!
@@ -153,8 +153,8 @@ The following icons are used across Launch!
 | OK | Cancel | Exit | Help | Retry | Add | Edit | Delete | Export | Print |
 
 
-## Open File
-`Open File` is a fixed special item at the bottom of the menu (removable in Config).
+## File Open
+`File Open` is a fixed special item at the bottom of the menu (removable in Config).
 It allows you to browse for files, based on configured associations, and open the file with the configured launcher.
 As an example, this can allow you to browse and open images with a launcher for an image viewing program - without having to type a massive command line and file path out yourself. Or browse zip files, and easily extract with your ZIP program, adding further parameters if required (like extraction directory).
 
@@ -162,7 +162,8 @@ There's a lot of flexibility to enable you to set up file-based workflows in tan
 
 Multiple files can be selected with CTRL + click or space. 
 
-<img width="360" height="300" alt="Open File" src="https://github.com/user-attachments/assets/d7a9addd-2023-4b01-b1f9-3fb91308453e" />
+<img width="360" height="300" alt="File Open" src="https://github.com/user-attachments/assets/d48a69fd-0019-4769-a4d1-1a5b66136f73" />
+<img width="360" height="300" alt="File Open - Multi" src="https://github.com/user-attachments/assets/67b56264-1e47-4cef-a6bd-3810de396826" />
 
 An association consists of one or more file extensions, and a selected launcher from your menu.
 
@@ -177,9 +178,8 @@ You can choose the search location, whether to scan recursively and "Go deep" wh
 
 <img width="360" height="300" alt="Search for files" src="https://github.com/user-attachments/assets/a45bc6d8-9cde-45ec-822c-fa288c7a0e08" />
 
+The `File Open` dialog can also be shown on its own, without the menu, by running `! /OPEN`.
 
-The `Open File` dialog can also be shown on its own, without the menu, by running `! /OPEN`.
-INSTALL
 ## Explore & Run
 `Explore & Run` is a fixed item at the bottom of the menu.<br/>
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
@@ -206,7 +206,7 @@ The `Shutdown...` menu item is also fixed at the bottom of the menu, and when se
 
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="360" height="300" alt="Shutdown..." src="https://github.com/user-attachments/assets/88076cea-5701-44ec-8237-6bb07dafef96" />
+<img width="360" height="300" alt="Menu - Shutdown" src="https://github.com/user-attachments/assets/0e5440c0-5734-485c-831d-e76673daf8d6" />
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`). <BR/>
 The dialog can also be shown on its own, without the menu, by running `! /BYE`.
@@ -364,17 +364,19 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="360" height="300" alt="Menu - Add" src="https://github.com/user-attachments/assets/aa3c8ce9-5b45-4bcd-98f1-ed9200b318e3" />
+<img width="360" height="300" alt="Menu - Add" src="https://github.com/user-attachments/assets/d606c1ee-52e0-43c7-a0e9-3ade6867e2b9" />
+
 
 `CTRL+D` will remove the selected item from the menu (with confirmation first).
 
-<img width="360" height="300" alt="Menu - Remove" src="https://github.com/user-attachments/assets/bdc3519b-cfa2-475a-b91b-d5ee66c68bb7" />
+<img width="360" height="300" alt="Menu - Remove" src="https://github.com/user-attachments/assets/b9e9733c-2d3e-4e34-a72b-c776584878e9" />
 
 You can move selected items up and down with `CTRL+↑/↓`.
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="360" height="300" alt="Menu - Edit" src="https://github.com/user-attachments/assets/52864600-9b16-4e0e-bb8f-2fd713066c46" />
+<img width="360" height="300" alt="Menu - Edit" src="https://github.com/user-attachments/assets/cec267c7-f3c6-44fa-a068-ce23ab973e98" />
+
 
 If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
 You will be able to enter parameters before running the program.
