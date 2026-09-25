@@ -49,7 +49,7 @@ Extract the release zip file or mount the floppy image and run
 INSTALL.EXE
 ```
 
-<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/db6574df-656f-467a-869a-eec0f91a2fa4" />
+<img width="360" height="300" alt="Installation" src="https://github.com/user-attachments/assets/7a1cce4e-d6e1-44b9-94e6-ae2ea3a5ad8e" />
 
 - You'll be prompted for a directory to place Launch!
 - You can choose to exclude components from install.
