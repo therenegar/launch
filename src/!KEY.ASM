@@ -35,6 +35,7 @@ idle_timeout:   .long 0
 idle_last:      .long 0
 idle_macro:     .byte 27,'!',' ','/','N','O','W',13
 hotkey_len:     .word 0
+kbd_tail_before:.word 0
 launch_macro:   .space 132,0           /* Esc + ! command/path + Enter */
 queue_pos:      .word 0
 queue_len:      .word 0
@@ -134,10 +135,29 @@ int09_db_discard:
     pop ax
     iret
 .else
+.ifdef CPU286_BUILD
+    /*
+     * Record the BIOS ring tail before chaining.  The previous 286 path
+     * blindly subtracted two from the post-BIOS tail.  After the first
+     * injected launch macro that assumption can remove the wrong entry,
+     * corrupt the ring, leak a translated '\' to the command line and
+     * eventually wedge keyboard input.  Only remove the one entry that this
+     * IRQ actually appended.
+     */
+    push ax
+    push es
+    mov ax,0x40
+    mov es,ax
+    mov ax,word ptr es:[0x1c]
+    mov word ptr cs:[kbd_tail_before],ax
+    pop es
+    pop ax
+.endif
     pushf
     call far ptr cs:[old09]
     push ax
     push bx
+    push dx
     push es
     mov ax,0x40
     mov es,ax
@@ -154,6 +174,25 @@ int09_db_discard:
     or al,0x04
 3:  cmp al,byte ptr cs:[hot_mods]
     jne int09_done
+.ifdef CPU286_BUILD
+    mov bx,word ptr cs:[kbd_tail_before]
+    mov dx,bx
+    add dx,2
+    cmp dx,0x3e
+    jb 4f
+    mov dx,0x1e
+4:  cmp word ptr es:[0x1c],dx          /* exactly one new BIOS entry? */
+    jne int09_done
+    mov ah,byte ptr es:[bx+1]          /* entry created by this IRQ */
+    cmp ah,byte ptr cs:[hot_scan]
+    jne int09_done
+    mov word ptr es:[0x1c],bx          /* discard only that hotkey entry */
+    cmp byte ptr cs:[pending],0
+    jne int09_done                     /* swallow typematic/re-entry safely */
+    cmp byte ptr cs:[macro_active],0
+    jne int09_done
+    mov byte ptr cs:[pending],1
+.else
     mov bx,word ptr es:[0x1c]          /* keyboard-buffer tail */
     cmp bx,word ptr es:[0x1a]
     je int09_done
@@ -166,8 +205,10 @@ int09_db_discard:
     jne int09_done
     mov word ptr es:[0x1c],bx          /* remove hotkey keystroke */
     mov byte ptr cs:[pending],1
+.endif
 int09_done:
     pop es
+    pop dx
     pop bx
     pop ax
     iret

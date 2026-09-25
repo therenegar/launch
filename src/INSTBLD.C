@@ -299,21 +299,32 @@ static void component_icon(int digit)
 {
   char b[4];b[0]=' ';b[1]=(char)('0'+digit);b[2]=' ';b[3]=0;putchar(' ');colour_text(b,0x3F);putchar(' ');
 }
-static void screen_text_at(unsigned row,unsigned col,const char *text)
+static void screen_cursor_at(unsigned row,unsigned col)
+{
+  union REGS r;unsigned page;
+  memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);page=r.h.bh;
+  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;
+  r.h.dh=(unsigned char)row;r.h.dl=(unsigned char)col;int86(0x10,&r,&r);
+}
+static void screen_text_attr_at(unsigned row,unsigned col,const char *text,unsigned attr)
 {
   union REGS r;unsigned page,oldrow,oldcol,i;
   if(!_isatty(_fileno(stdout)))return;
-  /* Use BIOS text services instead of direct B800/B000 writes.  This follows
-     the active display page and works consistently on VGA/EGA, mono adapters,
-     DOSBox/DOSBox-X and BIOS implementations with nonstandard page layout. */
   memset(&r,0,sizeof(r));r.h.ah=0x0F;int86(0x10,&r,&r);page=r.h.bh;
   memset(&r,0,sizeof(r));r.h.ah=3;r.h.bh=(unsigned char)page;int86(0x10,&r,&r);
   oldrow=r.h.dh;oldcol=r.h.dl;
   for(i=0;text[i];i++){
-    memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;r.h.dh=(unsigned char)row;r.h.dl=(unsigned char)(col+i);int86(0x10,&r,&r);
-    memset(&r,0,sizeof(r));r.h.ah=9;r.h.al=(unsigned char)text[i];r.h.bh=(unsigned char)page;r.h.bl=7;r.x.cx=1;int86(0x10,&r,&r);
+    memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;
+    r.h.dh=(unsigned char)row;r.h.dl=(unsigned char)(col+i);int86(0x10,&r,&r);
+    memset(&r,0,sizeof(r));r.h.ah=9;r.h.al=(unsigned char)text[i];
+    r.h.bh=(unsigned char)page;r.h.bl=(unsigned char)attr;r.x.cx=1;int86(0x10,&r,&r);
   }
-  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;r.h.dh=(unsigned char)oldrow;r.h.dl=(unsigned char)oldcol;int86(0x10,&r,&r);
+  memset(&r,0,sizeof(r));r.h.ah=2;r.h.bh=(unsigned char)page;
+  r.h.dh=(unsigned char)oldrow;r.h.dl=(unsigned char)oldcol;int86(0x10,&r,&r);
+}
+static void screen_text_at(unsigned row,unsigned col,const char *text)
+{
+  screen_text_attr_at(row,col,text,7);
 }
 static void error_icon(int indent){status_icon(indent,4,'!');}
 static void success_icon(int indent){status_icon(indent,2,3);}
@@ -709,25 +720,47 @@ int main(int argc,char **argv)
   if(!upgrade){sprintf(destination,"%s\\LAUNCH.CFG",install);upgrade=exists(destination);}
   if(upgrade)puts("\nExisting Launch! installation detected.\nExisting menu/configuration will be retained; missing standard menu entries will be added.");
   {
-    int done=0,k,i;unsigned yr[6],yc[6];int *flags[6];
+    int done=0,k,i;unsigned yr[6],yc[6],base_row,base_col,value_col;int *flags[6];
+    char value[4];
     const char *labels[6]={"Accessories","Games","Screensavers","Fonts","Menu Generator","Keyboard Shortcut"};
     flags[0]=&accessories;flags[1]=&games;flags[2]=&screensavers;flags[3]=&fonts;flags[4]=&menu_generator;flags[5]=&shortcut_key;
     accessories=games=screensavers=fonts=menu_generator=shortcut_key=1;
-    puts("\nChoose which components to install.\n");
+
+    /*
+     * Draw the selector with BIOS screen services from one captured origin.
+     * Do not mix buffered stdio cursor tracking with BIOS coordinates: under
+     * DOSBox that caused every in-place Yes/No update to land on the line
+     * below the instructions.  The list is now completely deterministic.
+     */
+    puts("\nChoose which components to install.\n");fflush(stdout);
+    cursor_pos(&base_row,&base_col);
+    (void)base_col;
     for(i=0;i<6;i++){
-      component_icon(i+1);printf("%s : ",labels[i]);
-      /* stdio may be buffered even on a DOS console.  Flush before asking
-         BIOS where the value starts, otherwise every saved coordinate can
-         refer to an older cursor position (seen under DOSBox). */
-      fflush(stdout);cursor_pos(&yr[i],&yc[i]);printf("Yes\n");fflush(stdout);
+      yr[i]=base_row+(unsigned)i;
+      screen_text_attr_at(yr[i],0," ",7);
+      value[0]=' ';value[1]=(char)('1'+i);value[2]=' ';value[3]=0;
+      screen_text_attr_at(yr[i],1,value,0x3F);
+      screen_text_attr_at(yr[i],4," ",7);
+      screen_text_at(yr[i],5,labels[i]);
+      value_col=5+(unsigned)strlen(labels[i]);
+      screen_text_at(yr[i],value_col," : ");
+      yc[i]=value_col+3;
+      screen_text_at(yr[i],yc[i],"Yes");
     }
-    puts("\nChoose a number to change, or Enter to continue with selection.");
-    /* Commit the complete component selector before switching from stdio
-       output to BIOS INT 16h immediate keyboard input.  Without this flush,
-       Microsoft C under DOSBox can leave the selector buffered and appear
-       to hang at a blank blinking cursor after the directory question. */
-    fflush(stdout);
-    while(!done){k=read_key_immediate();if(k==13)done=1;else if(k>='1'&&k<='6'){i=k-'1';*flags[i]=!*flags[i];screen_text_at(yr[i],yc[i],*flags[i]?"Yes":"No ");}}
+    screen_text_at(base_row+7,0,"Choose a number to change, or Enter to continue with selection.");
+    screen_cursor_at(base_row+8,0);
+
+    while(!done){
+      k=read_key_immediate();
+      if(k==13)done=1;
+      else if(k>='1'&&k<='6'){
+        i=k-'1';*flags[i]=!*flags[i];
+        screen_text_at(yr[i],yc[i],*flags[i]?"Yes":"No ");
+        screen_cursor_at(base_row+8,0);
+      }
+    }
+    /* Resume ordinary DOS output beneath the selector. */
+    screen_cursor_at(base_row+8,0);
   }
   if(shortcut_key){
     is286=cpu_is_286();dosbox_detected=running_in_dosbox();
