@@ -234,9 +234,17 @@ static void render_begin(void)
 }
 static void render_end(void)
 {
-  unsigned i,n;unsigned short far *desired,*real;if(!render_active)return;
-  desired=video;real=render_real;video=real;render_active=0;render_real=0;n=(unsigned)(screen_cols*screen_rows);
-  wait_vertical_retrace();for(i=0;i<n;i++)if(real[i]!=desired[i])real[i]=desired[i];
+  unsigned i,n;
+  if(!render_active)return;
+  /* Keep the screen pointer far throughout.  Under Microsoft C 7.0 medium
+     model, the previous comma-declared automatic pointer was converted to a
+     near pointer (C4759), discarding B800h/B000h and causing R6001. */
+  video=render_real;
+  render_active=0;
+  n=(unsigned)(screen_cols*screen_rows);
+  wait_vertical_retrace();
+  for(i=0;i<n;i++)if(video[i]!=render_buffer[i])video[i]=render_buffer[i];
+  render_real=0;
 }
 
 static void restore_screen(void)
@@ -2874,18 +2882,18 @@ static int item_form(int folder,char *name,char *exe,char *params,
       else if(!folder && my==y+10 && mx>=x+16 && mx<x+54){*add_path=!*add_path;focus=6;continue;}
       else if(my==y+(folder?7:12) && mx>=x+3 && mx<x+9){
         press_button(x+3,y+(folder?7:12),"  OK  ",8);
-        if(*name && (folder || *exe))return 1;
+        if(*name && (folder || *exe)){edit_caret_hide();return 1;}
         focus=controls;continue;
       }
       else if(my==y+(folder?7:12) && mx>=x+11 && mx<x+17){
-        press_button(x+11,y+(folder?7:12),"  Cancel  ",6);return 0;
+        press_button(x+11,y+(folder?7:12),"  Cancel  ",6);edit_caret_hide();return 0;
       }
       else continue;
       len=strlen(fields[i]);scroll=pos[i]>(i==2?27:41)?pos[i]-(i==2?27:41):0;
       pos[i]=scroll+mx-(x+16);if(pos[i]>len)pos[i]=len;
       continue;
     }
-    if(k==27) return 0;
+    if(k==27){edit_caret_hide();return 0;}
     if(k==9 || k==0x0F00 || k==0x5000){focus=(k==0x0F00)?(focus+controls+1)%(controls+2):(focus+1)%(controls+2);continue;}
     if(k==0x4800){focus=(focus+controls+1)%(controls+2);continue;}
     if(!folder && (focus==3 || focus==4 || focus==5 || focus==6)){
@@ -2899,7 +2907,7 @@ static int item_form(int folder,char *name,char *exe,char *params,
     }
     if(focus>=controls){
       if(k==0x4B00 || k==0x4D00) focus=(focus==controls)?controls+1:controls;
-      else if(k==13){if(focus==controls && *name && (folder || *exe))return 1;if(focus==controls+1)return 0;}
+      else if(k==13){if(focus==controls && *name && (folder || *exe)){edit_caret_hide();return 1;}if(focus==controls+1){edit_caret_hide();return 0;}}
       continue;
     }
     i=focus;len=strlen(fields[i]);
