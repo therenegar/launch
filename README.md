@@ -8,7 +8,7 @@
 
 **Works with** MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU. Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="720" height="600" alt="The ! Menu" src="https://github.com/user-attachments/assets/6d1e7461-0498-4f7e-aa40-a8514c435247" />
+<img width="720" height="600" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/bd122c4f-27f6-4a08-9853-824695a0667d" />
 
 ## Contents
 - [Features](#features)
@@ -30,7 +30,7 @@
 - Built in file opener to create associations between files and launchers for easy open.
 - Built in Power Off/Reboot control with retro Windows 95 power off experience.
 - 10 handy and modern text-mode accessories
-    - [Calendar](#!cal), [Calculator](#!calc), [Card Stack](#!stack), [Journal](#!journal), [Markdown](#!mkdown), [Note](#!note), [Pixel Draw](#!draw) , [System Info](#!sysinfo), [To-dos](#!todos), [Typo](#!typo)
+    - [Calendar](#!cal), [Calculator](#!calc), [Card Stack](#!stack), [DOS Fetch](#!dfetch), [Journal](#!journal), [Markdown](#!mkdown), [Note](#!note), [Pixel Draw](#!draw) , [To-dos](#!todos), [Typo](#!typo)
 - 7 fun and addictive text-mode games
     - [Boxes](#!boxes), [Pop](#!pop), [Snake](#!snake), [Solitaire](#!sol), [FreeCell](#!fcell), [Plumb](#!plumb) and [Wordz](#!wordz)
 - 14 awesome screensavers including a 7-segment digital clock, starry night skyline, bouncing DOS logo, warp field, 3D pipes, bouncing 3D ball, paintball, and more!
@@ -48,14 +48,14 @@ Extract the release zip file or mount the floppy image:
 
 - Run `INSTALL.EXE`
 - You'll be prompted for a directory to place Launch!
-- You can choose whether to install accessories
+- You can select/de-select every component for install. Uncheck everything for the most minimal install.
 - The necessary files will be copied and you will be prompted for all changes to `AUTOEXEC.BAT`
     - FreeDOS will be detected automatically and `FDAUTO.BAT` used instead of `AUTOEXEC.BAT` throughout Launch!
 - The keyboard shortcut can be chosen
 - Your drive can be scanned and an initial menu built.
 - Simply reboot after install and you're ready to go.
 
-<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/dfaa9257-91cb-4433-8509-30c65ba2e7fd" />
+<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/fb30d6e8-e7d3-45c0-93f9-931c8c7f8f11" />
 
 > The compatible shortcut key utility for your environment will automatically be selected.
 
@@ -149,23 +149,30 @@ The following icons are used across Launch!
 ## Open File
 `Open File` is a fixed special item at the bottom of the menu (removable in Config).
 It allows you to browse for files, based on configured associations, and open the file with the configured launcher.
-
 As an example, this can allow you to browse and open images with a launcher for an image viewing program - without having to type a massive command line and file path out yourself. Or browse zip files, and easily extract with your ZIP program, adding further parameters if required (like extraction directory).
 
 There's a lot of flexibility to enable you to set up file-based workflows in tandem with your Launch! menu.
 
-<img width="360" height="300" alt="Open File" src="https://github.com/user-attachments/assets/9e3acdbb-8f0c-445d-a39a-66eaf8fead6b" />
+Multiple files can be selected with CTRL + click or space. 
+
+<img width="360" height="300" alt="Open File" src="https://github.com/user-attachments/assets/d7a9addd-2023-4b01-b1f9-3fb91308453e" />
 
 An association consists of one or more file extensions, and a selected launcher from your menu.
 
-<img width="360" height="300" alt="Create association" src="https://github.com/user-attachments/assets/3bc0d834-9157-4497-b0f5-dc678666e6b0" />
+<img width="360" height="300" alt="Create association" src="https://github.com/user-attachments/assets/bd1f3a4d-7366-4ee8-b356-b8b8c57d4637" />
 
 You can also open files with further parameters if required.
 
-<img width="360" height="300" alt="Open file with parameters" src="https://github.com/user-attachments/assets/718202b0-bf7b-4725-a002-df009b827725" />
+<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/c2ea42d6-1952-4558-bf71-024bfef6f40d" />
+
+There is also a Search feature, allowing you to find files for the selected association.
+You can choose the search location, whether to scan recursively and "Go deep" which means search inside files for the search string as well.
+
+<img width="360" height="300" alt="Search for files" src="https://github.com/user-attachments/assets/a45bc6d8-9cde-45ec-822c-fa288c7a0e08" />
+
 
 The `Open File` dialog can also be shown on its own, without the menu, by running `! /OPEN`.
-
+INSTALL
 ## Explore & Run
 `Explore & Run` is a fixed item at the bottom of the menu.<br/>
 When selected you will be able to browse the file-system for executable programs and quickly run them, exactly as launchers are run from the menu.<br/>
@@ -175,11 +182,12 @@ The drive bar shows the available disk drives, and allows you to switch between 
 
 The path bar shows a preview of the command line that will be executed when `Run` is chosen.
 
-<img width="360" height="300" alt="Explore" src="https://github.com/user-attachments/assets/558f8ff2-dbae-435a-a7f9-139f8f740f79" />
+<img width="360" height="300" alt="Explore and Run" src="https://github.com/user-attachments/assets/5a038cbb-6191-4cb0-a733-716a173a4142" />
+
 
 Choosing `Params` for an executable will show the parameter entry dialog, so you can provide the desired parameters before launching the command.
 
-<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/60b7f23a-5b96-40cc-8ae9-72864a925c10" />
+<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/ffe10005-b45d-4d1b-83f2-8270ee4039c0" />
 
 You can remove the `Explore & Run` menu item in configuration (`! /CONFIG`)<br/>
 
@@ -191,7 +199,7 @@ The `Shutdown...` menu item is also fixed at the bottom of the menu, and when se
 
 Power Off flushes DOS and SMARTDrive buffers first and then uses power management APM/ACPI calls to power off. That may not work on older machines of course, in which case, the Power off message from Windows 9x will be shown.<br/>
 
-<img width="360" height="300" alt="Shutdown..." src="https://github.com/user-attachments/assets/55a8a298-83e7-4010-afdf-4f2f5d96ae4c" />
+<img width="360" height="300" alt="Shutdown..." src="https://github.com/user-attachments/assets/88076cea-5701-44ec-8237-6bb07dafef96" />
 
 You can remove the `Shutdown...` menu item in configuration (`! /CONFIG`). <BR/>
 The dialog can also be shown on its own, without the menu, by running `! /BYE`.
@@ -216,13 +224,13 @@ If `LAUNCH.CFG` is absent or malformed, Launch! uses the defaults.
 
 You can choose where the menu is positioned, what options are displayed, the time format, and the style of cursor to use.
 
-<img width="360" height="300" alt="Config: Menu" src="https://github.com/user-attachments/assets/908ca5e2-248e-4d4c-b4e4-e6dbe80fa203" />
+<img width="360" height="300" alt="Config: Menu" src="https://github.com/user-attachments/assets/b0caaf7d-5505-465e-b567-a2cd8f15bcba" />
 
 Contextual help (tooltips) can be turned on (off by default). They will appear throughout Launch! with keyboard focus or mouse-over.
 
 The SysBar (off by default) shows an information bar, top-right of screen every time the menu is opened with some handy system status information.
 
-<img width="360" height="300" alt="SysBar" src="https://github.com/user-attachments/assets/bd4bb85c-87a3-4da7-910e-8f776f99d824" />
+<img width="360" height="300" alt="SysBar" src="https://github.com/user-attachments/assets/38667d5b-6e38-4c66-b595-a4ddaf0e7d4d" />
 
 The SysBar shows (left to right): 
 - Largest executable program size (free lower memory)
@@ -242,7 +250,7 @@ There are 9 pre-defined color schemes to choose from, or you can change the colo
 
 If using a monochrome display, use the 'Mono' scheme for best results.
 
-<img width="360" height="300" alt="Config: Colors" src="https://github.com/user-attachments/assets/1b53c115-8717-49a7-9d26-6cdb2c566d2e" />
+<img width="360" height="300" alt="Config: Colors" src="https://github.com/user-attachments/assets/6607b18c-68b1-4da0-b7df-1c5bdafee45d" />
 
 <img width="360" height="300" alt="Color Schemes" src="https://github.com/user-attachments/assets/189807a7-5fd1-4b88-98e5-b120dc750bcc" />
 
@@ -253,7 +261,7 @@ You can select which screensaver to show, choose `None` to disable this function
 You can also choose the time after which the screensaver will activate (1, 5, 15 or 30 minutes).<br/>
 Click `Preview` for an instant preview of the currently selected screensaver.
 
-<img width="360" height="300" alt="Config: ScreenSavers" src="https://github.com/user-attachments/assets/60c45c31-fc64-4f8a-8357-f2d15d9816a8" />
+<img width="360" height="300" alt="Config: Savers" src="https://github.com/user-attachments/assets/77da44a7-6e4e-4e70-b010-305fde1c30f6" />
 
 If the shortcut utility is loaded, the inactivity monitoring will apply to the command prompt and the menu - so your screensaver will also start if there's inactivity at the command prompt.<br/>
 If the shortcut utility is not loaded, the screensaver will only start when the menu is open. 
@@ -268,13 +276,14 @@ Choosing `SET` applies the selected prompt style immediately, and also updates a
 
 Styles using ANSI escape sequences will not show in the selector if an ANSI driver is not detected.
 
-<img width="360" height="300" alt="Config: Prompt" src="https://github.com/user-attachments/assets/0808a681-5930-4af9-a405-37919ae95bd7" />
+<img width="360" height="300" alt="Config: Prompt" src="https://github.com/user-attachments/assets/f6fe4b59-71e8-483b-bbaf-e014749b526b" />
 
 ###  Font
 
 You can change the VGA font used across the entire DOS session. `Standard` uses the system (built-in) VGA BIOS rom font. 
 
-<img width="360" height="300" alt="Config: Font" src="https://github.com/user-attachments/assets/b9968688-1705-4977-97cf-c64eb6241b8f" />
+<img width="360" height="300" alt="Config: Font" src="https://github.com/user-attachments/assets/7be74597-add0-4221-8821-e836aadda123" />
+
 
 If you choose `Persist`, Launch! will forcefully keep your font applied, even after screen mode changes. However, that will consume 4KB of lower memory (tiny, but that could be all the difference in some circumstances). Without `Persist`, no extra memory is consumed, Launch! will re-apply your font each time the menu is shown. Unchecking `Persist` if already active at any time, will release the 4KB of memory back.
 
@@ -323,7 +332,7 @@ If the shortcut is active, you can unload it - removing all traces of the TSR fr
 If the shortcut is inactive, you can activate the shortcut - which will install the required line in your `AUTOEXEC.BAT/FDAUTO.BAT` and reboot.<br/>
 Note that changing the key combination also requires a reboot to apply.
 
-<img width="360" height="300" alt="Config: Shortcut" src="https://github.com/user-attachments/assets/93d6ccf2-262a-46cc-be95-2b2fe05af8a9" />
+<img width="360" height="300" alt="Config: Shortcut" src="https://github.com/user-attachments/assets/fd3d058d-1aab-4143-9126-589a2270762b" />
 
 
 ### Reset
@@ -342,17 +351,17 @@ Each menu panel can display 20 items. Adding a 21st item automatically creates a
 
 `CTRL+A` allows you to add a new folder, launcher, or separator to the currently visible menu panel.
 
-<img width="360" height="300" alt="Add item" src="https://github.com/user-attachments/assets/feaf075d-39a6-4a57-bf7d-5a388474904a" />
+<img width="360" height="300" alt="Menu - Add" src="https://github.com/user-attachments/assets/aa3c8ce9-5b45-4bcd-98f1-ed9200b318e3" />
 
 `CTRL+D` will remove the selected item from the menu (with confirmation first).
 
-<img width="360" height="300" alt="Remote item" src="https://github.com/user-attachments/assets/1daef798-e7be-4cc8-b41e-2de77e4aa70e" />
+<img width="360" height="300" alt="Menu - Remove" src="https://github.com/user-attachments/assets/bdc3519b-cfa2-475a-b91b-d5ee66c68bb7" />
 
 You can move selected items up and down with `CTRL+↑/↓`.
 
 `CTRL+E` will show you the edit dialog to modify a launcher.
 
-<img width="360" height="300" alt="Edit item" src="https://github.com/user-attachments/assets/d609be98-e703-4f89-98ee-f1694bac0176" />
+<img width="360" height="300" alt="Menu - Edit" src="https://github.com/user-attachments/assets/52864600-9b16-4e0e-bb8f-2fd713066c46" />
 
 If a launcher has `Prompt?` activated, when launched from the menu, the parameter entry dialog will be displayed.<br/>
 You will be able to enter parameters before running the program.
@@ -364,7 +373,7 @@ E.g. for `C:\TOOLS\APP.EXE` it types `C:`, presses Enter, types `CD C:\TOOLS`, p
 
 If **Add to PATH for execution** is selected, the command's directory will be added to the environment %PATH% variable. Many programs require this, and will update AUTOEXEC.BAT/FDAUTO.BAT - all competing for environment space in a tiny environment variable (*cough* including this one). This allows you do away with that, and just add a program to PATH as/when launched from the menu itself.
 
-<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/9f596c4b-8f47-4ea0-9f93-da1ee0c199e9" />
+<img width="360" height="300" alt="Run with parameters" src="https://github.com/user-attachments/assets/75bc7e17-a113-4bc9-8c0b-ca10607f0c2c" />
 
 
 ### Manual menu configuration
@@ -468,9 +477,18 @@ e.g. `!CAL C:\DOCS\HOLIDAYS.ICS C:\DOCS\BDAYS.ICS`
 
 <a id="!calc"></a>
 ### !CALC.EXE - Calculator
-A simple calculator, with nice large digits, pretty self explanatory!
+A simple calculator, with nice large digits and printed ticker tape, pretty self explanatory!
 
-<img width="360" height="300" alt="Calculator" src="https://github.com/user-attachments/assets/3bb84bf7-383d-4f8e-b92b-0a7ada006c62" />
+<img width="360" height="300" alt="Calculator" src="https://github.com/user-attachments/assets/c0657876-0df1-4ca0-bc21-acdb80026920" />
+
+
+<a id="!dfetch"></a>
+### !DFETCH.EXE - DOS Fetch
+View useful information about your system, including free memory and disk space-- in the style of Neofetch/Fastfetch.
+Custom logos for different DOS versions.
+
+<img width="360" height="300" alt="DOS Fetch" src="https://github.com/user-attachments/assets/6a47b562-4f59-4fc5-9100-dcc6786f4aa7" />
+
 
 <a id="!draw"></a>
 ### !DRAW.EXE - Pixel Draw
@@ -483,13 +501,13 @@ The right mouse button erases.<br/>
 The grid can be toggled on/off.
 
 Your drawing is persisted and will be there when the program is re-opened.
-
-<img width="360" height="300" alt="Draw" src="https://github.com/user-attachments/assets/af350e87-e4fa-4629-9c8e-316bb29e34ce" />
-<img width="360" height="300" alt="Show" src="https://github.com/user-attachments/assets/fd5e02c8-e5cd-4c01-9ad7-d34cb8b8a742" />
-<img width="360" height="300" alt="Full-screen Draw" src="https://github.com/user-attachments/assets/96a259e4-1f04-4af3-9805-eb71fe373c43" />
+<img width="360" height="300" alt="Draw" src="https://github.com/user-attachments/assets/da747f2f-7f9a-437b-a2fa-b4d4eae84d68" />
+<img width="360" height="300" alt="Full-screen editing" src="https://github.com/user-attachments/assets/f9330aa8-dec4-43ea-9c25-9e40995c6cc4" />
 
 `Show` will render your drawing in large scale graphics mode.
 You can toggle full-screen editing with F11, or the Maximize icon in the titlebar.
+
+<img width="360" height="300" alt="Show" src="https://github.com/user-attachments/assets/091cfb6e-aa56-46cc-aa68-59a84e133bbb" />
 
 **Open files**: `!DRAW.EXE` accepts a filename as a parameter for any 16-color BMP image. It will load this image into the canvas for viewing/editing. e.g. `!DRAW C:\ICON.BMP`
 
@@ -508,19 +526,25 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 A simple but surprisingly powerful, markdown editor for DOS with split-screen live preview, full-screen graphical preview (font formatting and styles), and focus mode for a distraction free retro word processing experience.
 All markdown syntax [in this document](https://github.com/therenegar/launch/blob/main/res/SAMPLE.MD) is supported, and will be 'rendered' in the live preview or graphical preview (including tables!).
 
-<img width="360" height="300" alt="Markdown" src="https://github.com/user-attachments/assets/90dfdb60-1e91-4338-b138-4c67b08c17a8" />
+<img width="360" height="300" alt="Markdown" src="https://github.com/user-attachments/assets/e8b15c90-a4ba-49d7-8864-1a8d9c744261" />
+
 
 The `Split` button toggles between markdown entry only, split-screen preview, and preview only. 
 
-`Show` displays a rendered full-screen graphical preview of the markdown - up/down/PgUp/PgDn scrolls, and Esc returns to the editor. 
+`Show` displays a rendered full-screen graphical preview of the markdown document, in DOS! Complete with fonts, formatting, table rendering, code blocks, images, hyperlinks.
+
+Up/Down/PgUp/PgDn scrolls, Home/End goes to beginning or end of document, and Esc returns to the editor. 
+
+You can click internal document links to navigate to heading sections.
+
+<img width="360" height="300" alt="Graphical Preview 1" src="https://github.com/user-attachments/assets/6c8b5ea0-25a1-4086-8931-73a69f176780" />
+<img width="360" height="300" alt="Graphical Preview 2" src="https://github.com/user-attachments/assets/61bd767d-c156-4786-b6c7-42ea7540fec1" />
+<img width="360" height="300" alt="Graphical Preview 3" src="https://github.com/user-attachments/assets/41b717c6-569d-456e-9504-83aa76abdf97" />
 
 There's also a Focus mode for distraction free writing.
+<img width="360" height="300" alt="Focus Mode" src="https://github.com/user-attachments/assets/e80f942b-fdbb-46f9-a7cb-763bafec6ec7" />
 
-<img width="360" height="300" alt="Live Preview" src="https://github.com/user-attachments/assets/17c52b20-da1e-4969-8442-bdd75c1c9920" />
-<img width="360" height="300" alt="Graphical Preview" src="https://github.com/user-attachments/assets/f038ef00-ae08-4b02-90af-f3cbdbf8eef9" />
-<img width="360" height="300" alt="Focus Mode" src="https://github.com/user-attachments/assets/cb198856-6499-4c8c-9fd8-05c5266dc6e8" />
-
-> Note the graphic preview requires a VGA display adapter.
+> Note the 'Show' graphical preview requires a VGA display adapter.
 
 **Open files**: You can open one or more markdown (`.MD`) files by adding as a parameter to `!MKDOWN.EXE`, e.g. `!MKDOWN C:\DOCS\REPORT.MD`
 
@@ -563,14 +587,6 @@ You can also export all the cards (everything concatenated) into a text file.
 Entries are automatically saved, everything is persisted, and all cards will be visible when the program is re-opened.
 
 <img width="360" height="300" alt="Card Stack" src="https://github.com/user-attachments/assets/4f73850e-c67d-4a56-9b0b-b01001673bdd" />
-
-<a id="!sysinfo"></a>
-### !SYSINFO.EXE - System Information
-View useful information about your system, including free memory and disk space.
-
-The system information report can be printed for reference.
-
-<img width="360" height="300" alt="System Information" src="https://github.com/user-attachments/assets/258f9b7c-bc72-4bbb-8743-ad280804bb4a" />
 
 <a id="!todos"></a>
 ### !TODOS.EXE - To-dos
@@ -725,4 +741,5 @@ Launch is created on a 486DX4/100 machine, 32mb RAM, running IBM PC DOS 7.0. Cod
 Compiled with Microsoft C/C++ Optimizing Compiler 7.00 from 1992. 
 Screenshots taken on this machine using [Screen Thief](http://www.win3x.org/win3board/viewtopic.php?t=2710&view=min).
 
-<img width="360" height="300" alt="About" src="https://github.com/user-attachments/assets/ea323dd1-dcff-45e3-b721-b02e66b0cbea" />
+<img width="360" height="300" alt="About Launch!" src="https://github.com/user-attachments/assets/cfb867d4-a228-4291-b720-ed73aaa4dac6" />
+
