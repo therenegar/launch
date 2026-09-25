@@ -494,8 +494,11 @@ Days with events (from an .ICS file) will be indicated with a diamond. Clicking 
 ### !CALC.EXE - Calculator
 A simple calculator, with nice large digits and printed ticker tape, pretty self explanatory!
 
+Use up/down arrow keys to scroll the ticker tape calculation history.
+
 <img width="360" height="300" alt="Calculator" src="https://github.com/user-attachments/assets/c0657876-0df1-4ca0-bc21-acdb80026920" />
 
+If you add the `/PRINT` parameter to '!CALC', the calculator will function as a line printer, sending each calculation line (as it appears on the ticker tape) to a printer on LPT1.
 
 <a id="!dfetch"></a>
 ### !DFETCH.EXE - DOS Fetch
