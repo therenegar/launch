@@ -529,7 +529,7 @@ Text can be marked holding down the `Shift` key - and then Cut (`CTRL+X`), Copie
 <a id="!mkdown"></a>
 ### !MKDOWN.EXE - Markdown
 A simple but surprisingly powerful, markdown editor for DOS with split-screen live preview, full-screen graphical preview (font formatting and styles), and focus mode for a distraction free retro word processing experience.
-All markdown syntax [in this document](https://github.com/therenegar/launch/blob/main/res/SAMPLE.MD) is supported, and will be 'rendered' in the live preview or graphical preview (including tables!).
+All markdown syntax [in this document](https://github.com/therenegar/launch/blob/main/src/samples/SAMPLE.MD) is supported, and will be 'rendered' in the live preview or graphical preview (including tables!).
 
 <img width="360" height="300" alt="Markdown" src="https://github.com/user-attachments/assets/e8b15c90-a4ba-49d7-8864-1a8d9c744261" />
 
