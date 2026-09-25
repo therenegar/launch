@@ -48,7 +48,7 @@ Extract the release zip file or mount the floppy image:
 
 - Run `INSTALL.EXE`
 - You'll be prompted for a directory to place Launch!
-- You can select/de-select every component for install. Uncheck everything for the most minimal install.
+- You can choose to exlude components, entering `123456` will install nothing but the menu (!.EXE).
 - The necessary files will be copied and you will be prompted for all changes to `AUTOEXEC.BAT`
     - FreeDOS will be detected automatically and `FDAUTO.BAT` used instead of `AUTOEXEC.BAT` throughout Launch!
 - The keyboard shortcut can be chosen
