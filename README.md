@@ -491,6 +491,8 @@ Custom logos for different DOS versions.
 
 <img width="360" height="300" alt="DOS Fetch" src="https://github.com/user-attachments/assets/6a47b562-4f59-4fc5-9100-dcc6786f4aa7" />
 
+<img width="360" height="168" alt="FreeDOS" src="https://github.com/user-attachments/assets/b122bf4e-052b-4164-b6cc-ee8ebac27c66" />
+<img width="360" height="168" alt="MS-DOS" src="https://github.com/user-attachments/assets/eca99599-def3-49fb-b770-09f18fdff258" />
 
 <a id="!draw"></a>
 ### !DRAW.EXE - Pixel Draw
@@ -545,6 +547,7 @@ You can click internal document links to navigate to heading sections.
 <img width="360" height="300" alt="Graphical Preview 3" src="https://github.com/user-attachments/assets/41b717c6-569d-456e-9504-83aa76abdf97" />
 
 There's also a Focus mode for distraction free writing.
+
 <img width="360" height="300" alt="Focus Mode" src="https://github.com/user-attachments/assets/e80f942b-fdbb-46f9-a7cb-763bafec6ec7" />
 
 > Note the 'Show' graphical preview requires a VGA display adapter.
