@@ -1,6 +1,6 @@
 <img width="1633" height="250" alt="Launch! for DOS" src="https://github.com/user-attachments/assets/1aa6eb8a-98f3-4e74-a1ef-479e4f7a04ef" />
 
-> A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- and loads of goodies to uplift an old DOS machine.
+> A lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- and loads of goodies to uplift an old DOS machine and give it something to do!
 
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 
@@ -470,7 +470,10 @@ They've all been designed with a tiny memory footprint, and maximum compatibilit
 
 Usable with either keyboard or mouse interaction.
 
-Any data files for each program are stored in the `data` sub-directory of Launch!. Exports will be placed in the `exports` sub-directory.
+Most feature a **Print** function. While it should work with any DOS compatible printer connected to LPT1, I have designed printing with dot matrix printers in mind for the experience.
+Line print modes in Calc and Journal are particularly awesome, and noisy!
+
+Any data files for each program are stored in the `data` sub-directory of Launch!. Saves will be placed in the `exports` sub-directory unless otherwise specified.
 
 <a id="!cal"></a>
 ### !CAL.EXE - Calendar
