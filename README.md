@@ -292,39 +292,6 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 **Font Choices**
 There's a whopping 30 highly curated display fonts to choose from. Launch! is the default at install.
 
-<img width="456" height="50" alt="LAUNCH" src="https://github.com/user-attachments/assets/bf7c725c-c644-4c8e-9e5d-c3a8348ef29f" />
-<img width="456" height="50" alt="BIG" src="https://github.com/user-attachments/assets/541640d9-7bff-424b-8ebd-cf4254d645dc" />
-<img width="456" height="50" alt="BOLD" src="https://github.com/user-attachments/assets/dd5714d2-3cf3-4a1d-8b73-c97df3402d26" />
-<img width="456" height="50" alt="BOLDALT" src="https://github.com/user-attachments/assets/ef418c8a-506a-4a34-b409-902c176b9188" />
-<img width="456" height="50" alt="CHUNKY" src="https://github.com/user-attachments/assets/ceeb7cb3-1dc5-4c8a-b6f7-dee2be662ee6" />
-<img width="456" height="50" alt="CLEAN" src="https://github.com/user-attachments/assets/188a18f4-67f4-43b3-989b-f40d91a6d716" />
-<img width="456" height="50" alt="ELERGON" src="https://github.com/user-attachments/assets/fbe407be-5569-4161-a569-22f482bc6524" />
-<img width="456" height="50" alt="ELITE" src="https://github.com/user-attachments/assets/a466dd82-b881-40f6-b99d-abc11ac82374" />
-<img width="456" height="50" alt="EXTRA" src="https://github.com/user-attachments/assets/9822d908-b454-4c0b-bc3b-dee61f2ad51e" />
-<img width="456" height="50" alt="HUMANIST" src="https://github.com/user-attachments/assets/568a3425-4808-44eb-b4f9-d468c776e0e4" />
-<img width="456" height="50" alt="ISO" src="https://github.com/user-attachments/assets/4429ca61-000c-45d2-a7b2-719d36c3edb2" />
-<img width="456" height="50" alt="MAX" src="https://github.com/user-attachments/assets/b5df456a-45ef-4b90-bd18-6ebe74856b9c" />
-<img width="456" height="50" alt="MAXELITE" src="https://github.com/user-attachments/assets/92846791-3fb2-43cd-b556-2bdcff84269c" />
-<img width="456" height="50" alt="OLDENG" src="https://github.com/user-attachments/assets/0d2e90a2-9c04-40eb-961c-964604d9b39b" />
-<img width="456" height="50" alt="PIXEL" src="https://github.com/user-attachments/assets/23159908-d319-4be8-80d9-881c6fd60847" />
-<img width="456" height="50" alt="PROFONT" src="https://github.com/user-attachments/assets/0d1dda69-25f5-408c-b43f-ab7479a19e20" />
-<img width="456" height="50" alt="PROFONT BOLD" src="https://github.com/user-attachments/assets/af4ac8de-0655-4c89-9760-c8687f730142" />
-<img width="456" height="50" alt="ROMAN" src="https://github.com/user-attachments/assets/47e7b176-8e0b-478a-8c8f-d4fa4922f6f2" />
-<img width="456" height="50" alt="SCRIBBLE" src="https://github.com/user-attachments/assets/1cc68f2e-d1b4-4a9f-acb7-44e9f2867c80" />
-<img width="456" height="50" alt="SCRIPT" src="https://github.com/user-attachments/assets/9015e22c-1d93-467a-88bb-7b913e6dd2f6" />
-<img width="456" height="50" alt="TALL" src="https://github.com/user-attachments/assets/7a7a6567-b933-468a-bc48-1cef33b64945" />
-<img width="456" height="50" alt="TIMES" src="https://github.com/user-attachments/assets/4c386d0a-ee42-4ecc-b6dd-7ab9e8724252" />
-<img width="456" height="50" alt="SUPER" src="https://github.com/user-attachments/assets/f7edd545-3623-4eb2-9b27-773bc55f86d8" />
-<img width="456" height="50" alt="MODERN" src="https://github.com/user-attachments/assets/bcb78645-ab60-450d-86f1-4b157e34c840" />
-<img width="456" height="50" alt="ITALIC" src="https://github.com/user-attachments/assets/30755ad8-e8bb-4a01-b3f9-c22f105928cf" />
-<img width="456" height="50" alt="CURSIVE" src="https://github.com/user-attachments/assets/ed97d479-f8a0-4b5f-a513-fe4e683e0061" />
-<img width="456" height="50" alt="COURIER" src="https://github.com/user-attachments/assets/191d0193-2bde-4d97-85dd-9cf02c581d42" />
-<img width="456" height="50" alt="BROADWAY" src="https://github.com/user-attachments/assets/9171cd54-b064-4051-99f1-1406437429ef" />
-<img width="456" height="50" alt="BOLD ITALIC" src="https://github.com/user-attachments/assets/2ab32550-3eca-4dc8-8f1a-4f9f6f6f4a8e" />
-<img width="456" height="50" alt="BAUHAUS&#39;89" src="https://github.com/user-attachments/assets/d36cf47f-e6bb-4369-ae7c-5302135c2ef4" />
-
-
-
 ### Shortcut
 
 You can view the current status of the shortcut utility, current key combination, and set a new combination.<br/>
@@ -597,10 +564,14 @@ Tasks can be sorted and tags can be used to filter the list.
 
 Short date entry and display (`DD-MM-YYYY` / `MM-DD-YYYY`) will depend on your locale settings as/if set by `COUNTRY.SYS` in your `CONFIG.SYS`.
 
+<img width="360" height="300" alt="To-Dos" src="https://github.com/user-attachments/assets/7fcde203-2bbe-411e-b6b9-abc9974a730a" />
+
 Some secret hotkeys<br/>
 `A` Adds a task, `E` Edits selected, `D` Deletes selected `S` sorts the active group.
 
-<img width="360" height="300" alt="To-Dos" src="https://github.com/user-attachments/assets/4ec01403-7f3a-4391-9a39-98283af626d1" />
+To-Dos also supports pressing `F11` or the Maximize titlebar button to go full-screen editing.
+
+<img width="360" height="300" alt="Full screen editing" src="https://github.com/user-attachments/assets/424ba1ad-6e70-4bb0-9672-88c687f43f5f" />
 
 <a id="!typo"></a>
 ### !TYPO.EXE - Typo
