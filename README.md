@@ -55,9 +55,7 @@ Extract the release zip file or mount the floppy image:
 - Your drive can be scanned and an initial menu built.
 - Simply reboot after install and you're ready to go.
 
-<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/fb30d6e8-e7d3-45c0-93f9-931c8c7f8f11" />
-
-> The compatible shortcut key utility for your environment will automatically be selected.
+<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/fb30d6e8-e7d3-45c0-93f9-931c8c7f8f11"/>
 
 > **If you already have Launch! installed**, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
 
@@ -120,7 +118,7 @@ UI navigation
 - `Space`           - Selects
 - `Enter`           - Commits
 - `Esc`             - Cancels
-- `F11`             - Toggle full screen mode
+- `F11`             - Toggle full screen mode where supported
 
 
 ### Mouse usage
