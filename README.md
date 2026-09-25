@@ -451,7 +451,7 @@ The clock is based on a 1979 Vacuum Fluorescent Display alarm clock on my bedsid
 <a id="accessories"></a>
 # <img width="1633" height="250" alt="Accessories" src="https://github.com/user-attachments/assets/98418a23-1b67-43ee-b6f4-77de6fecee98" />
 
-Launch! comes with 9 handy accessories that can be useful in a basic DOS environment.
+Launch! comes with handy accessories that can be useful in a basic DOS environment especially with limited or no connectivity.
 
 If selected during the Install program, there will be an **Accessories** menu created for you in Launch! providing quick access.
 
