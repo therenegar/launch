@@ -501,8 +501,9 @@ The right mouse button erases.<br/>
 The grid can be toggled on/off.
 
 Your drawing is persisted and will be there when the program is re-opened.
-<img width="360" height="300" alt="Draw" src="https://github.com/user-attachments/assets/da747f2f-7f9a-437b-a2fa-b4d4eae84d68" />
+
 <img width="360" height="300" alt="Full-screen editing" src="https://github.com/user-attachments/assets/f9330aa8-dec4-43ea-9c25-9e40995c6cc4" />
+<img width="360" height="300" alt="Draw" src="https://github.com/user-attachments/assets/da747f2f-7f9a-437b-a2fa-b4d4eae84d68" />
 
 `Show` will render your drawing in large scale graphics mode.
 You can toggle full-screen editing with F11, or the Maximize icon in the titlebar.
