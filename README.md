@@ -44,19 +44,24 @@
 <a id="install"></a>
 # <img width="1633" height="250" alt="Install" src="https://github.com/user-attachments/assets/b7dee4b9-154f-47b6-b407-8b24ef9b03fd" />
 
-Extract the release zip file or mount the floppy image:
+Extract the release zip file or mount the floppy image and run
+```
+INSTALL.EXE
+```
 
-- Run `INSTALL.EXE`
+<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/9db263de-f78f-442e-96b4-b20d4c2bc6ea" />
+
 - You'll be prompted for a directory to place Launch!
-- You can choose to exlude components, entering `123456` will install nothing but the menu (!.EXE).
-- The necessary files will be copied and you will be prompted for all changes to `AUTOEXEC.BAT`
+- You can choose to exclude components from install.
+     - Enter `123456` for the lightest install with nothing but the menu (!.EXE).
+- Only the necessary files will be extracted and copied
+- You will be prompted for all changes to `AUTOEXEC.BAT`
     - FreeDOS will be detected automatically and `FDAUTO.BAT` used instead of `AUTOEXEC.BAT` throughout Launch!
 - The keyboard shortcut can be chosen
 - Your drive can be scanned and an initial menu built.
 - Simply reboot after install and you're ready to go.
 
-<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/9db263de-f78f-442e-96b4-b20d4c2bc6ea" />
-
+> [!TIP]
 > **If you already have Launch! installed**, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
 
 ----
@@ -67,7 +72,11 @@ At the **command prompt**, display your menu by pressing the keyboard shortcut w
 ```
 CTRL + ALT + .
 ```
-> The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display. This is not a multi-tasking application switcher!
+
+<img width="720" height="600" alt="Default boot" src="https://github.com/user-attachments/assets/63e0cc06-1f64-47e7-9534-fa58e7bfb4eb" />
+
+> [!IMPORTANT]
+> The keyboard shortcut will do nothing while in a program, you must be at the command prompt for the menu to display.<br/>This is not a multi-tasking application switcher!
 
 If you don't have `!KEY.COM` loaded, the keyboard shortcut will not be available.<br/>
 To start Launch! without the keyboard shortcut, at the command prompt, simply enter:
