@@ -289,6 +289,7 @@ If you choose `Persist`, Launch! will forcefully keep your font applied, even af
 
 **Font Choices**
 There's a whopping 30 highly curated display fonts to choose from. Launch! is the default at install.
+Included is the first conversion of [ProFont](https://tobiasjung.name/profont/) for DOS and a bunch of hidden fonts from an early IBM PS/2 386.
 
 <img width="420" height="51" alt="STANDARD" src="https://github.com/user-attachments/assets/fe18cc07-e7be-464b-8a8d-58b94116401e" />
 <img width="420" height="51" alt="LAUNCH" src="https://github.com/user-attachments/assets/7db43847-5298-4344-adc3-c02f9b815486" />
