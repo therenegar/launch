@@ -49,7 +49,7 @@ Extract the release zip file or mount the floppy image and run
 INSTALL.EXE
 ```
 
-<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/9db263de-f78f-442e-96b4-b20d4c2bc6ea" />
+<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/db6574df-656f-467a-869a-eec0f91a2fa4" />
 
 - You'll be prompted for a directory to place Launch!
 - You can choose to exclude components from install.
@@ -301,12 +301,12 @@ There's a whopping 30 highly curated display fonts to choose from. Launch! is th
 Included is the first conversion of [ProFont](https://tobiasjung.name/profont/) for DOS and a bunch of hidden fonts from an early IBM PS/2 386.
 
 <img width="420" height="51" alt="STANDARD" src="https://github.com/user-attachments/assets/fe18cc07-e7be-464b-8a8d-58b94116401e" />
-<img width="420" height="51" alt="LAUNCH" src="https://github.com/user-attachments/assets/7db43847-5298-4344-adc3-c02f9b815486" />
+<img width="420" height="51" alt="LAUNCH!" src="https://github.com/user-attachments/assets/e6d2cc41-60b1-444e-91f8-f27cbc066221" />
 <img width="420" height="51" alt="BAUHAUS 89" src="https://github.com/user-attachments/assets/afcfdafb-1253-4e92-903a-cc963a0bec06" />
 <img width="420" height="51" alt="BIG" src="https://github.com/user-attachments/assets/6ba1f6b5-a57a-4164-960b-44b97e04c624" />
+<img width="420" height="51" alt="BOLD" src="https://github.com/user-attachments/assets/376bfce2-9683-44bc-a1d9-5d8f27543a6d" />
 <img width="420" height="51" alt="BOLD ALT" src="https://github.com/user-attachments/assets/01241765-21d0-46dd-ab7a-4c4f7fdaff55" />
 <img width="420" height="51" alt="BOLD ITALIC" src="https://github.com/user-attachments/assets/afcd44ab-142d-4b77-8cc0-747b5cac01c7" />
-<img width="420" height="51" alt="BOLD" src="https://github.com/user-attachments/assets/376bfce2-9683-44bc-a1d9-5d8f27543a6d" />
 <img width="420" height="51" alt="BROADWAY" src="https://github.com/user-attachments/assets/7b2f7a4e-1eb7-475d-b84b-252b7cd51ef6" />
 <img width="420" height="51" alt="CHUNKY" src="https://github.com/user-attachments/assets/217c5cc7-df8e-40b6-a636-e1cfa432e3a4" />
 <img width="420" height="51" alt="CLEAN" src="https://github.com/user-attachments/assets/39ca8b99-30de-4f35-b479-46622632c6b3" />
@@ -322,6 +322,7 @@ Included is the first conversion of [ProFont](https://tobiasjung.name/profont/) 
 <img width="420" height="51" alt="MAX ELITE" src="https://github.com/user-attachments/assets/3bfb286e-557b-4249-b5bc-40df67f2e910" />
 <img width="420" height="51" alt="MAX" src="https://github.com/user-attachments/assets/12cfd4f9-0ea1-4e7e-9104-284e2f5f2e3c" />
 <img width="420" height="51" alt="MODERN" src="https://github.com/user-attachments/assets/021974d9-75c0-4a88-b4be-b8f2a941f94a" />
+<img width="420" height="51" alt="NEAT" src="https://github.com/user-attachments/assets/b8d94895-fbd3-4c46-96fb-6c5e9ce84e50" />
 <img width="420" height="51" alt="NEWS" src="https://github.com/user-attachments/assets/d5116f3f-92e7-499f-b6dc-9c394b940a6b" />
 <img width="420" height="51" alt="NUTSO" src="https://github.com/user-attachments/assets/2e29e472-9f46-42ba-837e-03aec5d9f1d7" />
 <img width="420" height="51" alt="PIXEL" src="https://github.com/user-attachments/assets/17504990-9119-4abe-9ae8-b1cfc6aef8ad" />
