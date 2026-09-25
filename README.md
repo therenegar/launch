@@ -492,10 +492,9 @@ Custom logos for different DOS versions.
 
 <img width="360" height="300" alt="DOS Fetch" src="https://github.com/user-attachments/assets/6a47b562-4f59-4fc5-9100-dcc6786f4aa7" />
 
-<img width="360" height="168" alt="FreeDOS" src="https://github.com/user-attachments/assets/b122bf4e-052b-4164-b6cc-ee8ebac27c66" />
-<img width="360" height="168" alt="MS-DOS" src="https://github.com/user-attachments/assets/eca99599-def3-49fb-b770-09f18fdff258" />
-<img width="360" height="175" alt="DRODS_crop" src="https://github.com/user-attachments/assets/b837f6e5-76f7-4a1a-a2ed-bec15809c1e2" />
-
+<img width="360" height="163" alt="freedos" src="https://github.com/user-attachments/assets/d5d1864e-e735-4a9f-9a4c-cae14e370991" />
+<img width="360" height="163" alt="dfetch" src="https://github.com/user-attachments/assets/2aa3831d-671b-4f61-9056-413db6122d80" />
+<img width="360" height="163" alt="msdos" src="https://github.com/user-attachments/assets/0b1f0469-db71-4142-9332-68da19af49f7" />
 
 <a id="!draw"></a>
 ### !DRAW.EXE - Pixel Draw
