@@ -55,7 +55,7 @@ Extract the release zip file or mount the floppy image:
 - Your drive can be scanned and an initial menu built.
 - Simply reboot after install and you're ready to go.
 
-<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/fb30d6e8-e7d3-45c0-93f9-931c8c7f8f11"/>
+<img width="360" height="300" alt="Install" src="https://github.com/user-attachments/assets/9db263de-f78f-442e-96b4-b20d4c2bc6ea" />
 
 > **If you already have Launch! installed**, choose the same directory and an upgrade will be performed keeping your existing configuration and menu in-tact.
 
@@ -494,6 +494,8 @@ Custom logos for different DOS versions.
 
 <img width="360" height="168" alt="FreeDOS" src="https://github.com/user-attachments/assets/b122bf4e-052b-4164-b6cc-ee8ebac27c66" />
 <img width="360" height="168" alt="MS-DOS" src="https://github.com/user-attachments/assets/eca99599-def3-49fb-b770-09f18fdff258" />
+<img width="360" height="175" alt="DRODS_crop" src="https://github.com/user-attachments/assets/b837f6e5-76f7-4a1a-a2ed-bec15809c1e2" />
+
 
 <a id="!draw"></a>
 ### !DRAW.EXE - Pixel Draw
