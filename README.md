@@ -485,6 +485,9 @@ The calendar will show events from a `CAL.ICS` file (in RFC5545 iCalendar Specif
 e.g. `!CAL C:\DOCS\HOLIDAYS.ICS C:\DOCS\BDAYS.ICS`
 
 <img width="360" height="300" alt="Calendar" src="https://github.com/user-attachments/assets/9db4cf53-9938-4e35-8381-a7e1633a2cfa" />
+
+Days with events (from an .ICS file) will be indicated with a diamond. Clicking or selecting the diamond will show the Day view with an agenda list of the events.
+
 <img width="360" height="300" alt="Calendar - Day View" src="https://github.com/user-attachments/assets/d1dbe2c3-6d0a-48fd-9887-b3d2ed2f7f28" />
 
 <a id="!calc"></a>
