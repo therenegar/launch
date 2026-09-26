@@ -60,9 +60,8 @@ static void day_dialog(int year,int mon,int day)
     acc_text(x+3,y+2,b,ACC_HEADING,36);
     acc_button(x+w-17,y+2,"  \021  ",focus==0);
     acc_button(x+w-9,y+2,"  \020  ",focus==1);
-    acc_tooltip_clear_regions();
-    acc_tooltip_region(x+w-17,y+2,5,"Previous day",1);
-    acc_tooltip_region(x+w-9,y+2,5,"Next day",1);
+    
+    
     for(i=0;i<11;i++)acc_fill(x+3,y+4+i,51,1,' ',ACC_BG);
     for(i=top;i<n&&i<top+6;i++){
       int yy=y+4+(i-top)*2;

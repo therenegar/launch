@@ -184,6 +184,16 @@ static void journal_date_string(char *b)
  static char*w[]={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
  sprintf(b,"%s, %s %d %d",w[jweekday(jy,jm,jd)],m[jm],jd,jy);
 }
+static int journal_lpt1_detected(void)
+{
+ union REGS r;
+ /* INT 11h reports the number of installed parallel adapters in bits 14-15.
+    Avoid MK_FP/BDA access: MSC 6 may emit it as an unresolved external. */
+ memset(&r,0,sizeof(r));int86(0x11,&r,&r);
+ if(((r.x.ax>>14)&3)==0)return 0;
+ memset(&r,0,sizeof(r));r.h.ah=2;r.x.dx=0;int86(0x17,&r,&r);
+ return (r.h.ah&0x10)!=0;
+}
 static int journal_line_print_begin(void)
 {
  char b[64];int i;journal_line_printer=fopen("LPT1","wb");if(!journal_line_printer)return 0;
@@ -247,19 +257,19 @@ int main(int argc,char**argv)
  if(!acc_begin(argv[0],"Journal",0))return 1;
  q.h.ah=0x2A;int86(0x21,&q,&q);jy=q.x.cx;jm=q.h.dh;jd=q.h.dl;
  x=(acc_cols-70)/2;y=(acc_rows-20)/2;tx=x+3;ty=y+2;load();
- if(journal_print_mode){if(!journal_line_print_begin()){acc_notice("Print","Unable to open LPT1; Journal will continue in normal editing mode.");journal_print_mode=0;}else journal_typewriter_start(&cx,&cy);}
+ if(journal_print_mode){if(!journal_lpt1_detected()){acc_notice("Print Error","No printing hardware detected.");journal_print_mode=0;}else if(!journal_line_print_begin()){acc_notice("Print Error","No printing hardware detected.");journal_print_mode=0;}else journal_typewriter_start(&cx,&cy);}
  acc_box(x,y,70,20,"Journal");view(tx,ty,cx,cy,top);
  while(key!=27){
   /* In /PRINT mode date navigation is read-only for the active typewriter sheet. */
   if(journal_print_mode){acc_button_disabled(x+3,y+17,"  \021  ");acc_button_disabled(x+10,y+17,"  \020  ");acc_button_disabled(x+17,y+17,"  Go To  ");}
   else{acc_button(x+3,y+17,"  \021  ",focus==1);acc_button(x+10,y+17,"  \020  ",focus==2);acc_button(x+17,y+17,"  Go To  ",focus==3);}
-  acc_put(x+28,y+17,179,ACC_BORDER);acc_button(x+30,y+17,"  Chars  ",focus==4);acc_button(x+41,y+17,"  Export  ",focus==5);journal_print_button(x+49,y+17,focus==6);acc_button(x+60,y+17,"  Exit  ",focus==7);acc_wait(&key,&mx,&my,&mb);
+  acc_put(x+28,y+17,179,ACC_BORDER);acc_button(x+30,y+17,"  Export  ",focus==5);journal_print_button(x+38,y+17,focus==6);acc_button(x+46,y+17,"  ",focus==4);acc_button(x+60,y+17,"  Exit  ",focus==7);acc_wait(&key,&mx,&my,&mb);
   /* Mouse toolbar activation mirrors keyboard activation.  Disabled date buttons
      do not move the typewriter to another journal page. */
-  if(mb&1){if(my==y+17){journal_selection_clear();if(!journal_print_mode&&mx>=x+2&&mx<x+7){focus=1;key=13;}else if(!journal_print_mode&&mx>=x+9&&mx<x+14){focus=2;key=13;}else if(!journal_print_mode&&mx>=x+16&&mx<x+25){focus=3;key=13;}else if(mx>=x+29&&mx<x+38){focus=4;key=13;}else if(mx>=x+40&&mx<x+46){focus=5;key=13;}else if(mx>=x+48&&mx<x+54){focus=6;key=13;}else if(mx>=x+60&&mx<x+66){focus=7;key=13;}}}
+  if(mb&1){if(my==y+17){journal_selection_clear();if(!journal_print_mode&&mx>=x+2&&mx<x+7){focus=1;key=13;}else if(!journal_print_mode&&mx>=x+9&&mx<x+14){focus=2;key=13;}else if(!journal_print_mode&&mx>=x+16&&mx<x+25){focus=3;key=13;}else if(mx>=x+30&&mx<x+36){focus=5;key=13;}else if(mx>=x+38&&mx<x+44){focus=6;key=13;}else if(mx>=x+46&&mx<x+49){focus=4;key=13;}else if(mx>=x+60&&mx<x+66){focus=7;key=13;}}}
   if(key==9||key==271){
-   if(journal_print_mode){static int pfwd[5]={0,4,5,6,7};int pi=-1,k;for(k=0;k<5;k++)if(pfwd[k]==focus){pi=k;break;}if(pi<0)pi=(key==271)?4:0;else pi=(pi+(key==271?4:1))%5;focus=pfwd[pi];}
-   else if(focus<0)focus=(key==271)?7:0;else focus=(key==271)?(focus+7)%8:(focus+1)%8;
+   if(journal_print_mode){static int pfwd[5]={0,5,6,4,7};int pi=-1,k;for(k=0;k<5;k++)if(pfwd[k]==focus){pi=k;break;}if(pi<0)pi=(key==271)?4:0;else pi=(pi+(key==271?4:1))%5;focus=pfwd[pi];}
+   else{static int nfwd[8]={0,1,2,3,5,6,4,7};int ni=-1,k;for(k=0;k<8;k++)if(nfwd[k]==focus){ni=k;break;}if(ni<0)ni=(key==271)?7:0;else ni=(ni+(key==271?7:1))%8;focus=nfwd[ni];}
    journal_editor_focus=(focus==0);if(focus!=0)journal_selection_clear();view(tx,ty,cx,cy,top);key=0;continue;
   }
   if(key==13&&focus>0){
@@ -267,7 +277,7 @@ int main(int argc,char**argv)
    else if(!journal_print_mode&&focus==3){save();journal_selection_clear();if(calpick())load();acc_box(x,y,70,20,"Journal");}
    else if(focus==4){ch=character_palette();acc_box(x,y,70,20,"Journal");if(ch>=0){if(journal_print_mode)journal_typewriter_put(ch,&cx,&cy);else{if(journal_has_selection())journal_delete_selection(&cx,&cy);note[cy*NW+cx]=(char)ch;if(cx<NW-1)cx++;journal_selection_clear();}}}
    else if(focus==5){save();if(export_all(exp)){sprintf(msg,"Journal exported to\n%s",exp);acc_notice("Export",msg);}}
-   else if(focus==6){if(!journal_print_mode){FILE*f=fopen("LPT1","wb");int r,q2;if(f){for(r=0;r<NL;r++){q2=NW;while(q2&&note[r*NW+q2-1]==' ')q2--;fwrite(note+r*NW,1,q2,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);}}}
+   else if(focus==6){if(journal_print_mode){acc_notice("Typewriter Mode","Typewriter printing mode is active. All characters typed\nwill be sent to the printer immediately. No deleting or text changes.\nPreceeding chars on the same line can be redacted with Backspace");}else{FILE*f=fopen("LPT1","wb");int r,q2;if(f){for(r=0;r<NL;r++){q2=NW;while(q2&&note[r*NW+q2-1]==' ')q2--;fwrite(note+r*NW,1,q2,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);}}}
    else key=27;view(tx,ty,cx,cy,top);if(key!=27)key=0;continue;
   }
   /* Clicking the paper can focus /PRINT mode but never relocates its insertion point. */
@@ -289,7 +299,7 @@ int main(int argc,char**argv)
    else if(key==256+0x77){cy=2;cx=4;journal_selection_clear();}
    else if(key==256+0x75){cy=last_text_line();cx=NW-1;while(cx>4&&note[cy*NW+cx-1]==' ')cx--;journal_selection_clear();}
    else if(key==24){journal_copy_selection();journal_delete_selection(&cx,&cy);oldtop=-1;key=0;}
-   else if((key==22||key==16)){journal_paste(&cx,&cy,insert);oldtop=-1;key=0;}
+   else if((key==22)){journal_paste(&cx,&cy,insert);oldtop=-1;key=0;}
    else if(key==256+75&&cx>4){cx--;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
    else if(key==256+77&&cx<NW-1){cx++;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}
    else if(key==256+72&&cy>2){cy--;journal_selection_move(oldpos,journal_pos(cx,cy),shift);}

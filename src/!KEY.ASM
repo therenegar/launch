@@ -1727,7 +1727,7 @@ msg_already:
     .ascii "!KEY is already installed.\r\n$"
 .endif
 msg_press:
-    .ascii "Press $"
+    .ascii "\r\n\r\nPress $"
 msg_open_prefix:
     .ascii " to open the $"
 display_launch:

@@ -191,8 +191,6 @@ static void stack_join_next(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,n,take,room;i
 static void stack_join_previous(int *pcx,int *pcy){int cy=*pcy,prev,n,take,room;if(cy<=0)return;prev=stack_used(cy-1);n=stack_used(cy);room=CW-prev;if(room<=0){*pcy=cy-1;*pcx=CW-1;return;}take=n<room?n:room;if(take)memcpy(cards[current].text+(cy-1)*CW+prev,cards[current].text+cy*CW,take);if(take>=n)stack_remove_row(cy);else{memmove(cards[current].text+cy*CW,cards[current].text+cy*CW+take,CW-take);memset(cards[current].text+cy*CW+CW-take,' ',take);}*pcy=cy-1;*pcx=prev;}
 static void stack_split_line(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,r,n,tail,indent=0;if(cy>=TEXT_LINES-1)return;while(indent<CW&&cards[current].text[cy*CW+indent]==' ')indent++;if(indent>=CW)indent=0;for(r=TEXT_LINES-1;r>cy+1;r--){memcpy(cards[current].text+r*CW,cards[current].text+(r-1)*CW,CW);stack_softwrap[current][r]=stack_softwrap[current][r-1];}memset(cards[current].text+(cy+1)*CW,' ',CW);n=stack_used(cy);tail=n>cx?n-cx:0;if(tail>CW-indent)tail=CW-indent;if(tail)memcpy(cards[current].text+(cy+1)*CW+indent,cards[current].text+cy*CW+cx,tail);memset(cards[current].text+cy*CW+cx,' ',CW-cx);stack_softwrap[current][cy+1]=0;*pcy=cy+1;*pcx=indent;}
 
-void acc_tooltip_region(int x,int y,int w,const char *text,int active);
-void acc_tooltip_clear_regions(void);
 int main(int argc,char **argv)
 {
   char counter[12],exported[ACC_PATH],message[ACC_PATH+32];
@@ -206,13 +204,11 @@ int main(int argc,char **argv)
   while(key!=27){
     if(dirty){cards_draw(px,y,focus,title_edit,tp,cx,cy,top);dirty=0;}
     if(count>1)acc_button(x,y+13," Prev ",focus==2);else acc_button_disabled(x,y+13," Prev ");
-    sprintf(counter,"%d",current+1);i=(int)strlen(counter);
-    acc_text(x+7,y+13,"",ACC_LABEL,5);acc_text(x+7,y+13,counter,ACC_HEADING,i);
-    sprintf(counter,"/%d",count);acc_text(x+7+i,y+13,counter,ACC_LABEL,(int)strlen(counter));
-    if(count>1)acc_button(x+14,y+13," Next ",focus==3);else acc_button_disabled(x+14,y+13," Next ");acc_button(x+21,y+13,"  Add  ",focus==4);
-    if(count>1)acc_button(x+29,y+13,"  Delete  ",focus==5);else acc_button_disabled(x+29,y+13,"  Delete  ");acc_button(x+37,y+13,"  Export  ",focus==6);
-    acc_button(x+55,y+13,"  Exit  ",focus==7);
-    acc_tooltip_clear_regions();acc_tooltip_region(px+2,y+1,CT,"Select to edit title",1);if(count>=2)acc_tooltip_region(px+4,y-1,CT,"Bring card to front",1);if(count>=3)acc_tooltip_region(px+6,y-3,CT,"Bring card to front",1);acc_wait(&key,&mx,&my,&mb);
+    if(count>1)acc_button(x+6,y+13," Next ",focus==3);else acc_button_disabled(x+6,y+13," Next ");
+    sprintf(counter,"%d",current+1);i=(int)strlen(counter);acc_text(x+12,y+13,"",ACC_LABEL,6);acc_text(x+12,y+13,counter,ACC_HEADING,i);sprintf(counter,"/%d",count);acc_text(x+12+i,y+13,counter,ACC_LABEL,(int)strlen(counter));
+    acc_put(x+18,y+13,179,ACC_BORDER);acc_button(x+20,y+13,"  Add  ",focus==4);
+    if(count>1)acc_button(x+28,y+13,"  Delete  ",focus==5);else acc_button_disabled(x+28,y+13,"  Delete  ");acc_button(x+36,y+13,"  Export  ",focus==6);acc_button(x+44,y+13,"  Print  ",focus==7);
+    acc_button(x+56,y+13,"  Exit  ",focus==8);acc_wait(&key,&mx,&my,&mb);
 
     if((mb&1)&&count>=2&&my==y-1&&mx>=px+4&&mx<px+26){stack_selection_clear();select_card(lower_card(1));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
     if((mb&1)&&count>=3&&my==y-3&&mx>=px+6&&mx<px+28){stack_selection_clear();select_card(lower_card(2));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
@@ -231,7 +227,7 @@ int main(int argc,char **argv)
       focus=1;title_edit=0;dirty=1;key=0;continue;
     }
     if((mb&1)&&my>=y+3&&my<y+3+VISIBLE_LINES&&mx>=px+2&&mx<px+2+CW){focus=1;title_edit=0;stack_selection_clear();cx=mx-(px+2);cy=top+my-(y+3);dirty=1;key=0;continue;}
-    if((mb&1)&&my==y+13){stack_selection_clear();title_edit=0;if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+14&&mx<x+19)focus=3;else if(mx>=x+21&&mx<x+27)focus=4;else if(count>1&&mx>=x+29&&mx<x+35)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+55&&mx<x+61)focus=7;key=13;}
+    if((mb&1)&&my==y+13){stack_selection_clear();title_edit=0;if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+6&&mx<x+11)focus=3;else if(mx>=x+20&&mx<x+26)focus=4;else if(count>1&&mx>=x+28&&mx<x+34)focus=5;else if(mx>=x+36&&mx<x+42)focus=6;else if(mx>=x+44&&mx<x+50)focus=7;else if(mx>=x+56&&mx<x+62)focus=8;key=13;}
 
     /* Esc first leaves title editing; a second Esc closes the program. */
     if(key==27&&title_edit){title_edit=0;dirty=1;key=0;continue;}
@@ -239,8 +235,8 @@ int main(int argc,char **argv)
     if(key==9||key==271){
       int dir=(key==271)?-1:1;
       title_edit=0;
-      if(focus<0)focus=(dir<0)?7:0;
-      else do { focus=(focus+dir+8)%8; } while(count<=1&&(focus==2||focus==3||focus==5));
+      if(focus<0)focus=(dir<0)?8:0;
+      else do { focus=(focus+dir+9)%9; } while(count<=1&&(focus==2||focus==3||focus==5));
       if(focus!=1)stack_selection_clear();dirty=1;key=0;continue;
     }
     if(key==13&&focus==0){
@@ -254,7 +250,8 @@ int main(int argc,char **argv)
       else if(focus==4&&count<CARDS){cards[count].used=1;sprintf(cards[count].title,"Card %d",count+1);memset(cards[count].text,' ',sizeof(cards[count].text));memset(stack_softwrap[count],0,TEXT_LINES);count++;stack_selection_clear();select_card(count-1);cx=cy=top=0;}
       else if(focus==5&&count>1){for(i=current;i<count-1;i++){cards[i]=cards[i+1];memcpy(stack_softwrap[i],stack_softwrap[i+1],TEXT_LINES);}memset(stack_softwrap[count-1],0,TEXT_LINES);count--;if(current>=count)current=count-1;stack_selection_clear();cx=cy=top=0;}
       else if(focus==6){if(!export_cards(exported))acc_notice("Export","Unable to export stack.");else{sprintf(message,"Card Stack exported to\n%s",exported);acc_notice("Export",message);}}
-      else if(focus==7)key=27;
+      else if(focus==7){FILE*f=fopen("LPT1","wb");int r,q;if(!f)acc_notice("Print","Unable to open LPT1.");else{fputs(cards[current].title,f);fputs("\r\n",f);for(q=0;q<72;q++)fputc('=',f);fputs("\r\n",f);for(r=0;r<TEXT_LINES;r++){q=CW;while(q&&cards[current].text[r*CW+q-1]==' ')q--;if(q)fwrite(cards[current].text+r*CW,1,q,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);}}
+      else if(focus==8)key=27;
       dirty=1;if(key!=27)key=0;continue;
     }
 

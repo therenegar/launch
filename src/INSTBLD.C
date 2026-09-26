@@ -1,4 +1,4 @@
-/* Launch! 3.71 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 3.72 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -558,7 +558,7 @@ static int append_autoexec(const char *filename,const char *path,int add_path,
   FILE *f;static char path_line[256],load_line[256],menu_line[256];long size;
   static const char *lines[3];static int wanted[3];int i,last=0,missing=0;
   sprintf(path_line,"PATH %%PATH%%;%s",path);
-  sprintf(load_line,"%s%s\\!KEY.COM",loadhigh_supported(path)?"LOADHIGH ":"",path);
+  sprintf(load_line,"%s\\!KEY.COM",path);
   if(add_shortcut && *key_spec){strcat(load_line," /KEY=");strcat(load_line,key_spec);}
   sprintf(menu_line,"%s\\!.EXE",path);
   lines[0]=path_line;lines[1]=load_line;lines[2]=menu_line;
@@ -759,7 +759,7 @@ int main(int argc,char **argv)
   (void)argc;
   installer_clear_screen();
   puts("\n");
-  puts("Launch! 3.71 Installation");
+  puts("Launch! 3.72 Installation");
   installer_title_rule();
   puts("");
   cpu_ok=cpu_at_least_286();display_name=display_adapter(&display_ok);vga_display=!strncmp(display_name,"VGA",3);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;

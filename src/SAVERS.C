@@ -454,7 +454,7 @@ void scooter_saver_loop(unsigned start_x,unsigned start_y)
   }
 }
 
-/* ---------------------------- Spiro (Squiral) ---------------------------- */
+/* -------------------------- Defrag (formerly Spiro) ----------------------- */
 
 #define SQUIRAL_COLS 80
 #define SQUIRAL_ROWS 43
@@ -462,9 +462,16 @@ void scooter_saver_loop(unsigned start_x,unsigned start_y)
 #define SQUIRAL_WORMS 14
 typedef struct { int x,y,direction,hand;unsigned char colour; } SQUIRAL_WORM;
 static SQUIRAL_WORM far squiral_worms[SQUIRAL_WORMS];
+/* 0 means unused; otherwise the cell contains its actual EGA colour. */
 static unsigned char far *squiral_cells;
 static const signed char squiral_dx[4]={1,0,-1,0};
 static const signed char squiral_dy[4]={0,1,0,-1};
+
+static void squiral_draw_cell(int index,unsigned char colour)
+{
+  int x=index%SQUIRAL_COLS,y=index/SQUIRAL_COLS;
+  ega_rectangle(x*8+1,y*8+1,6,6,colour);
+}
 
 static int squiral_clear_direction(const SQUIRAL_WORM far *worm,int direction)
 {
@@ -489,9 +496,63 @@ static void squiral_reset(void)
   }
 }
 
+/* Re-arrange the completed Spiro field in the manner of a disk defragmenter.
+   Cells are grouped by colour from the top-left, producing solid contiguous
+   runs across rows.  A bright flashing outline marks the block currently
+   being moved.  Return non-zero if user input asks the saver to finish. */
+static int squiral_defrag(unsigned start_x,unsigned start_y)
+{
+  unsigned counts[16];
+  int target,source,colour,cursor_on=0,flash;
+  unsigned char old_colour;
+  unsigned long last_tick,tick;
+  for(colour=0;colour<16;colour++)counts[colour]=0;
+  for(target=0;target<SQUIRAL_CELLS;target++)
+    if(squiral_cells[target]<16)counts[squiral_cells[target]]++;
+
+  target=0;last_tick=bios_ticks();
+  /* Coloured blocks first; any unfilled cells are compacted at the end. */
+  for(colour=9;colour<=15;colour++)while(counts[colour]--){
+    if(saver_input(start_x,start_y))return 1;
+    if(squiral_cells[target]!=(unsigned char)colour){
+      for(source=target+1;source<SQUIRAL_CELLS;source++)
+        if(squiral_cells[source]==(unsigned char)colour)break;
+      if(source<SQUIRAL_CELLS){
+        /* Flash a Defrag-style cursor briefly over the block being moved. */
+        for(flash=0;flash<2;flash++){
+          do{tick=bios_ticks();}while(tick==last_tick&&!saver_input(start_x,start_y));
+          if(saver_input(start_x,start_y))return 1;
+          last_tick=tick;cursor_on=!cursor_on;
+          if(cursor_on)saver_box_outline((source%SQUIRAL_COLS)*8+4,
+                                        (source/SQUIRAL_COLS)*8+4,4,4,15);
+          else squiral_draw_cell(source,squiral_cells[source]);
+        }
+        old_colour=squiral_cells[target];
+        squiral_cells[target]=(unsigned char)colour;
+        squiral_cells[source]=old_colour;
+        squiral_draw_cell(target,squiral_cells[target]);
+        squiral_draw_cell(source,squiral_cells[source]);
+      }
+    }
+    target++;
+  }
+  /* Briefly sweep the cursor over the finished contiguous field. */
+  for(source=0;source<target;source+=8){
+    if(saver_input(start_x,start_y))return 1;
+    saver_box_outline((source%SQUIRAL_COLS)*8+4,(source/SQUIRAL_COLS)*8+4,4,4,15);
+    tick=bios_ticks();while(bios_ticks()==tick)if(saver_input(start_x,start_y))return 1;
+    squiral_draw_cell(source,squiral_cells[source]);
+  }
+  /* Leave the defragmented result visible for a short moment. */
+  tick=bios_ticks();while((unsigned long)(bios_ticks()-tick)<18UL)
+    if(saver_input(start_x,start_y))return 1;
+  return 0;
+}
+
 void squiral_saver_loop(unsigned start_x,unsigned start_y)
 {
-  int i,turn,direction,attempt,index,moved,stalled=0;SQUIRAL_WORM far *worm;
+  int i,turn,direction,attempt,index,moved,stalled=0,placed=0;
+  SQUIRAL_WORM far *worm;
   unsigned frames=0;
   unsigned long last_tick=bios_ticks(),tick;
   squiral_cells=(unsigned char far *)_fmalloc(SQUIRAL_CELLS);if(!squiral_cells)return;
@@ -513,11 +574,19 @@ void squiral_saver_loop(unsigned start_x,unsigned start_y)
       worm->direction=direction;worm->x+=squiral_dx[direction];worm->y+=squiral_dy[direction];
       if(worm->x<0)worm->x+=SQUIRAL_COLS;if(worm->x>=SQUIRAL_COLS)worm->x-=SQUIRAL_COLS;
       if(worm->y<0)worm->y+=SQUIRAL_ROWS;if(worm->y>=SQUIRAL_ROWS)worm->y-=SQUIRAL_ROWS;
-      index=worm->y*SQUIRAL_COLS+worm->x;squiral_cells[index]=1;
-      ega_rectangle(worm->x*8+1,worm->y*8+1,6,6,worm->colour);moved++;
+      index=worm->y*SQUIRAL_COLS+worm->x;
+      if(!squiral_cells[index])placed++;
+      squiral_cells[index]=worm->colour;
+      squiral_draw_cell(index,worm->colour);moved++;
     }
     frames++;if(moved)stalled=0;else stalled++;
-    if(stalled>=90||frames>=1092){squiral_reset();stalled=0;frames=0;}
+    /* The original effect naturally stops with a few isolated holes because
+       it keeps a two-cell clearance.  Treat that visually-full state as the
+       end of the fragmentation pass, then perform the new Defrag phase. */
+    if(stalled>=90||frames>=1092||placed>=SQUIRAL_CELLS-32){
+      if(squiral_defrag(start_x,start_y))break;
+      squiral_reset();stalled=0;frames=0;placed=0;last_tick=bios_ticks();
+    }
   }
   _ffree(squiral_cells);squiral_cells=0;
 }

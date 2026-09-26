@@ -447,7 +447,7 @@ int main(int argc,char **argv)
   char drive_letter[MAX_DRIVES];unsigned drive_percent[MAX_DRIVES];
   unsigned long drive_total[MAX_DRIVES],drive_free[MAX_DRIVES];
   unsigned eq,total,avail,country;unsigned long physical,tk,fk;DF_DOS_INFO dos;
-  int x=2,y=2,w=75,h=21,row,d,drive_count=0,i;
+  int x=2,y=1,w=75,h=22,row,d,drive_count=0,i;
   int serial,parallel,game,netint,flops,cd;
   const char *cs,*blaster;
 
@@ -472,7 +472,7 @@ int main(int argc,char **argv)
   /* DFETCH has no toolbar: remove acc_box()'s standard toolbar divider. */
   acc_fill(x+1,y+h-4,w-2,1,' ',ACC_BG);
   acc_put(x,y+h-4,179,ACC_BORDER);acc_put(x+w-1,y+h-4,179,ACC_BORDER);
-  draw_logo(x+3,y+2,dos.family);
+  draw_logo(x+3,y+6,dos.family);
   row=y+2;
   if(dos.family==DF_DOS_DR)
     sprintf(s,"%s %d.%02d",dos_vendor(dos.family),dos.major,dos.minor);
@@ -483,7 +483,6 @@ int main(int argc,char **argv)
   fetch_item(x+24,row++,"Kernel",kernel_name(dos.family));
   cs=getenv("COMSPEC");fetch_item(x+24,row++,"Shell",basename_dos(cs));
   fetch_item(x+24,row++,"Display",video_name());
-  country=dos_country();if(country){sprintf(s,"%03u - %s",country,country_name(country));fetch_item(x+24,row++,"Locale",s);}else fetch_item(x+24,row++,"Locale","Unknown");
   fetch_item(x+24,row++,"CPU",processor());
 
   total=_bios_memsize();avail=largest_program_kb();physical=physical_ram_kb();
@@ -500,8 +499,9 @@ int main(int argc,char **argv)
   netint=packet_driver_interrupt();if(netint>=0){sprintf(s,"Packet driver at INT %02Xh",netint);fetch_item(x+24,row++,"Network",s);}else fetch_item(x+24,row++,"Network","Not detected");
   blaster=getenv("BLASTER");if(blaster&&*blaster){fetch_item(x+24,row++,"Audio","Sound Blaster or compatible");}else fetch_item(x+24,row++,"Audio","Not detected");
   serial=(eq>>9)&7;parallel=(eq>>14)&3;game=(eq&0x1000)?1:0;sprintf(s,"%d serial, %d parallel%s",serial,parallel,game?", 1 game":"");fetch_item(x+24,row++,"Ports",s);
+  country=dos_country();if(country){sprintf(s,"%03u - %s",country,country_name(country));fetch_item(x+24,row++,"Locale",s);}else fetch_item(x+24,row++,"Locale","Unknown");
 
-  draw_palette(x+24,y+18);
+  draw_palette(x+24,y+19);
   for(;;){
     int k=0,mx=0,my=0;unsigned mb=0;
     acc_wait(&k,&mx,&my,&mb);

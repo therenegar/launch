@@ -132,7 +132,7 @@ static void tape_faux_shadow(int x,int y,int w,int h)
 }
 static void tape_value(int x,int y,int w,const TAPE_REC *r)
 {
- char left[24],right[24],op[2];const char *dot;int ln,rn,decimal_col,attr,start,i;
+ char left[24],right[24],op[2];const char *dot;int ln,decimal_col,attr,start,i;
  if((unsigned char)r->op==196){for(i=2;i<w-2;i++)acc_put(x+i,y,196,ACC_ATTR(7,1));return;}
  dot=strchr(r->value,'.');
  if(dot){ln=(int)(dot-r->value);if(ln>22)ln=22;memcpy(left,r->value,ln);left[ln]=0;strncpy(right,dot,22);right[22]=0;}
@@ -201,13 +201,24 @@ static void calc_action(const char *s,double *value,char *entry,char *op)
  }
 }
 
+static int calc_lpt1_detected(void)
+{
+ union REGS r;
+ /* INT 11h reports the number of installed parallel adapters in bits 14-15.
+    Avoid MK_FP/BDA access: MSC 6 may emit it as an unresolved external. */
+ memset(&r,0,sizeof(r));int86(0x11,&r,&r);
+ if(((r.x.ax>>14)&3)==0)return 0;
+ memset(&r,0,sizeof(r));r.h.ah=2;r.x.dx=0;int86(0x17,&r,&r);
+ return (r.h.ah&0x10)!=0;
+}
+
 int main(int argc,char **argv)
 {
  double value=0;char entry[24]="",op=0,t[2];int bx,by,x,y,tx,ty,i,focus=-1,key=0,mx=0,my=0,ki;unsigned mb=0;
  if(acc_help(argc,argv,"!CALC","A simple four-function desktop calculator.  /PRINT sends each tape line to LPT1."))return 0;
  for(i=1;i<argc;i++)if(!stricmp(argv[i],"/PRINT")||!stricmp(argv[i],"-PRINT"))print_mode=1;
  if(!acc_begin(argv[0],"Calculator",0))return 1;
- if(print_mode){print_file=fopen("LPT1","wb");if(!print_file){acc_notice("Print","Unable to open LPT1; calculator will continue without printing.");print_mode=0;}}
+ if(print_mode){if(!calc_lpt1_detected()){acc_notice("Print Error","No printing hardware detected.");print_mode=0;}else{print_file=fopen("LPT1","wb");if(!print_file){acc_notice("Print Error","No printing hardware detected.");print_mode=0;}}}
  calc_segments_install();
  /* CALC2.ASC is the authoritative 80x25 layout.  Keep these coordinates
     relative to an 80x25 canvas so the overlap is exact. */

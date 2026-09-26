@@ -628,6 +628,7 @@ int main(int argc,char **argv)
     }
     if((mb&1)&&my==ly+todos_view_rows){nt=collect_tags(tags);if(mx>=lx+6&&mx<lx+9){filter[0]=0;tag_sel=0;}else{int p=9;for(i=0;i<nt;i++){p++;if(mx>=lx+p&&mx<lx+p+(int)strlen(tags[i])){strcpy(filter,tags[i]);tag_sel=i+1;break;}p+=(int)strlen(tags[i]);}}sel=top=0;focus=1;expanded=0;dirty=1;key=0;continue;}
     if(!maximized&&(mb&1)&&my==y+h-3){if(mx>=x+3&&mx<x+9)focus=2;else if(mx>=x+11&&mx<x+17)focus=3;else if(mx>=x+19&&mx<x+25)focus=4;else if(mx>=x+27&&mx<x+33)focus=5;else if(mx>=x+37&&mx<x+43)focus=6;else if(mx>=x+45&&mx<x+53)focus=7;else if(mx>=x+w-10&&mx<x+w-4)focus=8;key=13;}
+    if(key==256+0xA5){date_tab=(date_tab+1)%5;sel=top=0;expanded=0;focus=9;dirty=1;key=0;continue;}
     if(key==9||key==271){
       static int order[9]={1,0,2,3,4,5,6,7,8};int p,dir=(key==271)?-1:1;
       if(focus<0)focus=(key==271)?8:1;

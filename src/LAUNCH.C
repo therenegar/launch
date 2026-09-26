@@ -1,4 +1,4 @@
-/* Launch! 3.71 - modal command menu for DOS
+/* Launch! 3.72 - modal command menu for DOS
  * Microsoft C/C++ 7.0, medium model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -1284,7 +1284,7 @@ static void font_plane_close(const FONT_REGS *old)
 }
 
 static const unsigned char launchui_codes[41]={16,17,30,31,169,170,173,174,175,181,182,183,184,185,186,187,188,189,190,198,225,200,201,202,224,204,205,234,229,208,209,210,211,212,213,235,215,255,220,244,245};
-/* Release 3.71 icon runtime slots.  Left halves marked with * in the source
+/* Release 3.72 icon runtime slots.  Left halves marked with * in the source
    glyph map stay in C0h-DFh so VGA supplies the ninth-column extension. */
 #define UI_OPEN_L    199
 #define UI_OPEN_R    230
@@ -2361,7 +2361,7 @@ static void draw_button_state(int x,int y,const char *label,int width,int focuse
   int i,a=0,b=0,icon=button_icon(label,&a,&b),left;unsigned short v;if(icon==2)width=9;else if(icon==3)width=9;else if(icon)width=(b<0)?5:6;/* Clear only the actual rendered button plus its one-cell shadow.  The old code cleared the caller's legacy text width after shrinking an icon button, which erased the two-cell right margin and dialog border. */for(i=0;i<=width;i++){cell(x+i,y,' ',C_MENU_BACKGROUND);cell(x+i,y+1,' ',C_MENU_BACKGROUND);}
   for(i=1;i<=width;i++){v=video[(y+1)*screen_cols+x+i];cell(x+i,y+1,220,((v>>8)&0xF0)|C_BLOCK_SHADOW_FG);}
   v=video[y*screen_cols+x+width];cell(x+width,y,245,((v>>8)&0xF0)|C_BLOCK_SHADOW_FG);v=video[(y+1)*screen_cols+x+width];cell(x+width,y+1,244,((v>>8)&0xF0)|C_BLOCK_SHADOW_FG);
-  {int ba=enabled?C_BUTTON:ATTR(appearance.controls_bg,(appearance.controls_fg&7)|8);textout(x,y,"",ba,width);if(icon==2){left=x+2;cell(left,y,a,ba);cell(left+1,y,b,ba);textout(left+2,y,"Run",ba,3);}else if(icon==3){left=x+1;cell(left,y,a,ba);cell(left+1,y,b,ba);textout(left+3,y,"Open",ba,4);}else if(icon){left=x+(b<0?2:(width-2)/2);cell(left,y,a,ba);if(b>=0)cell(left+1,y,b,ba);}else textout(x,y,label,ba,width);}if(focused&&enabled){int fa=ATTR(appearance.controls_bg,appearance.controls_fg&7);cell(x,y,169,fa);cell(x+width-1,y,170,fa);}
+  {int ba=enabled?C_BUTTON:ATTR(appearance.controls_bg,(appearance.controls_fg&7)|8);textout(x,y,"",ba,width);if(icon==2){left=x+2;cell(left,y,a,ba);cell(left+1,y,b,ba);textout(left+2,y,"Run",ba,3);}else if(icon==3){left=x+1;cell(left,y,a,ba);cell(left+1,y,b,ba);textout(left+3,y,"Open",ba,4);}else if(icon){left=x+(b<0?2:(width-2)/2);cell(left,y,a,ba);if(b>=0)cell(left+1,y,b,ba);}else textout(x,y,label,ba,width);}if(focused&&enabled){int fa=ATTR(appearance.controls_bg,appearance.main_title);cell(x,y,169,fa);cell(x+width-1,y,170,fa);}
 }
 static void draw_button(int x,int y,const char *label,int width,int focused){draw_button_state(x,y,label,width,focused,1);}
 static void draw_button_disabled(int x,int y,const char *label,int width){draw_button_state(x,y,label,width,0,0);}
@@ -2377,7 +2377,7 @@ static void press_button(int x,int y,const char *label,int width)
   else if(icon==3){left=x+1;cell(left,y,a,C_BUTTON);cell(left+1,y,b,C_BUTTON);textout(left+3,y,"Open",C_BUTTON,4);}
   else if(icon){left=x+(b<0?2:(rw-2)/2);cell(left,y,a,C_BUTTON);if(b>=0)cell(left+1,y,b,C_BUTTON);}
   else textout(x,y,label,C_BUTTON,rw);
-  {int fa=ATTR(appearance.controls_bg,appearance.controls_fg&7);cell(x,y,169,fa);cell(x+rw-1,y,170,fa);}
+  {int fa=ATTR(appearance.controls_bg,appearance.main_title);cell(x,y,169,fa);cell(x+rw-1,y,170,fa);}
   mouse_show();do{(void)mouse_poll(&mx,&my);}while(mouse_last_buttons&1);mouse_stop();
 }
 
@@ -3351,7 +3351,7 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
     textout(x+5,y+14,"SysBar:",C_INPUT_LABEL,18);
     check_line(x+25,y+14,"Show on menu open",appearance.show_sysbar,f==5||h==5);
   } else if(tab==1){
-    static const char *labels[10]={"Panels","Border","Titlebar","Main Title","Titles","Folders","Launchers","Selected items","Controls","Labels"};
+    static const char *labels[10]={"Panels","Border","Titlebar","Accent","Titles","Folders","Launchers","Selected items","Controls","Labels"};
     int scheme=colour_scheme_index();
     textout(x+5,y+4,"Color scheme",C_INPUT_LABEL,18);
     cycle_control(x+25,y+4,scheme<0?"Custom":colour_schemes[scheme].name,f==0||h==0);
@@ -3453,7 +3453,7 @@ static void config_about_box(void)
   bx=x+3;subdialog_box(x,y,w,h,"About Launch!");
   textout(x+3,y+2,"(C)Copyright 2026 Ben Renegar",C_INPUT_LABEL,34);
   textout(x+3,y+3,"www.benrenegar.com",C_INPUT_LABEL,34);
-  textout(x+3,y+6,"Version 3.71 - 2026-09-25",C_INPUT_LABEL,34);
+  textout(x+3,y+6,"Version 3.72 - 2026-09-26",C_INPUT_LABEL,34);
   for(;;){
     draw_button(bx,y+h-3,"  OK  ",6,focus==0);
     wait_input(&k,&mx,&my,&mb);
@@ -4388,13 +4388,13 @@ static int explore_dialog(void)
 typedef struct { char name[17],ext[49]; int launcher; } COLLECTION;
 typedef struct { char name[13],date[9],path[COLLECTION_PATH]; } COLLECTION_RESULT;
 static COLLECTION collections[MAX_COLLECTIONS];
-static COLLECTION_RESULT far collection_results[MAX_COLLECTION_RESULTS];
+static COLLECTION_RESULT far *collection_results=0;
 static int collection_count,collection_result_count,collection_sort_col,collection_sort_desc;
 static int collection_last_changed=-1;
 static int collection_macro_direct;
 static int collection_run_launcher=-1;
 static unsigned char openfile_mark[MAX_EXPLORE_ENTRIES];
-/* Search result paths live in the existing far collection_results[] table.
+/* Search result paths live in the far-heap collection_results table.
    Do not duplicate them in DGROUP: TC17 is already close to the 64K near-data
    ceiling under Microsoft C 7 medium model. */
 static int openfile_result_mode=0;
@@ -4509,8 +4509,13 @@ static int collection_launcher_choose(const char *ext)
      then reset our edge state before the picker becomes live. */
   if(mouse_present){
     union REGS mr;
-    do { mr.x.ax=3;int86(0x33,&mr,&mr); } while(mr.x.bx&1);
-    mouse_last_buttons=0;
+    /* Synchronise to the current physical button state instead of spinning
+       until release.  Some DOS mouse drivers can keep button 1 asserted
+       while a modal is being redrawn, which made File Open appear to lock
+       the entire machine.  The normal edge detector will see the next
+       press only after the current button has been released. */
+    mr.x.ax=3;int86(0x33,&mr,&mr);
+    mouse_last_buttons=mr.x.bx;
   }
   /* Disable the parent dialog close hit target while the nested picker is live. */
   dialog_close_x=-1;dialog_close_y=-1;
@@ -4629,8 +4634,9 @@ static int collection_edit_dialog(int edit_index)
   int focus=A_NAME,hover=-1,redraw=2,k=0,mx=0,my=0;
   int pos_name=0,pos_ext=0,launcher=-1,save_ok,len,scroll;
   unsigned mb=0;
-  char name[17]="",ext[49]="",normalized[49],chosen[25];
+  static char name[17],ext[49],normalized[49],chosen[25];
 
+  name[0]=ext[0]=normalized[0]=chosen[0]=0;
   if(edit_index>=0&&edit_index<collection_count){
     strcpy(name,collections[edit_index].name);
     strcpy(ext,collections[edit_index].ext);
@@ -4852,6 +4858,28 @@ static void search_literal_from_pattern(const char *pattern,char *out,int max)
 {
   int n=0;while(*pattern&&n<max){if(*pattern!='*'&&*pattern!='?'&&*pattern!='!')out[n++]=*pattern;pattern++;}out[n]=0;trim(out);
 }
+static void openfile_search_live_draw(void)
+{
+  int dx=(screen_cols-78)/2,dy=(screen_rows-21)/2,rx=21,row,index,start;
+  char rn[13],rp[COLLECTION_PATH],line[53];int avail,n,plen;
+  /* The search form has already been removed.  Repaint the result pane as
+     matches arrive so a recursive disk search never looks frozen. */
+  start=((collection_result_count-1)/EXPLORE_ROWS)*EXPLORE_ROWS;
+  for(row=0;row<EXPLORE_ROWS;row++){
+    index=start+row;textout(dx+rx,dy+6+row,"",C_MENU_BACKGROUND,52);
+    if(index>=collection_result_count)continue;
+    openfile_far_to_near(rn,collection_results[index].name,13);
+    openfile_far_to_near(rp,collection_results[index].path,COLLECTION_PATH);
+    line[0]=0;strncat(line,rn,12);strcat(line,"  ");
+    avail=52-(int)strlen(line);
+    plen=(int)strlen(rp);
+    if(plen<=avail)strncat(line,rp,avail);
+    else if(avail>3){strncat(line,rp,avail-3);strcat(line,"...");}
+    textout(dx+rx,dy+6+row,line,C_ITEM,52);
+  }
+  render_end();
+}
+
 static void openfile_search_dir(const char *dir,const char *pattern,const char *exts,int recurse,int deep,int depth)
 {
   struct find_t found;char mask[MAX_CMD],full[MAX_CMD],literal[64];unsigned r;int namehit,contenthit;
@@ -4863,49 +4891,74 @@ static void openfile_search_dir(const char *dir,const char *pattern,const char *
     if((found.attrib&_A_SUBDIR)&&strcmp(found.name,".")&&strcmp(found.name,"..")){
       if(recurse){strcpy(full,dir);if(full[strlen(full)-1]!='\\')strcat(full,"\\");strcat(full,found.name);openfile_search_dir(full,pattern,exts,recurse,deep,depth+1);}
     }else if(!(found.attrib&_A_SUBDIR)&&collection_file_match(found.name,exts)){
-      namehit=search_wild_match(pattern,found.name);contenthit=0;
+      /* Plain search text is a case-insensitive filename fragment.  Wildcard
+         characters opt into DOS-style wildcard matching.  Thus "globe"
+         finds GLOBE.BMP while "glob?.*" remains available when wanted. */
+      if(strchr(pattern,'*')||strchr(pattern,'?')||strchr(pattern,'!'))
+        namehit=search_wild_match(pattern,found.name);
+      else namehit=search_contains_ci(found.name,pattern);
+      contenthit=0;
       strcpy(full,dir);if(full[strlen(full)-1]!='\\')strcat(full,"\\");strcat(full,found.name);
       if(deep&&!namehit&&literal[0])contenthit=search_file_contains(full,literal);
       if(namehit||contenthit){
         COLLECTION_RESULT far *cr=&collection_results[collection_result_count++];
         openfile_near_to_far(cr->name,found.name,13);cr->date[0]=0;openfile_near_to_far(cr->path,dir,COLLECTION_PATH);
+        openfile_search_live_draw();
       }
     }
     r=_dos_findnext(&found);
   }
 }
-static int openfile_search_dialog(const char *exts,const char *current)
+static int openfile_search_dialog(const char *assoc_name,const char *exts,const char *current)
 {
-  int w=62,h=13,x=(screen_cols-w)/2,y=(screen_rows-h)/2,focus=0,k,mx,my,posn,posp,recurse=1,deep=0,i;unsigned mb;
-  char pattern[32]="*",look[COLLECTION_PATH];strncpy(look,current,COLLECTION_PATH-1);look[COLLECTION_PATH-1]=0;posn=strlen(pattern);posp=strlen(look);
+  int w=62,h=15,x=(screen_cols-w)/2,y=(screen_rows-h)/2,focus=0,k,mx,my,posn,posp,recurse=1,deep=0,i;unsigned mb;
+  unsigned short far *behind=0;unsigned cells=(unsigned)(screen_cols*screen_rows);
+  char pattern[32]="*",look[COLLECTION_PATH],heading[48];
+  behind=(unsigned short far *)_fmalloc(cells*2U);
+  if(behind)for(i=0;i<(int)cells;i++)behind[i]=video[i];
+  strncpy(look,current,COLLECTION_PATH-1);look[COLLECTION_PATH-1]=0;posn=strlen(pattern);posp=strlen(look);
+  strcpy(heading,"Search files for ");
+  if(assoc_name)strncat(heading,assoc_name,sizeof(heading)-strlen(heading)-1);
   for(;;){
     subdialog_box(x,y,w,h,"Search Files");
-    textout(x+3,y+2,"Search for:",C_INPUT_LABEL,12);textout(x+16,y+2,"                                      ",focus==0?C_SELECTED:C_INPUT_FIELD,38);textout(x+16,y+2,pattern,focus==0?C_SELECTED:C_INPUT_FIELD,38);
-    textout(x+3,y+4,"Look in:",C_INPUT_LABEL,12);textout(x+16,y+4,"                                      ",focus==1?C_SELECTED:C_INPUT_FIELD,38);textout(x+16,y+4,look,focus==1?C_SELECTED:C_INPUT_FIELD,38);
-    check_line(x+16,y+6,"Search sub-directories",recurse,focus==2);
-    check_line(x+16,y+7,"Go deep",deep,focus==3);
-    draw_button(x+3,y+10," Search ",8,focus==4);draw_button(x+12,y+10,"  Cancel  ",10,focus==5);
+    textout(x+3,y+2,heading,C_TITLE,w-6);
+    textout(x+3,y+4,"Search for:",C_INPUT_LABEL,12);textout(x+16,y+4,"                                      ",focus==0?C_SELECTED:C_INPUT_FIELD,38);textout(x+16,y+4,pattern,focus==0?C_SELECTED:C_INPUT_FIELD,38);
+    textout(x+3,y+6,"Look in:",C_INPUT_LABEL,12);textout(x+16,y+6,"                                      ",focus==1?C_SELECTED:C_INPUT_FIELD,38);textout(x+16,y+6,look,focus==1?C_SELECTED:C_INPUT_FIELD,38);
+    check_line(x+16,y+8,"Search sub-directories",recurse,focus==2);
+    check_line(x+16,y+9,"Go deep",deep,focus==3);
+    draw_button(x+3,y+12," Search ",8,focus==4);draw_button(x+12,y+12,"  Cancel  ",10,focus==5);
     wait_input(&k,&mx,&my,&mb);
     if(mb&1){
-      if(my==y+6&&mx>=x+16&&mx<x+40){recurse=!recurse;continue;}
-      if(my==y+7&&mx>=x+16&&mx<x+40){deep=!deep;continue;}
-      if(my==y+10&&mx>=x+3&&mx<x+11){focus=4;k=13;}
-      else if(my==y+10&&mx>=x+12&&mx<x+22){focus=5;k=13;}
-      else if(my==y+2&&mx>=x+16&&mx<x+54)focus=0;
-      else if(my==y+4&&mx>=x+16&&mx<x+54)focus=1;
+      if(my==y+8&&mx>=x+16&&mx<x+40){recurse=!recurse;continue;}
+      if(my==y+9&&mx>=x+16&&mx<x+40){deep=!deep;continue;}
+      if(my==y+12&&mx>=x+3&&mx<x+11){focus=4;k=13;}
+      else if(my==y+12&&mx>=x+12&&mx<x+22){focus=5;k=13;}
+      else if(my==y+4&&mx>=x+16&&mx<x+54)focus=0;
+      else if(my==y+6&&mx>=x+16&&mx<x+54)focus=1;
     }
-    if(k==27)return 0;
+    if(k==27){if(behind){for(i=0;i<(int)cells;i++)video[i]=behind[i];_ffree(behind);}return 0;}
     if(k==9||k==0x0F00){focus+=(k==0x0F00?-1:1);if(focus<0)focus=5;if(focus>5)focus=0;continue;}
     if((k==13||k==' ')&&focus==2){recurse=!recurse;continue;}
     if((k==13||k==' ')&&focus==3){deep=!deep;continue;}
-    if((k==13||k==' ')&&focus==5)return 0;
+    if((k==13||k==' ')&&focus==5){if(behind){for(i=0;i<(int)cells;i++)video[i]=behind[i];_ffree(behind);}return 0;}
     if((k==13||k==' ')&&focus==4)break;
     if(focus==0){int len=strlen(pattern);if(k==0x4700){posn=0;}else if(k==0x4F00){posn=len;}else if(k==8&&posn){memmove(pattern+posn-1,pattern+posn,len-posn+1);posn--;}else if(k>=32&&k<127&&len<30){memmove(pattern+posn+1,pattern+posn,len-posn+1);pattern[posn++]=(char)k;}}
     else if(focus==1){int len=strlen(look);if(k==8&&posp){memmove(look+posp-1,look+posp,len-posp+1);posp--;}else if(k>=32&&k<127&&len<COLLECTION_PATH-2){memmove(look+posp+1,look+posp,len-posp+1);look[posp++]=(char)k;}}
   }
   trim(pattern);trim(look);if(!pattern[0])strcpy(pattern,"*");if(!look[0])strcpy(look,current);
-  collection_result_count=0;openfile_search_dir(look,pattern,exts,recurse,deep,0);
-  explore_count=0;memset(openfile_mark,0,sizeof(openfile_mark));
+  /* Close the modal form before touching the disk.  The File Open window is
+     restored immediately and the result pane is then populated live. */
+  if(behind){for(i=0;i<(int)cells;i++)video[i]=behind[i];_ffree(behind);behind=0;}
+  /* Microsoft C 7.0 medium model keeps ordinary static data in DGROUP.  A
+     static `far` result array proved unsafe here: writes landed in near data
+     on the real compiler, corrupting associations and leaving blank result
+     names.  Allocate the search table explicitly from the far heap instead. */
+  if(!collection_results){
+    collection_results=(COLLECTION_RESULT far *)_fmalloc((unsigned)(MAX_COLLECTION_RESULTS*sizeof(COLLECTION_RESULT)));
+    if(!collection_results){notice_box("Search Files","Not enough memory for search results.");return 0;}
+  }
+  collection_result_count=0;explore_count=0;memset(openfile_mark,0,sizeof(openfile_mark));openfile_result_mode=1;
+  openfile_search_dir(look,pattern,exts,recurse,deep,0);
   for(i=0;i<collection_result_count&&i<MAX_EXPLORE_ENTRIES;i++){
     openfile_far_to_near(explore_entries[i].name,collection_results[i].name,13);explore_entries[i].directory=0;
     explore_count++;
@@ -4918,6 +4971,7 @@ static int collections_dialog(void)
   int x=(screen_cols-78)/2,y=(screen_rows-21)/2,k,mx=0,my=0,selc=0,ctop=0,selected=-1,top=0,page=EXPLORE_ROWS*3;
   int i,row,column,index,drive,focus=0,pane=0,redraw=1,last_click=-1,hover_control=-1,hover_entry=-1;unsigned mb;unsigned long last_click_tick=0,tick;static char path[MAX_CMD]="C:\\";char cmd[MAX_CMD];
   const int rx=21,rw=55;
+  openfile_result_mode=0;collection_result_count=0;memset(openfile_mark,0,sizeof(openfile_mark));
   collections_load();explore_detect_drives();strcpy(path,"C:\\");
   if(collection_count){openfile_load(path,collections[0].ext);selected=explore_count?0:-1;}else explore_count=0;
   for(;;){
@@ -4956,16 +5010,18 @@ static int collections_dialog(void)
               int marked=openfile_mark[index]!=0;
               int active=((index==selected&&pane==1&&focus==0)||index==hover_entry);
               int fat=(marked||active)?C_SELECTED:C_ITEM;
-              int pat=(marked||active)?C_SELECTED:C_FOLDER;
-              char rp[COLLECTION_PATH],rn[13];
-              if(active)textout(x+rx,y+6+row,"",C_SELECTED,52);
+              char rp[COLLECTION_PATH],rn[13],shown[51];int avail,plen;
+              textout(x+rx,y+6+row,"",fat,52);
+              openfile_far_to_near(rn,collection_results[index].name,13);
+              openfile_far_to_near(rp,collection_results[index].path,COLLECTION_PATH);
+              shown[0]=0;strncat(shown,rn,12);strcat(shown,"  ");
+              avail=50-(int)strlen(shown);plen=(int)strlen(rp);
+              if(plen<=avail)strncat(shown,rp,avail);
+              else if(avail>3){strncat(shown,rp,avail-3);strcat(shown,"...");}
               cell(x+rx,y+6+row,launchui_browser_codes[0],fat);
               cell(x+rx+1,y+6+row,launchui_browser_codes[1],fat);
-              openfile_far_to_near(rn,collection_results[index].name,13);
-              textout(x+rx+2,y+6+row,rn,fat,12);
-              openfile_far_to_near(rp,collection_results[index].path,COLLECTION_PATH);
-              textout(x+rx+14,y+6+row,rp,pat,38);
-              if(openfile_mark[index])cell(x+rx+13,y+6+row,251,fat);
+              textout(x+rx+2,y+6+row,shown,fat,50);
+              if(openfile_mark[index])cell(x+rx+1,y+6+row,251,fat);
             }else textout(x+rx,y+6+row,"",C_MENU_BACKGROUND,52);
           }
         }else{
@@ -5117,11 +5173,11 @@ static int collections_dialog(void)
       continue;
     }
     if(focus==11){
-      if(k==13||k==' '){if(openfile_search_dialog(collections[selc].ext,path)){selected=explore_count?0:-1;top=0;pane=1;focus=0;}redraw=1;}
+      if(k==13||k==' '){if(openfile_search_dialog(collections[selc].name,collections[selc].ext,path)){selected=explore_count?0:-1;top=0;pane=1;focus=0;}redraw=1;}
       continue;
     }
     if((k=='s'||k=='S')&&focus==0){
-      if(openfile_search_dialog(collections[selc].ext,path)){selected=explore_count?0:-1;top=0;pane=1;focus=0;}redraw=1;continue;
+      if(openfile_search_dialog(collections[selc].name,collections[selc].ext,path)){selected=explore_count?0:-1;top=0;pane=1;focus=0;}redraw=1;continue;
     }
     if(focus>=5&&focus<10){
       int oldd=focus-5,newd=oldd;
@@ -6129,7 +6185,7 @@ static void shortcut_idle_sync(void)
 
 static void show_help(void)
 {
-  puts("Launch! 3.71 - a lightweight command menu for DOS\n");
+  puts("Launch! 3.72 - a lightweight command menu for DOS\n");
   puts("Usage: ! [menu.mnu] [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");

@@ -329,7 +329,7 @@ static void draw_words(int x,int y)
 static void draw_plain_button(int x,int y,const char *text,int selected)
 {
   int i,w=(int)strlen(text),a=ACC_CONTROL,sa=ACC_ATTR(acc_appearance.background,0);
-  int fa=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.controls_fg);
+  int fa=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title);
   acc_fill(x,y,w,1,' ',a);acc_text(x,y,text,a,w);
   for(i=1;i<=w;i++)acc_put(x+i,y+1,220,sa);
   acc_put(x+w,y,245,sa);acc_put(x+w,y+1,244,sa);

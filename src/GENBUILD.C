@@ -1,5 +1,5 @@
-/* Launch! 3.71 build-time source generator.
-   Keeps the large Release 3.71 canonical sources while generating Release 3.71
+/* Launch! 3.72 build-time source generator.
+   Keeps the large Release 3.72 canonical sources while generating Release 3.72
    build intermediates for core/installer changes and intelligent editor word
    wrapping.  Generated files are build intermediates, not distribution files.
    Microsoft C/C++ 7.0, DOS small model. */
@@ -36,67 +36,11 @@ static void emit_startup_batch_helpers(FILE *out)
   fputs("  return startup_is_freedos()?\":\\\\FDAUTO.BAT\":\":\\\\AUTOEXEC.BAT\";\n}\n",out);
 }
 
-static void emit_tooltip_ui(FILE *out)
-{
-  fputs("#define CORE_TOOLTIP_MAX 42\n",out);
-  fputs("static int core_tt_active=0,core_tt_x=0,core_tt_y=0,core_tt_w=0;\n",out);
-  fputs("static int core_tt_owner_x=-1,core_tt_owner_y=-1;\n",out);
-  fputs("static unsigned short core_tt_line[CORE_TOOLTIP_MAX],core_tt_arrow;\n",out);
-  fputs("static char core_tt_text[41];\n",out);
-  fputs("static void core_tooltip_restore(void)\n{\n",out);
-  fputs("  int i;if(!core_tt_active)return;\n",out);
-  fputs("  for(i=0;i<core_tt_w;i++)video[core_tt_y*screen_cols+core_tt_x+i]=core_tt_line[i];\n",out);
-  fputs("  video[(core_tt_y+1)*screen_cols+core_tt_x+2]=core_tt_arrow;\n",out);
-  fputs("  core_tt_active=0;core_tt_owner_x=core_tt_owner_y=-1;\n}\n",out);
-  fputs("static void core_tooltip_trim(const char *src,char *dst)\n{\n",out);
-  fputs("  const char *a=src,*b;int n;while(*a==' ')a++;b=a+strlen(a);\n",out);
-  fputs("  while(b>a&&b[-1]==' ')b--;n=(int)(b-a);if(n>40)n=40;\n",out);
-  fputs("  memcpy(dst,a,n);dst[n]=0;if(!strcmp(dst,\"?\"))strcpy(dst,\"Help\");\n}\n",out);
-  fputs("static void core_tooltip_show(int bx,int by,const char *label)\n{\n",out);
-  fputs("  char clean[41];int i,w,ty=by-2,a=ATTR(appearance.controls_fg,appearance.controls_bg),aa;\n",out);
-  fputs("  if(!appearance.show_tooltips){core_tooltip_restore();return;}\n",out);
-  fputs("  core_tooltip_trim(label,clean);if(!*clean||ty<0)return;\n",out);
-  fputs("  w=(int)strlen(clean)+2;if(w>CORE_TOOLTIP_MAX)w=CORE_TOOLTIP_MAX;\n",out);
-  fputs("  if(bx+w>screen_cols)w=screen_cols-bx;if(w<3)return;\n",out);
-  fputs("  if(core_tt_active&&core_tt_owner_x==bx&&core_tt_owner_y==by&&!strcmp(core_tt_text,clean))return;\n",out);
-  fputs("  core_tooltip_restore();core_tt_x=bx;core_tt_y=ty;core_tt_w=w;\n",out);
-  fputs("  core_tt_owner_x=bx;core_tt_owner_y=by;strncpy(core_tt_text,clean,40);core_tt_text[40]=0;\n",out);
-  fputs("  for(i=0;i<w;i++)core_tt_line[i]=video[ty*screen_cols+bx+i];\n",out);
-  fputs("  core_tt_arrow=video[(ty+1)*screen_cols+bx+2];\n",out);
-  fputs("  for(i=0;i<w;i++)cell(bx+i,ty,' ',a);textout(bx+1,ty,core_tt_text,a,w-2);\n",out);
-  fputs("  aa=(int)((core_tt_arrow>>8)&0xF0);cell(bx+2,ty+1,CORE_TOOLTIP_GLYPH,aa);core_tt_active=1;\n}\n",out);
-  fputs("static int core_tooltip_icon(const char *label)\n{\n",out);
-  fputs("  int a=0,b=0;return button_icon(label,&a,&b)==1;\n}\n",out);
-}
-
-static void emit_tooltip_glyph(FILE *out)
-{
-  fputs("static unsigned char far tooltip_old_glyph[32];static int tooltip_glyph_saved=0;\n",out);
-  fputs("static const unsigned char tooltip_glyph16[32]={\n",out);
-  fputs("  0xFF,0xFF,0x7E,0x7E,0x3C,0x3C,0x18,0x18,0,0,0,0,0,0,0,0,\n",out);
-  fputs("  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};\n",out);
-  fputs("static const unsigned char tooltip_glyph14[32]={\n",out);
-  fputs("  0xFF,0x7E,0x7E,0x3C,0x3C,0x18,0x18,0,0,0,0,0,0,0,0,0,\n",out);
-  fputs("  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};\n",out);
-  fputs("static void tooltip_glyph_install(void)\n{\n",out);
-  fputs("  FONT_REGS old;unsigned char far *font;const unsigned char *glyph;int i;\n",out);
-  fputs("  unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);\n",out);
-  fputs("  glyph=(*h==14)?tooltip_glyph14:tooltip_glyph16;\n",out);
-  fputs("  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,CORE_TOOLTIP_GLYPH*32);\n",out);
-  fputs("  if(!tooltip_glyph_saved){for(i=0;i<32;i++)tooltip_old_glyph[i]=font[i];tooltip_glyph_saved=1;}\n",out);
-  fputs("  for(i=0;i<32;i++)font[i]=glyph[i];font_plane_close(&old);\n}\n",out);
-  fputs("static void tooltip_glyph_restore(void)\n{\n",out);
-  fputs("  FONT_REGS old;unsigned char far *font;int i;\n",out);
-  fputs("  if(!tooltip_glyph_saved)return;\n",out);
-  fputs("  font_plane_open(&old);font=(unsigned char far *)MAKE_FP(0xA000,CORE_TOOLTIP_GLYPH*32);\n",out);
-  fputs("  for(i=0;i<32;i++)font[i]=tooltip_old_glyph[i];font_plane_close(&old);tooltip_glyph_saved=0;\n}\n",out);
-}
-
 static int copy_generated_source(const char *src,const char *dst);
 
 static int write_launch36(void)
 {
-  /* 3.71 keeps the final 3.7 core source authoritative.  The historical
+  /* 3.72 keeps the final 3.7 core source authoritative.  The historical
      transform pass is no longer needed and could reapply already-merged UI
      patches, so regeneration copies it verbatim. */
   if(!copy_generated_source("LAUNCH.C","COREBLD.C")){puts("GENBUILD: failed copying LAUNCH.C to COREBLD.C");return 0;}
@@ -113,7 +57,7 @@ static int write_install36(void)
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT file","startup batch file");
     replace_all(line,GEN_LINE,"AUTOEXEC.BAT","startup batch file");
     if(strstr(line,"/* Launch! 3.5 installer")){
-      fputs("/* Launch! 3.71 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
+      fputs("/* Launch! 3.72 installer - Microsoft C/C++ 7.0, DOS small model. */\n",out);continue;
     }
     if(strstr(line,"#define PATH_SIZE 128")){
       emit_startup_batch_helpers(out);fputs(line,out);continue;
@@ -138,7 +82,6 @@ static int write_install36(void)
 }
 
 
-static void emit_acc_tooltip_decl(FILE *out);
 
 static void emit_note_wrap(FILE *out)
 {
@@ -210,12 +153,6 @@ static int write_stack36(void)
   return 1;
 }
 
-
-static void emit_acc_tooltip_decl(FILE *out)
-{
-  fputs("void acc_tooltip_region(int x,int y,int w,const char *text,int active);\n",out);
-  fputs("void acc_tooltip_clear_regions(void);\n",out);
-}
 
 static int write_cal36(void)
 {
@@ -333,10 +270,10 @@ static int write_boxes36(void)
 
 int main(void)
 {
-  /* Release 3.71 changes only generated Core, Installer and Journal sources.
+  /* Release 3.72 changes only generated Core, Installer and Journal sources.
      Leave the already-qualified 3.7 intermediates for all other components
      untouched: several older transformation routines are historical and are
      not idempotent once their fixes have already been merged. */
   if(!write_launch36()||!write_install36()||!write_journal36())return 1;
-  puts("Generated Launch! 3.71 Core, Installer and Journal build sources.");return 0;
+  puts("Generated Launch! 3.72 Core, Installer and Journal build sources.");return 0;
 }

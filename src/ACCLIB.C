@@ -264,6 +264,9 @@ static int launchui_ega14(void)
 {unsigned char far *h=(unsigned char far *)MAKE_FP(0x40,0x85);return *h==14;}
 static unsigned char launchui_old[41][32];
 static unsigned char exit_old[2][32];
+#ifndef ACCLIB_MIN_GLYPHS
+static unsigned char open_old[2][32];
+#endif
 static unsigned char divider_old[32];
 static int launchui_installed=0;
 static int acc_screen_restored=0;
@@ -280,6 +283,7 @@ static void launchui_font(int install)
       for(i=0;i<(int)sizeof(launchui_codes);i++)
         acc_glyph_write_far(launchui_codes[i],launch_glyph14[i]);
       acc_glyph_write_far(214,launch_glyph14[92]);acc_glyph_write_far(233,launch_glyph14[93]);
+      acc_glyph_write_far(199,launch_glyph14[88]);acc_glyph_write_far(230,launch_glyph14[89]);
       acc_glyph_write_far(216,launch_glyph14[55]);
       launchui_installed=1;
     }else if(launchui_installed){
@@ -296,12 +300,14 @@ static void launchui_font(int install)
       acc_glyph_write_far(launchui_codes[i],launch_glyph16[i]);
     }
     acc_glyph_read(214,exit_old[0]);acc_glyph_read(233,exit_old[1]);
+    acc_glyph_read(199,open_old[0]);acc_glyph_read(230,open_old[1]);
     acc_glyph_write_far(214,launch_glyph16[92]);acc_glyph_write_far(233,launch_glyph16[93]);
+    acc_glyph_write_far(199,launch_glyph16[88]);acc_glyph_write_far(230,launch_glyph16[89]);
     acc_glyph_read(216,divider_old);
     acc_glyph_write_far(216,launch_glyph16[55]);
     launchui_installed=1;
   }else if(launchui_installed){
-    acc_glyph_write(216,divider_old);acc_glyph_write(214,exit_old[0]);acc_glyph_write(233,exit_old[1]);
+    acc_glyph_write(216,divider_old);acc_glyph_write(214,exit_old[0]);acc_glyph_write(233,exit_old[1]);acc_glyph_write(199,open_old[0]);acc_glyph_write(230,open_old[1]);
     for(i=0;i<(int)sizeof(launchui_codes);i++)
       acc_glyph_write(launchui_codes[i],launchui_old[i]);
     launchui_installed=0;
@@ -346,7 +352,7 @@ static void mouse_pointer_install(void)
 {
   static const unsigned char arrow16[16]={0,0,0,0,0,0,0,0x10,0x18,0x1C,0x1E,0x1F,0x1E,0x12,3,1};
   static const unsigned char target16[32]={0,0,0,0x18,0x18,0x18,0x3C,0xE7,0xE7,0x3C,0x18,0x18,0x18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-  FONT_REGS old;unsigned char far *font,height_far;unsigned char arrow[32];union REGS r;int i,height,source;
+  unsigned char height_far;unsigned char arrow[32];union REGS r;int i,height,source;
   if(acc_appearance.mouse_cursor){memset(&r,0,sizeof(r));r.x.ax=0x000A;r.x.bx=0;if(acc_appearance.mouse_cursor==1){r.x.cx=0xFFFF;r.x.dx=0x7700;}else{r.x.cx=0xF000;r.x.dx=0x0FB8;}int86(0x33,&r,&r);return;}
   acc_glyph_read(127,mouse_old_glyph);mouse_glyph_saved=1;
   memset(arrow,0,sizeof(arrow));height_far=*(unsigned char far *)MAKE_FP(0x40,0x85);height=height_far;if(height<8||height>32)height=16;
@@ -468,6 +474,7 @@ static int acc_button_icon(const char *text,int *a,int *b)
   if(strstr(text,"Next level"))return 0;
   if(strstr(text,"Prev")){*a=17;*b=-1;return 1;}
   if(strstr(text,"Next")){*a=16;*b=-1;return 1;}
+  if(strstr(text,"Open")){*a=199;*b=230;return 1;}
   if(strstr(text,"Save")||strstr(text,"Export")){*a=204;*b=181;return 1;}
   if(strstr(text,"Yes")||strstr(text," OK ")){*a=198;*b=225;return 1;}
   if(strstr(text,"Cancel")||strstr(text,"No")||strstr(text,"Close")){*a=close_glyph_l;*b=close_glyph_r;return 1;}
@@ -482,7 +489,7 @@ static int acc_button_icon(const char *text,int *a,int *b)
   return 0;
 }
 static void acc_button_draw_state(int x,int y,const char *text,int selected,int enabled)
-{int i,oldw=(int)strlen(text),w=oldw,a=0,b=0,icon=acc_button_icon(text,&a,&b),left;unsigned short v;/* Application panels are commonly redrawn after acc_box(), which used to paint over the toolbar divider.  Redraw it immediately before any toolbar button so it is the final layer. */if(toolbar_box_h>=7 && y==toolbar_box_y+toolbar_box_h-3){acc_put(toolbar_box_x,toolbar_box_y+toolbar_box_h-4,179,ACC_BORDER);for(i=1;i<toolbar_box_w-1;i++)acc_put(toolbar_box_x+i,toolbar_box_y+toolbar_box_h-4,216,ACC_BORDER);acc_put(toolbar_box_x+toolbar_box_w-1,toolbar_box_y+toolbar_box_h-4,179,ACC_BORDER);}if(icon==2)w=9;else if(icon)w=(b<0)?5:6;/* Clear only the rendered button and its shadow.  Clearing strlen(text) here erased dialog borders when an icon replaced a longer label. */for(i=0;i<=w;i++){acc_put(x+i,y,' ',ACC_BG);acc_put(x+i,y+1,' ',ACC_BG);}for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+i)*2);acc_put(x+i,y+1,220,((v>>8)&0xF0));}v=*(unsigned short far *)MAKE_FP(0xB800,(y*acc_cols+x+w)*2);acc_put(x+w,y,245,((v>>8)&0xF0));v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+w)*2);acc_put(x+w,y+1,244,((v>>8)&0xF0));{int ba=enabled?ACC_CONTROL:ACC_ATTR(acc_appearance.controls_bg,(acc_appearance.controls_fg&7)|8);acc_fill(x,y,w,1,' ',ba);if(icon==2){left=x+2;acc_put(left,y,a,ba);acc_put(left+1,y,b,ba);acc_text(left+2,y,"Run",ba,3);}else if(icon){left=x+(b<0?2:(w-2)/2);acc_put(left,y,a,ba);if(b>=0)acc_put(left+1,y,b,ba);}else acc_text(x,y,text,ba,w);}if(selected&&enabled){int fa=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.controls_fg);acc_put(x,y,169,fa);acc_put(x+w-1,y,170,fa);}}
+{int i,oldw=(int)strlen(text),w=oldw,a=0,b=0,icon=acc_button_icon(text,&a,&b),left;unsigned short v;/* Application panels are commonly redrawn after acc_box(), which used to paint over the toolbar divider.  Redraw it immediately before any toolbar button so it is the final layer. */if(toolbar_box_h>=7 && y==toolbar_box_y+toolbar_box_h-3){acc_put(toolbar_box_x,toolbar_box_y+toolbar_box_h-4,179,ACC_BORDER);for(i=1;i<toolbar_box_w-1;i++)acc_put(toolbar_box_x+i,toolbar_box_y+toolbar_box_h-4,216,ACC_BORDER);acc_put(toolbar_box_x+toolbar_box_w-1,toolbar_box_y+toolbar_box_h-4,179,ACC_BORDER);}if(icon==2)w=9;else if(icon)w=(b<0)?5:6;/* Clear only the rendered button and its shadow.  Clearing strlen(text) here erased dialog borders when an icon replaced a longer label. */for(i=0;i<=w;i++){acc_put(x+i,y,' ',ACC_BG);acc_put(x+i,y+1,' ',ACC_BG);}for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+i)*2);acc_put(x+i,y+1,220,((v>>8)&0xF0));}v=*(unsigned short far *)MAKE_FP(0xB800,(y*acc_cols+x+w)*2);acc_put(x+w,y,245,((v>>8)&0xF0));v=*(unsigned short far *)MAKE_FP(0xB800,((y+1)*acc_cols+x+w)*2);acc_put(x+w,y+1,244,((v>>8)&0xF0));{int ba=enabled?ACC_CONTROL:ACC_ATTR(acc_appearance.controls_bg,(acc_appearance.controls_fg&7)|8);acc_fill(x,y,w,1,' ',ba);if(icon==2){left=x+2;acc_put(left,y,a,ba);acc_put(left+1,y,b,ba);acc_text(left+2,y,"Run",ba,3);}else if(icon){left=x+(b<0?2:(w-2)/2);acc_put(left,y,a,ba);if(b>=0)acc_put(left+1,y,b,ba);}else acc_text(x,y,text,ba,w);}if(selected&&enabled){int fa=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title);acc_put(x,y,169,fa);acc_put(x+w-1,y,170,fa);}}
 void acc_button(int x,int y,const char *text,int selected)
 {int a,b;acc_button_draw_state(x,y,text,selected,1);if(acc_button_count<ACC_MAX_BUTTONS){acc_buttons[acc_button_count].x=x;acc_buttons[acc_button_count].y=y;acc_buttons[acc_button_count].text=text;acc_buttons[acc_button_count].selected=selected;acc_buttons[acc_button_count].width=((acc_button_icon(text,&a,&b)==2)?9:(acc_button_icon(text,&a,&b)?((b<0)?5:6):(int)strlen(text)));acc_button_count++;}}
 void acc_button_disabled(int x,int y,const char *text){acc_button_draw_state(x,y,text,0,0);}
@@ -497,7 +504,7 @@ void acc_press_button(int x,int y,const char *text)
   if(icon==2){left=x+2;acc_put(left,y,a,ACC_CONTROL);acc_put(left+1,y,b,ACC_CONTROL);acc_text(left+2,y,"Run",ACC_CONTROL,3);}
   else if(icon){left=x+(b<0?2:(w-2)/2);acc_put(left,y,a,ACC_CONTROL);if(b>=0)acc_put(left+1,y,b,ACC_CONTROL);}
   else acc_text(x,y,text,ACC_CONTROL,w);
-  {int fa=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.controls_fg);acc_put(x,y,169,fa);acc_put(x+w-1,y,170,fa);}
+  {int fa=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title);acc_put(x,y,169,fa);acc_put(x+w-1,y,170,fa);}
   /* acc_wait() owns mouse visibility.  Do not issue nested INT 33h
      Show/Hide calls here: doing so unbalances the driver's visibility
      counter when a toolbar button is clicked and can leave the pointer
@@ -514,7 +521,7 @@ int acc_mouse(int *x,int *y,int *buttons)
   r.x.ax=3;int86(0x33,&r,&r);*x=r.x.cx/8;*y=r.x.dx/8;*buttons=r.x.bx;return 1;
 }
 static int acc_enhanced_keyboard(void){static int known=-1;unsigned char far *p;union REGS r;if(known>=0)return known;p=(unsigned char far *)MAKE_FP(0x40,0x96);if((*p)&0x10)return known=1;memset(&r,0,sizeof(r));r.h.ah=0x09;int86(0x16,&r,&r);return known=(r.h.al&1)?1:0;}
-int acc_key(void){unsigned w=_bios_keybrd(acc_enhanced_keyboard()?0x10:_KEYBRD_READ);int c=w&255,scan=(w>>8)&255;/* Enhanced INT 16h returns AL=E0h for many navigation/editing keys. Treat that exactly like AL=00h when a scan code is present; otherwise Focus/Maximize sees E0h as a printable character. Preserve genuine Alt-numpad extended characters, which arrive with scan==0. */if(scan==0x0E&&(c==8||c==0||c==0x7F||c==0xE0))return 8;if(!scan&&c)return 512+c;if(!c||c==0xE0)return 256+scan;return c;}
+int acc_key(void){unsigned w=_bios_keybrd(acc_enhanced_keyboard()?0x10:_KEYBRD_READ);int c=w&255,scan=(w>>8)&255;/* Enhanced INT 16h returns AL=E0h for many navigation/editing keys. Treat that exactly like AL=00h when a scan code is present; otherwise Focus/Maximize sees E0h as a printable character. Preserve genuine Alt-numpad extended characters, which arrive with scan==0. */if(scan==0x0E&&(c==8||c==0||c==0x7F||c==0xE0))return 8;if(scan==0x32&&c==13)return 256+0x32; /* Ctrl+M */if(!scan&&c)return 512+c;if(!c||c==0xE0)return 256+scan;return c;}
 int acc_key_ready(void){return _bios_keybrd(acc_enhanced_keyboard()?0x11:_KEYBRD_READY)!=0;}
 void acc_caret_hide(void)
 {
@@ -531,7 +538,28 @@ void acc_wait(int *key,int *x,int *y,unsigned *buttons)
  union REGS r;int i,w;
  *key=0;*buttons=0;if(acc_mouse_present){r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;}
  for(;;){
-  if(acc_key_ready()){*key=acc_key();acc_caret_hide();break;}
+  if(acc_key_ready()){
+   *key=acc_key();acc_caret_hide();
+   /* Suite-wide keyboard commands.  Convert command shortcuts into the same
+      synthetic button click used by the mouse so every accessory/game keeps
+      one action path.  Ctrl+C/X/V remain editor commands. */
+   if(*key==17||*key==256+0x6B){*key=27;break;} /* Ctrl+Q / Alt+F4 */
+   {const char *want=0;
+    if(*key==15)want="Open";       /* Ctrl+O */
+    else if(*key==5)want="Edit";  /* Ctrl+E */
+    else if(*key==19)want="Save"; /* Ctrl+S */
+    else if(*key==4)want="Delete";/* Ctrl+D */
+    else if(*key==16)want="Print";/* Ctrl+P */
+    else if(*key==256+0x93)want="Clr";   /* Ctrl+Del */
+    else if(*key==256+0x92)want="\001"; /* Ctrl+Ins: Chars */
+    if(want){for(i=0;i<acc_button_count;i++)if(strstr(acc_buttons[i].text,want)){
+      *x=acc_buttons[i].x;*y=acc_buttons[i].y;*buttons=1;
+      acc_press_button(acc_buttons[i].x,acc_buttons[i].y,acc_buttons[i].text);*key=0;break;}
+      if(*buttons)break;
+    }
+   }
+   break;
+  }
   if(acc_mouse_present){r.x.ax=3;int86(0x33,&r,&r);mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;*x=r.x.cx/8;*y=r.x.dx/8;*buttons=(unsigned)(r.x.bx&~mouse_last_buttons);mouse_last_buttons=r.x.bx;
    if(*buttons){
     acc_caret_hide();
@@ -541,6 +569,11 @@ void acc_wait(int *key,int *x,int *y,unsigned *buttons)
  }
  if(acc_mouse_present&&mouse_visible){r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;}acc_button_count=0;if((*buttons&1)&&*y==close_y&&(*x==close_x||*x==close_x+1)){*buttons=0;*key=27;}
 }
+
+void acc_close_target_suspend(int *old_x,int *old_y)
+{if(old_x)*old_x=close_x;if(old_y)*old_y=close_y;close_x=close_y=-1;}
+void acc_close_target_restore(int old_x,int old_y)
+{close_x=old_x;close_y=old_y;}
 
 unsigned long acc_ticks(void){return *(volatile unsigned long far *)(((unsigned long)0x40<<16)|0x6C);}
 int acc_help(int argc,char **argv,const char *name,const char *description){if(argc>1&&(!stricmp(argv[1],"/?")||!stricmp(argv[1],"-?"))){printf("%s - Launch! 3.5 accessory\n\n%s\n\nThis accessory requires !.EXE in the same directory.\n",name,description);return 1;}return 0;}
