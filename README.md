@@ -144,7 +144,7 @@ Learn more about [Screen Savers](https://github.com/therenegar/launch/wiki/Scree
 
 
 Launch is created on a 486DX4/100 machine, 32mb RAM, running IBM PC DOS 7.0. Coded using [Microsoft QuickC](https://en.wikipedia.org/wiki/QuickC) IDE and [FTE](https://fte.sourceforge.net/) (Folding Text Editor). Graphical glyphs created using [Fontraption](https://int10h.org/blog/2019/05/fontraption-vga-text-mode-font-editor/). Screen layout and composition done with [TheDraw](https://www.abandonwaredos.com/abandonware-game.php?abandonware=TheDraw+4&gid=3563).
-Compiled with Microsoft C/C++ Optimizing Compiler 7.00 from 1992 (Takes approx 30-45 minutes to build the whole shebang). Builds transferred using FTP to a Linux host where a simple Python script integrates the build into (this) GIT repository.  
+Compiled with Microsoft C/C++ Optimizing Compiler 7.00 from 1992 (Takes approx 30-45 minutes to build the whole shebang). Builds transferred using FTP to a Linux host where a simple Python script integrates the build into (this) GIT repository- and automates creation of release zip/img files.
 Screenshots taken on this machine using [Screen Thief](http://www.win3x.org/win3board/viewtopic.php?t=2710&view=min).
 
 <img width="720" height="600" alt="About Launch!" src="https://github.com/user-attachments/assets/cfb867d4-a228-4291-b720-ed73aaa4dac6" />
