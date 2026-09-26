@@ -147,5 +147,5 @@ Launch is created on a 486DX4/100 machine, 32mb RAM, running IBM PC DOS 7.0. Cod
 Compiled with Microsoft C/C++ Optimizing Compiler 7.00 from 1992. 
 Screenshots taken on this machine using [Screen Thief](http://www.win3x.org/win3board/viewtopic.php?t=2710&view=min).
 
-<img width="360" height="300" alt="About Launch!" src="https://github.com/user-attachments/assets/cfb867d4-a228-4291-b720-ed73aaa4dac6" />
+<img width="720" height="600" alt="About Launch!" src="https://github.com/user-attachments/assets/cfb867d4-a228-4291-b720-ed73aaa4dac6" />
 
