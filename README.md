@@ -18,6 +18,7 @@
 - Automatic [menu generator](https://github.com/therenegar/launch/wiki/!MNUGEN.COM) with comprehensive DOS program database to automatically identify programs.
 - Built in [executable explorer](https://github.com/therenegar/launch/wiki/Explore-and-Run) to quickly browse and run programs anywhere.
 - Built in [file opener](https://github.com/therenegar/launch/wiki/File-Open) to create associations between files and launchers for easy open.
+- Integrated file searching including "Go Deep" mode for searching file contents as well.
 - Built in [Power Off/Reboot control](https://github.com/therenegar/launch/wiki/Shutdown) with retro Windows 95 power off experience.
 - 10 handy and modern text-mode [accessories](https://github.com/therenegar/launch/wiki/Accessories)
     - [Calendar](https://github.com/therenegar/launch/wiki/!CAL.EXE), [Calculator](https://github.com/therenegar/launch/wiki/!CALC.EXE), [Card Stack](https://github.com/therenegar/launch/wiki/!STACK.EXE), [DOS Fetch](https://github.com/therenegar/launch/wiki/!DFETCH.EXE)), [Journal](https://github.com/therenegar/launch/wiki/!JOURNAL.EXE), [Markdown](https://github.com/therenegar/launch/wiki/!MKDOWN.EXE), [Note](https://github.com/therenegar/launch/wiki/!NOTE.EXE), [Pixel Draw](https://github.com/therenegar/launch/wiki/!DRAW.EXE) , [To-dos](https://github.com/therenegar/launch/wiki/!TODOS.EXE), [Typo](https://github.com/therenegar/launch/wiki/!TYPO.EXE)
