@@ -1,4 +1,21 @@
-/* Launch! 3.72 - modal command menu for DOS
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: LAUNCH.C
+ * Role: Canonical Launch! core/menu source
+ * Build/ownership: Authoritative core source. GENBUILD copies it to COREBLD.C for normal builds.
+ * Maintainer contract: Owns menu UI, Config, File Open, Explore & Run, Quick Launch, screensaver dispatch and core configuration.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
+/* Launch! 3.73 - modal command menu for DOS
  * Microsoft C/C++ 7.0, medium model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -504,7 +521,7 @@ static int appearance_value(APPEARANCE *a,const char *key,int value)
   else if(!stricmp(key,"SAVER_COLOR"))field=&a->saver_color;
   else if(!stricmp(key,"SAVER_DELAY")){field=&a->saver_delay;limit=3;}
   else if(!stricmp(key,"HOUR_12")){field=&a->hour_12;limit=1;}
-  else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=35;}
+  else if(!stricmp(key,"FONT_ID")){field=&a->font_id;limit=63;}
   else if(!stricmp(key,"FONT_PERSIST")){field=&a->font_persist;limit=1;}
   else if(!stricmp(key,"MOUSE_CURSOR")){field=&a->mouse_cursor;limit=2;}
   else if(!stricmp(key,"PROMPT_INACTIVITY")){field=&a->prompt_inactivity;limit=1;}
@@ -747,6 +764,19 @@ static int merge_default_menu_nodes(int *changed)
 {
   DOS_INFO dos;int folder;
   *changed=0;
+
+  /* 3.73: SysBar is built into Core again.  Remove the short-lived
+     external !SYSBAR launcher from menus upgraded from early 3.73 tests. */
+  {
+    int i;
+    for(i=0;i<node_count;i++){
+      if(nodes[i].active&&!nodes[i].folder&&!nodes[i].separator&&
+         (!stricmp(nodes[i].title,"SysBar")||!strnicmp(nodes[i].command,"!SYSBAR",7))){
+        delete_tree(i);
+        *changed=1;
+      }
+    }
+  }
 
   /* 3.65: migrate the former System Info launcher to DOS Fetch. */
   if(sibling_exists("!DFETCH.EXE")){
@@ -2937,6 +2967,10 @@ typedef struct {
 } COLOUR_SCHEME;
 
 #define COLOUR_SCHEME_COUNT 9
+#define MAX_CUSTOM_SCHEMES 16
+static COLOUR_SCHEME custom_schemes[MAX_CUSTOM_SCHEMES];
+static char custom_scheme_names[MAX_CUSTOM_SCHEMES][24];
+static int custom_scheme_count=0;
 static const COLOUR_SCHEME colour_schemes[COLOUR_SCHEME_COUNT]={
   {"Standard", {1,11,15,7,12,14,15,10,15,3,0,7,7}},
   {"Hot Dog",  {4,0,14,7,14,14,7,15,14,0,4,7,12}},
@@ -2949,11 +2983,34 @@ static const COLOUR_SCHEME colour_schemes[COLOUR_SCHEME_COUNT]={
   {"Tranquil", {3,11,10,2,10,0,8,0,10,0,15,2,15}}
 };
 
+static int colour_key_index(const char *k)
+{
+  static const char *keys[13]={"BACKGROUND","BORDER","TITLEBAR_FG","TITLEBAR_BG","MAIN_TITLE","TITLES","FOLDERS","LAUNCHERS","SELECTED_FG","SELECTED_BG","CONTROLS_FG","CONTROLS_BG","LABELS"};
+  int i;for(i=0;i<13;i++)if(!stricmp(k,keys[i]))return i;return -1;
+}
+static void load_custom_schemes(void)
+{
+  char path[MAX_CMD],line[96],*p,*q;FILE *f;int cur=-1,idx,v,seen[13],i;
+  custom_scheme_count=0;strcpy(path,program_dir);strcat(path,"COLORS.CFG");f=fopen(path,"rt");if(!f)return;
+  memset(seen,0,sizeof(seen));
+  while(fgets(line,sizeof(line),f)){
+    p=trim(line);if(!*p||*p==';'||*p=='#')continue;
+    if(*p=='['){q=strchr(p,']');if(!q)continue;*q=0;if(custom_scheme_count>=MAX_CUSTOM_SCHEMES){cur=-1;continue;}
+      cur=custom_scheme_count++;strncpy(custom_scheme_names[cur],p+1,23);custom_scheme_names[cur][23]=0;custom_schemes[cur].name=custom_scheme_names[cur];
+      for(i=0;i<13;i++){custom_schemes[cur].colour[i]=colour_schemes[0].colour[i];seen[i]=0;}continue;}
+    if(cur<0)continue;q=strchr(p,'=');if(!q)continue;*q++=0;p=trim(p);q=trim(q);idx=colour_key_index(p);if(idx<0)continue;v=atoi(q);if(v<0||v>15)continue;
+    if((idx==0||idx==3||idx==9||idx==11)&&v>7)continue;custom_schemes[cur].colour[idx]=(unsigned char)v;seen[idx]=1;
+  }
+  fclose(f);
+}
+static int total_colour_schemes(void){return COLOUR_SCHEME_COUNT+custom_scheme_count;}
+static const COLOUR_SCHEME *colour_scheme_at(int i){return i<COLOUR_SCHEME_COUNT?&colour_schemes[i]:&custom_schemes[i-COLOUR_SCHEME_COUNT];}
+
 static int colour_scheme_index(void)
 {
   const unsigned char *current=&appearance.background;int i,j;
-  for(i=0;i<COLOUR_SCHEME_COUNT;i++){
-    for(j=0;j<13;j++)if(current[j]!=colour_schemes[i].colour[j])break;
+  for(i=0;i<total_colour_schemes();i++){const COLOUR_SCHEME *sc=colour_scheme_at(i);
+    for(j=0;j<13;j++)if(current[j]!=sc->colour[j])break;
     if(j==13)return i;
   }
   return -1;
@@ -2961,13 +3018,13 @@ static int colour_scheme_index(void)
 
 static void apply_colour_scheme(int index)
 {
-  unsigned char *current=&appearance.background;int i;
-  for(i=0;i<13;i++)current[i]=colour_schemes[index].colour[i];
+  unsigned char *current=&appearance.background;int i;const COLOUR_SCHEME *sc=colour_scheme_at(index);
+  for(i=0;i<13;i++)current[i]=sc->colour[i];
 }
 
 static const char *screensaver_names[15]={
   "None","Clock","Boing","Logo","Mosaic","Mystic","Paintball","Particles",
-  "Pipes","Scooter","Space Junk","Space Wars","Spiro","Starry Nite","Warp"
+  "Pipes","Scooter","Space Junk","Space Wars","Defrag","Starry Nite","Warp"
 };
 
 static const char *saver_delay_names[4]={
@@ -2982,12 +3039,29 @@ static const char *font_names[36]={
   "Bauhaus '89","Bold Italic","Broadway","Courier","Italic","Modern","Nutso",
   "Super","Times","Tiny","Serif","Poster","News"
 };
+#define BUILTIN_FONT_COUNT 36
+#define MAX_EXTERNAL_FONTS 28
+static char external_font_file[MAX_EXTERNAL_FONTS][13],external_font_name[MAX_EXTERNAL_FONTS][13];
+static int external_font_count=0;
+static void scan_external_fonts(void)
+{
+  struct find_t ff;char mask[MAX_CMD],tmp[13],*dot;unsigned e;int i,j;
+  external_font_count=0;strcpy(mask,program_dir);strcat(mask,"APPDATA\\*.FNT");
+  e=_dos_findfirst(mask,_A_NORMAL,&ff);while(!e&&external_font_count<MAX_EXTERNAL_FONTS){
+    strncpy(external_font_file[external_font_count],ff.name,12);external_font_file[external_font_count][12]=0;
+    strcpy(external_font_name[external_font_count],external_font_file[external_font_count]);dot=strrchr(external_font_name[external_font_count],'.');if(dot)*dot=0;external_font_count++;e=_dos_findnext(&ff);
+  }
+  for(i=0;i<external_font_count-1;i++)for(j=i+1;j<external_font_count;j++)if(stricmp(external_font_name[i],external_font_name[j])>0){
+    strcpy(tmp,external_font_name[i]);strcpy(external_font_name[i],external_font_name[j]);strcpy(external_font_name[j],tmp);
+    strcpy(tmp,external_font_file[i]);strcpy(external_font_file[i],external_font_file[j]);strcpy(external_font_file[j],tmp);}
+}
+static int total_fonts(void){return BUILTIN_FONT_COUNT+external_font_count;}
+static const char *font_name_at(int id){return id<BUILTIN_FONT_COUNT?font_names[id]:external_font_name[id-BUILTIN_FONT_COUNT];}
+
 
 static void cycle_control(int x,int y,const char *value,int focused)
 {
-  char field[24];
-  sprintf(field,"%-12.12s %c",value,(char)175);
-  textout(x,y,field,focused?C_SELECTED:C_BUTTON,14);
+  textout(x,y,"               ",focused?C_SELECTED:C_INPUT_FIELD,15);textout(x+1,y,value,focused?C_SELECTED:C_INPUT_FIELD,12);cell(x+13,y,31,focused?C_SELECTED:C_INPUT_FIELD);
 }
 
 static void draw_config_tabs(int x,int y,int active,int focus,int hover)
@@ -3084,7 +3158,7 @@ static unsigned char *config_field(int tab,int item,int *limit)
     }
   }
   if(tab==4){
-    if(item==0){*limit=35;return &appearance.font_id;}
+    if(item==0){*limit=63;return &appearance.font_id;}
     if(item==1){*limit=1;return &appearance.font_persist;}
   }
   return 0;
@@ -3348,13 +3422,12 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
     cycle_control(x+25,y+10,appearance.hour_12?"12-hour":"24-hour",f==6||h==6);
     textout(x+5,y+12,"Mouse cursor:",C_INPUT_LABEL,18);
     cycle_control(x+25,y+12,mouse_cursor_names[appearance.mouse_cursor],f==7||h==7);
-    textout(x+5,y+14,"SysBar:",C_INPUT_LABEL,18);
-    check_line(x+25,y+14,"Show on menu open",appearance.show_sysbar,f==5||h==5);
+    textout(x+5,y+14,"SysBar:",C_INPUT_LABEL,18);check_line(x+25,y+14,"Show on menu open",appearance.show_sysbar,f==5||h==5);
   } else if(tab==1){
     static const char *labels[10]={"Panels","Border","Titlebar","Accent","Titles","Folders","Launchers","Selected items","Controls","Labels"};
     int scheme=colour_scheme_index();
     textout(x+5,y+4,"Color scheme",C_INPUT_LABEL,18);
-    cycle_control(x+25,y+4,scheme<0?"Custom":colour_schemes[scheme].name,f==0||h==0);
+    cycle_control(x+25,y+4,scheme<0?"Custom":colour_scheme_at(scheme)->name,f==0||h==0);
     textout(x+25,y+5,"Foreground",C_BORDER,15);textout(x+45,y+5,"Background",C_BORDER,15);
     for(i=0;i<10;i++)textout(x+5,y+6+i,labels[i],C_INPUT_LABEL,18);
     cycle_control(x+45,y+6,colour_names[appearance.background],f==1||h==1);
@@ -3386,7 +3459,7 @@ static void draw_config_page(int x,int y,int tab,int focus,int hover,int full)
     textout(x+5,y+6,prompt_ansi?"ANSI driver detected.":"ANSI driver not detected.",C_ITEM,26);
     draw_prompt_preview(x+5,y+8,56,prompt_style);
   } else if(tab==4&&font_is_vga()){
-    textout(x+5,y+4,"VGA display font",C_INPUT_LABEL,18);cycle_control(x+25,y+4,font_names[appearance.font_id],f==0||h==0);
+    textout(x+5,y+4,"VGA display font",C_INPUT_LABEL,18);cycle_control(x+25,y+4,font_name_at(appearance.font_id<total_fonts()?appearance.font_id:0),f==0||h==0);
     check_line(x+25,y+6,"Persist",appearance.font_persist,f==1||h==1);draw_character_preview(x+5,y+9);
   } else if(tab==4)textout(x+7,y+9,"Font customization requires a VGA display adapter",C_INPUT_LABEL,52);
   else {
@@ -3453,7 +3526,7 @@ static void config_about_box(void)
   bx=x+3;subdialog_box(x,y,w,h,"About Launch!");
   textout(x+3,y+2,"(C)Copyright 2026 Ben Renegar",C_INPUT_LABEL,34);
   textout(x+3,y+3,"www.benrenegar.com",C_INPUT_LABEL,34);
-  textout(x+3,y+6,"Version 3.72 - 2026-09-26",C_INPUT_LABEL,34);
+  textout(x+3,y+6,"Version 3.73 - 2026-09-26",C_INPUT_LABEL,34);
   for(;;){
     draw_button(bx,y+h-3,"  OK  ",6,focus==0);
     wait_input(&k,&mx,&my,&mb);
@@ -3463,6 +3536,119 @@ static void config_about_box(void)
   }
 }
 
+
+
+static int select_popup(int x,int y,const char **items,int count,int current,int width)
+{
+  int h=count<10?count:10,top=current>=h?current-h+1:0,sel=current,k=0;
+  int mx=0,my=0,i,py,row,col,result=current,done=0;
+  unsigned mb=0;
+  unsigned short far *under=0;
+  unsigned under_cells;
+
+  if(width<8)width=8;
+  if(width>28)width=28;
+  py=y+1;
+  if(py+h+2>=screen_rows)py=y-h-2;
+  if(py<0)py=0;
+  if(x<0)x=0;
+  if(x+width>screen_cols)width=screen_cols-x;
+
+  /*
+   * A Select popup is allowed to extend beyond its parent dialog.  Saving the
+   * cells underneath it is therefore part of the control's contract: the
+   * parent only redraws its own rectangle and cannot erase popup pixels that
+   * were painted over the surrounding menu/screen.  Restore this backing on
+   * every exit path so opening and dismissing a drop-down is visually neutral.
+   */
+  under_cells=(unsigned)(width*(h+2));
+  under=(unsigned short far *)_fmalloc(under_cells*sizeof(unsigned short));
+  if(under){
+    for(row=0;row<h+2;row++)
+      for(col=0;col<width;col++)
+        under[(unsigned)(row*width+col)]=video[(py+row)*screen_cols+x+col];
+  }
+
+  while(!done){
+    cell(x,py,218,C_BORDER);
+    for(i=1;i<width-1;i++)cell(x+i,py,196,C_BORDER);
+    cell(x+width-1,py,191,C_BORDER);
+    for(i=0;i<h;i++){
+      int idx=top+i;
+      cell(x,py+1+i,179,C_BORDER);
+      textout(x+1,py+1+i,idx<count?items[idx]:"",idx==sel?C_SELECTED:C_ITEM,width-2);
+      cell(x+width-1,py+1+i,179,C_BORDER);
+    }
+    cell(x,py+h+1,192,C_BORDER);
+    for(i=1;i<width-1;i++)cell(x+i,py+h+1,196,C_BORDER);
+    cell(x+width-1,py+h+1,217,C_BORDER);
+
+    wait_input(&k,&mx,&my,&mb);
+    if(mb&MOUSE_MOVED){
+      if(mx>x&&mx<x+width-1&&my>py&&my<py+h+1){
+        int n=top+my-py-1;
+        if(n<count)sel=n;
+      }
+      continue;
+    }
+    if(mb&1){
+      if(mx>x&&mx<x+width-1&&my>py&&my<py+h+1){
+        int n=top+my-py-1;
+        if(n<count)result=n;
+      }
+      done=1;
+      continue;
+    }
+    if(k==27){done=1;continue;}
+    if((k==0x4800||k==256+72)&&sel>0)sel--;
+    else if((k==0x5000||k==256+80)&&sel+1<count)sel++;
+    else if(k==0x4900||k==256+73){sel-=h;if(sel<0)sel=0;}
+    else if(k==0x5100||k==256+81){sel+=h;if(sel>=count)sel=count-1;}
+    else if(k==0x4700||k==256+71)sel=0;
+    else if(k==0x4F00||k==256+79)sel=count-1;
+    else if(k==13||k==' '){result=sel;done=1;continue;}
+    else continue;
+    if(sel<top)top=sel;
+    if(sel>=top+h)top=sel-h+1;
+  }
+
+  if(under){
+    for(row=0;row<h+2;row++)
+      for(col=0;col<width;col++)
+        video[(py+row)*screen_cols+x+col]=under[(unsigned)(row*width+col)];
+    _ffree(under);
+  }
+  return result;
+}
+
+static int config_is_select(int tab,int item)
+{
+  if(tab==0)return item==0||item==6||item==7;
+  if(tab==1)return 1;
+  if(tab==2){if(item==0||item==1)return 1;if(appearance.screensaver==1&&item==2)return 1;return 0;}
+  if(tab==3)return item==0;if(tab==4)return item==0;return 0;
+}
+static void config_select_control(int tab,int item,int x,int y)
+{
+  int sx=x+25,sy=y+4;
+  static const char *posopt[2]={"Bottom","Top"},*timeopt[2]={"24-hour","12-hour"};
+  const char *opts[64];unsigned char *field;int n=0,current=0,chosen,i,limit;
+  if(tab==0&&item==0){opts[0]=posopt[0];opts[1]=posopt[1];n=2;current=appearance.menu_top;}
+  else if(tab==0&&item==6){opts[0]=timeopt[0];opts[1]=timeopt[1];n=2;current=appearance.hour_12;}
+  else if(tab==0&&item==7){for(i=0;i<3;i++)opts[i]=mouse_cursor_names[i];n=3;current=appearance.mouse_cursor;}
+  else if(tab==1&&item==0){for(i=0;i<total_colour_schemes();i++)opts[i]=colour_scheme_at(i)->name;n=total_colour_schemes();current=colour_scheme_index();if(current<0)current=0;}
+  else if(tab==1){field=config_field(tab,item,&limit);for(i=0;i<=limit;i++)opts[i]=colour_names[i];n=limit+1;current=field?*field:0;}
+  else if(tab==2&&item==0){for(i=0;i<15;i++)opts[i]=screensaver_names[i];n=15;current=appearance.screensaver;}
+  else if(tab==2){field=config_field(tab,item,&limit);if(appearance.screensaver==1&&item==1){for(i=0;i<=limit;i++)opts[i]=colour_names[i];}else{for(i=0;i<=limit;i++)opts[i]=saver_delay_names[i];}n=limit+1;current=field?*field:0;}
+  else if(tab==3&&item==0){for(i=0;i<prompt_count;i++)opts[i]=prompt_names[i];n=prompt_count;current=prompt_style;}
+  else if(tab==4&&item==0){for(i=0;i<total_fonts();i++)opts[i]=font_name_at(i);n=total_fonts();current=appearance.font_id;if(current>=n)current=0;}
+  if(tab==0){if(item==6)sy=y+10;else if(item==7)sy=y+12;}
+  else if(tab==1){static const int ry[14]={4,6,7,8,8,9,10,11,12,13,13,14,14,15};static const int rx[14]={25,45,25,25,45,25,25,25,25,25,45,25,45,25};sy=y+ry[item];sx=x+rx[item];}
+  else if(tab==2){sy=y+(item==0?4:(item==1?6:8));}
+  if(!n)return;chosen=select_popup(sx,sy,opts,n,current,20);if(chosen==current)return;
+  if(tab==1&&item==0){apply_colour_scheme(chosen);return;}if(tab==3&&item==0){prompt_style=chosen;return;}field=config_field(tab,item,&limit);if(field)*field=(unsigned char)chosen;
+  if(tab==4&&item==0){mouse_pointer_restore();font_preview(appearance.font_id);mouse_pointer_install();}if(tab==0&&item==7)mouse_pointer_install();
+}
 
 static int config_reset_box(void)
 {
@@ -3506,7 +3692,7 @@ static int configure_appearance(void)
   int hit,count,item,redraw=2,reset_choice;unsigned mb=0;
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return 0;}
   cursor_hide();mouse_present=mouse_start();mouse_stop();
-  config_shortcut_changed=0;shortcut_refresh();prompt_load_styles();prompt_ansi=ansi_installed();if(!prompt_ansi&&prompt_needs_ansi[prompt_style])prompt_style=prompt_next_style(prompt_style,1);
+  config_shortcut_changed=0;shortcut_refresh();load_custom_schemes();scan_external_fonts();prompt_load_styles();prompt_ansi=ansi_installed();if(!prompt_ansi&&prompt_needs_ansi[prompt_style])prompt_style=prompt_next_style(prompt_style,1);
   x=(screen_cols-66)/2;y=(screen_rows-20)/2;
   for(;;){
     wait_vertical_retrace();if(redraw){render_begin();draw_config_page(x,y,tab,focus,hover,redraw==2);render_end();redraw=0;}
@@ -3516,6 +3702,7 @@ static int configure_appearance(void)
       if(hit>=0&&hit<CONFIG_TAB_COUNT){tab=hit;focus=hit;hover=-1;redraw=2;continue;}
       if(hit>=CONFIG_CONTROL_BASE&&hit<20){
         focus=hit;item=hit-CONFIG_CONTROL_BASE;
+        if(config_is_select(tab,item)){config_select_control(tab,item,x,y);redraw=2;continue;}
         if(tab==5&&item==0){
           if(config_shortcut_active){
             press_button(x+45,y+5,"  Unload  ",10);shortcut_unload();
@@ -3564,6 +3751,7 @@ static int configure_appearance(void)
       continue;
     }
     if(k==27){mouse_pointer_restore();appearance=original;font_restore();close_menu();return 0;}
+    if(k==0xA500){tab=(tab+1)%CONFIG_TAB_COUNT;focus=tab;redraw=2;continue;}
     count=config_count(tab);
     if(k==9){
       if(focus<0)focus=0;
@@ -3609,6 +3797,7 @@ static int configure_appearance(void)
     }
     if(focus<20){
       item=focus-CONFIG_CONTROL_BASE;
+      if(config_is_select(tab,item)&&(k==13||k==' ')){config_select_control(tab,item,x,y);redraw=2;continue;}
       if(tab==5&&item==0){
         if(k==13||k==' '){
           if(config_shortcut_active){
@@ -3632,8 +3821,8 @@ static int configure_appearance(void)
         if(!set_autoexec_prompt(prompt_style)){notice_box("Write Error","AUTOEXEC.BAT could not be updated.");redraw=2;continue;}
         if(!prepare_prompt_macro(prompt_style)){notice_box("Prompt Error","The selected prompt is too long.");redraw=2;continue;}
         mouse_pointer_restore();close_menu();return 2;
-      } else if(k==0x4B00){change_config_value(tab,item,-1);redraw=2;}
-      else if(k==0x4D00||k==' '){change_config_value(tab,item,1);redraw=2;}
+      } else if(!config_is_select(tab,item)&&k==0x4B00){change_config_value(tab,item,-1);redraw=2;}
+      else if(!config_is_select(tab,item)&&(k==0x4D00||k==' ')){change_config_value(tab,item,1);redraw=2;}
       else if(k==13){focus=(item+1<count)?focus+1:20;redraw=1;}
       continue;
     }
@@ -3890,11 +4079,13 @@ static int explore_ram_label(unsigned drive)
 }
 
 /* Same media classification used by DRIVES 1.2. */
+static unsigned long explore_cdrom_mask=0UL;
 static unsigned char explore_classify_drive(unsigned drive)
 {
   union REGS r;struct SREGS s;unsigned char far *dpb;
   static unsigned char driver_name[2];
   unsigned offset,segment,word;
+  if(explore_cdrom_mask&(1UL<<drive))return 9;
   if(drive<2){
     int86(0x11,&r,&r);
     if(!(r.x.ax&1) || drive>=(((r.x.ax>>6)&3)+1))return 0;
@@ -3931,7 +4122,7 @@ static unsigned char explore_classify_drive(unsigned drive)
 
 static void explore_detect_drives(void)
 {
-  int i;
+  int i;union REGS r;explore_cdrom_mask=0UL;memset(&r,0,sizeof(r));r.x.ax=0x1500;r.x.bx=0;int86(0x2F,&r,&r);if(r.x.bx){unsigned first=r.x.cx,count=r.x.bx;for(i=0;i<(int)count&&first+(unsigned)i<26;i++)explore_cdrom_mask|=(1UL<<(first+i));}
   for(i=0;i<26;i++){
     explore_drive_symbols[i]=explore_classify_drive((unsigned)i);
     explore_drive_positions[i]=-1;
@@ -4232,7 +4423,7 @@ static int explore_dialog(void)
     for(column=0;column<EXPLORE_COLS;column++)for(row=0;row<EXPLORE_ROWS;row++){
       index=top+column*EXPLORE_ROWS+row;
       if(index<explore_count)draw_browser_entry(x+2+column*18,y+6+row,index,
-        explore_entry_attribute(index,index==selected||index==hover_entry),16,1);
+        explore_entry_attribute(index,index==selected),16,1);
       else textout(x+2+column*18,y+6+row,"",C_MENU_BACKGROUND,16);
     }
     cell(x+73,y+6,top>0?30:' ',C_BUTTON);
@@ -4246,7 +4437,7 @@ static int explore_dialog(void)
       if(my>=y+6 && my<y+17 && mx>=x+2 && mx<x+72){
         column=(mx-(x+2))/18;row=my-(y+6);
         index=top+column*EXPLORE_ROWS+row;
-        if(index<explore_count)next_hover=index;
+        if(index<explore_count)next_hover=-1;
       }
       else if(my==y+18 && mx>=x+3 && mx<x+12)next_control=1;
       else if(my==y+18 && mx>=x+14 && mx<x+24)next_control=2;
@@ -4861,7 +5052,7 @@ static void search_literal_from_pattern(const char *pattern,char *out,int max)
 static void openfile_search_live_draw(void)
 {
   int dx=(screen_cols-78)/2,dy=(screen_rows-21)/2,rx=21,row,index,start;
-  char rn[13],rp[COLLECTION_PATH],line[53];int avail,n,plen;
+  char rn[13],rp[COLLECTION_PATH],line[53];int avail,plen;
   /* The search form has already been removed.  Repaint the result pane as
      matches arrive so a recursive disk search never looks frozen. */
   start=((collection_result_count-1)/EXPLORE_ROWS)*EXPLORE_ROWS;
@@ -4958,6 +5149,7 @@ static int openfile_search_dialog(const char *assoc_name,const char *exts,const 
     if(!collection_results){notice_box("Search Files","Not enough memory for search results.");return 0;}
   }
   collection_result_count=0;explore_count=0;memset(openfile_mark,0,sizeof(openfile_mark));openfile_result_mode=1;
+  {int dx=(screen_cols-78)/2,dy=(screen_rows-21)/2,row;render_begin();for(row=0;row<EXPLORE_ROWS;row++)textout(dx+21,dy+6+row,"",C_MENU_BACKGROUND,52);textout(dx+21,dy+6,"Searching...",C_BORDER,12);render_end();}
   openfile_search_dir(look,pattern,exts,recurse,deep,0);
   for(i=0;i<collection_result_count&&i<MAX_EXPLORE_ENTRIES;i++){
     openfile_far_to_near(explore_entries[i].name,collection_results[i].name,13);explore_entries[i].directory=0;
@@ -5008,19 +5200,17 @@ static int collections_dialog(void)
             index=top+row;
             if(index<explore_count){
               int marked=openfile_mark[index]!=0;
-              int active=((index==selected&&pane==1&&focus==0)||index==hover_entry);
+              int active=(index==selected&&pane==1&&focus==0);
               int fat=(marked||active)?C_SELECTED:C_ITEM;
               char rp[COLLECTION_PATH],rn[13],shown[51];int avail,plen;
-              textout(x+rx,y+6+row,"",fat,52);
+              textout(x+rx,y+6+row,"",C_MENU_BACKGROUND,52);
               openfile_far_to_near(rn,collection_results[index].name,13);
               openfile_far_to_near(rp,collection_results[index].path,COLLECTION_PATH);
-              shown[0]=0;strncat(shown,rn,12);strcat(shown,"  ");
-              avail=50-(int)strlen(shown);plen=(int)strlen(rp);
-              if(plen<=avail)strncat(shown,rp,avail);
-              else if(avail>3){strncat(shown,rp,avail-3);strcat(shown,"...");}
               cell(x+rx,y+6+row,launchui_browser_codes[0],fat);
               cell(x+rx+1,y+6+row,launchui_browser_codes[1],fat);
-              textout(x+rx+2,y+6+row,shown,fat,50);
+              textout(x+rx+2,y+6+row,rn,fat,12);
+              avail=36;plen=(int)strlen(rp);shown[0]=0;if(plen<=avail){strncpy(shown,rp,avail);shown[plen]=0;}else if(avail>3){strncpy(shown,rp,avail-3);shown[avail-3]=0;strcat(shown,"...");}shown[avail]=0;
+              textout(x+rx+16,y+6+row,shown,marked||active?C_SELECTED:ATTR(appearance.background,appearance.labels),36);
               if(openfile_mark[index])cell(x+rx+1,y+6+row,251,fat);
             }else textout(x+rx,y+6+row,"",C_MENU_BACKGROUND,52);
           }
@@ -5028,7 +5218,7 @@ static int collections_dialog(void)
           for(column=0;column<3;column++)for(row=0;row<EXPLORE_ROWS;row++){
             index=top+column*EXPLORE_ROWS+row;
             if(index<explore_count){
-              int at=openfile_mark[index]?C_SELECTED:(((index==selected&&pane==1&&focus==0)||index==hover_entry)?C_SELECTED:explore_entry_attribute(index,0));
+              int at=openfile_mark[index]?C_SELECTED:((index==selected&&pane==1&&focus==0)?C_SELECTED:explore_entry_attribute(index,0));
               draw_browser_entry(x+rx+column*18,y+6+row,index,at,16,0);
               if(openfile_mark[index])cell(x+rx+column*18+15,y+6+row,251,at);
             }else textout(x+rx+column*18,y+6+row,"",C_MENU_BACKGROUND,16);
@@ -5040,20 +5230,20 @@ static int collections_dialog(void)
       } else {
         textout(x+rx,y+4,"Select a file association to browse...",C_EMPTY,rw);
       }
-      {int file_ok=collection_count&&selected>=0&&selected<explore_count&&!explore_entries[selected].directory;if(file_ok){draw_button(x+3,y+18,"  Open  ",9,focus==1||hover_control==1);draw_button(x+14,y+18,"  Params  ",10,focus==2||hover_control==2);draw_button(x+26,y+18,"  Locate  ",10,focus==3||hover_control==3);}else{draw_button_disabled(x+3,y+18,"  Open  ",9);draw_button_disabled(x+14,y+18,"  Params  ",10);draw_button_disabled(x+26,y+18,"  Locate  ",10);}draw_button(x+38,y+18," Search ",8,focus==11||hover_control==11);draw_button(x+68,y+18,"  Exit  ",9,focus==4||hover_control==4);}render_end();redraw=0;}
+      {int file_ok=collection_count&&selected>=0&&selected<explore_count&&!explore_entries[selected].directory;if(collection_count)draw_button(x+3,y+18," Search ",8,focus==11||hover_control==11);else draw_button_disabled(x+3,y+18," Search ",8);cell(x+12,y+18,179,C_BORDER);if(file_ok){draw_button(x+14,y+18,"  Open  ",9,focus==1||hover_control==1);draw_button(x+25,y+18,"  Params  ",10,focus==2||hover_control==2);draw_button(x+37,y+18,"  Locate  ",10,focus==3||hover_control==3);}else{draw_button_disabled(x+14,y+18,"  Open  ",9);draw_button_disabled(x+25,y+18,"  Params  ",10);draw_button_disabled(x+37,y+18,"  Locate  ",10);}draw_button(x+68,y+18,"  Exit  ",9,focus==4||hover_control==4);}render_end();redraw=0;}
     wait_input(&k,&mx,&my,&mb);
     if(mb&MOUSE_MOVED){
       int h=-1,next_hover=-1;
       if(collection_count&&my>=y+6&&my<y+17&&mx>=x+rx&&mx<x+75){
         if(openfile_result_mode){row=my-(y+6);index=(row>=0)?top+row:-1;}
         else {column=(mx-(x+rx))/18;row=my-(y+6);index=top+column*EXPLORE_ROWS+row;}
-        if(index>=0&&index<explore_count&&!openfile_mark[index])next_hover=index;
+        if(index>=0&&index<explore_count&&!openfile_mark[index])next_hover=-1;
       }
       if(my==y+2&&mx>=x+2&&mx<x+10)h=10;
-      else if(my==y+18&&mx>=x+3&&mx<x+12)h=1;
-      else if(my==y+18&&mx>=x+14&&mx<x+24)h=2;
-      else if(my==y+18&&mx>=x+26&&mx<x+36)h=3;
-      else if(my==y+18&&mx>=x+38&&mx<x+46)h=11;
+      else if(collection_count&&my==y+18&&mx>=x+3&&mx<x+11)h=11;
+      else if(my==y+18&&mx>=x+14&&mx<x+23)h=1;
+      else if(my==y+18&&mx>=x+25&&mx<x+35)h=2;
+      else if(my==y+18&&mx>=x+37&&mx<x+47)h=3;
       else if(my==y+18&&mx>=x+68&&mx<x+77)h=4;
       if(next_hover!=hover_entry){
         int old_hover=hover_entry;
@@ -5121,7 +5311,7 @@ static int collections_dialog(void)
         }
         continue;
       }
-      if(my==y+18&&mx>=x+3&&mx<x+12){focus=1;k=13;}else if(my==y+18&&mx>=x+14&&mx<x+24){focus=2;k=13;}else if(my==y+18&&mx>=x+26&&mx<x+36){focus=3;k=13;}else if(my==y+18&&mx>=x+38&&mx<x+46){focus=11;k=13;}else if(my==y+18&&mx>=x+68)return 0;else continue;
+      if(collection_count&&my==y+18&&mx>=x+3&&mx<x+11){focus=11;k=13;}else if(my==y+18&&mx>=x+14&&mx<x+23){focus=1;k=13;}else if(my==y+18&&mx>=x+25&&mx<x+35){focus=2;k=13;}else if(my==y+18&&mx>=x+37&&mx<x+47){focus=3;k=13;}else if(my==y+18&&mx>=x+68)return 0;else continue;
     }
     if(k==27)return 0;if(!collection_count){
       if(k==9){focus=(focus==10)?4:10;redraw=1;continue;}
@@ -5150,7 +5340,7 @@ static int collections_dialog(void)
         else if(focus==0&&pane==1){d=explore_first_drive();if(d>=0)focus=d+5;else focus=1;}
         else if(focus>=5&&focus<10)focus=1;
         else if(focus>=1&&focus<3)focus++;
-        else if(focus==3)focus=11;
+        else if(focus==3)focus=collection_count?11:4;
         else if(focus==11)focus=4;
         else {focus=0;pane=0;}
       } else {
@@ -5159,7 +5349,7 @@ static int collections_dialog(void)
         else if(focus==0&&pane==1)focus=10;
         else if(focus>=5&&focus<10){focus=0;pane=1;}
         else if(focus==1){d=explore_first_drive();if(d>=0){int n=d;while(explore_adjacent_drive(n,1)!=n)n=explore_adjacent_drive(n,1);focus=n+5;}else{focus=0;pane=1;}}
-        else if(focus==4)focus=11;
+        else if(focus==4)focus=collection_count?11:3;
         else if(focus==11)focus=3;
         else if(focus>1&&focus<=3)focus--;
         else {focus=0;pane=0;}
@@ -5173,10 +5363,10 @@ static int collections_dialog(void)
       continue;
     }
     if(focus==11){
-      if(k==13||k==' '){if(openfile_search_dialog(collections[selc].name,collections[selc].ext,path)){selected=explore_count?0:-1;top=0;pane=1;focus=0;}redraw=1;}
+      if(collection_count&&(k==13||k==' ')){if(openfile_search_dialog(collections[selc].name,collections[selc].ext,path)){selected=explore_count?0:-1;top=0;pane=1;focus=0;}redraw=1;}
       continue;
     }
-    if((k=='s'||k=='S')&&focus==0){
+    if(collection_count&&(k=='s'||k=='S')&&focus==0){
       if(openfile_search_dialog(collections[selc].name,collections[selc].ext,path)){selected=explore_count?0:-1;top=0;pane=1;focus=0;}redraw=1;continue;
     }
     if(focus>=5&&focus<10){
@@ -5312,6 +5502,32 @@ static int menu_open_folder(const char *name,int *parent,int *sel)
   return count<MAX_DEPTH?count:MAX_DEPTH-1;
 }
 
+static int quick_title_match(const char *title,const char *find)
+{
+  int i,j,n;
+  if(!title||!find)return 0;
+  n=strlen(find);if(n<2)return 0;
+  for(i=0;title[i];i++){
+    for(j=0;j<n;j++){
+      if(!title[i+j])break;
+      if(toupper((unsigned char)title[i+j])!=toupper((unsigned char)find[j]))break;
+    }
+    if(j==n)return 1;
+  }
+  return 0;
+}
+
+static int quick_launchers(const char *find,int *list)
+{
+  int i,j,t,n=0;
+  if(!find||strlen(find)<2)return 0;
+  for(i=0;i<node_count && n<MAX_CHILD;i++)
+    if(nodes[i].active&&!nodes[i].folder&&!nodes[i].separator&&quick_title_match(nodes[i].title,find))list[n++]=i;
+  for(i=0;i<n-1;i++)for(j=i+1;j<n;j++)
+    if(stricmp(nodes[list[j]].title,nodes[list[i]].title)<0){t=list[i];list[i]=list[j];list[j]=t;}
+  return n;
+}
+
 static int menu(const char *open_to)
 {
   static int parent[MAX_DEPTH],sel[MAX_DEPTH],list[MAX_CHILD];
@@ -5319,13 +5535,58 @@ static int menu(const char *open_to)
   static int draw_list[MAX_CHILD],hitlist[MAX_CHILD];
   union REGS clock_regs;
   int depth=0,n,k,i,h,x,y,node,redraw=2,mx=0,my=0,hit,pos;
+  int quick=0,qfocus=1,qn=0,qsel=0,qlist[MAX_CHILD],qh,qy,qinput_y;
+  char qtext[MAX_TITLE];
   unsigned mb,last_mouse_x,last_mouse_y;unsigned char last_second=255;
   unsigned long last_activity,now;
-  parent[0]=-1; sel[0]=0;depth=menu_open_folder(open_to,parent,sel);
+  parent[0]=-1; sel[0]=0;qtext[0]=0;depth=menu_open_folder(open_to,parent,sel);
   video_init();if(!save_screen()){puts("Launch!: insufficient memory");return -1;}
   cursor_hide();mouse_present=mouse_start();mouse_stop();
   last_mouse_x=mouse_raw_x;last_mouse_y=mouse_raw_y;last_activity=bios_ticks();
   for(;;){
+    if(quick){
+      qn=quick_launchers(qtext,qlist);if(qsel>=qn)qsel=qn?qn-1:0;
+      qh=(qn?qn:1)+5;if(qh>screen_rows)qh=screen_rows;
+      qy=appearance.menu_top?0:screen_rows-qh;qinput_y=qy+qh-2;
+      if(redraw){
+        if(redraw==2)restore_screen();if(appearance.show_sysbar)draw_sysbar();
+        menu_box(0,qy,MENU_WIDTH,qh,"Launch!",C_ROOT_TITLE,1);
+        if(qn){
+          int first=0,visible=qh-5;
+          if(!qfocus&&qsel>=visible)first=qsel-visible+1;
+          for(i=0;i<visible&&first+i<qn;i++){
+            node=qlist[first+i];
+            textout(1,qy+2+i,nodes[node].title,(!qfocus&&first+i==qsel)?C_SELECTED:C_ITEM,18);
+          }
+        } else textout(1,qy+2,strlen(qtext)>=2?"No matches":"Type to search",C_EMPTY,18);
+        for(i=1;i<MENU_WIDTH-1;i++)cell(i,qinput_y-1,196,C_BORDER);
+        for(i=1;i<MENU_WIDTH-1;i++)cell(i,qinput_y,' ',C_INPUT_FIELD);
+        textout(1,qinput_y,qtext,C_INPUT_FIELD,MENU_WIDTH-2);
+        if(qfocus){int cx=1+strlen(qtext);if(cx>MENU_WIDTH-2)cx=MENU_WIDTH-2;cell(cx,qinput_y,'_',C_INPUT_FIELD);}
+        redraw=0;
+      }
+      k=keyread();cursor_hide();last_activity=bios_ticks();
+      if(k==27){quick=0;depth=0;parent[0]=-1;sel[0]=0;redraw=2;continue;}
+      if(qfocus){
+        if(k==0x4800&&qn){qfocus=0;qsel=qn-1;redraw=1;continue;}
+        if(k==0x5000&&qn){qfocus=0;qsel=0;redraw=1;continue;}
+        if(k==8){int l=strlen(qtext);if(l){qtext[l-1]=0;qsel=0;redraw=1;}continue;}
+        if(k>=32&&k<127){int l=strlen(qtext);if(l<MAX_TITLE-1){qtext[l]=(char)k;qtext[l+1]=0;qsel=0;redraw=1;}continue;}
+        continue;
+      }
+      if(k=='\\'){qfocus=1;redraw=1;continue;}
+      if(k==0x4800&&qn){qsel=(qsel+qn-1)%qn;redraw=1;continue;}
+      if(k==0x5000&&qn){qsel=(qsel+1)%qn;redraw=1;continue;}
+      if((key_shift&0x04)&&key_scan==0x12&&qn){node=qlist[qsel];if(edit_dialog(node)&&!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");redraw=2;continue;}
+      if((key_shift&0x04)&&key_scan==0x20&&qn){
+        char question[64];node=qlist[qsel];sprintf(question,"Remove %s from the menu?",nodes[node].title);
+        strncpy(remove_item_name,nodes[node].title,MAX_TITLE-1);remove_item_name[MAX_TITLE-1]=0;remove_item_colour=C_ITEM;
+        if(confirm_box("Remove Item",question)){int pp=nodes[node].parent;delete_tree(node);normalize_order(pp);if(!save_config())notice_box("Write Error","Could not update LAUNCH.MNU.");}
+        remove_item_name[0]=0;qsel=0;redraw=2;continue;
+      }
+      if(k==13&&qn){node=qlist[qsel];if(prepare_launcher(node)){run_node=node;close_menu();return node;}redraw=2;continue;}
+      continue;
+    }
     n=menu_children(parent[depth],list);
     if(sel[depth]>=n) sel[depth]=n ? n-1 : 0;
     if(redraw){
@@ -5433,6 +5694,13 @@ static int menu(const char *open_to)
           hit=i;pos=menu_position_at(i,hitlist,hn,panel_y[i],my);break;
         }
       }
+      if((mb&2) && appearance.show_time && my==panel_y[0]+panel_h[0]-1 && mx>=8 && mx<=18){
+        /* Run TIME against the restored DOS screen.  This keeps the shell's
+           interactive TIME prompt readable and avoids drawing it over the menu. */
+        mouse_stop();restore_screen();cursor_restore();
+        system("TIME");
+        cursor_hide();redraw=2;continue;
+      }
       if((mb&2) && hit==0 && my==panel_y[0] && mx>=3 && mx<10){
         close_menu();return BUILTIN_CONFIG;
       }
@@ -5475,6 +5743,7 @@ static int menu(const char *open_to)
       continue;
     }
 
+    if(k=='\\'){quick=1;qfocus=1;qtext[0]=0;qsel=0;depth=0;redraw=2;continue;}
     if(k==27){close_menu();return -1;}
     if((key_shift&0x04) && key_scan==0x1E){
       if(add_dialog(parent[depth],depth)){
@@ -5634,8 +5903,9 @@ static int font_read(unsigned char id,unsigned segment)
 {
   FILE *f;long offset;size_t got;unsigned total=0;struct SREGS s;
   if(id==0)return 1;
-  f=fopen(font_file,"rb");if(!f)return 0;
-  offset=((long)id-1L)*4096L;
+  if(id>=BUILTIN_FONT_COUNT){char p[MAX_CMD];int ex=(int)id-BUILTIN_FONT_COUNT;if(ex<0||ex>=external_font_count)return 0;strcpy(p,program_dir);strcat(p,"APPDATA\\");strcat(p,external_font_file[ex]);f=fopen(p,"rb");offset=0;}
+  else {f=fopen(font_file,"rb");offset=((long)id-1L)*4096L;}
+  if(!f)return 0;
   if(fseek(f,offset,SEEK_SET)!=0){fclose(f);return 0;}
   segread(&s);
   while(total<4096){
@@ -6185,7 +6455,7 @@ static void shortcut_idle_sync(void)
 
 static void show_help(void)
 {
-  puts("Launch! 3.72 - a lightweight command menu for DOS\n");
+  puts("Launch! 3.73 - a lightweight command menu for DOS\n");
   puts("Usage: ! [menu.mnu] [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
@@ -6209,6 +6479,7 @@ int main(int argc,char **argv)
   int i,result,config_status,config_mode=0,explore_mode=0,open_mode=0,bye_mode=0,now_mode=0,initmenu_mode=0;
   static char macro[MAX_MACRO],open_to[MAX_TITLE];
   config_path(argv[0]);
+  scan_external_fonts();
   if(!load_appearance())puts("Launch!: LAUNCH.CFG is invalid; using default appearance.");
   shortcut_idle_sync();
   for(i=1;i<argc;i++){

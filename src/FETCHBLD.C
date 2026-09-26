@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: FETCHBLD.C
+ * Role: Build copy of !DFETCH
+ * Build/ownership: Derived from DFETCH.C.
+ * Maintainer contract: Keep synchronized with DFETCH.C.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* DOS Fetch accessory. */
 #include <dos.h>
 #include <bios.h>
@@ -156,7 +173,7 @@ static void fetch_item(int x,int y,const char *label,const char *value)
 {
   char l[18];
   sprintf(l,"%s:",label);
-  acc_text(x,y,l,ACC_TITLE,15);
+  acc_text(x,y,l,ACC_ATTR(acc_appearance.background,acc_appearance.folders),15);
   acc_text(x+14,y,value,ACC_TEXT,34);
   report_item(label,value);
 }
@@ -392,13 +409,19 @@ static void draw_palette(int x,int y)
   for(i=0;i<8;i++)acc_fill(x+i*4,y+1,4,1,219,ACC_ATTR(acc_appearance.background,i+8));
 }
 
-static int print_info(void)
+static int print_info(int family)
 {
-  FILE *f;int i;
+  FILE *f;int i,rows;const char **logo;
   f=fopen("LPT1","wb");if(!f)return 0;
-  fputs("DOS Fetch - Launch! 3.71\r\n",f);
-  fputs("========================\r\n\r\n",f);
-  for(i=0;i<report_count;i++){fputs(report_lines[i],f);fputs("\r\n",f);}
+  fputs("DOS Fetch\r\n",f);
+  fputs("------------------------------------------------------------\r\n",f);
+  if(family==DF_DOS_PC)logo=logo_pc;else if(family==DF_DOS_DR)logo=logo_dr;else if(family==DF_DOS_FREE)logo=logo_free;else logo=logo_ms;
+  rows=(family==DF_DOS_MS)?7:8;
+  for(i=0;i<report_count||i<rows;i++){
+    if(i<rows)fprintf(f,"%-20.20s  ",logo[i]);else fputs("                      ",f);
+    if(i<report_count)fputs(report_lines[i],f);
+    fputs("\r\n",f);
+  }
   fputc('\f',f);fclose(f);return 1;
 }
 
@@ -506,7 +529,7 @@ int main(int argc,char **argv)
     int k=0,mx=0,my=0;unsigned mb=0;
     acc_wait(&k,&mx,&my,&mb);
     if(k==27)break;
-    if(k==16){if(!print_info())acc_notice("Print","Unable to print DOS Fetch information to LPT1.");}
+    if(k==16){if(!print_info(dos.family))acc_notice("Print","Unable to print DOS Fetch information to LPT1.");}
   }
   fetch_blocks_restore();
   acc_end();return 0;

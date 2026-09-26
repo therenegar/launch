@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: ACCLIB.H
+ * Role: Public interface for accessory/game runtime
+ * Build/ownership: Included by accessories and games.
+ * Maintainer contract: Changes here affect many executables; preserve small-model DOS memory constraints and keyboard/mouse contracts.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 #ifndef LAUNCH_ACCLIB_H
 #define LAUNCH_ACCLIB_H
 
@@ -61,6 +78,7 @@ int acc_mouse(int *x,int *y,int *buttons);
 void acc_wait(int *key,int *x,int *y,unsigned *buttons);
 void acc_close_target_suspend(int *old_x,int *old_y);
 void acc_close_target_restore(int old_x,int old_y);
+void acc_input_bounds(int x,int y,int w,int h);
 void acc_set_idle_hook(void (*fn)(void));
 void acc_modal_begin(void);
 void acc_modal_end(void);

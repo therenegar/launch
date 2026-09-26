@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: PACKDAT.C
+ * Role: Installer data packer
+ * Build/ownership: Builds INSTALL.DAT from compiled executables and packaged resources.
+ * Maintainer contract: Every file declared here must exist at the expected source path; packaging failures occur after otherwise successful builds.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Builds the compressed Launch! 3.71 INSTALL.DAT distribution archive.
    Per-file LZSS compression: 4K history window, 3..18 byte matches.
    Microsoft C/C++ 7.0 / DOS small model. */
@@ -14,7 +31,7 @@
 
 static const char *files[]={
   "!.EXE","!KEY.COM","!KEYDB.COM","!KEY286.COM","!MNUGEN.EXE","AUTOGEN.DAT",
-  "PWROFF.BMP","FONT.DAT","PROMPTS.CFG","CAL.ICS","!CAL.EXE","!CALC.EXE",
+  "PWROFF.BMP","FONT.DAT","PROMPTS.CFG","COLORS.CFG","CAL.ICS","!CAL.EXE","!CALC.EXE",
   "!DRAW.EXE","!JOURNAL.EXE","!MKDOWN.EXE","!NOTE.EXE","!STACK.EXE","!DFETCH.EXE",
   "!TODOS.EXE","!TYPO.EXE","TYPO.LVL","!BOXES.EXE","BOXES.LVL","!FCELL.EXE","!PLUMB.EXE","!POP.EXE",
   "!SNAKE.EXE","!SOL.EXE","!WORDZ.EXE","WORDZ.LVL",0
@@ -25,7 +42,7 @@ static void source_path(const char *name,char *out)
 {
   const char *dot=strrchr(name,'.');
   if(!stricmp(name,"PWROFF.BMP")){sprintf(out,"res\\%s",name);return;}
-  if(!stricmp(name,"PROMPTS.CFG")){sprintf(out,"conf\\%s",name);return;}
+  if(!stricmp(name,"PROMPTS.CFG")||!stricmp(name,"COLORS.CFG")){sprintf(out,"conf\\%s",name);return;}
   if(!stricmp(name,"CAL.ICS")){sprintf(out,"samples\\%s",name);return;}
   if(dot&&!stricmp(dot,".LVL")){sprintf(out,"appdata\\%s",name);return;}
   strcpy(out,name);

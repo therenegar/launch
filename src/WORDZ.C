@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: WORDZ.C
+ * Role: !WORDZ word puzzle game
+ * Build/ownership: Loads WORDZ*.LVL packs and renders the staggered key field.
+ * Maintainer contract: Level packs are additive and should remain deterministic/alphabetical.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! Wordz accessory - staggered hinted word puzzle game.
    Release 3.64 uses a staggered 9x12 key field, animated keycaps and diagonal words,
    click/drag selection, 200 puzzles and direct level navigation.
@@ -17,7 +34,8 @@ void acc_modal_end(void);
 #define GW 9
 #define GH 12
 #define WORDS 12
-#define MAX_PUZZLES 200
+#define MAX_PUZZLES 1000
+#define MAX_LEVEL_FILES 32
 #define MAX_HINT 79
 #define WZ_SEG_BASE 128
 #define WZ_COLON 139
@@ -37,6 +55,8 @@ void acc_modal_end(void);
 
 typedef struct {signed char x,y,dx,dy;} WORD_PLACE;
 static long puzzle_offset[MAX_PUZZLES];
+static unsigned char puzzle_file_index[MAX_PUZZLES];
+static char puzzle_files[MAX_LEVEL_FILES][13];static int puzzle_file_count=0;
 static int puzzle_total=0,puzzle_words=0;
 
 static unsigned char wz_old_seg[11][32],wz_old_colon[32],wz_old_lower[32],wz_old_key[2][32];
@@ -87,22 +107,25 @@ static void wordz_time_box(int x,int y,int width,unsigned long sec)
 static char puzzle_title[16],puzzle_word[WORDS][13],puzzle_hint[WORDS][MAX_HINT+1];
 static WORD_PLACE puzzle_place[WORDS];
 
-static void puzzle_file_path(char *p)
+static void puzzle_file_path(char *p,int fi)
 {
-  size_t n;strcpy(p,acc_directory);n=strlen(p);if(n&&p[n-1]!='\\'&&p[n-1]!='/')strcat(p,"\\");strcat(p,"WORDZ.LVL");
+  size_t n;strcpy(p,acc_directory);n=strlen(p);if(n&&p[n-1]!='\\'&&p[n-1]!='/')strcat(p,"\\");strcat(p,puzzle_files[fi]);
 }
 static void puzzle_strip(char *s)
 {int n=(int)strlen(s);while(n&&(s[n-1]=='\r'||s[n-1]=='\n'))s[--n]=0;}
 static int scan_puzzles(void)
 {
-  char p[ACC_PATH],line[192];FILE *f;long pos;puzzle_total=0;puzzle_file_path(p);f=fopen(p,"rt");if(!f)return 0;
-  for(;;){pos=ftell(f);if(!fgets(line,sizeof(line),f))break;if(line[0]=='@'){if(puzzle_total>=MAX_PUZZLES){fclose(f);return 0;}puzzle_offset[puzzle_total++]=pos;}}
-  fclose(f);return puzzle_total==MAX_PUZZLES;
+  struct find_t ff;char mask[ACC_PATH],p[ACC_PATH],line[192],tmp[13];FILE *f;long pos;unsigned e;int i,j,fi;
+  puzzle_total=0;puzzle_file_count=0;strcpy(mask,acc_directory);if(mask[0]&&mask[strlen(mask)-1]!='\\'&&mask[strlen(mask)-1]!='/')strcat(mask,"\\");strcat(mask,"WORDZ*.LVL");
+  e=_dos_findfirst(mask,_A_NORMAL,&ff);while(!e&&puzzle_file_count<MAX_LEVEL_FILES){strncpy(puzzle_files[puzzle_file_count],ff.name,12);puzzle_files[puzzle_file_count][12]=0;puzzle_file_count++;e=_dos_findnext(&ff);}
+  for(i=0;i<puzzle_file_count-1;i++)for(j=i+1;j<puzzle_file_count;j++)if(stricmp(puzzle_files[i],puzzle_files[j])>0){strcpy(tmp,puzzle_files[i]);strcpy(puzzle_files[i],puzzle_files[j]);strcpy(puzzle_files[j],tmp);}
+  for(fi=0;fi<puzzle_file_count&&puzzle_total<MAX_PUZZLES;fi++){puzzle_file_path(p,fi);f=fopen(p,"rt");if(!f)continue;for(;;){pos=ftell(f);if(!fgets(line,sizeof(line),f))break;if(line[0]=='@'&&puzzle_total<MAX_PUZZLES){puzzle_offset[puzzle_total]=pos;puzzle_file_index[puzzle_total]=(unsigned char)fi;puzzle_total++;}}fclose(f);}
+  return puzzle_total>0;
 }
 static int load_puzzle(int which)
 {
   char p[ACC_PATH],line[192],*part[6],*q;FILE *f;int i,j;
-  if(which<0||which>=puzzle_total)return 0;puzzle_file_path(p);f=fopen(p,"rt");if(!f)return 0;
+  if(which<0||which>=puzzle_total)return 0;puzzle_file_path(p,puzzle_file_index[which]);f=fopen(p,"rt");if(!f)return 0;
   if(fseek(f,puzzle_offset[which],SEEK_SET)!=0||!fgets(line,sizeof(line),f)){fclose(f);return 0;}
   puzzle_strip(line);if(line[0]!='@'){fclose(f);return 0;}strncpy(puzzle_title,line+1,15);puzzle_title[15]=0;puzzle_words=0;
   while(puzzle_words<WORDS&&fgets(line,sizeof(line),f)){
@@ -125,7 +148,7 @@ static signed char pathx[MAX_PATH],pathy[MAX_PATH];
 static unsigned char solx[WORDS][MAX_PATH],soly[WORDS][MAX_PATH],sollen[WORDS];
 static int path_len=0,cursor_x=0,cursor_y=0,puzzle_no=0,focus=-1,hint_word=0;
 static unsigned long start_tick=0,pause_tick=0;
-static int timer_running=0,finished=0,mistakes=0;
+static int timer_running=0,finished=0,mistakes=0,wordz_paused=0;
 static int animation_pending=1;
 
 static int puzzle_word_count(void)
@@ -177,7 +200,7 @@ static void build_grid(void)
 static void reset_puzzle(void)
 {
   build_grid();path_len=0;cursor_x=0;cursor_y=0;hint_word=0;
-  start_tick=0;pause_tick=0;timer_running=0;finished=0;mistakes=0;
+  start_tick=0;pause_tick=0;timer_running=0;finished=0;mistakes=0;wordz_paused=0;
   animation_pending=1;
 }
 
@@ -199,7 +222,7 @@ static int path_contains(int x,int y)
 }
 
 static void start_timer(void)
-{if(!timer_running&&!finished){timer_running=1;start_tick=acc_ticks();}}
+{if(!timer_running&&!finished&&!wordz_paused){timer_running=1;start_tick=acc_ticks();}}
 
 static void path_remove_at(int at)
 {
@@ -361,6 +384,14 @@ static unsigned long elapsed_seconds(void)
   if(!timer_running)return start_tick?pause_tick:0;return(acc_ticks()-start_tick)/18UL;
 }
 
+
+static void wordz_pause_toggle(void)
+{
+  if(finished)return;
+  if(wordz_paused){start_tick=acc_ticks()-pause_tick*18UL;timer_running=1;wordz_paused=0;}
+  else if(timer_running){pause_tick=(acc_ticks()-start_tick)/18UL;timer_running=0;wordz_paused=1;}
+}
+
 static void draw_status(int x,int y)
 {
   char s[32];unsigned long sec=elapsed_seconds();int found=solved_count(),count=puzzle_word_count();
@@ -408,7 +439,7 @@ int main(int argc,char **argv)
   int mouse_selecting=0,mouse_moved=0,mouse_start_x=-1,mouse_start_y=-1,mouse_start_selected=0,hint_hover=0,last_hint_hover=-1;
   unsigned long sec;
   if(acc_help(argc,argv,"!WORDZ","Find hinted words horizontally or diagonally."))return 0;
-  if(!acc_begin(argv[0],"Wordz",0))return 1;wordz_font(1);acc_mouse_display(1);if(!scan_puzzles()){acc_notice("Wordz Error","WORDZ.LVL is missing or invalid.");acc_end_screen();acc_end();return 1;}srand((unsigned)acc_ticks());puzzle_no=puzzle_total>1?rand()%puzzle_total:0;if(!load_puzzle(puzzle_no)){acc_notice("Wordz Error","WORDZ.LVL is missing or invalid.");acc_end_screen();acc_end();return 1;}if(!puzzle_data_valid()){acc_notice("Wordz Error","Puzzle data is invalid.");acc_end_screen();acc_end();return 1;}
+  if(!acc_begin(argv[0],"Wordz",0))return 1;wordz_font(1);acc_mouse_display(1);if(!scan_puzzles()){acc_notice("Wordz Error","No valid WORDZ*.LVL level files were found.");acc_end_screen();acc_end();return 1;}srand((unsigned)acc_ticks());puzzle_no=puzzle_total>1?rand()%puzzle_total:0;if(!load_puzzle(puzzle_no)){acc_notice("Wordz Error","No valid WORDZ*.LVL level files were found.");acc_end_screen();acc_end();return 1;}if(!puzzle_data_valid()){acc_notice("Wordz Error","Puzzle data is invalid.");acc_end_screen();acc_end();return 1;}
   x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;bx=x+3;by=y+5;
   acc_box(x,y,DLG_W,DLG_H,"Wordz");reset_puzzle();
 
@@ -418,7 +449,15 @@ int main(int argc,char **argv)
 
     if(kbhit()){
       key=acc_key();
-      if(key==9||key==271){if(focus<0)focus=(key==271)?BTN_CLOSE:0;else if(key==271)focus=focus?focus-1:BTN_CLOSE;else {focus++;if(focus>BTN_CLOSE)focus=0;}need=1;key=0;}
+      if(key==27){key=0;}
+      else if(key==17||key==256+0x6B){key=27;}
+      else if(key==256+0x3F){reset_puzzle();need=1;key=0;} /* F5 */
+      else if(key==256+0x73){change_puzzle(-1);need=1;key=0;} /* Ctrl+Left */
+      else if(key==256+0x74){change_puzzle(1);need=1;key=0;} /* Ctrl+Right */
+      else if(key==7){int g=wordz_goto_dialog();if(g>=0){puzzle_no=g;load_puzzle(puzzle_no);reset_puzzle();}acc_box(x,y,DLG_W,DLG_H,"Wordz");focus=0;need=1;key=0;}
+      else if(key==256+0x45){wordz_pause_toggle();need=1;key=0;} /* Pause/Break */
+      else if(wordz_paused){key=0;}
+      else if(key==9||key==271){if(focus<0)focus=(key==271)?BTN_CLOSE:0;else if(key==271)focus=focus?focus-1:BTN_CLOSE;else {focus++;if(focus>BTN_CLOSE)focus=0;}need=1;key=0;}
       else if(focus==0&&(key==256+72||key==0x4800)){if(cursor_y>0)cursor_y--;need=1;key=0;}
       else if(focus==0&&(key==256+80||key==0x5000)){if(cursor_y<GH-1)cursor_y++;need=1;key=0;}
       else if(focus==0&&(key==256+75||key==0x4B00)){if(cursor_x>0)cursor_x--;need=1;key=0;}

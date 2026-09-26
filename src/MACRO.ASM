@@ -1,3 +1,18 @@
+;     __                           __    __
+;    / /   ____ ___  ______  _____/ /_  / /
+;   / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+;  / /___/ /_/ / /_/ / / / /__/ / / /_/  
+; /_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+; Launch! for DOS ---------------------
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: MACRO.ASM
+ * Role: Low-level macro/keyboard support
+ * Build/ownership: Assembly helper for keyboard/macro functionality.
+ * Maintainer contract: Interrupt-facing code must remain reentrant-safe and chain correctly.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 .intel_syntax noprefix
 .code16
 .section .text

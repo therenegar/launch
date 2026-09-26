@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: STACK.C
+ * Role: !STACK persistent card stack
+ * Build/ownership: Canonical Stack source; build copy is STACKBLD.C.
+ * Maintainer contract: Persistent cards, navigation, export/print, and full-screen card presentation.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! Card Stack accessory. */
 #include <stdio.h>
 #include <string.h>
@@ -191,6 +208,140 @@ static void stack_join_next(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,n,take,room;i
 static void stack_join_previous(int *pcx,int *pcy){int cy=*pcy,prev,n,take,room;if(cy<=0)return;prev=stack_used(cy-1);n=stack_used(cy);room=CW-prev;if(room<=0){*pcy=cy-1;*pcx=CW-1;return;}take=n<room?n:room;if(take)memcpy(cards[current].text+(cy-1)*CW+prev,cards[current].text+cy*CW,take);if(take>=n)stack_remove_row(cy);else{memmove(cards[current].text+cy*CW,cards[current].text+cy*CW+take,CW-take);memset(cards[current].text+cy*CW+CW-take,' ',take);}*pcy=cy-1;*pcx=prev;}
 static void stack_split_line(int *pcx,int *pcy){int cx=*pcx,cy=*pcy,r,n,tail,indent=0;if(cy>=TEXT_LINES-1)return;while(indent<CW&&cards[current].text[cy*CW+indent]==' ')indent++;if(indent>=CW)indent=0;for(r=TEXT_LINES-1;r>cy+1;r--){memcpy(cards[current].text+r*CW,cards[current].text+(r-1)*CW,CW);stack_softwrap[current][r]=stack_softwrap[current][r-1];}memset(cards[current].text+(cy+1)*CW,' ',CW);n=stack_used(cy);tail=n>cx?n-cx:0;if(tail>CW-indent)tail=CW-indent;if(tail)memcpy(cards[current].text+(cy+1)*CW+indent,cards[current].text+cy*CW+cx,tail);memset(cards[current].text+cy*CW+cx,' ',CW-cx);stack_softwrap[current][cy+1]=0;*pcy=cy+1;*pcx=indent;}
 
+static void stack_add_card(void)
+{
+ if(count>=CARDS)return;cards[count].used=1;sprintf(cards[count].title,"Card %d",count+1);memset(cards[count].text,' ',sizeof(cards[count].text));memset(stack_softwrap[count],0,TEXT_LINES);count++;stack_selection_clear();select_card(count-1);
+}
+static void stack_delete_current(void)
+{
+ int i;if(count<=1)return;for(i=current;i<count-1;i++){cards[i]=cards[i+1];memcpy(stack_softwrap[i],stack_softwrap[i+1],TEXT_LINES);}memset(stack_softwrap[count-1],0,TEXT_LINES);count--;if(current>=count)current=count-1;stack_selection_clear();
+}
+static int stack_print_current(void)
+{
+ FILE *f;int r,q;f=fopen("LPT1","wb");if(!f)return 0;fputs(cards[current].title,f);fputs("\r\n",f);for(q=0;q<72;q++)fputc('=',f);fputs("\r\n",f);for(r=0;r<TEXT_LINES;r++){q=CW;while(q&&cards[current].text[r*CW+q-1]==' ')q--;if(q)fwrite(cards[current].text+r*CW,1,q,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);return 1;
+}
+static void stack_full_draw(int focus,int title_edit,int tp,int cx,int cy,int top)
+{
+  int d,idx;
+  char pager[16];
+  const int ax=2,ay=11;
+
+  acc_clear(ACC_BG);
+  /* Preserve the normal stack geometry: active card at bottom-left, older
+     cards stepping upward and right.  Full screen simply exposes five layers. */
+  for(d=5;d>=1;d--){
+    if(d<count){
+      idx=lower_card(d);
+      card_box(ax+d*2,ay-d*2,idx,0,0,0,0,0,0,0,0);
+    }
+  }
+  card_box(ax,ay,current,1,focus==0,title_edit,tp,focus==1,cx,cy,top);
+  acc_fill(0,24,80,1,' ',ACC_BG);
+  sprintf(pager," %d/%d ",current+1,count);
+  acc_text(0,24,pager,ACC_LABEL,(int)strlen(pager));
+}
+
+static void stack_fullscreen(char *exported,char *message)
+{
+  int key=0,mx=0,my=0,top=0,cx=0,cy=0,tp=0,focus=1,title_edit=0,insert=1,ch;
+  int oldcy,oldtop,base,oldpos,shift,oldx,oldy;
+  unsigned mb=0;
+  const int ax=2,ay=11;
+
+  stack_selection_clear();
+  acc_close_target_suspend(&oldx,&oldy);
+  acc_modal_begin();
+  acc_input_bounds(0,0,acc_cols,acc_rows);
+  stack_full_draw(focus,title_edit,tp,cx,cy,top);
+
+  while(key!=27&&key!=256+0x85&&key!=256+0x57){
+    acc_wait(&key,&mx,&my,&mb);
+
+    /* Suite shortcuts remain active in full-screen mode. */
+    if(key==256+0x73){stack_selection_clear();select_card(higher_card());cx=cy=top=0;focus=1;title_edit=0;stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;}
+    if(key==256+0x74){stack_selection_clear();select_card(lower_card(1));cx=cy=top=0;focus=1;title_edit=0;stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;}
+    if(key==1){stack_add_card();cx=cy=top=0;focus=1;title_edit=0;stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;}
+    if(key==4){stack_delete_current();cx=cy=top=0;focus=1;title_edit=0;stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;}
+    if(key==19){if(!export_cards(exported))acc_notice("Export","Unable to export stack.");else{sprintf(message,"Card Stack exported to\n%s",exported);acc_notice("Export",message);}stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;}
+    if(key==16){if(!stack_print_current())acc_notice("Print","Unable to open LPT1.");stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;}
+
+    /* Mouse editing uses the same active-card controls as the normal view. */
+    if((mb&1)&&my==ay+1&&mx>=ax+2&&mx<ax+2+CT){
+      int len=(int)strlen(cards[current].title);
+      focus=0;title_edit=1;tp=mx-(ax+2);if(tp<0)tp=0;if(tp>len)tp=len;
+      stack_selection_clear();stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;
+    }
+    if((mb&1)&&mx==ax+54&&my>=ay+3&&my<ay+3+VISIBLE_LINES){
+      if(my==ay+3&&top>0)top--;
+      else if(my==ay+3+VISIBLE_LINES-1&&top<TEXT_LINES-VISIBLE_LINES)top++;
+      else {key=0;continue;}
+      if(cy<top)cy=top;if(cy>=top+VISIBLE_LINES)cy=top+VISIBLE_LINES-1;
+      focus=1;title_edit=0;stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;
+    }
+    if((mb&1)&&my>=ay+3&&my<ay+3+VISIBLE_LINES&&mx>=ax+2&&mx<ax+2+CW){
+      focus=1;title_edit=0;stack_selection_clear();cx=mx-(ax+2);cy=top+my-(ay+3);
+      stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;
+    }
+
+    if(key==9||key==271){
+      title_edit=0;focus=(focus==0)?1:0;stack_selection_clear();
+      if(focus==0)tp=(int)strlen(cards[current].title);
+      stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;
+    }
+    if(key==13&&focus==0){title_edit=!title_edit;if(title_edit)tp=(int)strlen(cards[current].title);stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;}
+
+    if(focus==0&&title_edit){
+      int len=(int)strlen(cards[current].title);
+      if(key==256+75&&tp>0)tp--;
+      else if(key==256+77&&tp<len)tp++;
+      else if(key==256+71)tp=0;
+      else if(key==256+79)tp=len;
+      else if(key==256+82)insert=!insert;
+      else if(key==256+83&&tp<len)memmove(cards[current].title+tp,cards[current].title+tp+1,len-tp);
+      else if(key==8&&tp>0){memmove(cards[current].title+tp-1,cards[current].title+tp,len-tp+1);tp--;}
+      else if((key>=32&&key<=255)||(key>=513&&key<=767)){
+        ch=key>=512?key-512:key;
+        if(insert&&len<CT){memmove(cards[current].title+tp+1,cards[current].title+tp,len-tp+1);cards[current].title[tp++]=(char)ch;}
+        else if(!insert){if(tp<len)cards[current].title[tp++]=(char)ch;else if(len<CT){cards[current].title[tp++]=(char)ch;cards[current].title[tp]=0;}}
+      }
+      stack_full_draw(focus,title_edit,tp,cx,cy,top);key=0;continue;
+    }
+    if(focus==0){key=0;continue;}
+
+    oldcy=cy;oldtop=top;base=cy*CW;oldpos=cy*CW+cx;shift=stack_shift_down();
+    if(key==3){stack_copy_selection();key=0;}
+    else if(key==24){stack_copy_selection();stack_delete_selection(&cx,&cy);key=0;}
+    else if(key==22){stack_paste(&cx,&cy,insert);key=0;}
+    else if(key==256+0x77){cy=0;cx=0;stack_selection_clear();}
+    else if(key==256+0x75){cy=TEXT_LINES-1;while(cy>0&&stack_used(cy)==0)cy--;cx=stack_used(cy);if(cx>=CW)cx=CW-1;stack_selection_clear();}
+    else if(key==256+75&&cx>0){cx--;stack_selection_move(oldpos,cy*CW+cx,shift);}
+    else if(key==256+77&&cx<CW-1){cx++;stack_selection_move(oldpos,cy*CW+cx,shift);}
+    else if(key==256+72&&cy>0){cy--;stack_selection_move(oldpos,cy*CW+cx,shift);}
+    else if(key==256+80&&cy<TEXT_LINES-1){cy++;stack_selection_move(oldpos,cy*CW+cx,shift);}
+    else if(key==256+71){cx=0;stack_selection_move(oldpos,cy*CW+cx,shift);}
+    else if(key==256+79){cx=stack_used(cy);if(cx>=CW)cx=CW-1;stack_selection_move(oldpos,cy*CW+cx,shift);}
+    else if(key==256+73){cy-=VISIBLE_LINES;if(cy<0)cy=0;stack_selection_move(oldpos,cy*CW+cx,shift);}
+    else if(key==256+81){cy+=VISIBLE_LINES;if(cy>=TEXT_LINES)cy=TEXT_LINES-1;stack_selection_move(oldpos,cy*CW+cx,shift);}
+    else if(key==256+82){stack_selection_clear();insert=!insert;}
+    else if(key==256+83){if(stack_has_selection())stack_delete_selection(&cx,&cy);else if(cx>=stack_used(cy))stack_join_next(&cx,&cy);else{base=cy*CW;memmove(cards[current].text+base+cx,cards[current].text+base+cx+1,CW-cx-1);cards[current].text[base+CW-1]=' ';}}
+    else if(key==8){if(stack_has_selection())stack_delete_selection(&cx,&cy);else if(cx>0){cx--;base=cy*CW;memmove(cards[current].text+base+cx,cards[current].text+base+cx+1,CW-cx-1);cards[current].text[base+CW-1]=' ';}else stack_join_previous(&cx,&cy);}
+    else if(key==13){if(stack_has_selection())stack_delete_selection(&cx,&cy);if(cy<TEXT_LINES-1)stack_split_line(&cx,&cy);stack_selection_clear();}
+    else if((key>=32&&key<=255)||(key>=513&&key<=767)){if(stack_has_selection())stack_delete_selection(&cx,&cy);ch=key>=512?key-512:key;stack_insert_one(&cx,&cy,ch,insert);stack_selection_clear();}
+    else if(key!=27&&key!=256+0x85&&key!=256+0x57)key=0;
+
+    if(cy<top)top=cy;if(cy>=top+VISIBLE_LINES)top=cy-VISIBLE_LINES+1;
+    if(top<0)top=0;if(top>TEXT_LINES-VISIBLE_LINES)top=TEXT_LINES-VISIBLE_LINES;
+    (void)oldcy;(void)oldtop;
+    stack_full_draw(focus,title_edit,tp,cx,cy,top);
+  }
+
+  stack_selection_clear();
+  acc_modal_end();
+  acc_close_target_restore(oldx,oldy);
+  acc_restore_text_screen();
+  acc_mouse_display(1);
+}
+
 int main(int argc,char **argv)
 {
   char counter[12],exported[ACC_PATH],message[ACC_PATH+32];
@@ -201,7 +352,7 @@ int main(int argc,char **argv)
   if(!acc_begin(argv[0],"Card Stack",0))return 1;
   load_cards();x=(acc_cols-68)/2+3;px=x+1;y=(acc_rows-22)/2+6;acc_box(x-3,y-6,68,22,"Card Stack");
 
-  while(key!=27){
+  while(1){
     if(dirty){cards_draw(px,y,focus,title_edit,tp,cx,cy,top);dirty=0;}
     if(count>1)acc_button(x,y+13," Prev ",focus==2);else acc_button_disabled(x,y+13," Prev ");
     if(count>1)acc_button(x+6,y+13," Next ",focus==3);else acc_button_disabled(x+6,y+13," Next ");
@@ -209,6 +360,13 @@ int main(int argc,char **argv)
     acc_put(x+18,y+13,179,ACC_BORDER);acc_button(x+20,y+13,"  Add  ",focus==4);
     if(count>1)acc_button(x+28,y+13,"  Delete  ",focus==5);else acc_button_disabled(x+28,y+13,"  Delete  ");acc_button(x+36,y+13,"  Export  ",focus==6);acc_button(x+44,y+13,"  Print  ",focus==7);
     acc_button(x+56,y+13,"  Exit  ",focus==8);acc_wait(&key,&mx,&my,&mb);
+    if(key==256+0x85||key==256+0x57){stack_fullscreen(exported,message);acc_box(x-3,y-6,68,22,"Card Stack");dirty=1;key=0;continue;}
+    if(key==256+0x73){stack_selection_clear();select_card(higher_card());cx=cy=top=0;focus=0;dirty=1;key=0;continue;}
+    if(key==256+0x74){stack_selection_clear();select_card(lower_card(1));cx=cy=top=0;focus=0;dirty=1;key=0;continue;}
+    if(key==1){stack_add_card();cx=cy=top=0;focus=0;dirty=1;key=0;continue;}
+    if(key==4){stack_delete_current();cx=cy=top=0;focus=0;dirty=1;key=0;continue;}
+    if(key==19){if(!export_cards(exported))acc_notice("Export","Unable to export stack.");else{sprintf(message,"Card Stack exported to\n%s",exported);acc_notice("Export",message);}acc_box(x-3,y-6,68,22,"Card Stack");dirty=1;key=0;continue;}
+    if(key==16){if(!stack_print_current())acc_notice("Print","Unable to open LPT1.");acc_box(x-3,y-6,68,22,"Card Stack");dirty=1;key=0;continue;}
 
     if((mb&1)&&count>=2&&my==y-1&&mx>=px+4&&mx<px+26){stack_selection_clear();select_card(lower_card(1));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
     if((mb&1)&&count>=3&&my==y-3&&mx>=px+6&&mx<px+28){stack_selection_clear();select_card(lower_card(2));cx=cy=top=0;focus=0;title_edit=0;dirty=1;key=0;continue;}
@@ -229,9 +387,9 @@ int main(int argc,char **argv)
     if((mb&1)&&my>=y+3&&my<y+3+VISIBLE_LINES&&mx>=px+2&&mx<px+2+CW){focus=1;title_edit=0;stack_selection_clear();cx=mx-(px+2);cy=top+my-(y+3);dirty=1;key=0;continue;}
     if((mb&1)&&my==y+13){stack_selection_clear();title_edit=0;if(mx>=x&&mx<x+5)focus=2;else if(mx>=x+6&&mx<x+11)focus=3;else if(mx>=x+20&&mx<x+26)focus=4;else if(count>1&&mx>=x+28&&mx<x+34)focus=5;else if(mx>=x+36&&mx<x+42)focus=6;else if(mx>=x+44&&mx<x+50)focus=7;else if(mx>=x+56&&mx<x+62)focus=8;key=13;}
 
-    /* Esc first leaves title editing; a second Esc closes the program. */
-    if(key==27&&title_edit){title_edit=0;dirty=1;key=0;continue;}
-    if(key==27)break;
+    /* Bare Esc is local only: leave title editing / clear focus.
+       Program exit is via Exit, Ctrl+Q or Alt+F4. */
+    if(key==27){title_edit=0;stack_selection_clear();focus=-1;dirty=1;key=0;continue;}
     if(key==9||key==271){
       int dir=(key==271)?-1:1;
       title_edit=0;
@@ -247,10 +405,10 @@ int main(int argc,char **argv)
     if(key==13&&focus>=2){
       if(focus==2){stack_selection_clear();select_card(higher_card());cx=cy=top=0;}
       else if(focus==3){stack_selection_clear();select_card(lower_card(1));cx=cy=top=0;}
-      else if(focus==4&&count<CARDS){cards[count].used=1;sprintf(cards[count].title,"Card %d",count+1);memset(cards[count].text,' ',sizeof(cards[count].text));memset(stack_softwrap[count],0,TEXT_LINES);count++;stack_selection_clear();select_card(count-1);cx=cy=top=0;}
-      else if(focus==5&&count>1){for(i=current;i<count-1;i++){cards[i]=cards[i+1];memcpy(stack_softwrap[i],stack_softwrap[i+1],TEXT_LINES);}memset(stack_softwrap[count-1],0,TEXT_LINES);count--;if(current>=count)current=count-1;stack_selection_clear();cx=cy=top=0;}
+      else if(focus==4&&count<CARDS){stack_add_card();cx=cy=top=0;}
+      else if(focus==5&&count>1){stack_delete_current();cx=cy=top=0;}
       else if(focus==6){if(!export_cards(exported))acc_notice("Export","Unable to export stack.");else{sprintf(message,"Card Stack exported to\n%s",exported);acc_notice("Export",message);}}
-      else if(focus==7){FILE*f=fopen("LPT1","wb");int r,q;if(!f)acc_notice("Print","Unable to open LPT1.");else{fputs(cards[current].title,f);fputs("\r\n",f);for(q=0;q<72;q++)fputc('=',f);fputs("\r\n",f);for(r=0;r<TEXT_LINES;r++){q=CW;while(q&&cards[current].text[r*CW+q-1]==' ')q--;if(q)fwrite(cards[current].text+r*CW,1,q,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);}}
+      else if(focus==7){if(!stack_print_current())acc_notice("Print","Unable to open LPT1.");}
       else if(focus==8)key=27;
       dirty=1;if(key!=27)key=0;continue;
     }

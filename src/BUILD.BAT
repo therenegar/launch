@@ -1,3 +1,16 @@
+REM     __                           __    __
+REM    / /   ____ ___  ______  _____/ /_  / /
+REM   / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+REM  / /___/ /_/ / /_/ / / / /__/ / / /_/  
+REM /_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+REM Launch! for DOS ---------------------
+REM MAINTAINER NOTES - Launch! 3.73
+REM File: BUILD.BAT
+REM Role: Primary DOS build script
+REM Build/ownership: Builds complete suite or named component and captures transcript in BUILD.LOG.
+REM Maintainer contract: Keep component labels synchronized with shipped programs. A failed PACKDAT means binaries may have built even though release packaging did not.
+REM Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+REM DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
 @ECHO OFF
 REM Launch! build script - Microsoft C/C++ 7.0
 REM Top-level builds are captured in BUILD.LOG, then echoed to the screen.
@@ -19,7 +32,7 @@ GOTO END
 REM BUILD with no parameter builds everything.
 REM BUILD ! builds only the core Launch! menu and appends its authentication trailer.
 REM BUILD !SNAKE (etc.) builds only that accessory.
-REM Release 3.72 generated build sources are supplied with this tree.
+REM Release 3.73 generated build sources are supplied with this tree.
 REM GENBUILD.C is a maintainer regeneration tool and is not run by BUILD.
 IF "%1"=="" GOTO ALL
 IF "%1"=="!" GOTO CORE

@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: TYPO.C
+ * Role: !TYPO typing/word game
+ * Build/ownership: Loads TYPO*.LVL packs.
+ * Maintainer contract: Level navigation must use discovered combined count.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! Typo accessory - timed typing accuracy and WPM practice.
    Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
@@ -14,7 +31,8 @@ void acc_modal_end(void);
 
 #define DLG_W 73
 #define DLG_H 22
-#define LEVELS 100
+#define MAX_LEVELS 500
+#define MAX_LEVEL_FILES 32
 #define MAX_TEXT 3200
 #define MAX_NAME 31
 #define SEG_BASE 128
@@ -31,14 +49,16 @@ void acc_modal_end(void);
 
 typedef struct {unsigned short year;unsigned char month,day;unsigned short mistakes,wpm;} TYPO_RECORD;
 
-static long level_offset[LEVELS];
+static long level_offset[MAX_LEVELS];
+static unsigned char level_file_index[MAX_LEVELS];
+static char level_files[MAX_LEVEL_FILES][13];static int level_file_count=0;
 static int level_count=0,level_secs=60;
 static char level_name[MAX_NAME+1],level_text[MAX_TEXT+1];
 static int level_len=0;
 
-static void level_file_path(char *p)
+static void level_file_path(char *p,int fi)
 {
-  size_t n;strcpy(p,acc_directory);n=strlen(p);if(n&&p[n-1]!='\\'&&p[n-1]!='/')strcat(p,"\\");strcat(p,"TYPO.LVL");
+  size_t n;strcpy(p,acc_directory);n=strlen(p);if(n&&p[n-1]!='\\'&&p[n-1]!='/')strcat(p,"\\");strcat(p,level_files[fi]);
 }
 
 static void strip_eol(char *s)
@@ -46,15 +66,18 @@ static void strip_eol(char *s)
 
 static int scan_levels(void)
 {
-  char p[ACC_PATH],line[128];FILE *f;long pos;level_count=0;level_file_path(p);f=fopen(p,"rt");if(!f)return 0;
-  for(;;){pos=ftell(f);if(!fgets(line,sizeof(line),f))break;if(line[0]=='@'&&level_count<LEVELS)level_offset[level_count++]=pos;}
-  fclose(f);return level_count==LEVELS;
+  struct find_t ff;char mask[ACC_PATH],p[ACC_PATH],line[128],tmp[13];FILE *f;long pos;unsigned e;int i,j,fi;
+  level_count=0;level_file_count=0;strcpy(mask,acc_directory);if(mask[0]&&mask[strlen(mask)-1]!='\\'&&mask[strlen(mask)-1]!='/')strcat(mask,"\\");strcat(mask,"TYPO*.LVL");
+  e=_dos_findfirst(mask,_A_NORMAL,&ff);while(!e&&level_file_count<MAX_LEVEL_FILES){strncpy(level_files[level_file_count],ff.name,12);level_files[level_file_count][12]=0;level_file_count++;e=_dos_findnext(&ff);}
+  for(i=0;i<level_file_count-1;i++)for(j=i+1;j<level_file_count;j++)if(stricmp(level_files[i],level_files[j])>0){strcpy(tmp,level_files[i]);strcpy(level_files[i],level_files[j]);strcpy(level_files[j],tmp);}
+  for(fi=0;fi<level_file_count&&level_count<MAX_LEVELS;fi++){level_file_path(p,fi);f=fopen(p,"rt");if(!f)continue;for(;;){pos=ftell(f);if(!fgets(line,sizeof(line),f))break;if(line[0]=='@'&&level_count<MAX_LEVELS){level_offset[level_count]=pos;level_file_index[level_count]=(unsigned char)fi;level_count++;}}fclose(f);}
+  return level_count>0;
 }
 
 static int load_level_text(int which)
 {
   char p[ACC_PATH],head[128],*sep;FILE *f;int n;
-  if(which<0||which>=level_count)return 0;level_file_path(p);f=fopen(p,"rt");if(!f)return 0;
+  if(which<0||which>=level_count)return 0;level_file_path(p,level_file_index[which]);f=fopen(p,"rt");if(!f)return 0;
   if(fseek(f,level_offset[which],SEEK_SET)!=0||!fgets(head,sizeof(head),f)){fclose(f);return 0;}
   strip_eol(head);sep=strchr(head+1,'|');if(!sep){fclose(f);return 0;}*sep++=0;
   level_secs=atoi(head+1);if(level_secs<30)level_secs=60;
@@ -64,8 +87,8 @@ static int load_level_text(int which)
 }
 
 static unsigned char old_seg[11][32],old_lower[32],old_key[2][32];
-static int level=0,focus=-1,running=0,finished=0,errors=0,last_bad=0,last_key=0;
-static unsigned long start_tick=0,last_second=999;
+static int level=0,focus=-1,running=0,finished=0,errors=0,last_bad=0,last_key=0,paused=0;
+static unsigned long start_tick=0,last_second=999,pause_sec=0;
 static long correct_chars=0;
 static TYPO_RECORD records[RECORDS];static int record_count=0;
 
@@ -156,7 +179,7 @@ static char stream_char(long p)
 
 static unsigned long elapsed(void)
 {
-  unsigned long e;if(!running)return finished?(unsigned long)level_secs:0;e=(acc_ticks()-start_tick)/18UL;if(e>(unsigned long)level_secs)e=(unsigned long)level_secs;return e;
+  unsigned long e;if(paused)return pause_sec;if(!running)return finished?(unsigned long)level_secs:0;e=(acc_ticks()-start_tick)/18UL;if(e>(unsigned long)level_secs)e=(unsigned long)level_secs;return e;
 }
 
 static int current_wpm(void)
@@ -165,7 +188,7 @@ static int current_wpm(void)
 }
 
 static void reset_level(void)
-{running=0;finished=0;errors=0;last_bad=0;last_key=0;correct_chars=0;start_tick=0;last_second=999;}
+{running=0;finished=0;errors=0;last_bad=0;last_key=0;correct_chars=0;start_tick=0;last_second=999;paused=0;pause_sec=0;}
 
 static void finish_session(int completed)
 {
@@ -310,7 +333,7 @@ static void draw_buttons(int x,int y)
 {
   acc_button(x+3,y+DLG_H-3," Refresh ",focus==F_RESET);
   if(level>0)acc_button(x+12,y+DLG_H-3," Prev ",focus==F_PREV);else acc_button_disabled(x+12,y+DLG_H-3," Prev ");
-  if(level<LEVELS-1)acc_button(x+20,y+DLG_H-3," Next ",focus==F_NEXT);else acc_button_disabled(x+20,y+DLG_H-3," Next ");
+  if(level<level_count-1)acc_button(x+20,y+DLG_H-3," Next ",focus==F_NEXT);else acc_button_disabled(x+20,y+DLG_H-3," Next ");
   acc_button(x+28,y+DLG_H-3," Records ",focus==F_RECORDS);
   acc_button(x+DLG_W-10,y+DLG_H-3," Exit ",focus==F_CLOSE);
 }
@@ -320,7 +343,7 @@ static void draw_all(int x,int y)
   char s[48];
   acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);
   draw_status(x,y);
-  sprintf(s,"Level %02d/%02d : %s",level+1,LEVELS,level_name);
+  sprintf(s,"Level %02d/%02d : %s",level+1,level_count,level_name);
   acc_text(x+3,y+4,s,ACC_HEADING,46);
   draw_console(x+3,y+6);
   draw_keyboard(x+5,y+12);
@@ -328,17 +351,34 @@ static void draw_all(int x,int y)
 }
 
 static void level_change(int d)
-{int n=level+d;if(n<0||n>=LEVELS)return;level=n;load_level_text(level);reset_level();}
+{int n=level+d;if(n<0||n>=level_count)return;level=n;load_level_text(level);reset_level();}
 
 static int button_hit(int x,int y,int mx,int my)
 {
   if(my!=y+DLG_H-3)return 0;
   if(mx>=x+3&&mx<x+9)return F_RESET;
   if(level>0&&mx>=x+12&&mx<x+17)return F_PREV;
-  if(level<LEVELS-1&&mx>=x+20&&mx<x+25)return F_NEXT;
+  if(level<level_count-1&&mx>=x+20&&mx<x+25)return F_NEXT;
   if(mx>=x+28&&mx<x+37)return F_RECORDS;
   if(mx>=x+DLG_W-10&&mx<x+DLG_W-4)return F_CLOSE;
   return 0;
+}
+
+
+static int typo_goto_dialog(void)
+{
+  int w=38,h=9,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,pos=0,df=-1,v,result=-1;unsigned mb=0;char b[5];b[0]=0;acc_modal_begin();
+  for(;;){acc_subbox(x,y,w,h,"Go To",1);acc_text(x+3,y+2,"Level number:",ACC_LABEL,13);acc_fill(x+17,y+2,5,1,' ',df==0?ACC_SELECT:ACC_CONTROL);acc_text(x+17,y+2,b,df==0?ACC_SELECT:ACC_CONTROL,4);acc_button(x+3,y+6,"  Go  ",df==1);acc_button(x+11,y+6,"  Cancel  ",df==2);acc_wait(&k,&mx,&my,&mb);
+    if((mb&1)&&my==y+2&&mx>=x+17&&mx<x+22){df=0;k=0;continue;}if((mb&1)&&my==y+6){if(mx>=x+3&&mx<x+9){df=1;k=13;}else if(mx>=x+11&&mx<x+21){df=2;k=13;}}
+    if(k==27){result=-1;break;}if(k==9||k==271){if(df<0)df=(k==271)?2:0;else df=(k==271)?(df+2)%3:(df+1)%3;k=0;continue;}if(k==13&&df==2){result=-1;break;}if(k==13&&df==1){v=atoi(b);if(v>=1&&v<=level_count){result=v-1;break;}k=0;continue;}
+    if(df==0){if(k==8&&pos){b[--pos]=0;}else if(k>='0'&&k<='9'&&pos<3){b[pos++]=(char)k;b[pos]=0;}}k=0;}
+  acc_modal_end();return result;
+}
+static void typo_pause_toggle(void)
+{
+  if(finished)return;
+  if(paused){start_tick=acc_ticks()-pause_sec*18UL;running=1;paused=0;}
+  else if(running){pause_sec=elapsed();running=0;paused=1;}
 }
 
 static void process_char(int ch)
@@ -352,7 +392,7 @@ int main(int argc,char **argv)
 {
   int x,y,key=0,mx=0,my=0,buttons=0,last_buttons=0,hit,need=1,quit=0,last_kflags=-1,kflags,old_key;unsigned long sec;
   if(acc_help(argc,argv,"!TYPO","Timed typing practice for accuracy and words per minute."))return 0;
-  if(!acc_begin(argv[0],"Typo",0))return 1;acc_mouse_display(1);typo_font(1);load_records();if(!scan_levels()||!load_level_text(0)){acc_notice("Typo Error","TYPO.LVL is missing or invalid.");typo_font(0);acc_end_screen();acc_end();return 1;}x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;acc_box(x,y,DLG_W,DLG_H,"Typo");reset_level();
+  if(!acc_begin(argv[0],"Typo",0))return 1;acc_mouse_display(1);typo_font(1);load_records();if(!scan_levels()||!load_level_text(0)){acc_notice("Typo Error","No valid TYPO*.LVL level files were found.");typo_font(0);acc_end_screen();acc_end();return 1;}x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;acc_box(x,y,DLG_W,DLG_H,"Typo");reset_level();
   while(!quit){
     sec=elapsed();if(running&&sec>=(unsigned long)level_secs){finish_session(0);acc_box(x,y,DLG_W,DLG_H,"Typo");need=1;}
     if(sec!=last_second){last_second=sec;draw_status(x,y);}
@@ -364,13 +404,20 @@ int main(int argc,char **argv)
     if(need){draw_all(x,y);need=0;}
     if(kbhit()){
       key=acc_key();
-      if(key==27){if(running){reset_level();need=1;key=0;}else quit=1;}
-      else if(key==9||key==271){if(focus<0)focus=(key==271)?F_CLOSE:0;else if(key==271){focus--;if(level==LEVELS-1&&focus==F_NEXT)focus--;if(level==0&&focus==F_PREV)focus--;if(focus<0)focus=F_CLOSE;}else{focus++;if(level==0&&focus==F_PREV)focus++;if(level==LEVELS-1&&focus==F_NEXT)focus++;if(focus>F_CLOSE)focus=0;}last_key=0;need=1;key=0;}
+      if(key==27){key=0;} /* Escape is reserved for dismissing sub-dialogs. */
+      else if(key==17||key==256+0x6B){quit=1;}
+      else if(key==256+0x3F){reset_level();need=1;key=0;} /* F5 */
+      else if(key==256+0x73){level_change(-1);need=1;key=0;} /* Ctrl+Left */
+      else if(key==256+0x74){level_change(1);need=1;key=0;}  /* Ctrl+Right */
+      else if(key==7){int g=typo_goto_dialog();if(g>=0){level=g;load_level_text(level);reset_level();}acc_box(x,y,DLG_W,DLG_H,"Typo");need=1;key=0;}
+      else if(key==256+0x45){typo_pause_toggle();need=1;key=0;} /* Pause/Break */
+      else if(paused){key=0;}
+      else if(key==9||key==271){if(focus<0)focus=(key==271)?F_CLOSE:0;else if(key==271){focus--;if(level==level_count-1&&focus==F_NEXT)focus--;if(level==0&&focus==F_PREV)focus--;if(focus<0)focus=F_CLOSE;}else{focus++;if(level==0&&focus==F_PREV)focus++;if(level==level_count-1&&focus==F_NEXT)focus++;if(focus>F_CLOSE)focus=0;}last_key=0;need=1;key=0;}
       else if(key==13&&focus>0){
         if(focus==F_RESET)reset_level();
         else if(focus==F_PREV&&level>0)level_change(-1);
         else if(focus==F_RECORDS){show_records();acc_box(x,y,DLG_W,DLG_H,"Typo");}
-        else if(focus==F_NEXT&&level<LEVELS-1)level_change(1);
+        else if(focus==F_NEXT&&level<level_count-1)level_change(1);
         else if(focus==F_CLOSE)quit=1;
         if(!quit){need=1;key=0;}
       } else if(key==8&&!finished){

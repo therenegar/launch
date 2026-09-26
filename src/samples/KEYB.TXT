@@ -1,0 +1,134 @@
+Launch! 3.73 - Keyboard Shortcut Reference
+==========================================
+
+GLOBAL ACCESSORY / GAME SHORTCUTS
+---------------------------------
+Ctrl+Q          Close program
+Alt+F4          Close program
+Esc             Dismiss the current popup/dialog/view; does not close program
+F11             Toggle full-screen/maximize where supported
+Alt+Tab         Cycle tabs where supported (Config, Note, To-Dos)
+
+Common commands, where the command exists:
+Ctrl+O          Open
+Ctrl+E          Edit
+Ctrl+S          Save
+Ctrl+D          Delete
+Ctrl+P          Print
+Ctrl+Del        Clear
+Ctrl+Ins        Character map
+Ctrl+C          Copy
+Ctrl+X          Cut
+Ctrl+V          Paste
+
+LAUNCH! CORE (!.EXE)
+--------------------
+\               Quick Launch from the open menu
+Ctrl+E          Edit selected Quick Launch item
+Ctrl+D          Delete selected Quick Launch item
+
+File Open:
+Ctrl+A          Add association
+Ctrl+E          Edit association
+Ctrl+D          Delete association
+Ctrl+S          Search for files
+
+Configuration:
+Alt+Tab         Cycle configuration tabs
+
+!DRAW
+-----
+Ctrl+O          Open bitmap
+Ctrl+N          New blank drawing
+Ctrl+W          Close current drawing
+Ctrl+S          Save As
+Ctrl+Del        Clear drawing
+Ctrl+G          Toggle grid
+F5              Show drawing
+F11             Toggle full-screen
+
+!NOTE
+-----
+Ctrl+O          Open file(s)
+Ctrl+N          New page in current tab
+Ctrl+W          Close current page
+Ctrl+S          Save As
+Ctrl+D          Delete current file
+Ctrl+P          Print
+Ctrl+Del        Clear
+Ctrl+Ins        Character map
+Ctrl+C/X/V      Copy / Cut / Paste
+F11             Toggle full-screen
+Alt+Tab         Cycle tabs
+
+!MKDOWN
+-------
+Ctrl+O          Open Markdown/plain-text file(s)
+Ctrl+N          New blank document
+Ctrl+W          Close current document/page
+Ctrl+S          Save
+Ctrl+/          Cycle Split / Editor / Preview views
+Ctrl+F          Focus mode
+Ctrl+M          Document Map
+Ctrl+Ins        Character map
+Ctrl+C/X/V      Copy / Cut / Paste
+F5              Graphical Show
+F11             Toggle full-screen
+
+!JOURNAL
+--------
+Ctrl+S          Save current card
+Ctrl+P          Print current card
+Ctrl+G          Go To date
+Ctrl+Left       Previous day
+Ctrl+Right      Next day
+Ctrl+Ins        Character map
+Ctrl+C/X/V      Copy / Cut / Paste
+
+!STACK
+------
+Ctrl+A          Add card
+Ctrl+D          Delete active card
+Ctrl+S          Export ALL cards to text
+Ctrl+P          Print active card
+Ctrl+Left       Previous card
+Ctrl+Right      Next card
+Ctrl+C/X/V      Copy / Cut / Paste
+F11             Toggle full-screen stack view
+
+!TODOS
+------
+Ctrl+A          Add task/group
+Ctrl+E          Edit selected task/group
+Ctrl+D          Delete selected task/group
+Ctrl+P          Print current view
+Ctrl+S          Cycle sorting
+Ctrl+Space      Toggle showing completed/incomplete items
+F11             Toggle full-screen
+Alt+Tab         Cycle tabs
+
+!DFETCH
+-------
+Ctrl+P          Print DOS Fetch report
+
+!CALC
+-----
+Ctrl+P          Print (when printing is enabled)
+
+GAMES
+-----
+The following are used where applicable:
+F5              Start new game / retry current level
+Ctrl+Left       Previous level/puzzle
+Ctrl+Right      Next level/puzzle
+Ctrl+G          Go To level/puzzle
+Pause/Break     Pause/resume timed or continuously running game
+
+!BOXES          F5, Ctrl+Left, Ctrl+Right, Ctrl+G
+!TYPO           F5, Ctrl+Left, Ctrl+Right, Ctrl+G, Pause/Break
+!WORDZ          F5, Ctrl+Left, Ctrl+Right, Ctrl+G, Pause/Break
+!POP            F5, Ctrl+Left, Ctrl+Right, Ctrl+G, Pause/Break
+!SNAKE          F5, Ctrl+Left, Ctrl+Right, Ctrl+G, Pause/Break
+!PLUMB          F5, Pause/Break
+!SOL            F5
+!FCELL          F5

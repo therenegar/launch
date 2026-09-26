@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: JOURNAL.C
+ * Role: !JOURNAL persistent journal/typewriter
+ * Build/ownership: Canonical Journal source; build copy is JOURBLD.C.
+ * Maintainer contract: Persistent dated cards plus /PRINT typewriter mode. Typewriter mode sends keystrokes directly to LPT1 and has intentionally restricted editing.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! Journal - daily journal accessory. */
 #include <stdio.h>
 #include <string.h>
@@ -64,7 +81,41 @@ static int calpick(void)
   k=0;
  }
 }
-static int export_all(char*out){char p[ACC_PATH],name[20],date[16],last[16]="";FILE*idx,*f,*in;int n,r,q;for(n=1;n<10000;n++){sprintf(name,"JOURNAL%d.TXT",n);acc_path(p,"EXPORT",name);if(!acc_exists(p))break;}strcpy(out,p);f=fopen(p,"w");if(!f)return 0;acc_path(p,"DATA","JOURNAL.IDX");idx=fopen(p,"r");if(idx){while(fgets(date,sizeof(date),idx)){date[strcspn(date,"\r\n")]=0;if(!strcmp(date,last))continue;strcpy(last,date);sprintf(name,"J%s.DAT",date);acc_path(p,"DATA",name);in=fopen(p,"rb");if(!in)continue;fread(note,1,sizeof(note),in);fclose(in);fprintf(f,"%s\n",date);fputs("------------------------------------------------------------\n",f);for(r=2;r<NL;r++){q=NW;while(q&&note[r*NW+q-1]==' ')q--;fwrite(note+r*NW,1,q,f);fputc('\n',f);}fputs("------------------------------------------------------------\n",f);}fclose(idx);}fclose(f);return 1;}
+static void journal_date_string(char *b);
+static int journal_save_dialog(char *out)
+{
+ int w=52,h=9,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,pos=(int)strlen(out),f=0;unsigned mb=0;
+ acc_modal_begin();
+ for(;;){
+  acc_subbox(x,y,w,h,"Save Journal",1);acc_text(x+3,y+2,"Filename:",ACC_LABEL,10);
+  acc_fill(x+13,y+2,34,1,' ',f==0?ACC_SELECT:ACC_CONTROL);acc_text(x+13,y+2,out,f==0?ACC_SELECT:ACC_CONTROL,33);
+  if(f==0)acc_caret_set(x+13+(pos<33?pos:32),y+2);else acc_caret_hide();
+  acc_button(x+3,y+6," Save ",f==1);acc_button(x+11,y+6," Cancel ",f==2);
+  acc_wait(&k,&mx,&my,&mb);
+  if(k==27){acc_modal_end();return 0;}
+  if((mb&1)&&my==y+2){f=0;k=0;}else if((mb&1)&&my==y+6&&mx>=x+3&&mx<x+9){f=1;k=13;}else if((mb&1)&&my==y+6&&mx>=x+11&&mx<x+19){f=2;k=13;}
+  if(k==9||k==271){f=k==271?(f+2)%3:(f+1)%3;k=0;continue;}
+  if(k==13&&f==2){acc_modal_end();return 0;}
+  if(k==13&&(f==0||f==1)){if(pos){if(!strrchr(out,'.')&&strlen(out)<ACC_PATH-4)strcat(out,".TXT");acc_modal_end();return 1;}k=0;continue;}
+  if(f==0){int n=(int)strlen(out);if(k==256+71)pos=0;else if(k==256+79)pos=n;else if(k==8&&pos){memmove(out+pos-1,out+pos,n-pos+1);pos--;}else if(k>=32&&k<127&&n<ACC_PATH-1){memmove(out+pos+1,out+pos,n-pos+1);out[pos++]=(char)k;}}k=0;
+ }
+}
+static int journal_export_current(char *out)
+{
+ char path[ACC_PATH],title[64];FILE *f;int r,q;
+ if(!journal_save_dialog(out))return -1;
+ if(!strchr(out,'\\')&&!strchr(out,':')){acc_path(path,"EXPORT",out);strcpy(out,path);}
+ f=fopen(out,"wb");if(!f)return 0;
+ journal_date_string(title);fputs(title,f);fputs("\r\n",f);for(q=0;q<72;q++)fputc('=',f);fputs("\r\n",f);
+ for(r=2;r<NL;r++){q=NW;while(q>4&&note[r*NW+q-1]==' ')q--;if(q>4)fwrite(note+r*NW+4,1,q-4,f);fputs("\r\n",f);}
+ fclose(f);return 1;
+}
+static int journal_print_current(void)
+{
+ FILE *f;char title[64];int r,q;
+ f=fopen("LPT1","wb");if(!f)return 0;journal_date_string(title);fputs(title,f);fputs("\r\n",f);for(q=0;q<72;q++)fputc('=',f);fputs("\r\n",f);
+ for(r=2;r<NL;r++){q=NW;while(q>4&&note[r*NW+q-1]==' ')q--;if(q>4)fwrite(note+r*NW+4,1,q-4,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);return 1;
+}
 static int palette_codes[256];
 static int palette_count=0;
 static void palette_build(void)
@@ -264,6 +315,11 @@ int main(int argc,char**argv)
   if(journal_print_mode){acc_button_disabled(x+3,y+17,"  \021  ");acc_button_disabled(x+10,y+17,"  \020  ");acc_button_disabled(x+17,y+17,"  Go To  ");}
   else{acc_button(x+3,y+17,"  \021  ",focus==1);acc_button(x+10,y+17,"  \020  ",focus==2);acc_button(x+17,y+17,"  Go To  ",focus==3);}
   acc_put(x+28,y+17,179,ACC_BORDER);acc_button(x+30,y+17,"  Export  ",focus==5);journal_print_button(x+38,y+17,focus==6);acc_button(x+46,y+17,"  ",focus==4);acc_button(x+60,y+17,"  Exit  ",focus==7);acc_wait(&key,&mx,&my,&mb);
+  /* Journal command shortcuts.  Ctrl+Left/Right use enhanced BIOS scan codes. */
+  if(!journal_print_mode&&key==19){save();key=0;continue;}
+  if(!journal_print_mode&&key==7){save();journal_selection_clear();if(calpick())load();acc_box(x,y,70,20,"Journal");view(tx,ty,cx,cy,top);key=0;continue;}
+  if(!journal_print_mode&&(key==256+0x73||key==256+0x74)){save();journal_selection_clear();stepday(key==256+0x73?-1:1);load();cx=4;cy=2;top=2;view(tx,ty,cx,cy,top);key=0;continue;}
+  if(key==16){if(journal_print_mode)acc_notice("Typewriter Mode","Typewriter printing mode is active. All characters typed\nwill be sent to the printer immediately. No deleting or text changes.\nPreceeding chars on the same line can be redacted with Backspace");else if(!journal_print_current())acc_notice("Print Error","No printing hardware detected.");view(tx,ty,cx,cy,top);key=0;continue;}
   /* Mouse toolbar activation mirrors keyboard activation.  Disabled date buttons
      do not move the typewriter to another journal page. */
   if(mb&1){if(my==y+17){journal_selection_clear();if(!journal_print_mode&&mx>=x+2&&mx<x+7){focus=1;key=13;}else if(!journal_print_mode&&mx>=x+9&&mx<x+14){focus=2;key=13;}else if(!journal_print_mode&&mx>=x+16&&mx<x+25){focus=3;key=13;}else if(mx>=x+30&&mx<x+36){focus=5;key=13;}else if(mx>=x+38&&mx<x+44){focus=6;key=13;}else if(mx>=x+46&&mx<x+49){focus=4;key=13;}else if(mx>=x+60&&mx<x+66){focus=7;key=13;}}}
@@ -276,8 +332,8 @@ int main(int argc,char**argv)
    if(!journal_print_mode&&(focus==1||focus==2)){save();journal_selection_clear();stepday(focus==1?-1:1);load();cx=4;cy=2;top=2;}
    else if(!journal_print_mode&&focus==3){save();journal_selection_clear();if(calpick())load();acc_box(x,y,70,20,"Journal");}
    else if(focus==4){ch=character_palette();acc_box(x,y,70,20,"Journal");if(ch>=0){if(journal_print_mode)journal_typewriter_put(ch,&cx,&cy);else{if(journal_has_selection())journal_delete_selection(&cx,&cy);note[cy*NW+cx]=(char)ch;if(cx<NW-1)cx++;journal_selection_clear();}}}
-   else if(focus==5){save();if(export_all(exp)){sprintf(msg,"Journal exported to\n%s",exp);acc_notice("Export",msg);}}
-   else if(focus==6){if(journal_print_mode){acc_notice("Typewriter Mode","Typewriter printing mode is active. All characters typed\nwill be sent to the printer immediately. No deleting or text changes.\nPreceeding chars on the same line can be redacted with Backspace");}else{FILE*f=fopen("LPT1","wb");int r,q2;if(f){for(r=0;r<NL;r++){q2=NW;while(q2&&note[r*NW+q2-1]==' ')q2--;fwrite(note+r*NW,1,q2,f);fputs("\r\n",f);}fputc('\f',f);fclose(f);}}}
+   else if(focus==5){int er;save();sprintf(exp,"J%04d%02d%02d.TXT",jy,jm,jd);er=journal_export_current(exp);if(er==0)acc_notice("Export Error","Unable to save journal card.");else if(er>0){sprintf(msg,"Journal saved to\n%s",exp);acc_notice("Export",msg);}}
+   else if(focus==6){if(journal_print_mode){acc_notice("Typewriter Mode","Typewriter printing mode is active. All characters typed\nwill be sent to the printer immediately. No deleting or text changes.\nPreceeding chars on the same line can be redacted with Backspace");}else if(!journal_print_current())acc_notice("Print Error","No printing hardware detected.");}
    else key=27;view(tx,ty,cx,cy,top);if(key!=27)key=0;continue;
   }
   /* Clicking the paper can focus /PRINT mode but never relocates its insertion point. */

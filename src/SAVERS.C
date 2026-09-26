@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: SAVERS.C
+ * Role: Core screensaver implementations
+ * Build/ownership: Linked with Core.
+ * Maintainer contract: Screensavers must exit promptly on user activity and restore the text screen/cursor correctly.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Integer-only EGA adaptations of five classic XScreenSaver effects, plus
    the original Paintball simulation.
    They deliberately share Launch!'s mode 10h renderer, timer, PRNG and
@@ -473,6 +490,17 @@ static void squiral_draw_cell(int index,unsigned char colour)
   ega_rectangle(x*8+1,y*8+1,6,6,colour);
 }
 
+/* Draw the transient DEFRAG work cursor entirely inside the 6x6 cluster
+   square.  Earlier versions used an 8x8 outline and restored only the 6x6
+   cell afterwards, leaving permanent white one-pixel borders.  A solid flash
+   is closer to the original DOS DEFRAG visual language and is exactly erased
+   by squiral_draw_cell(). */
+static void squiral_cursor(int index,unsigned char colour)
+{
+  int x=index%SQUIRAL_COLS,y=index/SQUIRAL_COLS;
+  ega_rectangle(x*8+1,y*8+1,6,6,colour);
+}
+
 static int squiral_clear_direction(const SQUIRAL_WORM far *worm,int direction)
 {
   int x1=worm->x+squiral_dx[direction],y1=worm->y+squiral_dy[direction];
@@ -503,47 +531,72 @@ static void squiral_reset(void)
 static int squiral_defrag(unsigned start_x,unsigned start_y)
 {
   unsigned counts[16];
-  int target,source,colour,cursor_on=0,flash;
-  unsigned char old_colour;
-  unsigned long last_tick,tick;
+  int target,source,colour,flash;
+  unsigned char displaced;
+  unsigned long tick;
+
   for(colour=0;colour<16;colour++)counts[colour]=0;
   for(target=0;target<SQUIRAL_CELLS;target++)
     if(squiral_cells[target]<16)counts[squiral_cells[target]]++;
 
-  target=0;last_tick=bios_ticks();
-  /* Coloured blocks first; any unfilled cells are compacted at the end. */
+  target=0;
+  /* Consolidate one colour at a time from the top-left.  Each relocation is
+     deliberately shown as a short read/write operation: the scattered source
+     cluster flashes, then the destination flashes, then the move settles.
+     This produces the recognisable DOS DEFRAG 'busy cursor hopping through the
+     cluster map' effect instead of simply repainting the sorted result. */
   for(colour=9;colour<=15;colour++)while(counts[colour]--){
     if(saver_input(start_x,start_y))return 1;
     if(squiral_cells[target]!=(unsigned char)colour){
       for(source=target+1;source<SQUIRAL_CELLS;source++)
         if(squiral_cells[source]==(unsigned char)colour)break;
       if(source<SQUIRAL_CELLS){
-        /* Flash a Defrag-style cursor briefly over the block being moved. */
+        /* Flash the source twice.  Colour 15 is the bright work cursor and
+           colour 14 gives a brief write pulse without changing the stored
+           cluster colour.  Both flashes stay inside the cell, so no border
+           pixels can accumulate. */
         for(flash=0;flash<2;flash++){
-          do{tick=bios_ticks();}while(tick==last_tick&&!saver_input(start_x,start_y));
-          if(saver_input(start_x,start_y))return 1;
-          last_tick=tick;cursor_on=!cursor_on;
-          if(cursor_on)saver_box_outline((source%SQUIRAL_COLS)*8+4,
-                                        (source/SQUIRAL_COLS)*8+4,4,4,15);
-          else squiral_draw_cell(source,squiral_cells[source]);
+          squiral_cursor(source,(flash&1)?14:15);
+          tick=bios_ticks();
+          while(bios_ticks()==tick)if(saver_input(start_x,start_y))return 1;
+          squiral_draw_cell(source,squiral_cells[source]);
         }
-        old_colour=squiral_cells[target];
+
+        /* Show the destination as the head/cursor position before committing
+           the swap, like DEFRAG moving from a fragmented cluster to its new
+           contiguous location. */
+        squiral_cursor(target,15);
+        tick=bios_ticks();
+        while(bios_ticks()==tick)if(saver_input(start_x,start_y))return 1;
+
+        displaced=squiral_cells[target];
         squiral_cells[target]=(unsigned char)colour;
-        squiral_cells[source]=old_colour;
+        squiral_cells[source]=displaced;
         squiral_draw_cell(target,squiral_cells[target]);
         squiral_draw_cell(source,squiral_cells[source]);
+      }
+    } else {
+      /* Even already-correct runs get an occasional cursor pulse so the work
+         head visibly advances through contiguous areas rather than vanishing. */
+      if((target&7)==0){
+        squiral_cursor(target,15);
+        tick=bios_ticks();
+        while(bios_ticks()==tick)if(saver_input(start_x,start_y))return 1;
+        squiral_draw_cell(target,squiral_cells[target]);
       }
     }
     target++;
   }
-  /* Briefly sweep the cursor over the finished contiguous field. */
+
+  /* One final fast cursor sweep across the consolidated area. */
   for(source=0;source<target;source+=8){
     if(saver_input(start_x,start_y))return 1;
-    saver_box_outline((source%SQUIRAL_COLS)*8+4,(source/SQUIRAL_COLS)*8+4,4,4,15);
-    tick=bios_ticks();while(bios_ticks()==tick)if(saver_input(start_x,start_y))return 1;
+    squiral_cursor(source,15);
+    tick=bios_ticks();while(bios_ticks()==tick)
+      if(saver_input(start_x,start_y))return 1;
     squiral_draw_cell(source,squiral_cells[source]);
   }
-  /* Leave the defragmented result visible for a short moment. */
+
   tick=bios_ticks();while((unsigned long)(bios_ticks()-tick)<18UL)
     if(saver_input(start_x,start_y))return 1;
   return 0;

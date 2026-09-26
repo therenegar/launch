@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: POPBLD.C
+ * Role: Build copy of !POP
+ * Build/ownership: Derived from POP.C.
+ * Maintainer contract: Keep synchronized with POP.C.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! Pop accessory - timed SameGame-style bubble game.
    Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
@@ -25,7 +42,7 @@ static int selx=-1,sely=-1,sel_count=0;
 static long score=0,high_score=0,time_left=MAX_START_TICKS,start_ticks=MAX_START_TICKS;
 static int level=1;
 static unsigned long last_tick;
-static int cursor_x=0,cursor_y=0,focus=-1;
+static int cursor_x=0,cursor_y=0,focus=-1,pop_paused=0;
 
 static const unsigned char pop16[2][32]={
   {0x00,0x00,0x03,0x0F,0x1C,0x1B,0x37,0x37,0x3F,0x3F,0x1F,0x1F,0x0F,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
@@ -183,6 +200,17 @@ static void pop_result_notice(int is_error,long final_score)
   }
 }
 
+
+static int pop_goto_dialog(void)
+{
+  int w=36,h=9,x=(acc_cols-w)/2,y=(acc_rows-h)/2,k=0,mx=0,my=0,pos=0,f=-1,v,result=-1;unsigned mb=0;char b[4];b[0]=0;acc_modal_begin();
+  for(;;){acc_subbox(x,y,w,h,"Go To",1);acc_text(x+3,y+2,"Level number:",ACC_LABEL,13);acc_fill(x+17,y+2,4,1,' ',f==0?ACC_SELECT:ACC_CONTROL);acc_text(x+17,y+2,b,f==0?ACC_SELECT:ACC_CONTROL,3);acc_button(x+3,y+6,"  Go  ",f==1);acc_button(x+11,y+6,"  Cancel  ",f==2);acc_wait(&k,&mx,&my,&mb);
+    if((mb&1)&&my==y+2&&mx>=x+17&&mx<x+21){f=0;k=0;continue;}if((mb&1)&&my==y+6){if(mx>=x+3&&mx<x+9){f=1;k=13;}else if(mx>=x+11&&mx<x+21){f=2;k=13;}}
+    if(k==27){result=-1;break;}if(k==9||k==271){if(f<0)f=(k==271)?2:0;else f=(k==271)?(f+2)%3:(f+1)%3;k=0;continue;}if(k==13&&f==2){result=-1;break;}if(k==13&&f==1){v=atoi(b);if(v>=1&&v<=10){result=v;break;}k=0;continue;}
+    if(f==0){if(k==8&&pos){b[--pos]=0;}else if(k>='0'&&k<='9'&&pos<2){b[pos++]=(char)k;b[pos]=0;}}k=0;}
+  acc_modal_end();return result;
+}
+
 int main(int argc,char **argv)
 {
   int x,y,bx,by,key=0,mx=0,my=0,buttons=0,last_buttons=0,tx,ty,full=1,hover=-1,oldhover=-1;
@@ -191,26 +219,33 @@ int main(int argc,char **argv)
   if(!acc_begin(argv[0],"Pop",0))return 1;
   pop_font(1);x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;bx=x+6;by=y+6;acc_box(x,y,DLG_W,DLG_H,"Pop");new_game();mouse_show(1);
   while(key!=27){
-    now=acc_ticks();elapsed=now-last_tick;if(elapsed){last_tick=now;if(time_left>(long)elapsed)time_left-=(long)elapsed;else time_left=0;draw_status(x,y);}
-    if(full){acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);draw_status(x,y);draw_board(bx,by);draw_level(x,y);acc_button(x+3,y+18,"  Retry  ",focus==1);if(level>1)acc_button(x+11,y+18,"  Prev  ",focus==2);else acc_button_disabled(x+11,y+18,"  Prev  ");if(level<10)acc_button(x+18,y+18,"  Next  ",focus==3);else acc_button_disabled(x+18,y+18,"  Next  ");acc_button(x+DLG_W-10,y+18,"  Exit  ",focus==4);full=0;}
+    now=acc_ticks();elapsed=now-last_tick;if(elapsed){last_tick=now;if(!pop_paused){if(time_left>(long)elapsed)time_left-=(long)elapsed;else time_left=0;draw_status(x,y);}}
+    if(full){acc_fill(x+1,y+1,DLG_W-2,DLG_H-2,' ',ACC_BG);draw_status(x,y);draw_board(bx,by);draw_level(x,y);acc_button(x+3,y+18,"  Retry  ",focus==1);acc_button(x+11,y+18,"  Prev  ",focus==2);acc_button(x+18,y+18,"  Next  ",focus==3);acc_button(x+DLG_W-10,y+18,"  Exit  ",focus==4);full=0;}
     if(time_left<=0||!any_moves()){
       mouse_show(0);if(time_left<=0){pop_ui_glyphs(1);pop_result_notice(1,score);pop_ui_glyphs(0);new_game();}else{if(remaining()==0){score+=1000;score+=(long)((time_left>0?time_left:0)/TICKS_PER_SEC)*10L;}pop_ui_glyphs(1);pop_result_notice(0,score);pop_ui_glyphs(0);if(level<10)level++;new_game();}full=1;mouse_show(1);continue;
     }
     if(acc_key_ready())key=acc_key();else key=0;
-    if(acc_mouse_present){acc_mouse(&mx,&my,&buttons);if(buttons&ACC_MOUSE_OUTSIDE){key=27;break;}if((buttons&1)&&!(last_buttons&1)){
+    if(key==27)key=0;
+    else if(key==17||key==256+0x6B)key=27;
+    else if(key==256+0x3F){new_game();pop_paused=0;full=1;key=0;} /* F5 */
+    else if(key==256+0x73){if(--level<1)level=10;new_game();pop_paused=0;full=1;key=0;}
+    else if(key==256+0x74){if(++level>10)level=1;new_game();pop_paused=0;full=1;key=0;}
+    else if(key==7){int g=pop_goto_dialog();if(g>0){level=g;new_game();pop_paused=0;}acc_box(x,y,DLG_W,DLG_H,"Pop");full=1;key=0;}
+    else if(key==256+0x45){pop_paused=!pop_paused;last_tick=acc_ticks();key=0;} /* Pause/Break */
+    if(acc_mouse_present){acc_mouse(&mx,&my,&buttons);if((buttons&1)&&!(last_buttons&1)){
         if((buttons&1)&&my==y&&(mx==x+DLG_W-5||mx==x+DLG_W-4)){key=27;}
         else         if(my==y+18&&mx>=x+3&&mx<x+9){acc_press_button(x+3,y+18,"  Retry  ");new_game();full=1;}
-        else if(level>1&&my==y+18&&mx>=x+11&&mx<x+16){acc_press_button(x+11,y+18,"  Prev  ");level--;new_game();full=1;}
-        else if(level<10&&my==y+18&&mx>=x+18&&mx<x+23){acc_press_button(x+18,y+18,"  Next  ");level++;new_game();full=1;}
+        else if(my==y+18&&mx>=x+11&&mx<x+16){acc_press_button(x+11,y+18,"  Prev  ");if(--level<1)level=10;new_game();full=1;}
+        else if(my==y+18&&mx>=x+18&&mx<x+23){acc_press_button(x+18,y+18,"  Next  ");if(++level>10)level=1;new_game();full=1;}
         else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4){acc_press_button(x+DLG_W-10,y+18,"  Exit  ");key=27;}
         else if(mx>=bx&&mx<bx+BW*2&&my>=by&&my<by+BH){tx=(mx-bx)/2;ty=my-by;if(sel_count>=2&&mark[ty][tx]){pop_selected(bx,by);draw_board(bx,by);draw_status(x,y);}else{select_at(tx,ty);draw_board(bx,by);}focus=0;}
       }last_buttons=buttons;
-      hover=-1;if(my==y+18&&mx>=x+3&&mx<x+9)hover=1;else if(level>1&&my==y+18&&mx>=x+11&&mx<x+16)hover=2;else if(level<10&&my==y+18&&mx>=x+18&&mx<x+23)hover=3;else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4)hover=4;if(hover!=oldhover){acc_button(x+3,y+18,"  Retry  ",focus==1||hover==1);if(level>1)acc_button(x+11,y+18,"  Prev  ",focus==2||hover==2);else acc_button_disabled(x+11,y+18,"  Prev  ");if(level<10)acc_button(x+18,y+18,"  Next  ",focus==3||hover==3);else acc_button_disabled(x+18,y+18,"  Next  ");acc_button(x+DLG_W-10,y+18,"  Exit  ",focus==4||hover==4);oldhover=hover;}
+      hover=-1;if(my==y+18&&mx>=x+3&&mx<x+9)hover=1;else if(my==y+18&&mx>=x+11&&mx<x+16)hover=2;else if(my==y+18&&mx>=x+18&&mx<x+23)hover=3;else if(my==y+18&&mx>=x+DLG_W-10&&mx<x+DLG_W-4)hover=4;if(hover!=oldhover){acc_button(x+3,y+18,"  Retry  ",focus==1||hover==1);acc_button(x+11,y+18,"  Prev  ",focus==2||hover==2);acc_button(x+18,y+18,"  Next  ",focus==3||hover==3);acc_button(x+DLG_W-10,y+18,"  Exit  ",focus==4||hover==4);oldhover=hover;}
     }
-    if(key==9||key==271){if(focus<0)focus=(key==271)?4:0;else if(key==271){do{focus--;if(focus<0)focus=4;}while((focus==2&&level==1)||(focus==3&&level==10));}else{do{focus++;if(focus>4)focus=0;}while((focus==2&&level==1)||(focus==3&&level==10));}full=1;}
+    if(key==9||key==271){if(focus<0)focus=(key==271)?4:0;else if(key==271){focus--;if(focus<0)focus=4;}else{focus++;if(focus>4)focus=0;}full=1;}
     else if(key==13&&focus==1){new_game();full=1;}
-    else if(key==13&&focus==2&&level>1){level--;new_game();full=1;}
-    else if(key==13&&focus==3&&level<10){level++;new_game();full=1;}
+    else if(key==13&&focus==2){if(--level<1)level=10;new_game();full=1;}
+    else if(key==13&&focus==3){if(++level>10)level=1;new_game();full=1;}
     else if(key==13&&focus==4)key=27;
     else if(focus==0&&(key==256+75||key==256+77||key==256+72||key==256+80)){if(key==256+75&&cursor_x>0)cursor_x--;if(key==256+77&&cursor_x<BW-1)cursor_x++;if(key==256+72&&cursor_y>0)cursor_y--;if(key==256+80&&cursor_y<BH-1)cursor_y++;select_at(cursor_x,cursor_y);draw_board(bx,by);}
     else if(focus==0&&(key==13||key==' ')){if(sel_count>=2&&mark[cursor_y][cursor_x]){pop_selected(bx,by);draw_board(bx,by);draw_status(x,y);}else{select_at(cursor_x,cursor_y);draw_board(bx,by);}}

@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: BOXES.C
+ * Role: !BOXES puzzle game
+ * Build/ownership: Canonical source; build copy is BOXBLD.C.
+ * Maintainer contract: Loads base and expansion BOXES*.LVL packs; level navigation must use discovered combined count.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! Boxes accessory: 250-puzzle Sokoban/box-pushing game.
    Puzzle set: selected Microban I/II levels by David W. Skinner.
    Levels 1-200 include precomputed Solve playback; 201-250 are challenge levels.
@@ -12,7 +29,9 @@
 #define MAX_W 22
 #define MAX_H 14
 #define MAX_CELLS (MAX_W*MAX_H)
-#define LEVELS 250
+#define BUILTIN_LEVELS 250
+#define MAX_LEVELS 750
+#define MAX_LEVEL_FILES 32
 #define SOLVE_LIMIT 200
 #define SOLVE_MAX 2048
 #define DLG_W 68
@@ -71,39 +90,28 @@ static const unsigned char boxes_glyph14[8][32]={
 
 static unsigned char old_glyph[8][32],old_field[2][32];
 
-static long level_offset[LEVELS];
+static long level_offset[MAX_LEVELS];
+static unsigned char level_file_index[MAX_LEVELS];
+static char level_files[MAX_LEVEL_FILES][13];static int level_file_count=0,level_count=0;
 static unsigned short current_best=0;
 static char current_solution[SOLVE_MAX];
 static char level_line[SOLVE_MAX+64];
 
-static void boxes_level_path(char *p)
+static void boxes_level_path(char *p,int fi)
 {
-  size_t n;
-  strcpy(p,acc_directory);n=strlen(p);
-  if(n&&p[n-1]!='\\'&&p[n-1]!='/')strcat(p,"\\");
-  strcat(p,"BOXES.LVL");
+  size_t n;strcpy(p,acc_directory);n=strlen(p);if(n&&p[n-1]!='\\'&&p[n-1]!='/')strcat(p,"\\");strcat(p,level_files[fi]);
 }
-
 static void boxes_strip_eol(char *s)
-{
-  size_t n=strlen(s);
-  while(n&&(s[n-1]=='\n'||s[n-1]=='\r'))s[--n]=0;
-}
-
+{size_t n=strlen(s);while(n&&(s[n-1]=='\n'||s[n-1]=='\r'))s[--n]=0;}
 static int boxes_scan_levels(void)
 {
-  FILE *f;char p[ACC_PATH],line[96];long pos;int count=0;
-  boxes_level_path(p);f=fopen(p,"rb");if(!f)return 0;
-  for(;;){
-    pos=ftell(f);if(!fgets(line,sizeof(line),f))break;
-    if(line[0]=='@'&&line[1]=='L'&&line[2]=='|'){
-      if(count>=LEVELS){fclose(f);return 0;}
-      level_offset[count++]=pos;
-    }
-  }
-  fclose(f);return count==LEVELS;
+  struct find_t ff;FILE *f;char mask[ACC_PATH],p[ACC_PATH],line[96],tmp[13];long pos;unsigned e;int i,j,fi;
+  level_count=0;level_file_count=0;strcpy(mask,acc_directory);if(mask[0]&&mask[strlen(mask)-1]!='\\'&&mask[strlen(mask)-1]!='/')strcat(mask,"\\");strcat(mask,"BOXES*.LVL");
+  e=_dos_findfirst(mask,_A_NORMAL,&ff);while(!e&&level_file_count<MAX_LEVEL_FILES){strncpy(level_files[level_file_count],ff.name,12);level_files[level_file_count][12]=0;level_file_count++;e=_dos_findnext(&ff);}
+  for(i=0;i<level_file_count-1;i++)for(j=i+1;j<level_file_count;j++)if(stricmp(level_files[i],level_files[j])>0){strcpy(tmp,level_files[i]);strcpy(level_files[i],level_files[j]);strcpy(level_files[j],tmp);}
+  for(fi=0;fi<level_file_count&&level_count<MAX_LEVELS;fi++){boxes_level_path(p,fi);f=fopen(p,"rb");if(!f)continue;for(;;){pos=ftell(f);if(!fgets(line,sizeof(line),f))break;if(line[0]=='@'&&line[1]=='L'&&line[2]=='|'&&level_count<MAX_LEVELS){level_offset[level_count]=pos;level_file_index[level_count]=(unsigned char)fi;level_count++;}}fclose(f);}
+  return level_count>0;
 }
-
 
 static unsigned char tile[MAX_CELLS],box_at[MAX_CELLS];
 static int board_w,board_h,player_x,player_y,current_level,moves,pushes;
@@ -128,8 +136,8 @@ static void boxes_ui_glyphs(int ui){(void)ui;}
 static int load_level(int n)
 {
   FILE *f;char pth[ACC_PATH],row[MAX_W+4],*p,*q;int i,x,y,cells,w,h;
-  boxes_level_path(pth);f=fopen(pth,"rb");if(!f)return 0;
-  if(n<0||n>=LEVELS||fseek(f,level_offset[n],SEEK_SET)!=0||!fgets(level_line,sizeof(level_line),f)){fclose(f);return 0;}
+  boxes_level_path(pth,level_file_index[n]);f=fopen(pth,"rb");if(!f)return 0;
+  if(n<0||n>=level_count||fseek(f,level_offset[n],SEEK_SET)!=0||!fgets(level_line,sizeof(level_line),f)){fclose(f);return 0;}
   boxes_strip_eol(level_line);if(level_line[0]!='@'||level_line[1]!='L'||level_line[2]!='|'){fclose(f);return 0;}
   p=level_line+3;q=strchr(p,'|');if(!q){fclose(f);return 0;}*q=0;w=atoi(p);
   p=q+1;q=strchr(p,'|');if(!q){fclose(f);return 0;}*q=0;h=atoi(p);
@@ -274,28 +282,28 @@ static void save_level(void)
 {
   char p[ACC_PATH];
   FILE *f;
-  unsigned char n=(unsigned char)current_level;
+  unsigned short n=(unsigned short)current_level;
   acc_path(p,"DATA","BOXES.DAT");
   f=fopen(p,"wb");
-  if(f){fwrite(&n,1,1,f);fclose(f);}
+  if(f){fwrite(&n,sizeof(n),1,f);fclose(f);}
 }
 
 static void load_saved_level(void)
 {
   char p[ACC_PATH];
   FILE *f;
-  unsigned char n=0;
+  unsigned short n=0;
   current_level=0;
   acc_path(p,"DATA","BOXES.DAT");
   f=fopen(p,"rb");
-  if(f){if(fread(&n,1,1,f)==1&&n<LEVELS)current_level=n;fclose(f);}
+  if(f){if(fread(&n,sizeof(n),1,f)==1&&n<(unsigned)level_count)current_level=(int)n;else {rewind(f);{unsigned char oldn=0;if(fread(&oldn,1,1,f)==1&&oldn<level_count)current_level=oldn;}}fclose(f);}
 }
 
 static void change_level(int delta)
 {
   current_level+=delta;
-  if(current_level<0)current_level=LEVELS-1;
-  if(current_level>=LEVELS)current_level=0;
+  if(current_level<0)current_level=level_count-1;
+  if(current_level>=level_count)current_level=0;
   load_level(current_level);
   save_level();
 }
@@ -317,7 +325,7 @@ static void draw_counts(int x,int y)
 static void draw_status(int x,int y)
 {
   char s[32];
-  sprintf(s,"Puzzle %03d of %d",current_level+1,LEVELS);
+  sprintf(s,"Puzzle %03d of %d",current_level+1,level_count);
   acc_text(x+3,y+2,s,ACC_HEADING,20);
   draw_counts(x,y);
 }
@@ -394,7 +402,7 @@ static int boxes_goto_dialog(void)
   acc_modal_begin();acc_mouse_display(1);
   for(;;){acc_subbox(x,y,w,h,"Go To",1);acc_text(x+3,y+2,"Level number:",ACC_LABEL,13);acc_fill(x+17,y+2,5,1,' ',focus==0?ACC_SELECT:ACC_CONTROL);acc_text(x+17,y+2,s,focus==0?ACC_SELECT:ACC_CONTROL,4);acc_button(x+3,y+6,"  Go  ",focus==1);acc_button(x+11,y+6,"  Cancel  ",focus==2);acc_wait(&k,&mx,&my,&mb);
     if((mb&1)&&my==y+2&&mx>=x+17&&mx<x+22){focus=0;k=0;continue;}if((mb&1)&&my==y+6){if(mx>=x+3&&mx<x+9){focus=1;k=13;}else if(mx>=x+11&&mx<x+21){focus=2;k=13;}}
-    if(k==27){result=-1;break;}if(k==9||k==271){if(focus<0)focus=(k==271)?2:0;else focus=(k==271)?(focus+2)%3:(focus+1)%3;k=0;continue;}if(k==13&&focus==2){result=-1;break;}if(k==13&&focus==1){v=atoi(s);if(v>=1&&v<=LEVELS){result=v-1;break;}k=0;continue;}
+    if(k==27){result=-1;break;}if(k==9||k==271){if(focus<0)focus=(k==271)?2:0;else focus=(k==271)?(focus+2)%3:(focus+1)%3;k=0;continue;}if(k==13&&focus==2){result=-1;break;}if(k==13&&focus==1){v=atoi(s);if(v>=1&&v<=level_count){result=v-1;break;}k=0;continue;}
     if(focus==0){if(k==8&&pos){s[--pos]=0;}else if(k>='0'&&k<='9'&&pos<3){s[pos++]=(char)k;s[pos]=0;}}k=0;}
   acc_modal_end();acc_mouse_display(1);return result;
 }
@@ -407,7 +415,7 @@ int main(int argc,char **argv)
   if(acc_help(argc,argv,"!BOXES","A 250-puzzle box-pushing game using custom text-mode tile glyphs."))return 0;
   if(!acc_begin(argv[0],"Boxes",0))return 1;
   boxes_font(1);acc_glyph_library(5,169);acc_glyph_library(6,170);
-  if(!boxes_scan_levels()){acc_notice("Boxes Error","BOXES.LVL is missing or invalid.");boxes_font(0);acc_end_screen();acc_end();return 1;}
+  if(!boxes_scan_levels()){acc_notice("Boxes Error","No valid BOXES*.LVL level files were found.");boxes_font(0);acc_end_screen();acc_end();return 1;}
   x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;
   acc_box(x,y,DLG_W,DLG_H,"Boxes");
   load_saved_level();
@@ -433,6 +441,12 @@ int main(int argc,char **argv)
       dirty=0;
     }
     acc_wait(&key,&mx,&my,&mb);
+
+    /* Consistent game shortcuts. */
+    if(key==256+0x3F){focus=0;load_level(current_level);full=1;key=0;} /* F5 retry */
+    else if(key==256+0x73){focus=0;change_level(-1);full=1;key=0;} /* Ctrl+Left */
+    else if(key==256+0x74){focus=0;change_level(1);full=1;key=0;}  /* Ctrl+Right */
+    else if(key==7){int g;g=boxes_goto_dialog();if(g>=0){current_level=g;save_level();load_level(current_level);}acc_box(x,y,DLG_W,DLG_H,"Boxes");focus=0;full=1;key=0;} /* Ctrl+G */
 
     if((mb&1)&&!(mb&ACC_MOUSE_MOVED)){
       if(my==y+17){
@@ -480,7 +494,7 @@ int main(int argc,char **argv)
       if(won_best)sprintf(msg,"Puzzle solved!\nYour moves %d\nBest %d",won_moves,won_best);
       else sprintf(msg,"Puzzle solved!\nYour moves %d",won_moves);
       boxes_ui_glyphs(1);acc_notice("Boxes",msg);boxes_ui_glyphs(0);
-      if(current_level<LEVELS-1)current_level++;
+      if(current_level<level_count-1)current_level++;
       else current_level=0;
       save_level();
       load_level(current_level);

@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: CAL.C
+ * Role: !CAL read-only ICS calendar
+ * Build/ownership: Canonical Calendar source; build copy is CALBLD.C.
+ * Maintainer contract: Aggregates one or more ICS files supplied on command line. Calendar data is read-only; navigation/dialogs do not rewrite source ICS.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! Calendar accessory - calendar and iCalendar viewer. */
 #include <dos.h>
 #include <stdio.h>

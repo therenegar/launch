@@ -1,4 +1,21 @@
-/* Launch! 3.72 installer - Microsoft C/C++ 7.0, DOS small model. */
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: INSTALL.C
+ * Role: Canonical installer source
+ * Build/ownership: Authoritative installer source; GENBUILD produces INSTBLD.C.
+ * Maintainer contract: Installs Core/Accessories/Games/data files and updates DOS startup configuration without assuming COMMAND.COM.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
+/* Launch! 3.73 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -646,7 +663,7 @@ static int selected_member(const char *name,int shortcut_build,int accessories,
                            int games,int fonts,int menu_generator,const char **dest_name)
 {
   *dest_name=name;
-  if(!stricmp(name,"!.EXE")||!stricmp(name,"PROMPTS.CFG")||!stricmp(name,"PWROFF.BMP"))return 1;
+  if(!stricmp(name,"!.EXE")||!stricmp(name,"PROMPTS.CFG")||!stricmp(name,"COLORS.CFG")||!stricmp(name,"PWROFF.BMP"))return 1;
   if(fonts&&!stricmp(name,"FONT.DAT"))return 1;
   if(menu_generator&&(!stricmp(name,"!MNUGEN.EXE")||!stricmp(name,"AUTOGEN.DAT")))return 1;
   if(accessories&&component_member(name,1))return 1;
@@ -728,6 +745,8 @@ static int extract_install_files(const char *archive,const char *install,int sho
   sprintf(destination,"%s\\PROFONTB.FNT",install);remove(destination);
   sprintf(destination,"%s\\PROFONTI.FNT",install);remove(destination);
   sprintf(destination,"%s\\!SYSINFO.EXE",install);remove(destination);
+  sprintf(destination,"%s\\!SYSBAR.EXE",install);remove(destination);
+  sprintf(destination,"%s\\SBM.EXE",install);remove(destination);
   return 1;
 }
 
@@ -745,7 +764,7 @@ int main(int argc,char **argv)
   (void)argc;
   installer_clear_screen();
   puts("\n");
-  puts("Launch! 3.72 Installation");
+  colour_text("Launch!",12);puts(" 3.73 Installation");
   installer_title_rule();
   puts("");
   cpu_ok=cpu_at_least_286();display_name=display_adapter(&display_ok);vga_display=!strncmp(display_name,"VGA",3);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;

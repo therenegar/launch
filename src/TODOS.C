@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: TODOS.C
+ * Role: !TODOS task/group manager
+ * Build/ownership: Persistent To-Dos accessory.
+ * Maintainer contract: UI state such as current tab/filter/sort controls both screen and print output.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! To-Dos accessory. */
 #include <stdio.h>
 #include <string.h>
@@ -599,6 +616,7 @@ static int add_type_popup(int bx,int by)
 int main(int argc,char **argv)
 {
   int w=74,h=22,x,y,lx,ly,listw,key=0,mx=0,my=0,focus=-1,sel=0,top=0,expanded=0,map[MAX_ITEMS],n,idx,i,dirty=1,nt,tag_sel=0,newidx,sort_mode=0,hide_done=0,maximized=0;unsigned mb=0;
+  int old_close_x=0,old_close_y=0,close_suspended=0;
   char filter[TAG_LEN+1]="",tags[MAX_TAGS][TAG_LEN+1],hide_label[18];TODO_ITEM t;
   if(acc_help(argc,argv,"!TODOS","A persistent group-and-task to-do list with tags, dates and priorities."))return 0;
   if(!acc_begin(argv[0],"To-Dos",0))return 1;install_glyphs();load_items();x=(acc_cols-w)/2;y=(acc_rows-h)/2;lx=x+3;ly=y+3;listw=w-7;if(!maximized)acc_box(x,y,w,h,"To-Dos");
@@ -611,9 +629,21 @@ int main(int argc,char **argv)
     hide_label[0]=' ';hide_label[1]=' ';hide_label[2]=(char)GLYPH_C_L;hide_label[3]=(char)GLYPH_C_R;hide_label[4]=' ';hide_label[5]=' ';hide_label[6]=0;
     if(!maximized){acc_button(x+3,y+h-3," Add ",focus==2);if(n){acc_button(x+11,y+h-3," Edit ",focus==3);acc_button(x+19,y+h-3," Delete ",focus==4);}else{acc_button_disabled(x+11,y+h-3," Edit ");acc_button_disabled(x+19,y+h-3," Delete ");}acc_button(x+27,y+h-3," Print ",focus==5);acc_put(x+35,y+h-3,179,ACC_BORDER);acc_button(x+37,y+h-3,hide_label,focus==6);acc_button(x+45,y+h-3,"  Sort  ",focus==7);acc_text(x+55,y+h-3,(sort_mode==1)?"Date":(sort_mode==2)?"Date":(sort_mode==3)?"Alph":(sort_mode==4)?"Alph":"None",ACC_LABEL,6);acc_button(x+w-10,y+h-3," Exit ",focus==8);}
     acc_wait(&key,&mx,&my,&mb);
-    if(key==256+0x85||key==256+0x57||((mb&1)&&!maximized&&my==y&&mx>=x+w-8&&mx<x+w-6)){maximized=!maximized;acc_clear(ACC_BG);if(!maximized)acc_box(x,y,w,h,"To-Dos");focus=0;top=0;dirty=1;key=0;continue;}
+    if(key==256+0x85||key==256+0x57||((mb&1)&&!maximized&&my==y&&mx>=x+w-8&&mx<x+w-6)){
+      if(!maximized){acc_close_target_suspend(&old_close_x,&old_close_y);acc_modal_begin();acc_input_bounds(0,0,acc_cols,acc_rows);close_suspended=1;maximized=1;}
+      else {maximized=0;if(close_suspended){acc_modal_end();acc_close_target_restore(old_close_x,old_close_y);close_suspended=0;}}
+      acc_clear(ACC_BG);if(!maximized)acc_box(x,y,w,h,"To-Dos");focus=0;top=0;dirty=1;key=0;continue;
+    }
     if((mb&1)&&my==(maximized?0:y+2)){int dt=date_tab_at(lx,mx);if(dt>=0){date_tab=dt;sel=top=0;expanded=0;focus=9;dirty=1;key=0;continue;}}
     if(focus==9&&(key==256+75||key==256+77)){if(key==256+75&&date_tab>0)date_tab--;if(key==256+77&&date_tab<4)date_tab++;sel=top=0;expanded=0;dirty=1;key=0;continue;}
+    if((mb&1)&&mx==lx+listw&&my>=ly&&my<ly+todos_view_rows){
+      if(my==ly&&top>0)top--;
+      else if(my==ly+todos_view_rows-1&&top+todos_view_rows<n)top++;
+      else if(my>ly&&my<ly+todos_view_rows-1&&n>todos_view_rows){top=(my-ly-1)*(n-todos_view_rows)/(todos_view_rows-2);}
+      if(top<0)top=0;if(top>n-todos_view_rows)top=n-todos_view_rows;if(top<0)top=0;
+      if(sel<top)sel=top;if(sel>=top+todos_view_rows)sel=top+todos_view_rows-1;if(sel>=n)sel=n-1;
+      focus=0;expanded=0;dirty=1;key=0;continue;
+    }
     if((mb&1)&&my>=ly&&my<ly+todos_view_rows&&mx>=lx&&mx<lx+listw){
       static int last_click_idx=-1;static unsigned long last_click_tick=0;unsigned long now;int row=my-ly;
       if(row_map[row]>=0&&row_map[row]<n){
@@ -637,7 +667,7 @@ int main(int argc,char **argv)
     }
 
     /* Global keyboard shortcuts. */
-    if(key=='a'||key=='A'){
+    if(key==1){ /* Ctrl+A: Add */
       int kind=add_type_popup(x+3,y+h-3);
       if(!maximized)acc_box(x,y,w,h,"To-Dos");
       /* The popup is painted over the task viewport.  Repaint the viewport
@@ -647,18 +677,23 @@ int main(int argc,char **argv)
       else if(kind==2&&item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=0;strcpy(t.title,"New group");if(edit_heading(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;}if(!maximized)acc_box(x,y,w,h,"To-Dos");dirty=1;}
       key=0;continue;
     }
-    if(key=='g'||key=='G'){
+    /* Group creation is available through Add; no standalone letter shortcut. */
+    if(0){
       if(item_count<MAX_ITEMS){memset(&t,0,sizeof(t));t.used=1;t.type=0;strcpy(t.title,"New group");if(edit_heading(&t)){items[item_count++]=t;filter[0]=0;sort_mode=0;sel=item_count-1;}if(!maximized)acc_box(x,y,w,h,"To-Dos");dirty=1;}
       key=0;continue;
     }
-    if((key=='e'||key=='E')&&n>0){
+    if(key==5&&n>0){ /* Ctrl+E: Edit */
       idx=map[sel];if(items[idx].type)edit_task(&items[idx],task_group_name(idx));else edit_heading(&items[idx]);if(!maximized)acc_box(x,y,w,h,"To-Dos");dirty=1;key=0;continue;
     }
-    if((key=='d'||key=='D')&&n>0){
+    if(key==4&&n>0){ /* Ctrl+D: Delete */
       idx=map[sel];delete_selected(idx);if(sel>0)sel--;expanded=0;dirty=1;key=0;continue;
     }
-    if(key=='s'||key=='S'){sort_mode=(sort_mode+1)%5;sel=top=0;expanded=0;dirty=1;acc_text(x+55,y+h-3,(sort_mode==1)?"Date\031":(sort_mode==2)?"Date\030":(sort_mode==3)?"Alph\031":(sort_mode==4)?"Alph\030":"None",ACC_LABEL,6);key=0;continue;}
-    if(key=='h'||key=='H'){hide_done=!hide_done;sel=top=0;expanded=0;dirty=1;key=0;continue;}
+    if(key==16){ /* Ctrl+P: Print current view */
+      if(!print_tasks(filter,hide_done,sort_mode))acc_notice("Print","Unable to print to LPT1");
+      if(!maximized)acc_box(x,y,w,h,"To-Dos");dirty=1;key=0;continue;
+    }
+    if(key==19){ /* Ctrl+S: cycle sorting */sort_mode=(sort_mode+1)%5;sel=top=0;expanded=0;dirty=1;acc_text(x+55,y+h-3,(sort_mode==1)?"Date\031":(sort_mode==2)?"Date\030":(sort_mode==3)?"Alph\031":(sort_mode==4)?"Alph\030":"None",ACC_LABEL,6);key=0;continue;}
+    if(key==256+0x39){ /* Ctrl+Space: show/hide completed */hide_done=!hide_done;sel=top=0;expanded=0;dirty=1;key=0;continue;}
 
     if(focus==0&&n>0){
       idx=map[sel];
@@ -685,5 +720,6 @@ int main(int argc,char **argv)
     }
     if(key!=27)key=0;
   }
+  if(close_suspended){acc_modal_end();acc_close_target_restore(old_close_x,old_close_y);}
   save_items();restore_glyphs();acc_end();return 0;
 }

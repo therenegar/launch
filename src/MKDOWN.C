@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: MKDOWN.C
+ * Role: !MKDOWN Markdown editor
+ * Build/ownership: Standalone accessory using ACCLIB and MDFONTS.
+ * Maintainer contract: Handles editor, preview, graphical Show, Document Map, import normalization, printing and file lifecycle. Large buffers must avoid overflowing 16-bit DGROUP/stack.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! Markdown - persistent Markdown editor, live text preview, VGA page
    renderer and formatted Epson-compatible printing.  Microsoft C/C++ 7.0. */
 #include <stdio.h>
@@ -103,7 +120,7 @@ static void html_clean_line(const char *in,char *out,int max,char *link)
 static int load_emit_span(int pg,const char *line,int n,int *row)
 {int pos=0,left,cut,w=COLS;softwrap[pg][*row]=0;if(!n){(*row)++;return 1;}while(pos<n&&*row<LINES){left=n-pos;cut=left<w?left:w;if(left>w){while(cut>0&&line[pos+cut]!=' ')cut--;if(!cut)cut=w;}_fmemcpy(page[pg][*row],line+pos,cut);pos+=cut;while(pos<n&&line[pos]==' ')pos++;(*row)++;if(pos<n&&*row<LINES)softwrap[pg][*row]=1;}return *row<LINES;}
 static int load_file(int pg,const char *name)
-{FILE*f;char *p,*e;int row=0,n;if(!ensure_page(pg))return 0;wrap_width[pg]=COLS;blank_page(pg);memset(softwrap[pg],0,LINES);import_link[0]=0;f=fopen(name,"r");if(!f)return 0;while(fgets(import_line,sizeof(import_line),f)&&row<LINES){n=(int)strlen(import_line);while(n&&(import_line[n-1]=='\r'||import_line[n-1]=='\n'))import_line[--n]=0;html_clean_line(import_line,import_clean,sizeof(import_clean),import_link);p=import_clean;for(;;){e=strchr(p,'\n');if(e){load_emit_span(pg,p,(int)(e-p),&row);p=e+1;if(row>=LINES)break;}else{load_emit_span(pg,p,(int)strlen(p),&row);break;}}}fclose(f);strncpy(paths[pg],name,ACC_PATH-1);paths[pg][ACC_PATH-1]=0;force_md(paths[pg]);external[pg]=1;return 1;}
+{FILE*f;char *p,*e;int row=0,n;if(!ensure_page(pg))return 0;wrap_width[pg]=COLS;blank_page(pg);memset(softwrap[pg],0,LINES);import_link[0]=0;f=fopen(name,"r");if(!f)return 0;while(fgets(import_line,sizeof(import_line),f)&&row<LINES){n=(int)strlen(import_line);while(n&&(import_line[n-1]=='\r'||import_line[n-1]=='\n'))import_line[--n]=0;html_clean_line(import_line,import_clean,sizeof(import_clean),import_link);p=import_clean;for(;;){e=strchr(p,'\n');if(e){load_emit_span(pg,p,(int)(e-p),&row);p=e+1;if(row>=LINES)break;}else{load_emit_span(pg,p,(int)strlen(p),&row);break;}}}fclose(f);strncpy(paths[pg],name,ACC_PATH-1);paths[pg][ACC_PATH-1]=0;external[pg]=1;return 1;}
 static int write_file(int pg,const char *name){FILE*f=fopen(name,"w");char b[DOC_COLS];int y,n,next;if(!f)return 0;for(y=0;y<LINES;y++){n=used(pg,y);if(n){_fmemcpy(b,page[pg][y],n);fwrite(b,1,n,f);}next=y+1<LINES&&softwrap[pg][y+1];if(next){if(n&&used(pg,y+1))fputc(' ',f);}else fputc('\n',f);}if(fclose(f))return 0;strncpy(paths[pg],name,ACC_PATH-1);paths[pg][ACC_PATH-1]=0;external[pg]=1;dirty[pg]=0;return 1;}
 
 static int reflow_emit(MDLINE far *dst,int *outrow,const char *b,int n,int continuation,int width)
@@ -710,7 +727,7 @@ static int focus_progress(void)
 static void focus_draw(void)
 {char b[COLS+1],s[42];int r,c,line,left=(acc_cols-COLS)/2,panel=ACC_ATTR(acc_appearance.background,acc_appearance.labels),status=ACC_CONTROL,fill,prog,filled=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.controls_bg);long pos,lo=has_selection()?sel_low():-1L,hi=has_selection()?sel_high():-1L;unsigned long chars,words;for(r=0;r<24;r++){line=top+r;if(line<LINES){_fmemcpy(b,page[current][line],COLS);b[COLS]=0;acc_text(left,r,b,panel,COLS);if(lo>=0)for(c=0;c<COLS;c++){pos=(long)line*COLS+c;if(pos>=lo&&pos<hi)acc_put(left+c,r,b[c],ACC_SELECT);}}}if(cy>=top&&cy<top+24){acc_caret_set(left+cx,cy-top);}else acc_caret_hide();document_stats(&chars,&words);sprintf(s,"Chars: %lu   Words: %lu",chars,words);prog=focus_progress();fill=(prog*12+999)/1000;if(prog==0)fill=0;acc_fill(0,24,acc_cols,1,' ',status);for(c=0;c<12;c++)acc_put(c,24,c<fill?219:176,c<fill?filled:status);acc_text(acc_cols-(int)strlen(s),24,s,status,(int)strlen(s));}
 static void focus_mode(void)
-{int key=0,mx,my;unsigned mb;acc_clear(ACC_ATTR(acc_appearance.background,acc_appearance.labels));focus_draw();while(key!=27){acc_wait(&key,&mx,&my,&mb);if(key!=27)editor_key(key,24);if(cy<top)top=cy;if(cy>=top+24)top=cy-23;if(key!=27)focus_draw();}acc_caret_hide();acc_restore_text_screen();acc_mouse_display(1);key=0;}
+{int key=0,mx,my;unsigned mb;acc_modal_begin();acc_input_bounds(0,0,acc_cols,acc_rows);acc_clear(ACC_ATTR(acc_appearance.background,acc_appearance.labels));focus_draw();while(key!=27){acc_wait(&key,&mx,&my,&mb);if(key!=27)editor_key(key,24);if(cy<top)top=cy;if(cy>=top+24)top=cy-23;if(key!=27)focus_draw();}acc_caret_hide();acc_modal_end();acc_restore_text_screen();acc_mouse_display(1);key=0;}
 static void maximize_page_bar(void)
 {int i,xx=0,n,a,w,max;char s[6],shown[30],*base;acc_fill(0,24,80,1,' ',ACC_BG);for(i=0;i<count;i++){sprintf(s," %d ",i+1);w=(int)strlen(s);a=i==current?ACC_CONTROL:ACC_ATTR(acc_appearance.background,acc_appearance.titlebar_fg);acc_text(xx,24,s,a,w);xx+=w+1;}if(count<PAGES)acc_put(xx,24,'+',ACC_ATTR(acc_appearance.background,acc_appearance.titlebar_fg));if(external[current]&&paths[current][0]){base=strrchr(paths[current],'\\');if(!base)base=strrchr(paths[current],'/');base=base?base+1:paths[current];max=dirty[current]?79:80;n=(int)strlen(base);if(n>max){base+=n-max;n=max;}memcpy(shown,base,n);if(dirty[current])shown[n++]='*';shown[n]=0;acc_text(80-n,24,shown,dirty[current]?ACC_TITLE:ACC_HEADING,n);}else acc_text(73,24,"Unsaved",ACC_TITLE,7);}
 static void maximize_draw(void)
@@ -730,14 +747,14 @@ static void maximize_refresh(int key,int oldtop)
 static void maximize_mode(void)
 {
  int key=0,mx=0,my=0,rows,oldtop,editkey,oldpage,old_close_x,old_close_y;unsigned mb=0;clear_selection();
- acc_close_target_suspend(&old_close_x,&old_close_y);
- if(view_mode!=2&&!reflow_page(current,FULL_COLS)){acc_close_target_restore(old_close_x,old_close_y);acc_notice("Markdown","Not enough memory to expand the full-screen editor.");return;}
+ acc_close_target_suspend(&old_close_x,&old_close_y);acc_modal_begin();acc_input_bounds(0,0,acc_cols,acc_rows);
+ if(view_mode!=2&&!reflow_page(current,FULL_COLS)){acc_modal_end();acc_close_target_restore(old_close_x,old_close_y);acc_notice("Markdown","Not enough memory to expand the full-screen editor.");return;}
  if(cy<top)top=cy;rows=view_mode==0?12:24;if(cy>=top+rows)top=cy-rows+1;maximize_draw();
  while(key!=27&&key!=256+0x85&&key!=256+0x57){
-  acc_wait(&key,&mx,&my,&mb);rows=view_mode==0?12:24;if(key==256+0x32){headings_popup();maximize_draw();key=0;continue;}
+  acc_wait(&key,&mx,&my,&mb);rows=view_mode==0?12:24;if(key==256+0x32){headings_popup();acc_close_target_suspend(0,0);acc_input_bounds(0,0,acc_cols,acc_rows);maximize_draw();key=0;continue;}
   if((mb&1)&&view_mode!=2&&mx>=0&&mx<FULL_COLS&&((view_mode==0&&my>=0&&my<12)||(view_mode==1&&my>=0&&my<24))){cx=mx;cy=top+my;clear_selection();if(view_mode==0)draw_source(0,0,12,1,FULL_COLS);else draw_source(0,0,24,1,FULL_COLS);key=0;continue;}
   if((mb&1)&&my==24){int pg,xx=0;for(pg=0;pg<count;pg++){char ps[6];int pw;sprintf(ps," %d ",pg+1);pw=(int)strlen(ps);if(mx>=xx&&mx<xx+pw)break;xx+=pw+1;}if(pg<count){oldpage=current;if(view_mode!=2)reflow_page(oldpage,COLS);current=pg;cx=cy=top=0;clear_selection();if(view_mode!=2&&!reflow_page(current,FULL_COLS)){current=oldpage;reflow_page(current,FULL_COLS);acc_notice("Markdown","Not enough memory to expand that page.");}maximize_draw();}else if(count<PAGES&&mx==xx){if(!ensure_page(count)){acc_notice("Markdown","Not enough memory for another page.");maximize_draw();key=0;continue;}oldpage=current;if(view_mode!=2)reflow_page(oldpage,COLS);current=count++;blank_page(current);memset(softwrap[current],0,LINES);wrap_width[current]=COLS;paths[current][0]=0;external[current]=0;cx=cy=top=0;clear_selection();if(view_mode!=2&&!reflow_page(current,FULL_COLS)){current=oldpage;count--;reflow_page(current,FULL_COLS);acc_notice("Markdown","Not enough memory to expand the new page.");}maximize_draw();}key=0;continue;}
-  if((mb&1)&&mx==79&&my>=0&&my<rows){if(my==0){if(headings_popup())maximize_draw();else maximize_draw();key=0;continue;}else if(my==1&&top>0)top--;else if(my==rows-1&&top<LINES-rows)top++;else if(my>1&&my<rows-1)top=(my-2)*(LINES-rows)/(rows-3);if(top<0)top=0;if(top>LINES-rows)top=LINES-rows;if(cy<top)cy=top;if(cy>=top+rows)cy=top+rows-1;maximize_draw();key=0;continue;}
+  if((mb&1)&&mx==79&&my>=0&&my<rows){if(my==0){headings_popup();acc_close_target_suspend(0,0);acc_input_bounds(0,0,acc_cols,acc_rows);maximize_draw();key=0;continue;}else if(my==1&&top>0)top--;else if(my==rows-1&&top<LINES-rows)top++;else if(my>1&&my<rows-1)top=(my-2)*(LINES-rows)/(rows-3);if(top<0)top=0;if(top>LINES-rows)top=LINES-rows;if(cy<top)cy=top;if(cy>=top+rows)cy=top+rows-1;maximize_draw();key=0;continue;}
   editkey=key;oldtop=top;if(view_mode==2){
    if(key==256+72&&top>0)top--;else if(key==256+80&&top<LINES-rows)top++;
    else if(key==256+73){top-=rows;if(top<0)top=0;}
@@ -748,18 +765,34 @@ static void maximize_mode(void)
   if(cy<top)top=cy;if(cy>=top+rows)top=cy-rows+1;if(key!=27&&key!=256+0x85&&key!=256+0x57)maximize_refresh(editkey,oldtop);
  }
  if(view_mode!=2)reflow_page(current,COLS);if(cy<top)top=cy;rows=view_mode==0?VIEW:FULL_VIEW;if(cy>=top+rows)top=cy-rows+1;
- acc_caret_hide();acc_close_target_restore(old_close_x,old_close_y);acc_restore_text_screen();acc_mouse_display(1);
+ acc_caret_hide();acc_modal_end();acc_close_target_restore(old_close_x,old_close_y);acc_restore_text_screen();acc_mouse_display(1);
 }
 
+static int md_prompt_current(void)
+{
+  int choice;if(!dirty[current])return 1;choice=confirm_close();if(choice==0)return 0;if(choice==1)return 1;save_current();return !dirty[current];
+}
+static void md_remove_current(void)
+{
+  int i;if(count<=1){blank_page(0);memset(softwrap[0],0,LINES);paths[0][0]=0;external[0]=0;dirty[0]=0;current=0;cx=cy=top=0;clear_selection();return;}
+  if(page[current]){_ffree(page[current]);page[current]=0;}for(i=current;i<count-1;i++){page[i]=page[i+1];memcpy(softwrap[i],softwrap[i+1],LINES);wrap_width[i]=wrap_width[i+1];external[i]=external[i+1];dirty[i]=dirty[i+1];strcpy(paths[i],paths[i+1]);}page[count-1]=0;memset(softwrap[count-1],0,LINES);wrap_width[count-1]=COLS;count--;if(current>=count)current=count-1;cx=cy=top=0;clear_selection();
+}
 int main(int argc,char **argv)
 {
   int x,y,key=0,mx=0,my=0,focus=0,i,argn=0,rows,editkey,oldtop,done=0,discarded=0,choice;unsigned mb=0;
   if(acc_help(argc,argv,"!MKDOWN","Markdown editor with live preview, graphical pages and formatted printing."))return 0;
   if(!acc_begin(argv[0],"Markdown",0))return 1;if(!init_pages()){acc_notice("Markdown","Not enough memory for document pages.");acc_end();return 1;}memset(external,0,sizeof(external));memset(paths,0,sizeof(paths));memset(dirty,0,sizeof(dirty));
   for(i=1;i<argc&&argn<PAGES;i++)if(argv[i][0]!='/'&&argv[i][0]!='-'){if(load_file(argn,argv[i]))argn++;}
-  if(argn){count=argn;current=0;}else persist_load();
+  if(argn){count=argn;current=0;}else{count=1;current=0;blank_page(0);memset(softwrap[0],0,LINES);paths[0][0]=0;external[0]=0;dirty[0]=0;}
   x=(acc_cols-DLG_W)/2;y=(acc_rows-DLG_H)/2;draw_ui(x,y,focus);
-  while(!done){acc_wait(&key,&mx,&my,&mb);rows=view_mode==0?VIEW:FULL_VIEW;if(key==256+0x32){headings_popup();draw_ui(x,y,focus);key=0;continue;}
+  while(!done){acc_wait(&key,&mx,&my,&mb);rows=view_mode==0?VIEW:FULL_VIEW;
+    if(key==19){save_current();draw_ui(x,y,focus);key=0;continue;} /* Ctrl+S */
+    if(key==31){view_mode=(view_mode+1)%3;top=0;if(view_mode==2)clear_selection();draw_ui(x,y,focus);key=0;continue;} /* Ctrl+/ */
+    if(key==6){focus_mode();draw_ui(x,y,focus);key=0;continue;} /* Ctrl+F */
+    if(key==256+0x3F){graph_show();draw_ui(x,y,focus);key=0;continue;} /* F5 */
+    if(key==14){if(md_prompt_current()){blank_page(current);memset(softwrap[current],0,LINES);paths[current][0]=0;external[current]=0;dirty[current]=0;cx=cy=top=0;clear_selection();draw_ui(x,y,focus);}key=0;continue;}
+    if(key==23){if(md_prompt_current()){md_remove_current();draw_ui(x,y,focus);}key=0;continue;}
+    if(key==256+0x32){headings_popup();draw_ui(x,y,focus);key=0;continue;}
     if(key==27){if(!any_dirty()){done=1;break;}choice=confirm_close();if(choice==1){discarded=1;done=1;break;}if(choice==2&&save_all_dirty(!argn)){done=1;break;}draw_ui(x,y,focus);key=0;continue;}
     if((key==256+0x85||key==256+0x57)||((mb&1)&&my==y&&mx>=x+DLG_W-8&&mx<x+DLG_W-6)){maximize_mode();draw_ui(x,y,focus);key=0;continue;}
     if(view_mode!=2&&(mb&1)&&my>=y+2&&my<y+2+rows&&mx>=x+2&&mx<x+2+COLS){focus=0;clear_selection();cx=mx-(x+2);cy=top+my-(y+2);draw_source(x+2,y+2,rows,1,COLS);key=0;continue;}
@@ -778,5 +811,5 @@ int main(int argc,char **argv)
     }else if(key!=27&&!editor_key(key,rows))key=0;
     if(cy<top)top=cy;if(cy>=top+rows)top=cy-rows+1;if(view_mode!=2){draw_edit_refresh(x,y,rows,editkey,oldtop);page_bar(x+3,y+17);}
   }
-  if(!argn&&!discarded)persist_save();if(clip){_ffree(clip);clip=0;}free_pages();acc_end();return 0;
+  if(clip){_ffree(clip);clip=0;}free_pages();acc_end();return 0;
 }

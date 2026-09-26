@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: ACCLIBX.C
+ * Role: Build wrapper for shared accessory runtime
+ * Build/ownership: Normally includes/builds ACCLIB.C for component builds.
+ * Maintainer contract: Keep this thin; reusable behavior belongs in ACCLIB.C/ACCLIB.H.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! 3.65 accessory runtime extension.
    This translation unit wraps the 3.5 ACCLIB implementation to add the
    Release 3.72 shared accessory extensions without duplicating the shared UI runtime. */
@@ -47,6 +64,8 @@ static const unsigned char stack_export_b14[32]={0x00,0x1F,0x23,0x23,0x23,0x23,0
 static int acc_dialog_x=-1,acc_dialog_y=-1,acc_dialog_w=0,acc_dialog_h=0;
 static int acc_focus_suppressed=0;
 static int acc_hover_button=-1,acc_hover_x=-1,acc_hover_y=-1,acc_hover_valid=0;
+static int acc_modal_depth=0;
+static int acc_subbox_active=0;
 static void glyph36_refresh(void);
 static void game_digits_refresh(void);
 static void (*acc_idle_hook)(void)=0;
@@ -147,11 +166,11 @@ int acc_help(int argc,char **argv,const char *name,const char *description)
 
 void acc_box(int x,int y,int w,int h,const char *title)
 {
-  acc36_box_base(x,y,w,h,title);acc_dialog_x=x;acc_dialog_y=y;acc_dialog_w=w;acc_dialog_h=h;
+  acc36_box_base(x,y,w,h,title);acc_subbox_active=0;acc_dialog_x=x;acc_dialog_y=y;acc_dialog_w=w;acc_dialog_h=h;
 }
 void acc_subbox(int x,int y,int w,int h,const char *title,int toolbar)
 {
-  acc36_subbox_base(x,y,w,h,title,toolbar);acc_dialog_x=x;acc_dialog_y=y;acc_dialog_w=w;acc_dialog_h=h;
+  acc36_subbox_base(x,y,w,h,title,toolbar);acc_subbox_active=1;acc_dialog_x=x;acc_dialog_y=y;acc_dialog_w=w;acc_dialog_h=h;
 }
 /* Change only the mouse input boundary; used by true full-screen accessory
    views whose live controls intentionally extend beyond the normal dialog. */
@@ -163,7 +182,7 @@ void acc_input_bounds(int x,int y,int w,int h)
 int acc_begin(const char *argv0,const char *title,int graphics)
 {
   int ok;const char *p=argv0,*q;if((q=strrchr(argv0,'\\'))!=0)p=q+1;if((q=strrchr(p,'/'))!=0)p=q+1;strncpy(acc_app,p,sizeof(acc_app)-1);acc_app[sizeof(acc_app)-1]=0;strupr(acc_app);
-  ok=acc36_begin_base(argv0,title,graphics);if(ok){glyph36_refresh();maximize_install();game_digits_saved=0;game_digits_installed=0;game_digits_install();acc_hover_button=-1;acc_hover_valid=0;acc_dialog_x=acc_dialog_y=-1;acc_dialog_w=acc_dialog_h=0;acc_focus_suppressed=0;}return ok;
+  ok=acc36_begin_base(argv0,title,graphics);if(ok){glyph36_refresh();maximize_install();game_digits_saved=0;game_digits_installed=0;game_digits_install();acc_hover_button=-1;acc_hover_valid=0;acc_dialog_x=acc_dialog_y=-1;acc_dialog_w=acc_dialog_h=0;acc_focus_suppressed=0;acc_modal_depth=0;acc_subbox_active=0;}return ok;
 }
 
 void acc_end_screen(void)
@@ -212,12 +231,15 @@ void acc_button(int x,int y,const char *text,int selected)
 
 void acc_modal_begin(void)
 {
+  acc_modal_depth++;
   acc_caret_hide();
   acc_button_count=0;acc_hover_button=-1;acc_hover_valid=0;
 }
 
 void acc_modal_end(void)
 {
+  if(acc_modal_depth>0)acc_modal_depth--;
+  acc_subbox_active=0;
   /* A modal may close while its last focused control is a text field.
      Kill the BIOS caret before the backing UI is exposed again so the
      underscore cannot survive at the old field coordinates. */
@@ -277,6 +299,10 @@ void acc_wait(int *key,int *x,int *y,unsigned *buttons)
     if(acc_idle_hook)acc_idle_hook();
     if(acc_key_ready()){
       *key=acc_key();acc_caret_hide();if(*key==9||*key==271)acc_focus_suppressed=0;
+      /* Escape is reserved for dismissing modal/sub views.  At the top-level
+         accessory/game window it must not terminate the program: use Ctrl+Q,
+         Alt+F4 or the Close/Exit button instead. */
+      if(*key==27&&acc_modal_depth==0&&!acc_subbox_active){*key=0;continue;}
       if(*key==17||*key==256+0x6B){*key=27;break;} /* Ctrl+Q / Alt+F4 */
       {const char *want=0;
        if(*key==15)want="Open";else if(*key==5)want="Edit";else if(*key==19)want="Save";

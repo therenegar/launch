@@ -1,3 +1,20 @@
+/*
+    __                           __    __
+   / /   ____ ___  ______  _____/ /_  / /
+  / /   / __ `/ / / / __ \/ ___/ __ \/ / 
+ / /___/ /_/ / /_/ / / / /__/ / / /_/  
+/_____/\__,_/\__,_/_/ /_/\___/_/ /_(_)   
+Launch! for DOS ---------------------
+*/
+/*
+ * MAINTAINER NOTES - Launch! 3.73
+ * File: PLUMB.C
+ * Role: !PLUMB puzzle game
+ * Build/ownership: Standalone puzzle game.
+ * Maintainer contract: Follow global game shortcuts and Launch! UI conventions.
+ * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
+ * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
+ */
 /* Launch! Plumb accessory - pipe-laying puzzle game.
    Pipe artwork comes from the canonical LAUNCHUI.FNT/LAUNCHUI.F14 designs,
    copied into private extension-capable runtime glyph slots.
@@ -462,7 +479,11 @@ int main(int argc,char **argv)
     if(focus!=last_focus){draw_buttons(x,y,focus);last_focus=focus;}
     if(kbhit()){
       key=acc_key();
-      if(key==9||key==271){if(focus<0)focus=(key==271)?4:0;else focus=(key==271)?(focus+4)%5:(focus+1)%5;need_redraw=1;key=0;}
+      if(key==27){key=0;}
+      else if(key==17||key==256+0x6B){key=27;}
+      else if(key==256+0x3F){level=1;lives=3;new_round(1);need_redraw=1;key=0;} /* F5 */
+      else if(key==256+0x45){toggle_pause();need_redraw=1;key=0;} /* Pause/Break */
+      else if(key==9||key==271){if(focus<0)focus=(key==271)?4:0;else focus=(key==271)?(focus+4)%5:(focus+1)%5;need_redraw=1;key=0;}
       else if(focus==0&&(key==256+72||key==0x4800)){oldx=cursor_x;oldy=cursor_y;if(cursor_y>0)cursor_y--;draw_cell(bx,by,oldx,oldy);if(oldx!=cursor_x||oldy!=cursor_y)draw_cell(bx,by,cursor_x,cursor_y);key=0;}
       else if(focus==0&&(key==256+80||key==0x5000)){oldx=cursor_x;oldy=cursor_y;if(cursor_y<BH-1)cursor_y++;draw_cell(bx,by,oldx,oldy);if(oldx!=cursor_x||oldy!=cursor_y)draw_cell(bx,by,cursor_x,cursor_y);key=0;}
       else if(focus==0&&(key==256+75||key==0x4B00)){oldx=cursor_x;oldy=cursor_y;if(cursor_x>0)cursor_x--;draw_cell(bx,by,oldx,oldy);if(oldx!=cursor_x||oldy!=cursor_y)draw_cell(bx,by,cursor_x,cursor_y);key=0;}
