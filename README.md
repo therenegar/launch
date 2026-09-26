@@ -37,13 +37,13 @@
 <a id="install"></a>
 ## <img width="500" alt="Install" src="https://github.com/user-attachments/assets/b7dee4b9-154f-47b6-b407-8b24ef9b03fd" />
 
-<img width="720" height="600" alt="Installation" src="https://github.com/user-attachments/assets/7a1cce4e-d6e1-44b9-94e6-ae2ea3a5ad8e" />
-
 Extract the release zip file or mount the floppy image and run
 ```
 INSTALL.EXE
 ```
-Read more about [Installation](https://github.com/therenegar/launch/wiki/INSTALL.EXE).
+**Read more about [Installation](https://github.com/therenegar/launch/wiki/INSTALL.EXE).**
+
+<img width="720" height="600" alt="Installation" src="https://github.com/user-attachments/assets/7a1cce4e-d6e1-44b9-94e6-ae2ea3a5ad8e" />
 
 ----
 <a id="the-menu"></a>
@@ -53,10 +53,10 @@ At the **command prompt**, display your menu by pressing the keyboard shortcut w
 ```
 CTRL + ALT + .
 ```
+**Learn more about [the Menu](https://github.com/therenegar/launch/wiki/!.EXE).**
 
-<img width="720" height="600" alt="menu-sysbar" src="https://github.com/user-attachments/assets/f26403bb-d956-4f50-b682-a3f6e204400b" />
+<img width="720" alt="default-boot" src="https://github.com/user-attachments/assets/da13f54b-66d0-4f84-a8f5-0aa6ac7e95b8" />
 
-Learn more about [the Menu](https://github.com/therenegar/launch/wiki/!.EXE).
 
 ----
 <a id="config"></a>
@@ -68,9 +68,10 @@ Everything in Launch! can be configured in one place by running
 ```
 Configuration includes the menu, colors, screen savers, prompt customization, font customization and shortcut key settings.
 
+**Learn more about [Configuration](https://github.com/therenegar/launch/wiki/Configuration).**
+
 <img width="720" height="600" alt="config-menu" src="https://github.com/user-attachments/assets/7ec8b314-e2a1-4789-b78d-a40492139413" />
 
-Learn more about [Configuration](https://github.com/therenegar/launch/wiki/Configuration).
 
 ----
 <a id="screen-savers"></a>
@@ -98,7 +99,7 @@ Learn more about [Screen Savers](https://github.com/therenegar/launch/wiki/Scree
 <a id="accessories"></a>
 ## <img width="500" alt="Accessories" src="https://github.com/user-attachments/assets/98418a23-1b67-43ee-b6f4-77de6fecee98" />
 
-Learn more about [Accessories](https://github.com/therenegar/launch/wiki/Accessories).
+**Learn more about [Accessories](https://github.com/therenegar/launch/wiki/Accessories).**
 
 <img width="360" height="300" alt="dfetch" src="https://github.com/user-attachments/assets/c75ac29e-e0b8-4605-806f-42b4c48a5b21" />
 <img width="360" height="300" alt="mkdown" src="https://github.com/user-attachments/assets/60bec14c-4c19-4e75-9aa8-34c7d5aca165" />
@@ -115,7 +116,7 @@ Learn more about [Accessories](https://github.com/therenegar/launch/wiki/Accesso
 <a id="games"></a>
 ## <img width="500" alt="Games" src="https://github.com/user-attachments/assets/c4d31625-d74d-4534-a256-eb436e3ece78" />
 
-Learn more about [Games](https://github.com/therenegar/launch/wiki/Games).
+**Learn more about [Games](https://github.com/therenegar/launch/wiki/Games).**
 
 <img width="360" height="300" alt="boxes" src="https://github.com/user-attachments/assets/ac5d5edf-cf7d-4a45-ba55-305095763bf1" />
 <img width="360" height="300" alt="plumb" src="https://github.com/user-attachments/assets/389a9c8f-4d8c-425f-8f12-90b4154b91fb" />
@@ -131,14 +132,14 @@ Learn more about [Games](https://github.com/therenegar/launch/wiki/Games).
 <a id="tooling"></a>
 ## <img width="500" alt="Tooling" src="https://github.com/user-attachments/assets/dd935b02-2baa-4626-8c37-9cae052432f4" />
 
-Learn more about [Tooling](https://github.com/therenegar/launch/wiki/Tooling).
+**Learn more about [Tooling](https://github.com/therenegar/launch/wiki/Tooling).**
 
 
 ----
 <a id="techinfo"></a>
 ## Technical Information
 
-Read [Technical Information](https://github.com/therenegar/launch/wiki/Tech-Info).
+**Read [Technical Information](https://github.com/therenegar/launch/wiki/Tech-Info).**
 
 
 Launch is created on a 486DX4/100 machine, 32mb RAM, running IBM PC DOS 7.0. Coded using [Microsoft QuickC](https://en.wikipedia.org/wiki/QuickC) IDE and [FTE](https://fte.sourceforge.net/) (Folding Text Editor). Graphical glyphs created using [Fontraption](https://int10h.org/blog/2019/05/fontraption-vga-text-mode-font-editor/). Screen layout and composition done with [TheDraw](https://www.abandonwaredos.com/abandonware-game.php?abandonware=TheDraw+4&gid=3563).
