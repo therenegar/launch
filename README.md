@@ -8,7 +8,7 @@
 
 **Works with** MS-DOS, PC DOS, DR-DOS and FreeDOS on real hardware and virtual machines, including DOSBox, 86Box and DOSEMU. Compatible with third-party command interpreters such as 4DOS/NDOS.
 
-<img width="500" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/7e928087-c592-4ce9-9cd5-2ba3f794cdbe" />
+<img width="720" alt="The Launch! Menu" src="https://github.com/user-attachments/assets/7e928087-c592-4ce9-9cd5-2ba3f794cdbe" />
 
 ## Features
 - Displays a hierarchical folder based menu, modally over the top of the existing console contents.
