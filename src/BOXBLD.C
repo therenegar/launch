@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: BOXES.C
  * Role: !BOXES puzzle game
  * Build/ownership: Canonical source; build copy is BOXBLD.C.

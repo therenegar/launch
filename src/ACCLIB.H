@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: ACCLIB.H
  * Role: Public interface for accessory/game runtime
  * Build/ownership: Included by accessories and games.
@@ -70,6 +70,7 @@ void acc_shadow(int x,int y,int width,int height);
 void acc_glyph_read(int code,unsigned char *glyph);
 void acc_glyph_write(int code,const unsigned char *glyph);
 void acc_glyph_library(int logical_id,int code);
+int acc_print_left_glyph(void);
 void acc_game_glyphs_suspend(void);
 void acc_game_glyphs_resume(void);
 int acc_font_height(void);

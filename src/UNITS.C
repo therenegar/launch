@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.78
+ * MAINTAINER NOTES - Launch! 3.79
  * File: UNITS.C
  * Role: !UNITS unit-conversion accessory
  * Build/ownership: Standalone accessory using the shared Launch! accessory runtime.

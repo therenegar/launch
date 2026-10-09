@@ -1,4 +1,4 @@
-/* Launch! 3.78 - native Windows 3.0 menu companion.
+/* Launch! 3.79 - native Windows 3.0 menu companion.
    Target: Microsoft C/C++ 7.0 + Windows 3.0/3.1 SDK, medium model. */
 #ifndef WINVER
 #define WINVER 0x0300
@@ -208,7 +208,7 @@ static void debug_open(void)
   /* Append rather than truncate. Helper invocations must not erase the
      resident instance's crash trail. */
   gDebugFile=fopen(path,"at");
-  if(gDebugFile){fprintf(gDebugFile,"\n=== !W30 3.78 diagnostic session ===\n");fflush(gDebugFile);}
+  if(gDebugFile){fprintf(gDebugFile,"\n=== !W30 3.79 diagnostic session ===\n");fflush(gDebugFile);}
 }
 
 static void debug_msg(const char *s)
@@ -824,7 +824,7 @@ static int save_launch_menu(void)
   menu_sidecar_path(tmp,".$$$");menu_sidecar_path(bak,".BAK");
   root=find_section("Launcher");if(root<0)return 0;
   remove(tmp);f=fopen(tmp,"wt");if(!f)return 0;
-  ok=fputs("; Launch! 3.772 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt|add to PATH (0/1)|W (Windows only)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 3.79 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt|add to PATH (0/1)|W (Windows only)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   if(ok)ok=write_menu_section(f,root);
   if(fclose(f)!=0)ok=0;
   if(!ok){remove(tmp);return 0;}

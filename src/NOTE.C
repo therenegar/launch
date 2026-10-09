@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: NOTE.C
  * Role: !NOTE tabbed/page text editor
  * Build/ownership: Canonical Note source; build copy is NOTEBLD.C.

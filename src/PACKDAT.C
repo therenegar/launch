@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.78
+ * MAINTAINER NOTES - Launch! 3.79
  * File: PACKDAT.C
  * Role: Installer data packer
  * Build/ownership: Builds INSTALL.DAT from compiled executables and packaged resources.
@@ -15,7 +15,7 @@ Launch! for DOS ---------------------
  * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
  * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
  */
-/* Builds the compressed Launch! 3.78 INSTALL.DAT distribution archive.
+/* Builds the compressed Launch! 3.79 INSTALL.DAT distribution archive.
    Per-file LZSS compression: 4K history window, 3..18 byte matches.
    Microsoft C/C++ 7.0 / DOS small model. */
 #include <stdio.h>

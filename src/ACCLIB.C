@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: ACCLIB.C
  * Role: Shared accessory/game UI runtime
  * Build/ownership: Linked into most accessory and game executables via ACCLIBX.C.
@@ -198,6 +198,11 @@ void acc_glyph_library(int logical_id,int code)
 }
 
 static const unsigned char launchui_codes[41]={16,17,30,31,169,170,173,174,175,181,182,183,184,185,186,187,188,189,190,198,236,200,201,202,224,204,205,234,229,208,209,210,211,212,213,235,215,255,203,244,245};
+/* Print is a two-cell icon whose left half must occupy VGA's C0h-DFh
+   line-graphics range so bit 0 is duplicated into the ninth character
+   column.  ACCLIBX selects an application-safe slot at startup; 234 is
+   retained only as the unrelocated source/default slot. */
+static int acc_print_left_code=234;
 int acc_glyph_is_custom(int code){int i;if(code==127||code==216||code==255||code==8||code==206||code==231||code==214||code==233||code==ACC_MAXIMIZE_L||code==ACC_MAXIMIZE_R)return 1;for(i=0;i<(int)sizeof(launchui_codes);i++)if((unsigned)code==(unsigned)launchui_codes[i])return 1;return 0;}
 static const unsigned char launchui_glyphs[41][32]={
   {0x00,0x00,0x00,0x00,0x30,0x38,0x3C,0x3E,0x3C,0x38,0x30,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
@@ -544,7 +549,7 @@ static int acc_button_icon(const char *text,int *a,int *b)
      into the ninth character cell so the two icon halves join cleanly. */
   if(strstr(text,"Print")){*a=215;*b=229;return 1;}
 #else
-  if(strstr(text,"Print")){*a=234;*b=229;return 1;}
+  if(strstr(text,"Print")){*a=acc_print_left_code;*b=229;return 1;}
 #endif
   if(strstr(text,"Add")||strstr(text,"New")){*a=208;*b=187;return 1;}
   if(strstr(text,"Edit")){*a=210;*b=182;return 1;}

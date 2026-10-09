@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: SYSBAR.C
  * Role: !SYSBAR modular system-bar accessory
  * Build/ownership: Discovers APPDATA\*.SBM packages, captures module stdout and composes the SysBar. /CONFIG manages installed module order.

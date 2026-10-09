@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.78
+ * MAINTAINER NOTES - Launch! 3.79
  * File: INSTALL.C
  * Role: Canonical installer source
  * Build/ownership: Authoritative installer source; GENBUILD produces INSTBLD.C.
@@ -15,7 +15,7 @@ Launch! for DOS ---------------------
  * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
  * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
  */
-/* Launch! 3.78 installer - Microsoft C/C++ 7.0, DOS small model. */
+/* Launch! 3.79 installer - Microsoft C/C++ 7.0, DOS small model. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -311,6 +311,7 @@ static void status_icon(int indent,int colour,int symbol)
   colour_text(" ",7);
 }
 static void question_icon(int indent){status_icon(indent,1,'?');}
+static void info_icon(int indent){status_icon(indent,1,'i');}
 /* Windows 3.x installer prompt mark: two CP437 lower-half blocks. */
 static void windows_icon(int indent)
 {
@@ -1122,7 +1123,7 @@ static unsigned grp_map_offset(unsigned oldoff,const unsigned *pos,const int *de
 
 /* Install the real Program Manager group supplied with Launch!.
    LAUNCH.GRP is now the clean four-icon Windows 3.1 template supplied for
-   Release 3.78.  Its visual coordinates are preserved exactly.  The item
+   Release 3.79.  Its visual coordinates are preserved exactly.  The item
    directory in a GRP file is not necessarily stored in screen order, so find
    each item by title rather than assuming fixed record positions.  We then
    normalize the logical order to DOS, Configuration, Launch! 16, Menu Manager
@@ -1349,7 +1350,7 @@ int main(int argc,char **argv)
   (void)argc;
   installer_clear_screen();
   puts("\n");
-  colour_text("Launch!",12);puts(" 3.78 Installation");
+  colour_text("Launch!",12);puts(" 3.79 Installation");
   installer_title_rule();
   puts("");
   cpu_ok=cpu_at_least_286();display_name=display_adapter(&display_ok);vga_display=!strncmp(display_name,"VGA",3);if((!cpu_ok||!display_ok)&&!hardware_warning())return 1;
@@ -1434,11 +1435,20 @@ int main(int argc,char **argv)
       error_icon(0);printf("%s does not appear to contain Windows 3.x (WIN.COM/PROGMAN.EXE not found).\n",win_path);
     }
     win_version=detect_windows_version(win_path);
+    /* Release 3.79 keeps !W30.EXE out of the first-floppy distribution while
+       Windows 3.0 support remains under development.  Do not register a
+       missing companion, WIN.INI load= entry, or Program Manager group. */
+    if(win_version<31){
+      puts("");
+      info_icon(0);puts("Windows 3.0 integration is not included in Release 3.79.");
+      puts("DOS installation will continue without Windows integration.");
+      win_inst=0;
+    }
   }
 
   installer_clear_screen();
   puts("\n");
-  colour_text("Launch!",12);puts(" 3.78 Installation");
+  colour_text("Launch!",12);puts(" 3.79 Installation");
   installer_title_rule();
   puts("\n Please wait while files are extracted and copied...");fflush(stdout);
   source_directory(argv[0],source_dir);sprintf(archive,"%sINSTALL.DAT",source_dir);

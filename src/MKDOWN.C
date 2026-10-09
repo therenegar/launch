@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: MKDOWN.C
  * Role: !MD Markdown editor and shared !MDVIEW renderer
  * Build/ownership: Standalone accessory using ACCLIB and MDFONTS.

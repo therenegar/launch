@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: CAL.C
  * Role: !CAL read-only ICS calendar
  * Build/ownership: Canonical Calendar source; build copy is CALBLD.C.

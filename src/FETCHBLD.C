@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: FETCHBLD.C
  * Role: Build copy of !DFETCH
  * Build/ownership: Derived from DFETCH.C.

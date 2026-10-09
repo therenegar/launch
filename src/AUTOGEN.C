@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: AUTOGEN.C
  * Role: Menu auto-generation utility
  * Build/ownership: Builds !MNUGEN.EXE used to create menu data.

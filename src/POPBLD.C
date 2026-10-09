@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: POP.C
  * Role: !POP game
  * Build/ownership: Canonical source; build copy is POPBLD.C.

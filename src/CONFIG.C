@@ -1,4 +1,4 @@
-/* Launch! 3.78 standalone Configuration program.
+/* Launch! 3.79 standalone Configuration program.
  *
  * CONFIG_PROGRAM selects the Configuration-only build of the canonical
  * shared implementation.  Core-only menu, File Open, Explore, SysBar,

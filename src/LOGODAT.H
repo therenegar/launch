@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: LOGODAT.H
  * Role: Launch! logo bitmap/resource data
  * Build/ownership: Consumed by Core/installer as applicable.

@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.78
+ * MAINTAINER NOTES - Launch! 3.79
  * File: CALC.C
  * Role: !CALC calculator
  * Build/ownership: Accessory calculator with optional printing.

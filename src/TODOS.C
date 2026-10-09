@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: TODOS.C
  * Role: !TODOS task/group manager
  * Build/ownership: Persistent To-Dos accessory.

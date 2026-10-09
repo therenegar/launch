@@ -1,22 +1,21 @@
 Launch! Installation
 --------------------
 
-  * Run A:\INSTALL.EXE
+* Run A:\INSTALL.EXE
   
-  * You'll be prompted for a directory to place Launch!
-  * You can select/deselect components for installation
-  * Only the necessary files will be copied and you will be prompted for all
-    changes to AUTOEXEC.BAT/FDAUTO.BAT
-  * The keyboard shortcut can be chosen
-  * Your drive can be scanned and an initial menu built.
-  * Simply reboot after install and you're ready to go.
+  - You'll be prompted for a directory to place Launch!
+  - You can select/deselect components for installation - including Windows 3.x integration.
+  - Only the necessary files will be copied.
+  - The keyboard shortcut can be chosen.
+  - An initial menu will be created including DOS Commands for your DOS version.
+    
 
+UPGRADING
+---------
 If you already have Launch! installed, choose the same directory and an upgrade
 will be performed keeping your existing configuration and menu intact.
 
-A compatible version of the shortcut key tool will be chosen and installed
-for you automatically.
 
+----
 
-More information and latest release available online at
-https://launchfordos.app
+More information and latest release available online at https://launchfordos.app

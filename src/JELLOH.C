@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.74
+ * MAINTAINER NOTES - Launch! 3.79
  * File: JELLOH.C
  * Role: !JELLOH side-view block-merging puzzle game.
  * Build/ownership: Canonical source; JELLOHBLD.C is the build copy.

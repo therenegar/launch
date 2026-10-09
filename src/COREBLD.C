@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.78
+ * MAINTAINER NOTES - Launch! 3.79
  * File: COREBLD.C
  * Role: Generated/build copy of Launch! core
  * Build/ownership: Derived from LAUNCH.C; normal BUILD compiles this file. Keep behavioral edits in LAUNCH.C and synchronize/regenerate.
@@ -15,7 +15,7 @@ Launch! for DOS ---------------------
  * Documentation note: comments describe intent and invariants; behavior remains defined by the code and Release requirements.
  * DOS constraints: code targets 16-bit DOS/MS C 7-era models. Watch DGROUP (<64K in small model), stack use, far/near pointers, BIOS/DOS reentrancy and text-mode screen restoration.
  */
-/* Launch! 3.78 - modal command menu for DOS
+/* Launch! 3.79 - modal command menu for DOS
  * Microsoft C/C++ 7.0, medium model (.EXE), 286/EGA or later.
  */
 #include <dos.h>
@@ -140,29 +140,65 @@ typedef struct {
   unsigned char windows_program;
 } NODE;
 
-#ifndef CONFIG_PROGRAM
-/* Preassembled 8086 burst-injection helper.  The final 384 bytes are its queue. */
-#define MACRO_BLOB_SIZE 563
+/* Preassembled 8086 transient burst-injection helper (LH12).
+   !KEY/!TKEY remains the preferred queue. This helper is used only when the
+   complete command cannot fit in the BIOS type-ahead buffer. Once it has
+   placed the final character into that buffer it restores INT 16h/INT 2Fh.
+   The original BIOS IRET then enters a cleanup trampoline on the caller's
+   stack, so DOS frees the helper from normal shell context, not interrupt
+   context. */
+#define MACRO_BLOB_SIZE 841
 #define MACRO_INT16_OFF 0x0000
-#define MACRO_INT2F_OFF 0x0063
-#define MACRO_SIGNATURE_OFF 0x00A3
-#define MACRO_OLD16_OFF 0x00A7
-#define MACRO_OLD2F_OFF 0x00AB
+#define MACRO_INT2F_OFF 0x011F
+#define MACRO_SIGNATURE_OFF 0x01B5
+#define MACRO_OLD16_OFF 0x01B9
+#define MACRO_OLD2F_OFF 0x01BD
+#define MACRO_STATE_OFF 0x01C1
+#define MACRO_POS_OFF 0x01C3
+#define MACRO_LEN_OFF 0x01C5
+#define MACRO_CLEANUP_SP_OFF 0x01C7
+#define MACRO_QUEUE_OFF 0x01C9
+/* Layout of the pre-3.78-TC22 LH11 helper, retained only so upgrades can
+   remove an idle old helper safely before using the new path. */
+#define MACRO11_BLOB_SIZE 563
+#define MACRO11_INT16_OFF 0x0000
+#define MACRO11_INT2F_OFF 0x0063
+#define MACRO11_SIGNATURE_OFF 0x00A3
+#define MACRO11_OLD16_OFF 0x00A7
+#define MACRO11_OLD2F_OFF 0x00AB
+#define MACRO11_POS_OFF 0x00AF
+#define MACRO11_LEN_OFF 0x00B1
 static unsigned char macro_blob[MACRO_BLOB_SIZE]={
-232,5,0,46,255,46,167,0,156,250,80,83,81,87,6,184,
-64,0,142,192,46,139,30,175,0,46,59,30,177,0,115,60,
-38,139,62,28,0,137,249,131,193,2,131,249,62,114,3,185,
-30,0,38,59,14,26,0,116,35,46,138,135,179,0,48,228,
-60,27,117,2,180,1,60,13,117,2,180,28,38,137,5,38,
-137,14,28,0,67,46,137,30,175,0,235,184,7,95,89,91,
-88,157,195,61,160,213,116,10,61,161,213,116,9,46,255,46,
-171,0,187,72,76,207,80,81,86,87,6,14,7,49,255,46,
-137,62,175,0,129,249,128,1,118,3,185,128,1,46,137,14,
-177,0,191,179,0,252,243,164,7,95,94,89,88,232,104,255,
-48,192,207,76,72,49,49
+232,13,0,46,128,62,193,1,2,116,122,46,255,46,185,1,
+156,250,80,83,81,87,6,184,64,0,142,192,46,139,30,195,
+1,46,59,30,197,1,115,60,38,139,62,28,0,137,249,131,
+193,2,131,249,62,114,3,185,30,0,38,59,14,26,0,116,
+35,46,138,135,201,1,48,228,60,27,117,2,180,1,60,13,
+117,2,180,28,38,137,5,38,137,14,28,0,67,46,137,30,
+195,1,235,184,46,139,30,195,1,46,59,30,197,1,114,14,
+46,131,62,197,1,0,116,6,46,198,6,193,1,2,7,95,
+89,91,88,157,195,85,137,229,80,83,81,82,86,87,30,6,
+250,49,192,142,192,46,161,185,1,38,163,88,0,46,161,187,
+1,38,163,90,0,46,161,189,1,38,163,188,0,46,161,191,
+1,38,163,190,0,137,232,131,192,2,131,232,71,46,163,199,
+1,137,199,137,194,131,194,6,54,137,21,140,208,54,137,69,
+2,139,70,6,54,137,69,4,137,215,14,31,140,208,142,192,
+190,116,1,185,65,0,252,243,164,137,211,140,200,54,137,135,
+16,0,137,232,131,192,8,54,137,135,58,0,139,70,2,54,
+137,135,61,0,139,70,4,54,137,135,63,0,7,31,95,94,
+90,89,91,88,93,46,139,38,199,1,46,255,46,185,1,61,
+160,213,116,15,61,161,213,116,24,61,162,213,116,9,46,255,
+46,189,1,187,72,76,207,187,72,76,49,192,46,160,193,1,
+207,80,81,86,87,6,14,7,49,255,46,137,62,195,1,46,
+198,6,193,1,1,129,249,128,1,118,3,185,128,1,46,137,
+14,197,1,191,201,1,252,243,164,7,95,94,89,88,232,159,
+254,48,192,207,156,80,83,81,82,86,87,85,30,6,251,180,
+81,205,33,184,0,0,72,142,192,38,137,30,1,0,64,142,
+192,180,73,205,33,115,12,140,192,72,142,192,38,199,6,1,
+0,8,0,7,31,93,95,94,90,89,91,88,157,188,0,0,
+234,0,0,0,0,76,72,49,50
 };
 
-#endif /* !CONFIG_PROGRAM: resident macro blob */
 
 static NODE nodes[MAX_NODES];
 static int node_count;
@@ -225,7 +261,6 @@ static int shortcut_write_target(void);
 static int sync_startup_services(void);
 static int queue_service_apply(void);
 #endif
-static int queue_shell_batch(const char *commands);
 static unsigned long dos_get_vector(unsigned char vector);
 static void dos_set_vector(unsigned char vector,unsigned seg,unsigned off);
 static int children(int parent,int *list);
@@ -2404,7 +2439,7 @@ static int write_current_config(const char *name)
 {
   FILE *f=fopen(name,"wt");int ok;
   if(!f)return 0;
-  ok=fputs("; Launch! 3.78 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt|add to PATH (0/1)|W (Windows only)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
+  ok=fputs("; Launch! 3.79 menu definition\n; ITEM=title|command and parameters|press Enter|change directory|prompt|add to PATH (0/1)|W (Windows only)\n; SEPARATOR= adds a movable horizontal separator\n\n",f)!=EOF;
   strcpy(write_path,"Launcher");
   if(ok)ok=write_section(f,-1,8);
   if(fclose(f)!=0)ok=0;
@@ -3469,7 +3504,7 @@ static const char *font_name_at(int id)
 
 
 #ifdef CONFIG_PROGRAM
-/* Configuration is a separate !CONFIG executable in 3.78.  Keeping the
+/* Configuration is a separate !CONFIG executable in 3.79.  Keeping the
    complete modal UI behind CONFIG_PROGRAM removes it from !.EXE/!86.EXE. */
 static void cycle_control(int x,int y,const char *value,int focused)
 {
@@ -3756,7 +3791,7 @@ static void prompt_value(int style,char *out)
 static int prepare_prompt_batch(int style,char *out)
 {
   /* out is the existing MAX_MACRO main buffer; no large automatic buffer is
-     allocated here.  The completed line is consumed by !APPLY.BAT. */
+     allocated here.  The completed line is returned directly to COMMAND.COM. */
   strcpy(out,"PROMPT ");
   prompt_value(style,out+7);
   if((int)strlen(out)+2>=MAX_MACRO)return 0;
@@ -3966,7 +4001,7 @@ static void config_about_box(void)
   bx=x+3;subdialog_box(x,y,w,h,"About Launch!");
   textout(x+3,y+2,"(C)Copyright 2026 Ben Renegar",C_INPUT_LABEL,34);
   textout(x+3,y+3,"www.benrenegar.com",C_INPUT_LABEL,34);
-  textout(x+3,y+6,"Version 3.78 - 2026-10-05",C_INPUT_LABEL,34);
+  textout(x+3,y+6,"Version 3.79 - 2026-10-09",C_INPUT_LABEL,34);
   for(;;){
     draw_button(bx,y+h-3,"  OK  ",6,focus==0);
     wait_input(&k,&mx,&my,&mb);
@@ -4213,7 +4248,7 @@ static int configure_appearance_wide(void)
           prompt_boot_style=prompt_style;prompt_set=1;
           /* Do not perform any file I/O or prompt expansion from this deep
              modal stack.  Return to main first; it saves LAUNCH.CFG, rewrites
-             !START.BAT and creates !APPLY.BAT after Configuration has fully
+             !START.BAT and queues parent-shell changes after Configuration has fully
              unwound. */
           prompt_macro_pending=1;
           mouse_pointer_restore();close_menu();return 2;
@@ -6642,11 +6677,6 @@ static void build_macro(int node,const char *command,char *text)
   if(node<0 || nodes[node].press_enter)macro_append(text,"\r");
 }
 
-static void far_write_long(unsigned seg,unsigned off,unsigned long value)
-{
-  unsigned long far *p=(unsigned long far *)MAKE_FP(seg,off);*p=value;
-}
-
 #endif /* !CONFIG_PROGRAM: menu UI and launcher command construction */
 
 static unsigned long dos_get_vector(unsigned char vector)
@@ -6664,6 +6694,13 @@ static void dos_set_vector(unsigned char vector,unsigned seg,unsigned off)
   segread(&s);s.ds=seg;
   r.h.ah=0x25;r.h.al=vector;r.x.dx=off;
   int86x(0x21,&r,&r,&s);
+}
+
+/* Shared by !.EXE and standalone !CONFIG: the transient command injector is
+   available to either program when !KEY/!TKEY is not resident. */
+static void far_write_long(unsigned seg,unsigned off,unsigned long value)
+{
+  unsigned long far *p=(unsigned long far *)MAKE_FP(seg,off);*p=value;
 }
 
 #define FONT_API_QUERY       0xD5C0
@@ -7030,68 +7067,155 @@ static void font_restore(void)
   if(font_is_ega())font_preview_ega(appearance.font_id);else font_preview_vga(appearance.font_id);
 }
 
-#ifndef CONFIG_PROGRAM
-static int helper_signature(unsigned seg)
+static int helper_version(unsigned seg)
 {
   unsigned char far *p=(unsigned char far *)MAKE_FP(seg,0);
   unsigned char far *m=(unsigned char far *)MAKE_FP(seg-1,0);
   unsigned owner=*(unsigned short far *)(m+1);
   unsigned size=*(unsigned short far *)(m+3);
-  return (m[0]=='M' || m[0]=='Z') && owner==8 &&
-         size>=(MACRO_BLOB_SIZE+15)/16 &&
-         p[0x00]==0xE8 && p[0x01]==0x05 && p[0x02]==0x00 &&
-         p[MACRO_SIGNATURE_OFF+0]=='L' &&
-         p[MACRO_SIGNATURE_OFF+1]=='H' &&
-         p[MACRO_SIGNATURE_OFF+2]=='1' &&
-         p[MACRO_SIGNATURE_OFF+3]=='1';
+  if((m[0]!='M' && m[0]!='Z') || owner!=8 || p[0]!=0xE8)return 0;
+  if(size>=(MACRO_BLOB_SIZE+15)/16 &&
+     p[MACRO_SIGNATURE_OFF+0]=='L' && p[MACRO_SIGNATURE_OFF+1]=='H' &&
+     p[MACRO_SIGNATURE_OFF+2]=='1' && p[MACRO_SIGNATURE_OFF+3]=='2')return 12;
+  if(size>=(MACRO11_BLOB_SIZE+15)/16 &&
+     p[MACRO11_SIGNATURE_OFF+0]=='L' && p[MACRO11_SIGNATURE_OFF+1]=='H' &&
+     p[MACRO11_SIGNATURE_OFF+2]=='1' && p[MACRO11_SIGNATURE_OFF+3]=='1')return 11;
+  return 0;
 }
 
-static unsigned find_resident_helper(void)
+static unsigned current_helper(int *version)
 {
-  unsigned seg,top;
+  unsigned long vector=dos_get_vector(0x2F);
+  unsigned seg=(unsigned)(vector>>16),off=(unsigned)vector;int v=helper_version(seg);
+  if((v==12 && off==MACRO_INT2F_OFF) || (v==11 && off==MACRO11_INT2F_OFF)){
+    if(version)*version=v;return seg;
+  }
+  if(version)*version=0;return 0;
+}
+
+static unsigned scan_resident_helper(int *version)
+{
+  unsigned seg,top;int v;
   top=(*(unsigned short far *)MAKE_FP(0x40,0x13))*64U;
   if(top<0x60 || top>0xA000)top=0xA000;
-  for(seg=0x60;seg<top;seg++)if(helper_signature(seg))return seg;
-  return 0;
+  for(seg=0x60;seg<top;seg++){
+    v=helper_version(seg);
+    if(v){if(version)*version=v;return seg;}
+  }
+  if(version)*version=0;return 0;
+}
+
+static int helper_is_idle(unsigned seg,int version)
+{
+  unsigned pos_off=version==12?MACRO_POS_OFF:MACRO11_POS_OFF;
+  unsigned len_off=version==12?MACRO_LEN_OFF:MACRO11_LEN_OFF;
+  unsigned pos=*(unsigned far *)MAKE_FP(seg,pos_off);
+  unsigned len=*(unsigned far *)MAKE_FP(seg,len_off);
+  if(version==12){
+    unsigned char state=*(unsigned char far *)MAKE_FP(seg,MACRO_STATE_OFF);
+    if(state==1 && pos<len)return 0;
+  } else if(pos<len)return 0;
+  return 1;
+}
+
+static int release_idle_helper(unsigned seg,int version)
+{
+  union REGS r;unsigned psp;unsigned long vector,oldv;
+  unsigned int16_off=version==12?MACRO_INT16_OFF:MACRO11_INT16_OFF;
+  unsigned int2f_off=version==12?MACRO_INT2F_OFF:MACRO11_INT2F_OFF;
+  unsigned old16_off=version==12?MACRO_OLD16_OFF:MACRO11_OLD16_OFF;
+  unsigned old2f_off=version==12?MACRO_OLD2F_OFF:MACRO11_OLD2F_OFF;
+  unsigned far *owner;int direct16,direct2f;
+  if(!helper_is_idle(seg,version))return 0;
+  vector=dos_get_vector(0x16);
+  direct16=((unsigned)(vector>>16)==seg && (unsigned)vector==int16_off);
+  vector=dos_get_vector(0x2F);
+  direct2f=((unsigned)(vector>>16)==seg && (unsigned)vector==int2f_off);
+  /* LH11 never detached itself. If a later TSR has chained above it, freeing
+     LH11 would leave that chain pointing at released memory, so leave it alone.
+     LH12 state 2 is different: it restored both vectors itself before the
+     post-IRET free attempt, so an unhooked leftover is safe to reclaim. */
+  if(version==11 && (!direct16 || !direct2f))return 0;
+  if(direct16){
+    oldv=*(unsigned long far *)MAKE_FP(seg,old16_off);
+    dos_set_vector(0x16,(unsigned)(oldv>>16),(unsigned)oldv);
+  }
+  if(direct2f){
+    oldv=*(unsigned long far *)MAKE_FP(seg,old2f_off);
+    dos_set_vector(0x2F,(unsigned)(oldv>>16),(unsigned)oldv);
+  }
+  memset(&r,0,sizeof(r));r.h.ah=0x51;int86(0x21,&r,&r);psp=r.x.bx;
+  owner=(unsigned far *)MAKE_FP(seg-1,1);*owner=psp;
+  if(_dos_freemem(seg)==0)return 1;
+  *owner=8;return 0;
+}
+
+static void cleanup_idle_helpers(void)
+{
+  unsigned seg;int version;
+  seg=current_helper(&version);
+  if(seg && helper_is_idle(seg,version))release_idle_helper(seg,version);
+}
+
+static int cleanup_orphan_helper(void)
+{
+  unsigned seg;int version;
+  seg=scan_resident_helper(&version);
+  if(!seg || !helper_is_idle(seg,version))return 0;
+  return release_idle_helper(seg,version);
+}
+
+static int bios_try_queue_text(const char *text,unsigned len)
+{
+  unsigned short far *head=(unsigned short far *)MAKE_FP(0x40,0x1A);
+  unsigned short far *tail=(unsigned short far *)MAKE_FP(0x40,0x1C);
+  unsigned pos,next,i,word;
+  if(!len)return 1;
+  _disable();
+  pos=*tail;next=pos;
+  for(i=0;i<len;i++){
+    next+=2;if(next>=0x3E)next=0x1E;
+    if(next==*head){_enable();return 0;}
+  }
+  pos=*tail;
+  for(i=0;i<len;i++){
+    unsigned char ch=(unsigned char)text[i],scan=0;
+    next=pos+2;if(next>=0x3E)next=0x1E;
+    if(ch==0x1B)scan=0x01;else if(ch==0x0D)scan=0x1C;
+    word=((unsigned)scan<<8)|ch;
+    *(unsigned short far *)MAKE_FP(0x40,pos)=word;
+    pos=next;
+  }
+  *tail=pos;
+  _enable();return 1;
 }
 
 static int macro_helper(void)
 {
-  union REGS r;unsigned seg,paragraphs,vector_seg,vector_off;
-  unsigned int16_seg,int16_off,old_strategy;int detected,direct,alloc_error;
-  struct SREGS s;
-  unsigned long old16,old2f;
-  r.x.ax=0xD5A0;r.x.bx=0;int86(0x2F,&r,&r);
-  detected=r.x.bx==0x4C48;
-  old2f=dos_get_vector(0x2F);
-  vector_seg=(unsigned)(old2f>>16);vector_off=(unsigned)old2f;
-  direct=vector_off==MACRO_INT2F_OFF && helper_signature(vector_seg);
-  seg=direct?vector_seg:find_resident_helper();
-  if(seg){
-    old16=dos_get_vector(0x16);
-    int16_seg=(unsigned)(old16>>16);int16_off=(unsigned)old16;
-    if(int16_seg!=seg || int16_off!=MACRO_INT16_OFF){
-      far_write_long(seg,MACRO_OLD16_OFF,old16);
-      dos_set_vector(0x16,seg,MACRO_INT16_OFF);
-    }
-    if(!direct && !detected){
-      far_write_long(seg,MACRO_OLD2F_OFF,old2f);
-      dos_set_vector(0x2F,seg,MACRO_INT2F_OFF);
-    }
-    return 1;
-  }
-  if(detected)return 1;
+  union REGS r;unsigned seg,paragraphs;int alloc_error,version;
+  struct SREGS s;unsigned long old16,old2f;
+  cleanup_idle_helpers();
+  seg=current_helper(&version);
+  if(seg)return 1;
+  /* A later TSR may legitimately chain above an old LH11. Its multiplex API
+     remains usable even though we cannot safely unlink it from the middle of
+     that chain. Reuse it rather than installing a second feeder. */
+  memset(&r,0,sizeof(r));r.x.ax=0xD5A0;int86(0x2F,&r,&r);
+  if(r.x.bx==0x4C48)return 1;
   paragraphs=(MACRO_BLOB_SIZE+15)/16;
-  r.x.ax=0x5800;int86(0x21,&r,&r);old_strategy=r.x.ax;
-  if(old_strategy<=2){r.x.ax=0x5801;r.x.bx=2;int86(0x21,&r,&r);}
   alloc_error=_dos_allocmem(paragraphs,&seg);
-  if(old_strategy<=2){r.x.ax=0x5801;r.x.bx=old_strategy;int86(0x21,&r,&r);}
-  if(alloc_error!=0)return 0;
+  if(alloc_error!=0){
+    /* An LH12 whose post-IRET free failed is unhooked and normally invisible.
+       Only pay for the conventional-memory scan on allocation failure. */
+    if(!cleanup_orphan_helper())return 0;
+    alloc_error=_dos_allocmem(paragraphs,&seg);
+    if(alloc_error!=0)return 0;
+  }
   segread(&s);movedata(s.ds,(unsigned)macro_blob,seg,0,MACRO_BLOB_SIZE);
-  old16=dos_get_vector(0x16);
+  old16=dos_get_vector(0x16);old2f=dos_get_vector(0x2F);
   far_write_long(seg,MACRO_OLD16_OFF,old16);
   far_write_long(seg,MACRO_OLD2F_OFF,old2f);
-  *(unsigned far *)MAKE_FP(seg-1,1)=8; /* DOS-owned: survive !.EXE */
+  *(unsigned far *)MAKE_FP(seg-1,1)=8; /* survive only until LH12 self-release */
   dos_set_vector(0x16,seg,MACRO_INT16_OFF);
   dos_set_vector(0x2F,seg,MACRO_INT2F_OFF);
   return 1;
@@ -7100,19 +7224,36 @@ static int macro_helper(void)
 static int queue_macro(const char *text)
 {
   union REGS r;struct SREGS s;
-  r.x.ax=0xD5B3;r.x.bx=0;int86(0x2F,&r,&r);
+  unsigned len=(unsigned)strlen(text);
+  if(len>MAX_MACRO)len=MAX_MACRO;
+
+  /* First choice: the permanent shortcut TSR already owns a 384-byte queue. */
+  memset(&r,0,sizeof(r));r.x.ax=0xD5B3;int86(0x2F,&r,&r);
   if(r.x.bx==0x4D51 && r.x.cx>=MAX_MACRO){
-    segread(&s);r.x.ax=0xD5B2;r.x.si=(unsigned)text;
-    r.x.cx=(unsigned)strlen(text);
+    segread(&s);memset(&r,0,sizeof(r));r.x.ax=0xD5B2;r.x.si=(unsigned)text;r.x.cx=len;
     int86x(0x2F,&r,&r,&s);return r.h.al==0;
   }
-  /* TC02 deliberately never installs the detached LH11 injector.  Callers
-     without !KEY resident use the parent-shell !APPLY.BAT path instead. */
-  return 0;
+
+  /* Remove an idle LH11 left by an older build, or a rare LH12 whose final
+     DOS free failed.  This runs in normal process context, never in INT 16h. */
+  cleanup_idle_helpers();
+
+  /* Most short commands need no resident code at all.  If the complete text
+     fits in the currently free BIOS type-ahead slots, append it atomically and
+     return.  COMMAND.COM will consume it after Launch! exits. */
+  if(bios_try_queue_text(text,len))return 1;
+
+  /* Longer commands use the transient LH12 feeder. It unhooks itself as soon
+     as every byte has reached the BIOS buffer. The original INT 16h IRET then
+     lands in a stack trampoline which frees LH12 from normal shell context. */
+  if(!macro_helper())return 0;
+  memset(&r,0,sizeof(r));r.x.ax=0xD5A0;int86(0x2F,&r,&r);
+  if(r.x.bx!=0x4C48)return 0;
+  segread(&s);memset(&r,0,sizeof(r));r.x.ax=0xD5A1;r.x.si=(unsigned)text;r.x.cx=len;
+  int86x(0x2F,&r,&r,&s);return r.h.al==0;
 }
 
 #pragma code_seg("SHORTCUT_TEXT")
-#endif /* !CONFIG_PROGRAM: resident command macro helper */
 
 static unsigned char far *setkey_bios_byte(unsigned offset)
 {
@@ -7614,52 +7755,17 @@ static int sync_startup_services(void)
   if(open_menu_at_boot)if(fprintf(f,"%s\\!.EXE\n",dir)<0){fclose(f);return 0;}
   return fclose(f)==0;
 }
-#endif /* CONFIG_PROGRAM */
 
-/* Used by both the menu and !CONFIG.  The core still needs this helper to
-   hand !APPLY.BAT back to COMMAND.COM after launching menu items, SysBar
-   commands, or !CONFIG itself. */
-static int queue_bios_short_text(const char *text)
-{
-  unsigned short far *head=(unsigned short far *)MAKE_FP(0x40,0x1A);
-  unsigned short far *tail=(unsigned short far *)MAKE_FP(0x40,0x1C);
-  unsigned short far *buf;unsigned h,t,next,need=0,i;const char *p;
-  for(p=text;*p;p++)need++;
-  h=*head;t=*tail;next=t;
-  for(i=0;i<need;i++){next+=2;if(next>=0x3E)next=0x1E;if(next==h)return 0;}
-  _disable();t=*tail;
-  for(p=text;*p;p++){
-    unsigned short word=(unsigned char)*p;if(*p=='\r')word|=0x1C00;
-    buf=(unsigned short far *)MAKE_FP(0x40,t);*buf=word;t+=2;if(t>=0x3E)t=0x1E;
-  }
-  *tail=(unsigned short)t;_enable();return 1;
-}
-
-#ifdef CONFIG_PROGRAM
 static int queue_service_apply(void)
 {
   static char commands[MAX_MACRO];commands[0]=0;
   if(fonts_installed&&font_activation_pending)strcat(commands,"!FONT.COM\r");
   if(shortcut_component_installed&&shortcut_activation_pending){strcat(commands,shortcut_target_light?"!TKEY.COM":"!KEY.COM");strcat(commands," /KEY=");if(shortcut_ctrl)strcat(commands,"CTRL+");if(shortcut_alt)strcat(commands,"ALT+");if(shortcut_shift)strcat(commands,"SHIFT+");strcat(commands,shortcut_key_cfg);strcat(commands,"\r");}
   if(!commands[0])return 1;
-  return queue_shell_batch(commands);
+  return queue_macro(commands);
 }
 #endif /* CONFIG_PROGRAM */
 
-static int queue_shell_batch(const char *commands)
-{
-  static char path[MAX_CMD];const char *p;FILE *f;int last_cr=0;
-  strcpy(path,program_dir);strcat(path,"!APPLY.BAT");remove(path);f=fopen(path,"wt");if(!f)return 0;
-  if(fputs("@ECHO OFF\n",f)==EOF){fclose(f);return 0;}
-  for(p=commands;*p;p++){if(*p=='\r'){if(fputc('\n',f)==EOF){fclose(f);return 0;}last_cr=1;}else{if(fputc(*p,f)==EOF){fclose(f);return 0;}last_cr=0;}}
-  if(!last_cr)if(fputc('\n',f)==EOF){fclose(f);return 0;}
-  /* Do not delete a batch file while COMMAND.COM is still executing it.
-     Classic DOS reopens the file between lines and reports "Batch file
-     missing" if the batch removes itself.  The next !CONFIG run
-     safely removes the stale transient before rewriting it. */
-  if(fclose(f)!=0)return 0;
-  return queue_bios_short_text("!APPLY\r");
-}
 
 #pragma code_seg()
 
@@ -7667,13 +7773,13 @@ static int queue_shell_batch(const char *commands)
 static void show_help(void)
 {
 #ifdef LIGHT86
-  puts("Launch! 86 Light 3.78 - lightweight command menu for DOS\n");
+  puts("Launch! 86 Light 3.79 - lightweight command menu for DOS\n");
   puts("Usage: !86 [menu.mnu] [/OPENTO=folder | /?]\n");
   puts("Menu management: Ctrl+A Add, Ctrl+D Delete, Ctrl+E Edit, Ctrl+Up/Down Move, Ctrl+S Sort");
   puts("Configuration: run !CONFIG");
 #else
 
-  puts("Launch! 3.78 - a lightweight command menu for DOS\n");
+  puts("Launch! 3.79 - a lightweight command menu for DOS\n");
   puts("Usage: ! [menu.mnu] [/CONFIG | /EXPLORE | /OPEN | /BYE | /NOW | /OPENTO=folder | /?]\n");
   puts("Menu management shortcuts:");
   puts("  Ctrl+A        Add a folder, launcher or separator");
@@ -7723,16 +7829,11 @@ static int run_windows_batch(const char *commands)
 
 static int dispatch_command_text(const char *text)
 {
-  union REGS r;
   if(windows_session)return run_windows_batch(text);
-  /* Reuse !KEY's resident queue when it already exists.  If the shortcut TSR
-     is absent, do not allocate the old LH11 resident injector: that tiny TSR
-     can sit above the free arena and is enough for Windows 3.0 to report
-     fragmented conventional memory.  A short BIOS-buffer command starts a
-     temporary batch only after Launch! has returned to COMMAND.COM. */
-  memset(&r,0,sizeof(r));r.x.ax=0xD5B3;int86(0x2F,&r,&r);
-  if(r.x.bx==0x4D51 && r.x.cx>=MAX_MACRO)return queue_macro(text);
-  return queue_shell_batch(text);
+  /* DOS launchers return the exact command text to the parent command shell.
+     This is fundamental to Launch!: the user sees the real command and, when
+     "Provide Enter" is disabled, it remains at the prompt for editing. */
+  return queue_macro(text);
 }
 
 #endif /* !CONFIG_PROGRAM: launcher dispatch */
@@ -7743,11 +7844,12 @@ int main(int argc,char **argv)
   int i,result,display_mode=0;
   static char macro[MAX_MACRO];
   config_path(argv[0]);
+  /* Upgrade cleanup only: 3.77/early-3.78 builds created !APPLY.BAT. */
   {char stale_apply[MAX_CMD];strcpy(stale_apply,program_dir);strcat(stale_apply,"!APPLY.BAT");remove(stale_apply);}
   windows_session=running_under_windows();if(windows_session)no_glyph_mode=1;
   for(i=1;i<argc;i++){
     if(!stricmp(argv[i],"/?")||!stricmp(argv[i],"-?")){
-      puts("Launch! Configuration 3.78\n");
+      puts("Launch! Configuration 3.79\n");
       puts("Usage: !CONFIG [/DISPLAY | /?]\n");
       puts("  /DISPLAY      Apply saved screen columns and font, then return to DOS");
       return 0;
@@ -7772,7 +7874,7 @@ int main(int argc,char **argv)
     if(!save_appearance()){puts("!CONFIG: prompt configuration could not be saved.");return 1;}
     if(!sync_startup_services()){puts("!CONFIG: DOS startup services could not be updated.");return 1;}
     if(!prepare_prompt_batch(prompt_boot_style,macro)){puts("!CONFIG: selected prompt is too long.");return 1;}
-    if(!queue_shell_batch(macro)){puts("!CONFIG: cannot queue prompt application");return 1;}
+    if(!queue_macro(macro)){puts("!CONFIG: cannot queue prompt application");return 1;}
     prompt_macro_pending=0;
   }
   return 0;
@@ -7788,6 +7890,7 @@ int main(int argc,char **argv)
   static char macro[MAX_MACRO],open_to[MAX_TITLE];
   config_path(argv[0]);
 #ifndef LIGHT86
+  /* Upgrade cleanup only: 3.77/early-3.78 builds created !APPLY.BAT. */
   {char stale_apply[MAX_CMD];strcpy(stale_apply,program_dir);strcat(stale_apply,"!APPLY.BAT");remove(stale_apply);}
 #endif
   windows_session=running_under_windows();

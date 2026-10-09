@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: SAVERS.C
  * Role: Core screensaver implementations
  * Build/ownership: Linked with Core.

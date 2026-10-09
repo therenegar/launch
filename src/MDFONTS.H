@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: MDFONTS.H
  * Role: !MD / !MDVIEW graphical font interface
  * Build/ownership: Consumed by MKDOWN.C.

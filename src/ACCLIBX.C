@@ -7,7 +7,7 @@
 Launch! for DOS ---------------------
 */
 /*
- * MAINTAINER NOTES - Launch! 3.73
+ * MAINTAINER NOTES - Launch! 3.79
  * File: ACCLIBX.C
  * Role: Build wrapper for shared accessory runtime
  * Build/ownership: Normally includes/builds ACCLIB.C for component builds.
@@ -86,6 +86,34 @@ static void (*acc_idle_hook)(void)=0;
 static unsigned char maximize_old[2][32];static int maximize_saved=0;
 static unsigned char export_old[2][32];static int export_saved=0;
 static char acc_app[20];
+static int acc_app_is(const char *name);
+/* Keep the Print icon seam-free without stealing a glyph used elsewhere in
+   the same accessory.  D7h (215) is safe for the normal accessory Print toolbars; JOURNAL
+   deliberately uses D7h in its ruled editor, so it uses D4h (212) instead.
+   Both are inside VGA's ninth-column-extension range and both are already
+   owned/restored by the Launch! UI font layer. */
+static int acc_app_has_print_icon(void)
+{
+  return acc_app_is("!CAL.")||acc_app_is("!NOTE.")||acc_app_is("!MD.")||
+         acc_app_is("!MDVIEW.")||acc_app_is("!DRAW.")||acc_app_is("!TODOS.")||
+         acc_app_is("!DFETCH.")||acc_app_is("!JOURNAL.");
+}
+static void print_icon_select(void)
+{
+#ifndef ACCLIB_MIN_GLYPHS
+  if(acc_app_is("!JOURNAL."))acc_print_left_code=212;
+  else if(acc_app_has_print_icon())acc_print_left_code=215;
+  else acc_print_left_code=234;
+#endif
+}
+int acc_print_left_glyph(void)
+{
+#ifdef ACCLIB_MIN_GLYPHS
+  return 215;
+#else
+  return acc_print_left_code;
+#endif
+}
 void acc_set_idle_hook(void (*fn)(void)){acc_idle_hook=fn;}
 static int acc_app_is(const char *name){return strstr(acc_app,name)!=0;}
 static void maximize_install(void){
@@ -120,6 +148,10 @@ static void glyph36_refresh(void)
   if(!export_saved){acc_glyph_read(207,export_old[0]);acc_glyph_read(227,export_old[1]);export_saved=1;}
   acc_glyph_write(207,acc_font_height()==14?export_icon_a14:export_icon_a16);
   acc_glyph_write(227,acc_font_height()==14?export_icon_b14:export_icon_b16);
+  /* Relocate the Print left half only for accessories that actually show it.
+     The source artwork remains launchui glyph 28 (array index 27). */
+  if(acc_print_left_code!=234)
+    acc_glyph_write(acc_print_left_code,acc_font_height()==14?launchui_glyphs14[27]:launchui_glyphs[27]);
   return;
 #else
   /* !STACK omits the full glyph table to preserve DGROUP.  Refresh the
@@ -207,7 +239,7 @@ void acc_input_bounds(int x,int y,int w,int h)
 
 int acc_begin(const char *argv0,const char *title,int graphics)
 {
-  int ok;const char *p=argv0,*q;if((q=strrchr(argv0,'\\'))!=0)p=q+1;if((q=strrchr(p,'/'))!=0)p=q+1;strncpy(acc_app,p,sizeof(acc_app)-1);acc_app[sizeof(acc_app)-1]=0;strupr(acc_app);
+  int ok;const char *p=argv0,*q;if((q=strrchr(argv0,'\\'))!=0)p=q+1;if((q=strrchr(p,'/'))!=0)p=q+1;strncpy(acc_app,p,sizeof(acc_app)-1);acc_app[sizeof(acc_app)-1]=0;strupr(acc_app);print_icon_select();
   ok=acc36_begin_base(argv0,title,graphics);if(ok){glyph36_refresh();maximize_install();game_digits_saved=0;game_digits_installed=0;game_digits_install();acc_hover_button=-1;acc_hover_valid=0;acc_dialog_x=acc_dialog_y=-1;acc_dialog_w=acc_dialog_h=0;acc_focus_suppressed=0;acc_modal_depth=0;acc_subbox_active=0;}return ok;
 }
 
