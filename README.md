@@ -3,6 +3,8 @@
 
 > A free lightweight command launcher for any DOS, with huge features to improve the usability of the command prompt -- plus accessories and games, to create a retro yet modern desktop environment.
 
+<img width="32" height="32" alt="CITY" src="https://github.com/user-attachments/assets/d2e02c67-71ef-406b-b4c0-9357dfbe9d21" />&nbsp;&nbsp;<img width="32" height="32" alt="MONSTER" src="https://github.com/user-attachments/assets/fa908b17-6d31-4a0c-8e55-1f5c8d8c5533" />&nbsp;&nbsp;<img width="32" height="32" alt="PC" src="https://github.com/user-attachments/assets/c08d67bc-a4ce-49e3-ab21-f0fdbc075e35" />&nbsp;&nbsp;<img width="32" height="32" alt="ART" src="https://github.com/user-attachments/assets/7b46327d-25e6-4bc0-b615-3558350753f3" />&nbsp;&nbsp;<img width="32" height="32" alt="journal" src="https://github.com/user-attachments/assets/20e8f8ec-5d7f-41a2-a90a-36d3a01e9912" />&nbsp;&nbsp;<img width="32" height="32" alt="paper" src="https://github.com/user-attachments/assets/4084d17e-71ef-4537-97f2-6469b45c9914" />&nbsp;&nbsp;<img width="32" height="32" alt="rocket" src="https://github.com/user-attachments/assets/ee52799d-8f14-405d-9e4a-e733b2c5e73e" />
+
 ----
 
 <img height="75" alt="Go get it!" src="https://github.com/user-attachments/assets/deef3126-a840-4c73-bf86-51d12d398ec1" />
