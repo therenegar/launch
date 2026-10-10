@@ -82,7 +82,7 @@ static void view(int x,int y,int cx,int cy,int top){int r;char b[64];static char
  /* The notebook paper continues behind the fixed date and ruled line. */
  acc_fill(x,y,NW+1,NV+2,' ',ACC_CONTROL);if(!journal_fullscreen)acc_fill(x+NW+1,y,1,NV+2,' ',ACC_BG);
  acc_put(x,y,196,ACC_CONTROL);acc_put(x+1,y,9,ACC_CONTROL);acc_put(x,y+1,196,ACC_CONTROL);acc_put(x+1,y+1,9,ACC_CONTROL);
- acc_text(x+4,y,b,ACC_CONTROL,(int)strlen(b));for(r=journal_fullscreen?0:4;r<(journal_fullscreen?acc_cols:NW);r++)acc_put(x+r,y+1,215,ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title));for(r=0;r<NV;r++)jrow(x,y,top+r,top);if(journal_editor_focus&&cy>=top&&cy<top+NV){acc_caret_set(x+cx,y+2+cy-top);}else acc_caret_hide();jscroll(x,y,top);}
+ acc_text(x+4,y,b,ACC_CONTROL,(int)strlen(b));for(r=4;r<(journal_fullscreen?acc_cols:NW);r++)acc_put(x+r,y+1,215,ACC_ATTR(acc_appearance.controls_bg,acc_appearance.main_title));for(r=0;r<NV;r++)jrow(x,y,top+r,top);if(journal_editor_focus&&cy>=top&&cy<top+NV){acc_caret_set(x+cx,y+2+cy-top);}else acc_caret_hide();jscroll(x,y,top);}
 static int calpick(void)
 {
  static char *mn[]={"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};

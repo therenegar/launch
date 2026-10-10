@@ -88,9 +88,9 @@ static void cell_draw(int x,int y,int vx,int vy,int cx,int cy,int focus,int ox,i
     int bot=(px<CW&&py1>=0&&py1<CH)?PIXEL_AT(px,py1):0;
     int active=(focus==0&&px==cx&&(cy==py0||cy==py1));
     if(active){
-      if(cy==py0)acc_put(x+vx,y+vy,223,ACC_ATTR(selected,bot));
-      else acc_put(x+vx,y+vy,220,ACC_ATTR(selected,top));
-    }else acc_put(x+vx,y+vy,220,ACC_ATTR(bot,top));
+      if(cy==py0)acc_put(x+vx,y+vy,223,ACC_ATTR(bot,selected));
+      else acc_put(x+vx,y+vy,220,ACC_ATTR(top,selected));
+    }else acc_put(x+vx,y+vy,220,ACC_ATTR(top,bot));
   }else{
     int c=PIXEL_AT(ox+vx,oy+vy),attr=ACC_ATTR(c,7),l=grid_on?185:' ',r=grid_on?186:' ';
     int active=(focus==0&&ox+vx==cx&&oy+vy==cy);
