@@ -9,8 +9,6 @@
 
 <img height="75" alt="Go get it!" src="https://github.com/user-attachments/assets/deef3126-a840-4c73-bf86-51d12d398ec1" />
 
-`Version 3.79`
-
 **Download the latest release [here](https://github.com/therenegar/launch/releases/latest)**
 
 **Requires** any real-mode DOS - DOS 3.3+, 80286+, EGA/VGA compatible display adapter. 220KB-1.5MB free disk space for install (depending on selected options).
