@@ -56,11 +56,11 @@ static void draw_sysbar(void)
   sprintf(country,"%u-%s",sysbar_country,sysbar_country==61?"AUS":sysbar_country==1?"USA":sysbar_country==44?"GBR":"INT");
   for(i=0;i<6;i++)sysbar_w[i]=0;
   sprintf(s,"  MEM %uK \263 ENV %uK \263 %s",mem,env,disk);
-  if(screen_cols!=40){strcat(s," \263 CL NL SL \263 MOUSE ");strcat(s,vname);strcat(s," NET \263 ");strcat(s,country);strcat(s,"  ");}
+  if(screen_cols!=40){strcat(s," \263 NL CL SL \263 MOUSE ");strcat(s,vname);strcat(s," NET \263 ");strcat(s,country);strcat(s,"  ");}
   w=strlen(s);x=screen_cols>w?screen_cols-w:0;y=0;textout(x,y,s,base,screen_cols-x);
   p=strstr(s," \263 ");sysbar_region(0,x+2,0,p?(int)(p-s)-2:8);
   p=strstr(s,disk);if(p)sysbar_region(1,x+(int)(p-s),0,strlen(disk));
-  if(screen_cols==40){sprintf(s,"CL NL SL \263 MOUSE %s NET \263 %s  ",vname,country);w=strlen(s);x=screen_cols>w?screen_cols-w:0;y=1;textout(x,y,s,base,screen_cols-x);}
+  if(screen_cols==40){sprintf(s,"NL CL SL \263 MOUSE %s NET \263 %s  ",vname,country);w=strlen(s);x=screen_cols>w?screen_cols-w:0;y=1;textout(x,y,s,base,screen_cols-x);}
   p=strstr(s,"CL");if(p){sysbar_region(2,x+(int)(p-s),y,2);textout(sysbar_x[2],y,"CL",locks&0x40?active:dim,2);}
   p=strstr(s,"NL");if(p){sysbar_region(3,x+(int)(p-s),y,2);textout(sysbar_x[3],y,"NL",locks&0x20?active:dim,2);}
   p=strstr(s,"SL");if(p){sysbar_region(4,x+(int)(p-s),y,2);textout(sysbar_x[4],y,"SL",locks&0x10?active:dim,2);}

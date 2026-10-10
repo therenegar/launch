@@ -465,16 +465,26 @@ static void acc_load_config(void)
 
 void acc_put(int x,int y,int ch,int attr)
 {
-  unsigned short far *cell;unsigned short value;
+  unsigned short far *cell;unsigned short value;union REGS r;int cursor_cell=0;
   if(x<0||x>=acc_cols||y<0||y>=acc_rows)return;
+  /* A text-mode mouse driver saves the character cell underneath its cursor.
+     If we repaint that same cell while the cursor is visible, a later Hide
+     restores the driver's stale saved character over our new UI.  This was
+     the suite-wide source of stray button/popup glyphs.  Only hide the mouse
+     for the one cell actually underneath it; all other direct VRAM writes
+     remain zero-overhead. */
+  if(acc_mouse_present&&mouse_visible){
+    int mc=(int)(mouse_raw_x/(acc_cols==40?16:8)),mr=(int)(mouse_raw_y/8);
+    if(x==mc&&y==mr){memset(&r,0,sizeof(r));r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;cursor_cell=1;}
+  }
   /* Accessories redraw many logically unchanged cells while dispatching input.
      Writing those cells through INT 10h made fast DOSBox/VM displays visibly
      flash.  Write text memory directly and, critically, do nothing when the
-     requested cell is already correct.  This preserves the incremental UI on
-     real hardware while eliminating redundant redraw traffic globally. */
+     requested cell is already correct. */
   cell=(unsigned short far *)MAKE_FP(saved_video_segment,((y*acc_cols+x)*2));
   value=(unsigned short)(((unsigned short)(attr&255)<<8)|(unsigned char)ch);
   if(*cell!=value)*cell=value;
+  if(cursor_cell){memset(&r,0,sizeof(r));r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;}
 }
 void acc_text(int x,int y,const char *s,int attr,int width)
 {int i,ended=0;for(i=0;i<width;i++){if(!s||(!ended&&!s[i]))ended=1;acc_put(x+i,y,ended?' ':s[i],attr);}}
@@ -564,8 +574,12 @@ void acc_button(int x,int y,const char *text,int selected)
 void acc_button_disabled(int x,int y,const char *text){acc_button_draw_state(x,y,text,0,0);}
 void acc_press_button(int x,int y,const char *text)
 {
-  union REGS r;int i,w=(int)strlen(text),mx,my,a=0,b=0,icon=acc_button_icon(text,&a,&b),left;
+  union REGS r;int i,w=(int)strlen(text),mx,my,a=0,b=0,icon=acc_button_icon(text,&a,&b),left,restore_mouse=0;
   if(icon==2)w=9;else if(icon)w=(b<0)?5:6;
+  /* Paint the complete pressed state with the text-mode pointer hidden.
+     Otherwise the mouse driver can cache one of the old button cells and
+     restore it later as a stray glyph. */
+  if(acc_mouse_present&&mouse_visible){memset(&r,0,sizeof(r));r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;restore_mouse=1;}
   /* Pressed state has no drop shadow.  Keep the focus end glyphs so the
      button remains visibly selected while the mouse button is held. */
   for(i=0;i<=w;i++){acc_put(x+i,y,' ',ACC_BG);acc_put(x+i,y+1,' ',ACC_BG);}
@@ -574,12 +588,8 @@ void acc_press_button(int x,int y,const char *text)
   else if(icon){left=x+(b<0?2:(w-2)/2);acc_put(left,y,a,ACC_CONTROL);if(b>=0)acc_put(left+1,y,b,ACC_CONTROL);}
   else acc_text(x,y,text,ACC_CONTROL,w);
   {int fa=ACC_ATTR(acc_appearance.controls_bg,acc_appearance.controls_fg);acc_put(x,y,169,fa);acc_put(x+w-1,y,170,fa);}
-  /* acc_wait() owns mouse visibility.  Do not issue nested INT 33h
-     Show/Hide calls here: doing so unbalances the driver's visibility
-     counter when a toolbar button is clicked and can leave the pointer
-     permanently hidden after the press.  The pointer is already visible
-     while acc_wait() is dispatching the button press. */
-  if(acc_mouse_present){do{r.x.ax=3;int86(0x33,&r,&r);mx=r.x.cx/8;my=r.x.dx/8;(void)mx;(void)my;}while(r.x.bx&1);}
+  if(acc_mouse_present&&restore_mouse){memset(&r,0,sizeof(r));r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;}
+  if(acc_mouse_present){do{r.x.ax=3;int86(0x33,&r,&r);mx=r.x.cx/(acc_cols==40?16:8);my=r.x.dx/8;(void)mx;(void)my;}while(r.x.bx&1);}
 }
 void acc_scrollbar(int x,int top,int height,int position,int total,int page){int i,track=height-2,thumb=top+1;if(total>page&&track>1)thumb=top+1+position*(track-1)/(total-page);acc_put(x,top,30,ACC_CONTROL);for(i=1;i<height-1;i++)acc_put(x,top+i,i+top==thumb?219:177,ACC_CONTROL);acc_put(x,top+height-1,31,ACC_CONTROL);}
 void acc_shadow(int x,int y,int w,int h){int i,j;unsigned short v;for(j=1;j<h;j++){v=*(unsigned short far *)MAKE_FP(saved_video_segment,((y+j)*acc_cols+x+w)*2);acc_put(x+w,y+j,219,(v>>8)&0xF0);}for(i=1;i<=w;i++){v=*(unsigned short far *)MAKE_FP(saved_video_segment,((y+h)*acc_cols+x+i)*2);acc_put(x+i,y+h,223,(v>>8)&0xF0);}}
@@ -706,8 +716,14 @@ int acc_begin(const char *argv0,const char *title,int graphics)
   saved_cursor_y=r.h.dh;saved_cursor_x=r.h.dl;
   r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);
   launchui_font(1);
-  r.x.ax=0;int86(0x33,&r,&r);acc_mouse_present=r.x.ax!=0;
-  if(acc_mouse_present){r.x.ax=4;r.x.cx=1;r.x.dx=1;int86(0x33,&r,&r);mouse_pointer_install();r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;r.x.ax=3;int86(0x33,&r,&r);mouse_last_buttons=r.x.bx;mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;}
+  r.x.ax=0;int86(0x33,&r,&r);acc_mouse_present=r.x.ax!=0;mouse_visible=0;
+  if(acc_mouse_present){
+    r.x.ax=4;r.x.cx=1;r.x.dx=1;int86(0x33,&r,&r);
+    mouse_pointer_install();
+    /* Keep the pointer hidden while the application paints its first frame.
+       Input wait/poll functions show it only once drawing is complete. */
+    r.x.ax=3;int86(0x33,&r,&r);mouse_last_buttons=r.x.bx;mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;
+  }
   return 1;
 }
 
@@ -732,7 +748,7 @@ void acc_restore_screen(void)
   /* A video mode set restores VGA/EGA attribute bit 7 to blink.  Launch! uses
      it as the bright-background bit, so explicitly select intensity again. */
   memset(&r,0,sizeof(r));r.x.ax=0x1003;r.x.bx=0;int86(0x10,&r,&r);
-  launchui_installed=0;launchui_font(1);for(i=0;i<acc_cols*acc_rows;i++)*(unsigned short far *)(((unsigned long)saved_video_segment<<16)|(i*2))=saved_screen[i];r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);if(acc_mouse_present){r.x.ax=0;int86(0x33,&r,&r);mouse_pointer_install();}
+  launchui_installed=0;launchui_font(1);for(i=0;i<acc_cols*acc_rows;i++)*(unsigned short far *)(((unsigned long)saved_video_segment<<16)|(i*2))=saved_screen[i];r.h.ah=1;r.h.ch=0x20;r.h.cl=0;int86(0x10,&r,&r);if(acc_mouse_present){r.x.ax=0;int86(0x33,&r,&r);mouse_visible=0;mouse_pointer_install();r.x.ax=3;int86(0x33,&r,&r);mouse_last_buttons=r.x.bx;mouse_raw_x=r.x.cx;mouse_raw_y=r.x.dx;}
 }
 
 void acc_end_screen(void)

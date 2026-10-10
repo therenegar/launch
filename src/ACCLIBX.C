@@ -80,6 +80,11 @@ static int acc_focus_suppressed=0;
 static int acc_hover_button=-1,acc_hover_x=-1,acc_hover_y=-1,acc_hover_valid=0;
 static int acc_modal_depth=0;
 static int acc_subbox_active=0;
+/* Direct-poll applications may reveal the pointer on their first mouse poll,
+   but an explicit Hide must remain in force until the caller explicitly
+   shows it again.  !DRAW relies on this while painting a drag stroke so both
+   halves of each 2-character cell appear atomically. */
+static int acc_mouse_autoshow_pending=0;
 static void glyph36_refresh(void);
 static void game_digits_refresh(void);
 static void (*acc_idle_hook)(void)=0;
@@ -240,7 +245,7 @@ void acc_input_bounds(int x,int y,int w,int h)
 int acc_begin(const char *argv0,const char *title,int graphics)
 {
   int ok;const char *p=argv0,*q;if((q=strrchr(argv0,'\\'))!=0)p=q+1;if((q=strrchr(p,'/'))!=0)p=q+1;strncpy(acc_app,p,sizeof(acc_app)-1);acc_app[sizeof(acc_app)-1]=0;strupr(acc_app);print_icon_select();
-  ok=acc36_begin_base(argv0,title,graphics);if(ok){glyph36_refresh();maximize_install();game_digits_saved=0;game_digits_installed=0;game_digits_install();acc_hover_button=-1;acc_hover_valid=0;acc_dialog_x=acc_dialog_y=-1;acc_dialog_w=acc_dialog_h=0;acc_focus_suppressed=0;acc_modal_depth=0;acc_subbox_active=0;}return ok;
+  ok=acc36_begin_base(argv0,title,graphics);if(ok){glyph36_refresh();maximize_install();game_digits_saved=0;game_digits_installed=0;game_digits_install();acc_hover_button=-1;acc_hover_valid=0;acc_dialog_x=acc_dialog_y=-1;acc_dialog_w=acc_dialog_h=0;acc_focus_suppressed=0;acc_modal_depth=0;acc_subbox_active=0;acc_mouse_autoshow_pending=acc_mouse_present?1:0;}return ok;
 }
 
 void acc_end_screen(void)
@@ -256,7 +261,7 @@ void acc_restore_text_screen(void)
   /* Text-only Focus/Maximize return path: preserve the active text mode and
      custom font/glyph state. Only restore the saved text backing store. */
   acc36_restore_text_screen_base();
-  acc_hover_button=-1;acc_hover_valid=0;
+  acc_hover_button=-1;acc_hover_valid=0;acc_mouse_autoshow_pending=acc_mouse_present?1:0;
 }
 
 void acc_restore_screen(void)
@@ -266,6 +271,7 @@ void acc_restore_screen(void)
   glyph36_refresh();
   maximize_install();
   game_digits_refresh();
+  acc_mouse_autoshow_pending=acc_mouse_present?1:0;
 }
 
 void acc_end(void)
@@ -290,52 +296,90 @@ void acc_button(int x,int y,const char *text,int selected)
 
 void acc_region_save(int x,int y,int width,int height,void far *buffer)
 {
-  int i,j; unsigned short far *dst=(unsigned short far *)buffer;
+  int i,j,was_mouse=mouse_visible; unsigned short far *dst=(unsigned short far *)buffer;
   if(!buffer)return;
+  /* Never capture the mouse driver's temporary text-cell overlay as part of
+     a popup backing store. */
+  if(was_mouse)acc_mouse_display(0);
   for(j=0;j<height;j++)for(i=0;i<width;i++)
     dst[j*width+i]=*(unsigned short far *)MAKE_FP(saved_video_segment,(((y+j)*acc_cols+x+i)*2));
+  if(was_mouse)acc_mouse_display(1);
 }
 
 void acc_region_restore(int x,int y,int width,int height,const void far *buffer)
 {
-  int i,j; const unsigned short far *src=(const unsigned short far *)buffer;
+  int i,j,was_mouse=mouse_visible; const unsigned short far *src=(const unsigned short far *)buffer;
   if(!buffer)return;
-  acc_mouse_display(0);
+  if(was_mouse)acc_mouse_display(0);
   for(j=0;j<height;j++)for(i=0;i<width;i++)
     *(unsigned short far *)MAKE_FP(saved_video_segment,(((y+j)*acc_cols+x+i)*2))=src[j*width+i];
-  acc_mouse_display(1);
+  if(was_mouse)acc_mouse_display(1);
 }
 
 int acc_select_popup(int x,int anchor_y,const char **items,int count,int current,int width)
 {
   int h=count<10?count:10,top=current>=h?current-h+1:0,sel=current,py=anchor_y-h-2;
-  int k=0,mx=0,my=0,lastx=-1,lasty=-1,i,choice=-1,old_buttons=0,buttons;
+  int k=0,mx=0,my=0,lastx=-1,lasty=-1,i,choice=-1,old_buttons=0,buttons,redraw=1;
   unsigned short far *under;
   if(!items||count<1)return -1;if(width<8)width=8;if(width>28)width=28;
   if(x<0)x=0;if(x+width>acc_cols)width=acc_cols-x;
   if(py<0)py=anchor_y+1;if(py+h+1>=acc_rows)py=acc_rows-h-2;if(py<0)py=0;
   /* Popup backing stores belong in the far heap.  Small-model accessories
-     share DGROUP between static data, the near heap and the stack; using
-     malloc() here needlessly consumes that scarce segment and can trip
-     stack guards in data-heavy accessories such as !TODOS.  The original
-     corruption was not _fmalloc() itself: it was passing a far allocation
-     through near acc_region_save()/restore() parameters.  Those APIs are
-     now explicitly far-pointer safe, so keep the screen image out of DGROUP. */
+     share DGROUP between static data, the near heap and the stack. */
   under=(unsigned short far *)_fmalloc((unsigned)(width*(h+2))*sizeof(unsigned short));
   if(under)acc_region_save(x,py,width,h+2,under);
   acc_mouse_display(1);
   if(acc_mouse_present){acc_mouse(&lastx,&lasty,&old_buttons);}
   for(;;){
-    acc_put(x,py,218,ACC_BORDER);for(i=1;i<width-1;i++)acc_put(x+i,py,196,ACC_BORDER);acc_put(x+width-1,py,191,ACC_BORDER);
-    for(i=0;i<h;i++){int idx=top+i;acc_put(x,py+1+i,179,ACC_BORDER);acc_text(x+1,py+1+i,idx<count?items[idx]:"",idx==sel?ACC_SELECT:ACC_TEXT,width-2);acc_put(x+width-1,py+1+i,179,ACC_BORDER);}
-    if(top>0)acc_put(x+width-1,py+1,30,ACC_BORDER);if(top+h<count)acc_put(x+width-1,py+h,31,ACC_BORDER);
-    acc_put(x,py+h+1,192,ACC_BORDER);for(i=1;i<width-1;i++)acc_put(x+i,py+h+1,196,ACC_BORDER);acc_put(x+width-1,py+h+1,217,ACC_BORDER);
-    if(acc_key_ready()){k=acc_key();if(k==27)break;if(k==13||k==' '){choice=sel;break;}if(k==0x4800||k==256+72){if(sel>0)sel--;}else if(k==0x5000||k==256+80){if(sel+1<count)sel++;}else if(k==0x4700||k==256+71)sel=0;else if(k==0x4F00||k==256+79)sel=count-1;else if(k==0x4900||k==256+73){sel-=h;if(sel<0)sel=0;}else if(k==0x5100||k==256+81){sel+=h;if(sel>=count)sel=count-1;}else continue;if(sel<top)top=sel;if(sel>=top+h)top=sel-h+1;continue;}
-    if(acc_mouse(&mx,&my,&buttons)){if(mx!=lastx||my!=lasty){lastx=mx;lasty=my;if(mx>x&&mx<x+width-1&&my>py&&my<py+h+1){sel=top+my-py-1;if(sel>=count)sel=count-1;}}
-      if((buttons&1)&&!(old_buttons&1)){if(mx==x+width-1&&my==py+1&&top>0){top--;if(sel<top)sel=top;}else if(mx==x+width-1&&my==py+h&&top+h<count){top++;if(sel>=top+h)sel=top+h-1;}else if(mx>x&&mx<x+width-1&&my>py&&my<py+h+1){choice=top+my-py-1;if(choice<count)break;}else if(!(mx>=x&&mx<x+width&&my>=py&&my<py+h+2))break;}
-      old_buttons=buttons;}
+    if(redraw){
+      /* The text-mode mouse driver owns the character cell under its pointer.
+         Draw a complete popup frame while hidden, then reveal the pointer over
+         the finished frame.  Also avoid repainting the popup on every idle
+         poll: only selection/scroll changes request another frame. */
+      acc_mouse_display(0);
+      acc_put(x,py,218,ACC_BORDER);for(i=1;i<width-1;i++)acc_put(x+i,py,196,ACC_BORDER);acc_put(x+width-1,py,191,ACC_BORDER);
+      for(i=0;i<h;i++){int idx=top+i;acc_put(x,py+1+i,179,ACC_BORDER);acc_text(x+1,py+1+i,idx<count?items[idx]:"",idx==sel?ACC_SELECT:ACC_TEXT,width-2);acc_put(x+width-1,py+1+i,179,ACC_BORDER);}
+      if(top>0)acc_put(x+width-1,py+1,30,ACC_BORDER);if(top+h<count)acc_put(x+width-1,py+h,31,ACC_BORDER);
+      acc_put(x,py+h+1,192,ACC_BORDER);for(i=1;i<width-1;i++)acc_put(x+i,py+h+1,196,ACC_BORDER);acc_put(x+width-1,py+h+1,217,ACC_BORDER);
+      acc_mouse_display(1);redraw=0;
+    }
+    if(acc_key_ready()){
+      int old_sel=sel,old_top=top;
+      k=acc_key();if(k==27)break;if(k==13||k==' '){choice=sel;break;}
+      if(k==0x4800||k==256+72){if(sel>0)sel--;}
+      else if(k==0x5000||k==256+80){if(sel+1<count)sel++;}
+      else if(k==0x4700||k==256+71)sel=0;
+      else if(k==0x4F00||k==256+79)sel=count-1;
+      else if(k==0x4900||k==256+73){sel-=h;if(sel<0)sel=0;}
+      else if(k==0x5100||k==256+81){sel+=h;if(sel>=count)sel=count-1;}
+      else continue;
+      if(sel<top)top=sel;if(sel>=top+h)top=sel-h+1;
+      if(sel!=old_sel||top!=old_top)redraw=1;
+      continue;
+    }
+    if(acc_mouse(&mx,&my,&buttons)){
+      if(mx!=lastx||my!=lasty){
+        int old_sel=sel;
+        lastx=mx;lasty=my;
+        if(mx>x&&mx<x+width-1&&my>py&&my<py+h+1){
+          sel=top+my-py-1;if(sel>=count)sel=count-1;
+          if(sel!=old_sel)redraw=1;
+        }
+      }
+      if((buttons&1)&&!(old_buttons&1)){
+        if(mx==x+width-1&&my==py+1&&top>0){top--;if(sel<top)sel=top;redraw=1;}
+        else if(mx==x+width-1&&my==py+h&&top+h<count){top++;if(sel>=top+h)sel=top+h-1;redraw=1;}
+        else if(mx>x&&mx<x+width-1&&my>py&&my<py+h+1){choice=top+my-py-1;if(choice<count)break;}
+        else if(!(mx>=x&&mx<x+width&&my>=py&&my<py+h+2))break;
+      }
+      old_buttons=buttons;
+    }
   }
-  if(under){acc_region_restore(x,py,width,h+2,under);_ffree(under);}return choice;
+  /* Return to the caller with the pointer hidden.  Callers can now repaint
+     their underlying control without the mouse restoring stale popup cells. */
+  acc_mouse_display(0);
+  if(under){acc_region_restore(x,py,width,h+2,under);_ffree(under);}
+  return choice;
 }
 
 int acc_print_popup(int x,int anchor_y)
@@ -406,6 +450,9 @@ int acc_ps_export(FILE *source,const char *name)
 void acc_modal_begin(void)
 {
   acc_modal_depth++;
+  /* Modal content is painted immediately after this call.  Keep the text
+     pointer hidden until the modal enters its input wait. */
+  acc_mouse_display(0);
   acc_caret_hide();
   acc_button_count=0;acc_hover_button=-1;acc_hover_valid=0;
 }
@@ -425,6 +472,8 @@ void acc_mouse_display(int show)
 {
   union REGS r;
   if(!acc_mouse_present)return;
+  /* An explicit visibility request cancels the one-shot automatic show. */
+  acc_mouse_autoshow_pending=0;
   if(show){
     if(!mouse_visible){r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;}
   } else {
@@ -442,6 +491,11 @@ static void acc_hover_sync(int mx,int my)
     if(my==acc_buttons[i].y&&mx>=acc_buttons[i].x&&mx<acc_buttons[i].x+w){newhover=i;break;}
   }
   if(newhover!=acc_hover_button){
+    int was_mouse=mouse_visible;
+    /* A hover transition repaints complete buttons.  Hide once for the whole
+       transition instead of allowing the text-mode driver to save/restore
+       intermediate button cells beneath its cursor. */
+    if(was_mouse)acc_mouse_display(0);
     if(acc_hover_button>=0&&acc_hover_button<acc_button_count)
       acc_button_draw_state(acc_buttons[acc_hover_button].x,acc_buttons[acc_hover_button].y,
         acc_buttons[acc_hover_button].text,acc_buttons[acc_hover_button].selected&&!acc_focus_suppressed,1);
@@ -449,12 +503,19 @@ static void acc_hover_sync(int mx,int my)
     if(acc_hover_button>=0&&acc_hover_button<acc_button_count)
       acc_button_draw_state(acc_buttons[acc_hover_button].x,acc_buttons[acc_hover_button].y,
         acc_buttons[acc_hover_button].text,1,1);
+    if(was_mouse)acc_mouse_display(1);
   }
 }
 
 int acc_mouse(int *x,int *y,int *buttons)
 {
-  int r=acc36_mouse_base(x,y,buttons);
+  int r;
+  /* Direct-poll games/accessories do not use acc_wait(), so reveal the pointer
+     on the first poll.  Initial application painting remains cursor-free. */
+  if(acc_mouse_present&&!mouse_visible&&acc_mouse_autoshow_pending){
+    acc_mouse_display(1);acc_mouse_autoshow_pending=0;
+  }
+  r=acc36_mouse_base(x,y,buttons);
   if(acc_mouse_present){canvas_cursor_sync(*x,*y);acc_hover_sync(*x,*y);}
   if((*buttons&1)&&acc_dialog_w>0&&(*x<acc_dialog_x||*x>=acc_dialog_x+acc_dialog_w||*y<acc_dialog_y||*y>=acc_dialog_y+acc_dialog_h))*buttons|=ACC_MOUSE_OUTSIDE;
   return r;
@@ -464,10 +525,10 @@ int acc_key_ready(void){return acc36_key_ready_base();}
 
 void acc_wait(int *key,int *x,int *y,unsigned *buttons)
 {
-  union REGS r;int i,w,shown_here=0;
+  union REGS r;int i,w;
   *key=0;*buttons=0;
   if(acc_mouse_present&&!mouse_visible){
-    r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;shown_here=1;
+    r.x.ax=1;int86(0x33,&r,&r);mouse_visible=1;acc_mouse_autoshow_pending=0;
   }
   for(;;){
     if(acc_idle_hook)acc_idle_hook();
@@ -507,13 +568,14 @@ void acc_wait(int *key,int *x,int *y,unsigned *buttons)
       }
     }
   }
+  /* Input dispatch ends with the pointer hidden.  This is the shared
+     rendering contract: applications may repaint immediately after acc_wait()
+     without the mouse driver later restoring a stale character cell. */
+  if(acc_mouse_present&&mouse_visible){r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;}
   if(acc_hover_button>=0&&acc_hover_button<acc_button_count)
     acc_button_draw_state(acc_buttons[acc_hover_button].x,acc_buttons[acc_hover_button].y,
       acc_buttons[acc_hover_button].text,acc_buttons[acc_hover_button].selected,1);
   acc_hover_button=-1;acc_hover_valid=0;
-  if(acc_mouse_present&&shown_here&&mouse_visible){
-    r.x.ax=2;int86(0x33,&r,&r);mouse_visible=0;
-  }
   acc_button_count=0;
   if((*buttons&1)&&*y==close_y&&(*x==close_x||*x==close_x+1)){*buttons=0;*key=27;}
 }

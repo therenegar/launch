@@ -612,15 +612,50 @@ static int capture_shortcut(char *spec)
 }
 
 
-static int loadhigh_supported(const char *probe_dir)
+static int file_contains_ci(const char *filename,const char *needle)
 {
-  char bat[PATH_SIZE],ok[PATH_SIZE],cmd[PATH_SIZE*3],*comspec;FILE *f;int found;
-  comspec=getenv("COMSPEC");if(!comspec||!*comspec||!probe_dir||!*probe_dir)return 0;
-  sprintf(bat,"%s\\LHTEST.BAT",probe_dir);sprintf(ok,"%s\\LHTEST.$$$",probe_dir);
-  remove(bat);remove(ok);f=fopen(bat,"wt");if(!f)return 0;
-  fprintf(f,"@ECHO OFF\nECHO Y>%s\n",ok);if(fclose(f)!=0){remove(bat);return 0;}
-  sprintf(cmd,"LOADHIGH %s /C %s >NUL",comspec,bat);system(cmd);remove(bat);
-  f=fopen(ok,"rb");found=f!=0;if(f)fclose(f);remove(ok);return found;
+  FILE *f;int c;unsigned matched=0,nlen;
+  if(!filename||!*filename||!needle||!*needle)return 0;
+  nlen=(unsigned)strlen(needle);f=fopen(filename,"rb");if(!f)return 0;
+  while((c=fgetc(f))!=EOF){
+    unsigned char ch=(unsigned char)toupper((unsigned char)c);
+    unsigned char want=(unsigned char)toupper((unsigned char)needle[matched]);
+    if(ch==want){
+      matched++;
+      if(matched==nlen){fclose(f);return 1;}
+    }else matched=(ch==(unsigned char)toupper((unsigned char)needle[0]))?1:0;
+  }
+  fclose(f);return 0;
+}
+
+static int startup_uses_loadhigh(const char *filename)
+{
+  char line[300],*p;FILE *f;
+  if(!filename||!*filename)return 0;
+  f=fopen(filename,"rt");if(!f)return 0;
+  while(fgets(line,sizeof(line),f)){
+    p=line;while(*p==' '||*p=='\t'||*p=='@')p++;
+    if(!strnicmp(p,"REM",3)&&(p[3]==0||isspace((unsigned char)p[3])))continue;
+    if(!strncmp(p,"::",2))continue;
+    if(!strnicmp(p,"LOADHIGH",8)&&(p[8]==0||isspace((unsigned char)p[8]))){fclose(f);return 1;}
+  }
+  fclose(f);return 0;
+}
+
+/* LOADHIGH is a command-processor feature, so testing it by calling system()
+   necessarily starts another command interpreter.  That is especially wrong
+   for 4DOS/NDOS, where startup scripts such as 4START.BAT run in the child
+   shell.  Detect support without executing anything: first honour an existing
+   LOADHIGH use in the actual startup batch, then inspect the active COMSPEC
+   binary for its command name.  The test is deliberately conservative; if
+   support cannot be established, !START simply loads the TSRs normally. */
+static int loadhigh_supported(const char *startup_file)
+{
+  char *comspec;
+  if(startup_uses_loadhigh(startup_file))return 1;
+  comspec=getenv("COMSPEC");
+  if(comspec&&*comspec&&file_contains_ci(comspec,"LOADHIGH"))return 1;
+  return 0;
 }
 
 static int append_autoexec(const char *filename,const char *path,int add_path,
@@ -715,20 +750,21 @@ static int startup_cfg_light(const char *install)
 /* Resident TSRs are loaded directly by the user's command processor.  Do not
    place a transient loader below them: when that loader exits it leaves a
    conventional-memory hole, which Windows 3.0 reports as fragmentation. */
-static int write_start_batch(const char *install,int add_key,const char *key_spec,int add_font,int light_target,int show_menu)
+static int write_start_batch(const char *startup_file,const char *install,int add_key,const char *key_spec,int add_font,int light_target,int show_menu)
 {
-  static char path[PATH_SIZE],line[300],prompt_line[300];FILE *f,*oldf;const char *keyprog=light_target?"!TKEY.COM":"!KEY.COM";
+  static char path[PATH_SIZE],line[300],prompt_line[300];FILE *f,*oldf;const char *keyprog=light_target?"!TKEY.COM":"!KEY.COM";int loadhigh;
   /* Preserve a prompt already managed by Launch! across an upgrade.  Clean
      installs have no PROMPT line until Configuration > Prompt > Set is used. */
+  loadhigh=loadhigh_supported(startup_file);
   prompt_line[0]=0;sprintf(path,"%s\\!START.BAT",install);oldf=fopen(path,"rt");
   if(oldf){while(fgets(line,sizeof(line),oldf)){char *q=line;while(*q==' '||*q=='\t')q++;if(!strnicmp(q,"PROMPT ",7)){q[strcspn(q,"\r\n")]=0;strncpy(prompt_line,q,sizeof(prompt_line)-1);prompt_line[sizeof(prompt_line)-1]=0;}}fclose(oldf);}
   f=fopen(path,"wt");if(!f)return 0;
   if(fputs("@ECHO OFF\n",f)==EOF){fclose(f);return 0;}
   if(fprintf(f,"PATH %%PATH%%;%s\n",install)<0){fclose(f);return 0;}
   if(fprintf(f,"%s\\!CONFIG.EXE /DISPLAY\n",install)<0){fclose(f);return 0;}
-  if(add_font)if(fprintf(f,"%s\\!FONT.COM\n",install)<0){fclose(f);return 0;}
+  if(add_font)if(fprintf(f,"%s%s\\!FONT.COM\n",loadhigh?"LOADHIGH ":"",install)<0){fclose(f);return 0;}
   if(add_key){
-    if(fprintf(f,"%s\\%s",install,keyprog)<0){fclose(f);return 0;}
+    if(fprintf(f,"%s%s\\%s",loadhigh?"LOADHIGH ":"",install,keyprog)<0){fclose(f);return 0;}
     if(key_spec&&*key_spec)if(fprintf(f," /KEY=%s",key_spec)<0){fclose(f);return 0;}
     if(fputc('\n',f)==EOF){fclose(f);return 0;}
   }
@@ -737,33 +773,77 @@ static int write_start_batch(const char *install,int add_key,const char *key_spe
   return fclose(f)==0;
 }
 
+static int startup_is_start_line(const char *upper)
+{
+  const char *p=upper,*hit;
+  while(*p==' '||*p=='\t'||*p=='@')p++;
+  if(!strncmp(p,"::",2))return 0;
+  if(!strncmp(p,"REM",3)&&(p[3]==0||isspace((unsigned char)p[3])))return 0;
+  hit=strstr(p,"!START");
+  if(!hit)return 0;
+  if(hit>p && hit[-1]!='\\' && hit[-1]!='/' && !isspace((unsigned char)hit[-1]))return 0;
+  return hit[6]==0||hit[6]=='\r'||hit[6]=='\n'||hit[6]=='.'||isspace((unsigned char)hit[6]);
+}
+
 static int migrate_launch_startup(const char *filename,const char *install,int add_key,const char *key_spec,int add_font,int light_target,int show_menu,int preserve_menu)
 {
-  /* Keep the startup-file work buffers out of the small-model runtime stack.
-     This routine is entered immediately after the final installer question,
-     and the five automatic arrays previously consumed roughly 1 KB at once,
-     enough to trigger Microsoft C runtime error R6000 on real DOS builds. */
+  /* AUTOEXEC.BAT/FDAUTO.BAT is edited as a file.  Never invoke a command
+     processor to change startup configuration.  Replace the first existing
+     !START line in place; remove duplicate/legacy Launch! startup lines; append
+     one !START line only when no existing Launch! startup position was found. */
   static char temp[PATH_SIZE],old[PATH_SIZE],line[300],up[300],uinst[PATH_SIZE];
-  char *dot;FILE *in,*out;int ok=1,had_menu=0,i,last=1;
+  char *dot,*q;FILE *in,*out;int ok=1,had_menu=0,i,last=1,inserted=0,legacy=0;
   strcpy(temp,filename);dot=strrchr(temp,'.');if(dot)strcpy(dot,".$L$");else strcat(temp,".$L$");
   strcpy(old,filename);dot=strrchr(old,'.');if(dot)strcpy(dot,".L!$");else strcat(old,".L!$");
   in=fopen(filename,"rt");out=fopen(temp,"wt");if(!out){if(in)fclose(in);return 0;}
   if(in){while(ok&&fgets(line,sizeof(line),in)){
-    strncpy(up,line,sizeof(up)-1);up[sizeof(up)-1]=0;strncpy(uinst,install,sizeof(uinst)-1);uinst[sizeof(uinst)-1]=0;
-    for(i=0;up[i];i++)up[i]=(char)toupper((unsigned char)up[i]);for(i=0;uinst[i];i++)uinst[i]=(char)toupper((unsigned char)uinst[i]);
-    if(strstr(up,uinst)){
-      if(strstr(up,"!START")||strstr(up,"!HELPER")||strstr(up,"!APPLY")||strstr(up,"!FONT")||strstr(up,"!KEY")||strstr(up,"!TKEY"))continue;
-      if(strstr(up,"PATH")&&strstr(up,uinst))continue;
-      if(strstr(up,"!.EXE")){had_menu=1;continue;}
+    strncpy(up,line,sizeof(up)-1);up[sizeof(up)-1]=0;
+    strncpy(uinst,install,sizeof(uinst)-1);uinst[sizeof(uinst)-1]=0;
+    for(i=0;up[i];i++)up[i]=(char)toupper((unsigned char)up[i]);
+    for(i=0;uinst[i];i++)uinst[i]=(char)toupper((unsigned char)uinst[i]);
+
+    if(startup_is_start_line(up)){
+      if(!inserted){if(fprintf(out,"%s\\!START\n",install)<0)ok=0;else{inserted=1;last=1;}}
+      continue;
     }
-    {char *q=up;while(*q==' '||*q=='\t'||*q=='@')q++;if(*q=='!'&&(q[1]==0||q[1]=='\r'||q[1]=='\n')){had_menu=1;continue;}}
-    if(fputs(line,out)==EOF){ok=0;break;}last=(line[0]&&line[strlen(line)-1]=='\n');
-  }if(ferror(in))ok=0;if(fclose(in)!=0)ok=0;}
-  if(ok&&!last)if(fputs("\n",out)==EOF)ok=0;
-  if(ok)if(fprintf(out,"%s\\!START\n",install)<0)ok=0;
-  if(fclose(out)!=0)ok=0;if(!ok){remove(temp);return 0;}
-  if(!write_start_batch(install,add_key,key_spec,add_font,light_target,show_menu||(preserve_menu&&had_menu))){remove(temp);return 0;}
-  remove(old);if(in&&rename(filename,old)!=0){remove(temp);return 0;}if(rename(temp,filename)!=0){if(in)rename(old,filename);remove(temp);return 0;}if(in)remove(old);return 1;
+
+    legacy=0;
+    if(strstr(up,uinst)){
+      if(strstr(up,"!HELPER")||strstr(up,"!APPLY")||strstr(up,"!FONT")||
+         strstr(up,"!KEY")||strstr(up,"!TKEY"))legacy=1;
+      if(strstr(up,"PATH")&&strstr(up,uinst))legacy=1;
+      if(strstr(up,"!.EXE")){had_menu=1;legacy=1;}
+    }
+    q=up;while(*q==' '||*q=='\t'||*q=='@')q++;
+    if(*q=='!'&&(q[1]==0||q[1]=='\r'||q[1]=='\n')){had_menu=1;legacy=1;}
+
+    if(legacy){
+      if(!inserted){if(fprintf(out,"%s\\!START\n",install)<0)ok=0;else{inserted=1;last=1;}}
+      continue;
+    }
+
+    if(fputs(line,out)==EOF){ok=0;break;}
+    last=(line[0]&&line[strlen(line)-1]=='\n');
+  }
+  if(ferror(in))ok=0;if(fclose(in)!=0)ok=0;}
+
+  if(ok&&!inserted){
+    if(!last)if(fputs("\n",out)==EOF)ok=0;
+    if(ok&&fprintf(out,"%s\\!START\n",install)<0)ok=0;
+  }
+  if(fclose(out)!=0)ok=0;
+  if(!ok){remove(temp);return 0;}
+
+  /* Build !START.BAT from the original startup environment before replacing
+     the startup file, so LOADHIGH capability detection can inspect it. */
+  if(!write_start_batch(filename,install,add_key,key_spec,add_font,light_target,
+                        show_menu||(preserve_menu&&had_menu))){remove(temp);return 0;}
+
+  remove(old);
+  if(in&&rename(filename,old)!=0){remove(temp);return 0;}
+  if(rename(temp,filename)!=0){if(in)rename(old,filename);remove(temp);return 0;}
+  if(in)remove(old);
+  return 1;
 }
 
 /* Prepare one post-install activation batch in the installed Launch! directory

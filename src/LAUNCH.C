@@ -376,11 +376,17 @@ static void render_end(void)
   render_real=0;
 }
 
+static void restore_saved_target(void)
+{
+  int i,n=screen_cols*screen_rows;
+  if(!saved)return;
+  for(i=0;i<n;i++)video[i]=saved[i];
+}
+
 static void restore_screen(void)
 {
-  int i, n = screen_cols * screen_rows;if(render_active)render_end();
-  if(!saved)return;
-  for (i=0; i<n; ++i) video[i] = saved[i];
+  if(render_active)render_end();
+  restore_saved_target();
 }
 
 static void close_menu(void)
@@ -6141,17 +6147,25 @@ static int menu_position_at(int depth,int *list,int n,int panel_y,int mouse_y)
   return -1;
 }
 
-static void change_menu_selection(int depth,int *list,int n,int *selection,
-                                  int direction,int panel_y)
+static int change_menu_selection(int depth,int *list,int n,int *selection,
+                                 int direction,int panel_y,int panel_h)
 {
   int old=*selection,next,x=(depth-menu_first_panel)*MENU_WIDTH;
-  if(!n)return;
-  next=(old+n+direction)%n;if(next==old)return;
+  int old_row,next_row,first_row=depth?1:2,last_row=panel_h-2;
+  if(!n)return 1;
+  next=(old+n+direction)%n;if(next==old)return 1;
+  old_row=menu_item_offset(depth,list[old],old);
+  next_row=menu_item_offset(depth,list[next],next);
+  /* If the new selection crosses a scroll boundary, let the normal buffered
+     panel redraw adjust menu_scroll.  Otherwise only the two affected rows
+     need to change, which keeps cursor-key navigation instantaneous. */
+  if(next_row<first_row||next_row>last_row){*selection=next;return 0;}
   if(x+MENU_WIDTH>screen_cols)x=screen_cols-MENU_WIDTH;
   wait_vertical_retrace();
-  row_attribute(x+1,panel_y+menu_item_offset(depth,list[old],old),18,menu_entry_attribute(list[old],0));
+  row_attribute(x+1,panel_y+old_row,18,menu_entry_attribute(list[old],0));
   *selection=next;
-  row_attribute(x+1,panel_y+menu_item_offset(depth,list[next],next),18,menu_entry_attribute(list[next],1));
+  row_attribute(x+1,panel_y+next_row,18,menu_entry_attribute(list[next],1));
+  return 1;
 }
 
 static void set_menu_selection(int depth,int *list,int *selection,
@@ -6325,11 +6339,13 @@ static int menu(const char *open_to)
       qh=(qn?qn:1)+5;if(qh>screen_rows-sysbar_rows())qh=screen_rows-sysbar_rows();
       qy=appearance.menu_top?sysbar_rows():screen_rows-qh;qinput_y=qy+qh-2;
       if(redraw){
-        /* Quick Launch can shrink as the result count changes.  Always restore
-           the saved DOS screen before redrawing it so pixels from a taller
-           previous Quick Launch/menu panel cannot remain exposed behind the
-           new, shorter panel. */
-        restore_screen();
+        /* Build the complete Quick Launch frame off-screen.  Restoring the
+           DOS background directly to VRAM before repainting exposed it for a
+           frame and made the menu look as though it flashed through to the
+           command prompt.  The render buffer now receives the restore and
+           final panel paint; render_end() commits only the final cell deltas. */
+        render_begin();
+        restore_saved_target();
         if(appearance.show_sysbar)draw_sysbar();
         menu_box(0,qy,MENU_WIDTH,qh,suite_title,C_ROOT_TITLE,1);
         if(qn){
@@ -6347,6 +6363,7 @@ static int menu(const char *open_to)
         for(i=1;i<MENU_WIDTH-1;i++)cell(i,qinput_y,' ',C_INPUT_FIELD);
         textout(1,qinput_y,qtext,C_INPUT_FIELD,MENU_WIDTH-2);
         if(qfocus){int cx=1+strlen(qtext);if(cx>MENU_WIDTH-2)cx=MENU_WIDTH-2;cell(cx,qinput_y,'_',C_INPUT_FIELD);}
+        render_end();
         redraw=0;
       }
       wait_input(&k,&mx,&my,&mb);cursor_hide();last_activity=bios_ticks();
@@ -6376,7 +6393,13 @@ static int menu(const char *open_to)
     n=menu_children(parent[depth],list);
     if(sel[depth]>=n) sel[depth]=n ? n-1 : 0;
     if(redraw){
-      if(redraw==2) restore_screen();
+      int full_redraw=(redraw==2);
+      /* Compose panel opens/closes and selection refreshes in the off-screen
+         text buffer.  In particular, closing a submenu must not first expose
+         the saved command-prompt background and then repaint the surviving
+         panels on top of it. */
+      render_begin();
+      if(full_redraw)restore_saved_target();
       if(appearance.show_sysbar)draw_sysbar();
       for(i=0;i<=depth;i++){
         int tn,j;
@@ -6434,6 +6457,7 @@ static int menu(const char *open_to)
       if(appearance.show_time&&menu_first_panel==0)last_second=draw_clock(panel_y[0]+panel_h[0]-1,255);
       else last_second=255;
       last_activity=bios_ticks();
+      render_end();
       redraw=0;
     }
     k=0;mb=0;mouse_show();
@@ -6587,8 +6611,8 @@ static int menu(const char *open_to)
       if(n>0){node=list[sel[depth]];sort_menu(parent[depth]);n=menu_children(parent[depth],list);for(i=0;i<n;i++)if(list[i]==node)sel[depth]=i;if(!save_config())wide_notice_box("Write Error","Could not update LAUNCH.MNU.");}
       redraw=1;
     }
-    else if(k==0x4800 && n>0){sel[depth]=(sel[depth]+n-1)%n;redraw=1;}
-    else if(k==0x5000 && n>0){sel[depth]=(sel[depth]+1)%n;redraw=1;}
+    else if(k==0x4800 && n>0){if(!change_menu_selection(depth,list,n,&sel[depth],-1,panel_y[depth],panel_h[depth]))redraw=1;else redraw=0;}
+    else if(k==0x5000 && n>0){if(!change_menu_selection(depth,list,n,&sel[depth],1,panel_y[depth],panel_h[depth]))redraw=1;else redraw=0;}
     else if(k==0x4B00){if(depth){depth--;redraw=2;}}
     else if((k==13 || k==0x4D00) && n>0){
       node=list[sel[depth]];
@@ -7543,15 +7567,33 @@ static int shortcut_set_dialog(void)
 }
 
 
+static int shortcut_file_contains_ci(const char *filename,const char *needle)
+{
+  FILE *f;int c;unsigned matched=0,nlen;
+  if(!filename||!*filename||!needle||!*needle)return 0;
+  nlen=(unsigned)strlen(needle);f=fopen(filename,"rb");if(!f)return 0;
+  while((c=fgetc(f))!=EOF){
+    unsigned char ch=(unsigned char)toupper((unsigned char)c);
+    unsigned char want=(unsigned char)toupper((unsigned char)needle[matched]);
+    if(ch==want){
+      matched++;
+      if(matched==nlen){fclose(f);return 1;}
+    }else matched=(ch==(unsigned char)toupper((unsigned char)needle[0]))?1:0;
+  }
+  fclose(f);return 0;
+}
+
 static int shortcut_loadhigh_supported(void)
 {
-  char bat[MAX_CMD],ok[MAX_CMD],cmd[MAX_CMD*2],*comspec;FILE *f;int found;
-  comspec=getenv("COMSPEC");if(!comspec||!*comspec||!program_dir[0])return 0;
-  strcpy(bat,program_dir);strcat(bat,"LHTEST.BAT");strcpy(ok,program_dir);strcat(ok,"LHTEST.$$$");
-  remove(bat);remove(ok);f=fopen(bat,"wt");if(!f)return 0;
-  fprintf(f,"@ECHO OFF\nECHO Y>%s\n",ok);if(fclose(f)!=0){remove(bat);return 0;}
-  sprintf(cmd,"LOADHIGH %s /C %s >NUL",comspec,bat);system(cmd);remove(bat);
-  f=fopen(ok,"rb");found=f!=0;if(f)fclose(f);remove(ok);return found;
+  char *comspec;
+  /* Do not probe LOADHIGH with system(): that launches a child command
+     processor and can execute 4START.BAT/other shell startup scripts.  The
+     active command processor contains its internal command table, so a direct
+     binary scan establishes support without starting any process.  If the
+     name is not present we conservatively leave the TSRs in conventional
+     memory rather than guessing. */
+  comspec=getenv("COMSPEC");
+  return comspec&&*comspec&&shortcut_file_contains_ci(comspec,"LOADHIGH");
 }
 
 static int ensure_shortcut_autoexec(void)
@@ -7739,17 +7781,18 @@ static void shortcut_idle_sync(void)
 #ifdef CONFIG_PROGRAM
 static int sync_startup_services(void)
 {
-  static char path[MAX_CMD],dir[MAX_CMD],spec[64],value[256];FILE *f;int n;
+  static char path[MAX_CMD],dir[MAX_CMD],spec[64],value[256];FILE *f;int n,loadhigh;
   if(!program_dir[0])return 0;
+  loadhigh=shortcut_loadhigh_supported();
   strncpy(dir,program_dir,sizeof(dir)-1);dir[sizeof(dir)-1]=0;n=(int)strlen(dir);while(n>3&&(dir[n-1]=='\\'||dir[n-1]=='/'))dir[--n]=0;
   strcpy(path,program_dir);strcat(path,"!START.BAT");f=fopen(path,"wt");if(!f)return 0;
   if(fputs("@ECHO OFF\n",f)==EOF){fclose(f);return 0;}
   if(fprintf(f,"PATH %%PATH%%;%s\n",dir)<0){fclose(f);return 0;}
   if(fprintf(f,"%s\\!CONFIG.EXE /DISPLAY\n",dir)<0){fclose(f);return 0;}
-  if(fonts_installed&&appearance.font_persist)if(fprintf(f,"%s\\!FONT.COM\n",dir)<0){fclose(f);return 0;}
+  if(fonts_installed&&appearance.font_persist)if(fprintf(f,"%s%s\\!FONT.COM\n",loadhigh?"LOADHIGH ":"",dir)<0){fclose(f);return 0;}
   if(shortcut_component_installed&&shortcut_enabled){
     spec[0]=0;if(shortcut_ctrl)strcat(spec,"CTRL+");if(shortcut_alt)strcat(spec,"ALT+");if(shortcut_shift)strcat(spec,"SHIFT+");strcat(spec,shortcut_key_cfg);
-    if(fprintf(f,"%s\\%s /KEY=%s\n",dir,shortcut_target_light?"!TKEY.COM":"!KEY.COM",spec)<0){fclose(f);return 0;}
+    if(fprintf(f,"%s%s\\%s /KEY=%s\n",loadhigh?"LOADHIGH ":"",dir,shortcut_target_light?"!TKEY.COM":"!KEY.COM",spec)<0){fclose(f);return 0;}
   }
   if(prompt_set){prompt_value(prompt_boot_style,value);if(fprintf(f,"PROMPT %s\n",value)<0){fclose(f);return 0;}}
   if(open_menu_at_boot)if(fprintf(f,"%s\\!.EXE\n",dir)<0){fclose(f);return 0;}
