@@ -89,6 +89,8 @@ Configuration includes the menu, colors, screen savers, prompt customization, fo
 
 <img width="720" alt="Configuration" src="https://github.com/user-attachments/assets/bb8bc7e1-a34b-4137-b394-436e6bc9c324" />
 
+<img width="720" alt="Color Schemes" src="https://github.com/user-attachments/assets/189807a7-5fd1-4b88-98e5-b120dc750bcc" />
+
 ----
 
 ### <img height="100" alt="Screen Savers" src="https://github.com/user-attachments/assets/447f06ad-4597-45bc-b4cf-3f3debcc02a1" />
